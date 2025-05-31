@@ -1,0 +1,246 @@
+"use client";
+
+import AnalyticsPage from './page-new';
+
+export default function Analytics() {
+  return <AnalyticsPage />;
+}
+
+export default function AnalyticsPage() {
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [paymentsByDay, setPaymentsByDay] = useState<any[]>([]);
+  const [processingTime, setProcessingTime] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useSupabase();
+  const router = useRouter();
+  
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  // Fetch analytics data
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
+      
+      try {
+        // Get daily payments count for the last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const formattedDate = sevenDaysAgo.toISOString().split('T')[0];
+        
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('nt_items')
+          .select('*')
+          .gte('updated_at', formattedDate);
+          
+        if (itemsError) throw itemsError;
+        
+        // Get total NTs
+        const { data: ntsData, error: ntsError } = await supabase
+          .from('nts')
+          .select('created_at, status');
+          
+        if (ntsError) throw ntsError;
+        
+        // Calculate daily payments
+        const dailyPayments = itemsData.filter(item => 
+          item.status === 'Pago' && new Date(item.payment_time || item.updated_at).toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+        ).length;
+        
+        // Calculate average processing time (in hours)
+        const processedItems = itemsData.filter(item => item.status === 'Pago' && item.payment_time);
+        
+        const totalProcessingTime = processedItems.reduce((total, item) => {
+          const createdTime = new Date(item.created_at).getTime();
+          const paymentTime = new Date(item.payment_time!).getTime();
+          return total + (paymentTime - createdTime);
+        }, 0);
+        
+        const averageProcessingTime = processedItems.length > 0 
+          ? ((totalProcessingTime / processedItems.length) / (1000 * 60 * 60)).toFixed(1) + 'h'
+          : 'N/A';
+        
+        // Calculate payment ratio
+        const totalItems = itemsData.length;
+        const paidItems = itemsData.filter(item => item.status === 'Pago').length;
+        const paymentRatio = totalItems > 0 ? paidItems / totalItems : 0;
+        
+        setAnalytics({
+          dailyPayments,
+          averageProcessingTime,
+          totalItemsProcessed: paidItems,
+          paymentRatio
+        });
+        
+        // Prepare data for charts
+        const paymentsByDayData = preparePaymentsByDayData(itemsData);
+        setPaymentsByDay(paymentsByDayData);
+        
+        const processingTimeData = prepareProcessingTimeData(processedItems);
+        setProcessingTime(processingTimeData);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      fetchAnalytics();
+    }
+  }, [user, router]);
+  
+  // Prepare payments by day data
+  const preparePaymentsByDayData = (items: any[]) => {
+    const today = new Date();
+    const days = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(today.getDate() - i);
+      const dayStr = date.toISOString().split('T')[0];
+      
+      days.push({
+        name: formatDay(date),
+        date: dayStr,
+        payments: 0
+      });
+    }
+    
+    items.forEach(item => {
+      if (item.status === 'Pago' && item.payment_time) {
+        const paymentDate = new Date(item.payment_time);
+        const paymentDay = paymentDate.toISOString().split('T')[0];
+        
+        const dayItem = days.find(d => d.date === paymentDay);
+        if (dayItem) {
+          dayItem.payments++;
+        }
+      }
+    });
+    
+    return days;
+  };
+  
+  // Prepare processing time data
+  const prepareProcessingTimeData = (items: any[]) => {
+    const prioItems = items.filter(item => item.priority);
+    const nonPrioItems = items.filter(item => !item.priority);
+    
+    const getPrioAvgTime = (items: any[]) => {
+      if (items.length === 0) return 0;
+      
+      const total = items.reduce((sum, item) => {
+        const createdTime = new Date(item.created_at).getTime();
+        const paymentTime = new Date(item.payment_time!).getTime();
+        return sum + (paymentTime - createdTime) / (1000 * 60 * 60); // hours
+      }, 0);
+      
+      return total / items.length;
+    };
+    
+    return [
+      { name: 'Itens Prioritários', time: getPrioAvgTime(prioItems) },
+      { name: 'Itens Normais', time: getPrioAvgTime(nonPrioItems) }
+    ];
+  };
+  
+  // Format day for chart
+  const formatDay = (date: Date) => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return days[date.getDay()];
+  };
+  
+  if (!user) {
+    return null;
+  }
+  
+  return (
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Topbar />
+        <main className="flex-1 p-6 overflow-y-auto">
+          <h1 className="text-3xl font-bold mb-6">Análise e Estatísticas</h1>
+          
+          {loading ? (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow text-center">
+              <p>Carregando dados de análise...</p>
+            </div>
+          ) : (
+            <>
+              {/* Analytics Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">Pagamentos Hoje</h3>
+                  <p className="text-3xl font-bold">{analytics?.dailyPayments}</p>
+                </Card>
+                
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">Tempo Médio de Processamento</h3>
+                  <p className="text-3xl font-bold">{analytics?.averageProcessingTime}</p>
+                </Card>
+                
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">Total de Itens Processados</h3>
+                  <p className="text-3xl font-bold">{analytics?.totalItemsProcessed}</p>
+                </Card>
+                
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">Taxa de Pagamento</h3>
+                  <p className="text-3xl font-bold">{(analytics?.paymentRatio * 100).toFixed(1)}%</p>
+                </Card>
+              </div>
+              
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium mb-4">Pagamentos por Dia</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={paymentsByDay}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="payments" name="Pagamentos" fill="#4f46e5" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                
+                <Card className="p-6 bg-white dark:bg-gray-800">
+                  <h3 className="text-lg font-medium mb-4">Tempo de Processamento</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={processingTime}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis label={{ value: 'Horas', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip formatter={(value) => [value?.toFixed(2) + 'h', 'Tempo Médio']} />
+                        <Legend />
+                        <Bar dataKey="time" name="Tempo Médio (h)" fill="#3b82f6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
