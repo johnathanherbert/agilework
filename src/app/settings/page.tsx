@@ -27,6 +27,13 @@ export default function SettingsPage() {
   const [notifyRobotAlerts, setNotifyRobotAlerts] = useState(true);
   const [saving, setSaving] = useState(false);
   
+  // Handle authentication
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
   // Carrega configurações do usuário
   useEffect(() => {
     if (user?.user_metadata) {
@@ -45,12 +52,16 @@ export default function SettingsPage() {
     }
   }, [user]);
   
-  // Redirect if not authenticated
   if (!user) {
-    router.push('/login');
-    return null;
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold">Carregando...</h2>
+        <p className="text-gray-500 mt-2">Aguarde um momento</p>
+      </div>
+    </div>;
   }
-    const saveUserProfile = async () => {
+
+  const saveUserProfile = async () => {
     setSaving(true);
     
     try {

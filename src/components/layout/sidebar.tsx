@@ -1,6 +1,6 @@
-   "use client";
+"use client";
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   ClipboardCheck, ClipboardList, 
   Home, Settings, Plus, Archive, History,
@@ -26,23 +26,22 @@ const navItems: NavItem[] = [
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
   
-  // Observar mudanças na URL para atualizar o item ativo
+  // Update active item when pathname or search params change
   useEffect(() => {
-    // Obter parâmetros da URL atual
-    const url = new URL(window.location.href);
-    const status = url.searchParams.get('status');
+    const status = searchParams.get('status');
     
-    // Construir o path completo incluindo query params
+    // Construct full path including query params
     let fullPath = pathname;
     if (status) {
       fullPath += `?status=${status}`;
     }
     
     setCurrentPath(fullPath);
-  }, [pathname]);
+  }, [pathname, searchParams]);
   
   // Auto-collapse sidebar when not in use
   useEffect(() => {
