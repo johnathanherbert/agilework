@@ -111,7 +111,7 @@ Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTIN
 
 ## 👥 Autores
 
-- João Arthur Almeida (@johnarthur)
+- Johnathan Herbert (@johnathanherbert)
 
 ## 📞 Suporte
 
