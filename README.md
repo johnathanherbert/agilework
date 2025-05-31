@@ -1,104 +1,123 @@
-### Step 1: Set Up the Next.js Project
+# NT Manager
 
-1. **Create a New Next.js Project**:
-   ```bash
-   npx create-next-app@latest nt-management-system
-   cd nt-management-system
-   ```
+Sistema de gerenciamento de Notas Técnicas (NTs) desenvolvido com Next.js 13, TypeScript, Tailwind CSS e Supabase.
 
-2. **Install Required Packages**:
-   ```bash
-   npm install @supabase/supabase-js @heroicons/react shadcn-ui
-   ```
+## 🚀 Funcionalidades
 
-3. **Set Up Supabase**:
-   - Create a Supabase account and set up your database.
-   - Create the necessary tables (`nts`, `nt_items`) in Supabase.
-   - Get your Supabase URL and API key from the Supabase dashboard.
+- ✅ Gerenciamento completo de NTs (Criar, Editar, Excluir)
+- 📋 Adição de itens via colagem direta do SAP
+- 🔍 Filtragem avançada por status, data, turno e prioridade
+- 🌓 Tema claro/escuro
+- 📱 Interface responsiva
+- ⚡ Atualizações em tempo real
+- 🔐 Autenticação e autorização
+- 📊 Dashboard com estatísticas
+- 🤖 Monitoramento de robôs
+- 🔔 Sistema de notificações
 
-4. **Create a Supabase Client**:
-   Create a file named `supabaseClient.js` in the `src` directory:
-   ```javascript
-   // src/supabaseClient.js
-   import { createClient } from '@supabase/supabase-js';
+## 🛠️ Tecnologias
 
-   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+- [Next.js 13](https://nextjs.org/)
+- [React](https://reactjs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Shadcn/UI](https://ui.shadcn.com/)
+- [Supabase](https://supabase.com/)
+- [Lucide Icons](https://lucide.dev/)
 
-   export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-   ```
+## 📦 Instalação
 
-5. **Set Up Environment Variables**:
-   Create a `.env.local` file in the root of your project:
-   ```plaintext
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/nt-management-app.git
+cd nt-management-app
+```
 
-### Step 2: Create Components
+2. Instale as dependências:
+```bash
+npm install
+```
 
-1. **Create a Directory for Components**:
-   ```bash
-   mkdir src/components
-   ```
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env.local
+```
+Edite o arquivo `.env.local` com suas configurações do Supabase.
 
-2. **Create the Main NT Manager Component**:
-   Create a file named `NTManager.jsx`:
-   ```javascript
-   // src/components/NTManager.jsx
-   import { useEffect, useState } from 'react';
-   import { supabase } from '../supabaseClient';
-   import NTsList from './NTsList';
-   import AddNTModal from './AddNTModal';
-   import EditNTModal from './EditNTModal';
-   import DeleteConfirmationModal from './DeleteConfirmationModal';
+4. Inicie o servidor de desenvolvimento:
+```bash
+npm run dev
+```
 
-   export default function NTManager() {
-     const [nts, setNTs] = useState([]);
-     const [isLoading, setIsLoading] = useState(true);
-     const [showAddNTModal, setShowAddNTModal] = useState(false);
-     const [currentNT, setCurrentNT] = useState(null);
-     const [showEditNTModal, setShowEditNTModal] = useState(false);
-     const [showDeleteModal, setShowDeleteModal] = useState(false);
+## 🗄️ Estrutura do Projeto
 
-     useEffect(() => {
-       fetchNTs();
-     }, []);
+```
+src/
+  ├── app/                    # Rotas e páginas
+  ├── components/            
+  │   ├── analytics/         # Componentes de análise
+  │   ├── auth/              # Componentes de autenticação
+  │   ├── layout/            # Componentes de layout (Sidebar, Topbar)
+  │   ├── nt-manager/        # Componentes principais do gerenciador de NTs
+  │   ├── providers/         # Providers do React Context
+  │   └── ui/                # Componentes de UI reutilizáveis
+  ├── lib/                   # Utilitários e configurações
+  └── types/                 # Definições de tipos TypeScript
+```
 
-     const fetchNTs = async () => {
-       setIsLoading(true);
-       const { data, error } = await supabase.from('nts').select('*');
-       if (error) console.error(error);
-       else setNTs(data);
-       setIsLoading(false);
-     };
+## 🔒 Autenticação
 
-     const handleNTAdded = () => {
-       fetchNTs();
-       setShowAddNTModal(false);
-     };
+O sistema utiliza autenticação via Supabase com suporte a:
+- Login com email/senha
+- Gerenciamento de sessão
+- Rotas protegidas
+- Middleware de autenticação
 
-     const handleEditNT = (nt) => {
-       setCurrentNT(nt);
-       setShowEditNTModal(true);
-     };
+## 🎯 Principais Recursos
 
-     const handleDeleteNT = async (ntId) => {
-       await supabase.from('nts').delete().eq('id', ntId);
-       fetchNTs();
-       setShowDeleteModal(false);
-     };
+### Gerenciamento de NTs
+- Criação individual e em lote
+- Edição de campos
+- Exclusão com confirmação
+- Histórico completo
 
-     return (
-       <div>
-         <button onClick={() => setShowAddNTModal(true)}>Add NT</button>
-         <NTsList nts={nts} onEditNT={handleEditNT} onDeleteNT={handleDeleteNT} isLoading={isLoading} />
-         <AddNTModal isOpen={showAddNTModal} onClose={() => setShowAddNTModal(false)} onNTAdded={handleNTAdded} />
-         <EditNTModal isOpen={showEditNTModal} onClose={() => setShowEditNTModal(false)} nt={currentNT} />
-         <DeleteConfirmationModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={() => handleDeleteNT(currentNT.id)} />
-       </div>
-     );
-   }
+### Filtragem e Busca
+- Busca por número de NT
+- Filtro por status
+- Filtro por data
+- Filtro por turno
+- Filtro por prioridade
+- Visualização de NTs concluídas
+
+### Interface
+- Design responsivo
+- Temas claro/escuro
+- Animações suaves
+- Feedback visual
+- Tooltips informativos
+
+### Tempo Real
+- Atualizações automáticas
+- Notificações instantâneas
+- Status de robôs em tempo real
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## ✨ Contribuição
+
+Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre como contribuir com o projeto.
+
+## 👥 Autores
+
+- João Arthur Almeida (@johnarthur)
+
+## 📞 Suporte
+
+Para reportar bugs ou solicitar novas funcionalidades, por favor abra uma [issue](https://github.com/seu-usuario/nt-management-app/issues).
+
+
    ```
 
 3. **Create the NTs List Component**:
