@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AddItemModal } from './add-item-modal';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface NTCardProps {
   nt: NT;
@@ -21,6 +22,36 @@ interface NTCardProps {
 
 export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete }: NTCardProps) => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+
+  // Check if NT is delayed (created more than 2h ago and not fully paid)
+  const isNTDelayed = () => {
+    const twoHoursInMs = 2 * 60 * 60 * 1000;
+    
+    try {
+      // Usar a função parseDateTime do utils para garantir o parse correto
+      const { creationDate } = parseDateTime(nt.created_date, nt.created_time);
+      const elapsed = Date.now() - creationDate.getTime();
+      const { completionPercentage } = getStatusCounts();
+      
+      const isDelayed = elapsed > twoHoursInMs && completionPercentage < 100;
+      
+      // Debug para verificar os valores
+      if (process.env.NODE_ENV === 'development') {
+        console.log({
+          nt: nt.nt_number,
+          creationDate,
+          elapsed: elapsed / (1000 * 60 * 60), // em horas
+          completionPercentage,
+          isDelayed
+        });
+      }
+      
+      return isDelayed;
+    } catch (error) {
+      console.error('Erro ao verificar atraso da NT:', error);
+      return false;
+    }
+  };
   
   // Get status counts and check for delays
   const getStatusCounts = () => {
@@ -107,15 +138,47 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete }: NTCardPro
   };
 
   const ntStatus = getNTStatus();
+  const delayed = isNTDelayed();
 
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${
-      delayedCount > 0 ? 'border-l-4 border-l-orange-500' : ''
-    }`}>
-      <CardHeader className="pb-3">
-        {/* Delayed items warning */}
-        {delayedCount > 0 && (
-          <div className="absolute top-3 right-3">
+    <Card className={cn(
+      'transition-all duration-200',
+      'hover:shadow-md',
+      delayed ? [
+        'border-2 border-orange-500',
+        'bg-orange-50/50 dark:bg-orange-900/10',
+        'shadow-orange-500/10',
+        'animate-borderPulse'
+      ] : delayedCount > 0 ? 'border-l-4 border-l-orange-500' : ''
+    )}>
+      <CardHeader className={cn(
+        'pb-3 relative',
+        delayed ? 'bg-orange-100/50 dark:bg-orange-900/20' : ''
+      )}>
+        {/* Warning icons container */}
+        <div className="absolute top-3 right-3 flex space-x-2 z-10">
+          {/* NT delay warning */}
+          {delayed && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center animate-pulse">
+                      <Clock className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs font-medium whitespace-nowrap">
+                    NT em atraso (mais de 2 horas)
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Items delay warning */}
+          {delayedCount > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -128,27 +191,29 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete }: NTCardPro
                     </div>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="left">
                   <p className="text-xs font-medium">
                     {delayedCount} {delayedCount === 1 ? 'item em atraso' : 'itens em atraso'}
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
-        )}
+          )}
+        </div>
 
-        <div 
-          className="flex items-center justify-between cursor-pointer"
-          onClick={onToggle}
-        >
+        <div className="flex items-center justify-between cursor-pointer" onClick={onToggle}>
           <div className="flex items-center space-x-3">
             {/* NT Number */}
-            <div className={`px-3 py-1.5 rounded-lg font-semibold text-lg ${
-              delayedCount > 0 
-                ? "bg-orange-100 text-orange-900 border border-orange-200" 
+            <div className={cn(
+              'px-3 py-1.5 rounded-lg font-semibold text-lg',
+              delayed ? [
+                'bg-orange-100 text-orange-900',
+                'border border-orange-200',
+                'animate-pulse'
+              ] : delayedCount > 0 
+                ? "bg-orange-100 text-orange-900 border border-orange-200"
                 : "bg-primary/10 text-primary border border-primary/20"
-            }`}>
+            )}>
               {nt.nt_number}
             </div>
             
@@ -156,6 +221,16 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete }: NTCardPro
             <Badge variant={ntStatus.variant} className="capitalize">
               {ntStatus.label}
             </Badge>
+
+            {/* Delayed NT Badge */}
+            {delayed && (
+              <Badge 
+                variant="destructive" 
+                className="capitalize bg-orange-500 hover:bg-orange-600 animate-pulse border border-orange-400"
+              >
+                Em atraso (+ 2h)
+              </Badge>
+            )}
             
             {/* Progress indicator */}
             {total > 0 && (

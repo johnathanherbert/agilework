@@ -73,6 +73,10 @@ module.exports = {
           "0%, 100%": { opacity: 1 },
           "50%": { opacity: 0.7 },
         },
+        "borderPulse": {
+          "0%, 100%": { borderColor: "rgb(249 115 22 / 0.5)" }, // orange-500 with opacity
+          "50%": { borderColor: "rgb(249 115 22)" }, // orange-500
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
