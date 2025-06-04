@@ -1,4 +1,4 @@
-   "use client";
+"use client";
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { formatDate, formatTime } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { useNotifications } from '@/components/providers/notification-provider';
+import { useNotifications, startBatchOperation, endBatchOperation, BatchOperationType } from '@/components/providers/notification-provider';
 
 interface AddNTModalProps {
   open: boolean;
@@ -99,7 +99,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       
       // Start batch operation to prevent redundant notifications
       const batchId = `nt-creation-${Date.now()}`;
-      startBatchOperation(batchId, 'nt_creation');
+      startBatchOperation(batchId, 'nt_creation' as BatchOperationType);
       
       // Create the NT
       const { data: ntData, error: ntError } = await supabase
