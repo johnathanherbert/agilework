@@ -19,7 +19,6 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <Home size={20} /> },
   { label: 'Gerenciar NTs', href: '/almoxarifado/nts', icon: <ClipboardList size={20} /> },
   { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: <ClipboardCheck size={20} /> },
-  { label: 'Histórico', href: '/almoxarifado/nts?status=todas', icon: <History size={20} /> },
   { label: 'Configurações', href: '/settings', icon: <Settings size={20} /> },
 ];
 
