@@ -26,7 +26,8 @@ import { Input } from '@/components/ui/input';
 import { formatDate, formatTime } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotifications } from '@/components/providers/notification-provider';
-import type { BatchOperationType } from '@/components/providers/notification-provider';
+
+type BatchOperationType = 'nt_creation' | 'item_addition' | 'nt_deletion';
 
 interface AddNTModalProps {
   open: boolean;
@@ -52,7 +53,7 @@ type FormData = z.infer<typeof formSchema>;
 export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
-  const { startBatchOperation, endBatchOperation } = useNotifications();
+  const { toast, startBatchOperation, endBatchOperation } = useNotifications();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -100,7 +101,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       
       // Start batch operation to prevent redundant notifications
       const batchId = `nt-creation-${Date.now()}`;
-      // Alteração aqui: usar o startBatchOperation do hook
+      // Use as funções do hook
       startBatchOperation(batchId, 'nt_creation' as BatchOperationType);
       
       // Create the NT
@@ -149,7 +150,6 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       }
       
       // End batch operation
-      // Alteração aqui: usar o endBatchOperation do hook
       endBatchOperation(batchId);
       
       form.reset();
