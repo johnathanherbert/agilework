@@ -263,3 +263,53 @@
   border: 1px solid rgba(55, 65, 81, 0.18);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
 }
+
+/* Desktop-optimized NT Card styles */
+@layer components {
+  .desktop-card-compact {
+    @apply max-w-none;
+    /* Optimize for desktop grid layouts */
+    min-height: fit-content;
+  }
+  
+  .desktop-card-compact .card-header {
+    @apply py-2 px-3;
+  }
+  
+  .desktop-card-compact .card-content {
+    @apply py-2 px-3;
+  }
+  
+  /* Compact button styles for desktop */
+  .btn-compact {
+    @apply h-6 w-6 p-0 text-xs;
+  }
+  
+  /* Subtle hover effects optimized for mouse interaction */
+  .desktop-hover-subtle {
+    @apply transition-all duration-150 ease-out;
+  }
+  
+  .desktop-hover-subtle:hover {
+    @apply translate-y-[-1px] shadow-sm;
+  }
+  
+  /* Desktop-optimized status indicators */
+  .status-indicator-compact {
+    @apply w-4 h-4 rounded-full flex items-center justify-center;
+  }
+  
+  /* Progress bar optimized for desktop viewing */
+  .progress-compact {
+    @apply h-1.5 rounded-full transition-all duration-300;
+  }
+  
+  /* Desktop typography scaling */
+  .desktop-text-compact {
+    @apply text-xs leading-tight;
+  }
+  
+  .desktop-text-title {
+    @apply text-sm font-semibold leading-tight;
+  }
+}

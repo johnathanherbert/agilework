@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { formatDate, formatTime } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { useNotifications } from '@/components/providers/notification-provider';
 
 interface AddBulkNTModalProps {
   open: boolean;
@@ -56,6 +57,7 @@ interface ParsedItem {
 export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
+  const { startBatchOperation, endBatchOperation } = useNotifications();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -96,7 +98,6 @@ export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModal
       setParsedItems([]);
     }
   }, [watchSapData]);
-
   async function onSubmit(data: FormData) {
     if (parsedItems.length === 0) {
       toast.error('Nenhum item válido para importação');
@@ -105,8 +106,7 @@ export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModal
     
     setIsSubmitting(true);
     
-    try {
-      // First create the NT
+    try {      // First create the NT
       const now = new Date();
       const brazilianDate = formatDate(now);
       const brazilianTime = formatTime(now);
@@ -128,6 +128,9 @@ export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModal
       
       const nt = ntData[0];
       
+      // Start batch operation to prevent redundant notifications
+      const batchId = startBatchOperation('nt_creation', nt.id, parsedItems.length);
+      
       // Then add all items
       const items = parsedItems.map((item, index) => ({
         nt_id: nt.id,
@@ -148,7 +151,11 @@ export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModal
         throw itemsError;
       }
       
-      toast.success(`NT ${data.nt_number} criada com ${items.length} itens!`);
+      toast.success(`NT ${data.nt_number} foi criada com ${items.length} itens!`);
+      
+      // End batch operation
+      endBatchOperation(batchId);
+      
       form.reset({
         nt_number: '606349',
         sap_data: '',

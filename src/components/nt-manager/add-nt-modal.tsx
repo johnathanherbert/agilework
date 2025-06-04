@@ -51,6 +51,7 @@ type FormData = z.infer<typeof formSchema>;
 export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
+  const { startBatchOperation, endBatchOperation } = useNotifications();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -96,6 +97,10 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       const brazilianDate = formatDate(now);
       const brazilianTime = formatTime(now);
       
+      // Start batch operation to prevent redundant notifications
+      const batchId = `nt-creation-${Date.now()}`;
+      startBatchOperation(batchId, 'nt_creation');
+      
       // Create the NT
       const { data: ntData, error: ntError } = await supabase
         .from('nts')
@@ -135,11 +140,14 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
           console.error('Erro ao adicionar itens:', itemsError);
           toast.error('NT criada com sucesso, mas houve erro ao adicionar alguns itens');
         } else {
-          toast.success(`NT criada com ${itemsToInsert.length} item(ns)!`);
+          toast.success(`NT ${data.nt_number} foi criada com ${itemsToInsert.length} item(ns)!`);
         }
       } else {
-        toast.success('NT criada com sucesso!');
+        toast.success(`NT ${data.nt_number} foi criada com sucesso!`);
       }
+      
+      // End batch operation
+      endBatchOperation(batchId);
       
       form.reset();
       setParsedItems([]);

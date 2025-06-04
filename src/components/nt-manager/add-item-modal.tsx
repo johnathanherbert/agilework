@@ -14,6 +14,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatTime } from '@/lib/utils';
 import { NT } from '@/types';
+import { useNotifications } from '@/components/providers/notification-provider';
 
 interface AddItemModalProps {
   open: boolean;

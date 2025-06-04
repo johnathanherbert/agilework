@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Clock, Check, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { cn, calculateElapsedTime, isDelayed, formatElapsedTime, formatTimestamp, normalizeDate, debugDate, parseDateTime } from '@/lib/utils';
 import { EditFieldModal } from './edit-field-modal';
+import { DeleteConfirmationModal } from './delete-confirmation-modal';
 import { StatusSwitch } from '@/components/ui/status-switch';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -23,6 +24,7 @@ interface NTItemRowProps {
 
 export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }: NTItemRowProps) => {
   const [showEditFieldModal, setShowEditFieldModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldToEdit, setFieldToEdit] = useState<FieldType>('code');
   const [fieldLabel, setFieldLabel] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -36,9 +38,12 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
       // Se estiver atualizando para "Pago", registrar o tempo de pagamento
       const updateData: any = { status: newStatus };
       
-      // Se estiver marcando como pago, registrar o horário de pagamento
+      // Se estiver marcando como pago, registrar o horário de pagamento (apenas HH:MM)
       if (newStatus === 'Pago') {
-        updateData.payment_time = new Date().toISOString();
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        updateData.payment_time = `${hours}:${minutes}`;
       }
       
       const { error } = await supabase
@@ -56,6 +61,16 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
     } finally {
       setIsUpdating(false);
     }
+  };
+  
+  // Função para deletar o item
+  const handleDeleteItem = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    if (onSuccess) onSuccess();
   };
   
   // Calcular o tempo decorrido a cada minuto
@@ -217,9 +232,9 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
         
         // Verifica se foi pago com atraso
         if (paymentTimeInfo.wasDelayed) {
-          return `Pago com atraso (${paymentTimeInfo.minutesAfterDeadline} minutos após o limite de 2h)`;
+          return `Pago com atraso (${paymentTimeInfo.minutesAfterDeadline}min após 2h)`;
         } else {
-          return `Pago a tempo (${paymentTimeInfo.minutesBeforeDeadline} minutos antes do limite de 2h)`;
+          return `${paymentTimeInfo.minutesBeforeDeadline}min (pago a tempo)`;
         }
       }
       return "Pago (horário não registrado)";
@@ -293,18 +308,18 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
   return (
     <TooltipProvider>
       <tr className={cn(
-        "border-b border-border hover:bg-muted/50 transition-colors duration-200",
+        "border-b border-border hover:bg-muted/50 transition-colors duration-200 interactive-element",
         item.priority ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-2 border-amber-400 dark:border-amber-700" : ""
       )}>
         <td className="px-3 py-2.5 text-xs text-muted-foreground font-medium">{item.item_number}</td>
         <td 
-          className="px-3 py-2.5 text-xs font-medium cursor-pointer hover:text-primary transition-colors duration-150 hover:underline"
+          className="px-3 py-2.5 text-xs font-medium cursor-pointer hover:text-primary transition-colors duration-150 hover:underline interactive-element"
           onClick={() => handleCellClick('code', 'Código')}
         >
           {item.code}
         </td>
         <td 
-          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 group"
+          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 group interactive-element"
           onClick={() => handleCellClick('description', 'Descrição')}
         >
           <div className="max-w-[200px] truncate group-hover:underline">
@@ -312,7 +327,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
           </div>
         </td>
         <td 
-          className="px-3 py-2.5 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-150"
+          className="px-3 py-2.5 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
           onClick={() => handleCellClick('quantity', 'Quantidade')}
         >
           <div className="flex justify-center">
@@ -322,7 +337,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
           </div>
         </td>
         <td 
-          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150"
+          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
           onClick={() => handleCellClick('batch', 'Lote')}
         >
           <span className="truncate max-w-[60px] block">{item.batch || '-'}</span>
@@ -335,7 +350,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
                 onValueChange={handleStatusChange}
                 disabled={isUpdating}
                 size="sm"
-                className="w-full"
+                className="w-full interactive-element"
               />
             </div>
             
@@ -343,7 +358,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={cn(
-                  "flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap border min-w-[60px] justify-center",
+                  "flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap border min-w-[60px] justify-center interactive-element",
                   item.status === 'Pago' && paymentTimeInfo.wasDelayed 
                     ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800" : 
                   item.status === 'Pago' && !paymentTimeInfo.wasDelayed
@@ -452,7 +467,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 w-7 p-0 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200" 
+              className="h-7 w-7 p-0 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 interactive-element" 
               onClick={() => handleCellClick('priority', 'Prioridade')}
             >
               <Edit className="h-3 w-3" />
@@ -460,8 +475,8 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 w-7 p-0 rounded-full hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200" 
-              onClick={onDelete}
+              className="h-7 w-7 p-0 rounded-full hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 interactive-element" 
+              onClick={handleDeleteItem}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -476,6 +491,17 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
         item={item}
         fieldToEdit={fieldToEdit}
         fieldLabel={fieldLabel}
+      />
+      
+      <DeleteConfirmationModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar exclusão"
+        description={`Tem certeza que deseja excluir o item "${item.description}"? Esta ação é irreversível.`}
+        isDeleting={isUpdating}
+        entityType="item"
+        entityId={item.id}
       />
     </TooltipProvider>
   );

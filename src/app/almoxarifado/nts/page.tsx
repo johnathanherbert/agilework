@@ -18,6 +18,7 @@ import { NTFilters } from '@/components/nt-manager/nt-filters';
 import { AddNTModal } from '@/components/nt-manager/add-nt-modal';
 import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
+import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
 
 export default function NTManager() {
   const [nts, setNts] = useState<NT[]>([]);
@@ -27,6 +28,8 @@ export default function NTManager() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
   const { user } = useSupabase();
   const router = useRouter();
@@ -295,23 +298,15 @@ export default function NTManager() {
   };
   
   // Handle NT delete
-  const handleDeleteNT = async (ntId: string) => {
-    if (confirm('Tem certeza que deseja excluir esta NT? Esta ação é irreversível.')) {
-      try {
-        const { error } = await supabase
-          .from('nts')
-          .delete()
-          .eq('id', ntId);
-          
-        if (error) throw error;
-        
-        toast.success('NT excluída com sucesso!');
-        fetchNTs();
-      } catch (error: any) {
-        console.error('Erro ao excluir NT:', error);
-        toast.error(error.message || 'Ocorreu um erro ao excluir a NT');
-      }
-    }
+  const handleDeleteNT = (ntId: string) => {
+    setNtToDelete(ntId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDeleteNT = () => {
+    setShowDeleteModal(false);
+    setNtToDelete(null);
+    fetchNTs();
   };
   
   // Processar parâmetros de URL
@@ -456,6 +451,7 @@ export default function NTManager() {
                 nts={filteredNts}
                 onEdit={handleEditNT}
                 onDelete={handleDeleteNT}
+                onRefresh={fetchNTs}
               />
             ) : (
               <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -510,6 +506,17 @@ export default function NTManager() {
         onOpenChange={setShowEditModal}
         onSuccess={fetchNTs}
         nt={selectedNT}
+      />
+      
+      <DeleteConfirmationModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        onConfirm={handleConfirmDeleteNT}
+        title="Confirmar exclusão da NT"
+        description="Tem certeza que deseja excluir esta NT? Esta ação é irreversível e excluirá todos os itens relacionados."
+        isDeleting={false}
+        entityType="nt"
+        entityId={ntToDelete || ''}
       />
     </div>
   );

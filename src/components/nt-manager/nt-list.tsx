@@ -8,9 +8,10 @@ interface NTListProps {
   nts: NT[];
   onEdit: (nt: NT) => void;
   onDelete: (ntId: string) => void;
+  onRefresh?: () => void;
 }
 
-export const NTList = ({ nts, onEdit, onDelete }: NTListProps) => {
+export const NTList = ({ nts, onEdit, onDelete, onRefresh }: NTListProps) => {
   const [expandedNT, setExpandedNT] = useState<string | null>(null);
 
   const toggleExpand = (ntId: string) => {
@@ -27,6 +28,7 @@ export const NTList = ({ nts, onEdit, onDelete }: NTListProps) => {
           onToggle={() => toggleExpand(nt.id)}
           onEdit={() => onEdit(nt)}
           onDelete={() => onDelete(nt.id)}
+          onRefresh={onRefresh}
         />
       ))}
     </div>

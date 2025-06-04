@@ -58,6 +58,76 @@ export function isDelayed(startDate: string | Date, endDate?: string | Date | nu
   }
 }
 
+// Calcular o tempo de atraso excedente (apenas o tempo além das 2 horas)
+export function calculateDelayTime(startDate: string | Date, endDate?: string | Date | null): number {
+  if (!startDate) return 0;
+  
+  try {
+    const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 horas em milissegundos
+    const elapsedTime = calculateElapsedTime(startDate, endDate);
+    
+    // Se não passou de 2 horas, não há atraso
+    if (elapsedTime <= twoHoursInMs) return 0;
+    
+    // Retornar apenas o tempo excedente após as 2 horas
+    return elapsedTime - twoHoursInMs;
+  } catch (error) {
+    console.error("Erro ao calcular tempo de atraso:", error);
+    return 0;
+  }
+}
+
+// Formatar o tempo de atraso excedente em formato legível
+export function formatDelayTime(milliseconds: number): string {
+  // Se não há atraso, retornar string vazia
+  if (milliseconds <= 0) return "";
+  
+  // Usar a função existente formatElapsedTime para formatar o tempo excedente
+  return formatElapsedTime(milliseconds);
+}
+
+// Verificar se há atraso e obter informações detalhadas
+export function getDelayInfo(startDate: string | Date, endDate?: string | Date | null): {
+  isDelayed: boolean;
+  delayTime: number;
+  formattedDelayTime: string;
+  totalElapsed: number;
+  formattedTotalElapsed: string;
+} {
+  if (!startDate) {
+    return {
+      isDelayed: false,
+      delayTime: 0,
+      formattedDelayTime: "",
+      totalElapsed: 0,
+      formattedTotalElapsed: ""
+    };
+  }
+  
+  try {
+    const totalElapsed = calculateElapsedTime(startDate, endDate);
+    const delayTime = calculateDelayTime(startDate, endDate);
+    const isDelayed = delayTime > 0;
+    
+    return {
+      isDelayed,
+      delayTime,
+      formattedDelayTime: formatDelayTime(delayTime),
+      totalElapsed,
+      formattedTotalElapsed: formatElapsedTime(totalElapsed)
+    };
+  } catch (error) {
+    console.error("Erro ao obter informações de atraso:", error);
+    return {
+      isDelayed: false,
+      delayTime: 0,
+      formattedDelayTime: "",
+      totalElapsed: 0,
+      formattedTotalElapsed: ""
+    };
+  }
+}
+
 // Formatar o tempo decorrido em horas e minutos
 export function formatElapsedTime(milliseconds: number): string {
   // Verificar se temos um valor numérico válido
@@ -104,7 +174,7 @@ export function formatElapsedTime(milliseconds: number): string {
     : `${hours} horas e ${remainingMinutes} min`;
 }
 
-// Formatar timestamp para data e hora legível
+// Format timestamp to data e hora legível
 export function formatTimestamp(timestamp: string | Date | null): string {
   if (!timestamp) return '-';
   
