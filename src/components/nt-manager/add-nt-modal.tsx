@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/lib/supabase';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,7 +53,7 @@ type FormData = z.infer<typeof formSchema>;
 export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
-  const { toast, startBatchOperation, endBatchOperation } = useNotifications();
+  const { startBatchOperation, endBatchOperation } = useNotifications();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -143,7 +143,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
           console.error('Erro ao adicionar itens:', itemsError);
           toast.error('NT criada com sucesso, mas houve erro ao adicionar alguns itens');
         } else {
-          toast.success(`NT ${data.nt_number} foi criada com ${itemsToInsert.length} item(ns)!`);
+          toast.success(`NT ${ntData.nt_number} criada com ${itemsToInsert.length} item(ns)!`);
         }
       } else {
         toast.success(`NT ${data.nt_number} foi criada com sucesso!`);
