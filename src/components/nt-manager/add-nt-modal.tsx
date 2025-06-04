@@ -27,8 +27,6 @@ import { formatDate, formatTime } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotifications } from '@/components/providers/notification-provider';
 
-type BatchOperationType = 'nt_creation' | 'item_addition' | 'nt_deletion';
-
 interface AddNTModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -99,12 +97,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       const brazilianDate = formatDate(now);
       const brazilianTime = formatTime(now);
       
-      // Start batch operation to prevent redundant notifications
-      const batchId = `nt-creation-${Date.now()}`;
-      // Use as funções do hook
-      startBatchOperation(batchId, 'nt_creation' as BatchOperationType);
-      
-      // Create the NT
+      // Create the NT first
       const { data: ntData, error: ntError } = await supabase
         .from('nts')
         .insert({
@@ -118,6 +111,10 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       if (ntError) {
         throw ntError;
       }
+
+      // Start batch operation to prevent redundant notifications
+      const ntId = ntData[0].id;
+      const batchId = startBatchOperation('nt_creation', ntId, parsedItems.length);
       
       // Create items if we have parsed data
       if (parsedItems.length > 0 && ntData && ntData[0]) {
@@ -143,7 +140,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
           console.error('Erro ao adicionar itens:', itemsError);
           toast.error('NT criada com sucesso, mas houve erro ao adicionar alguns itens');
         } else {
-          toast.success(`NT ${ntData.nt_number} criada com ${itemsToInsert.length} item(ns)!`);
+          toast.success(`NT ${ntData[0].nt_number} criada com ${itemsToInsert.length} item(ns)!`);
         }
       } else {
         toast.success(`NT ${data.nt_number} foi criada com sucesso!`);
