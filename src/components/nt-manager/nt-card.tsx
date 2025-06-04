@@ -135,10 +135,17 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
   const isDelayed = isNTDelayed();  return (
     <TooltipProvider>      <Card 
         onClick={(e) => {
-          // Prevent card click when clicking on buttons or interactive elements
+          // Prevent card click when clicking on buttons, interactive elements or form controls
           if ((e.target as HTMLElement).closest('button') || 
               (e.target as HTMLElement).closest('[role="button"]') ||
-              (e.target as HTMLElement).closest('.interactive-element')) {
+              (e.target as HTMLElement).closest('.interactive-element') ||
+              (e.target as HTMLElement).closest('input') ||
+              (e.target as HTMLElement).closest('select') ||
+              (e.target as HTMLElement).closest('textarea') ||
+              (e.target as HTMLElement).closest('label') ||
+              (e.target as HTMLElement).closest('[role="dialog"]') ||
+              (e.target as HTMLElement).closest('.modal') ||
+              (e.target as HTMLElement).closest('dialog')) {
             return;
           }
           

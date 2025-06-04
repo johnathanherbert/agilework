@@ -25,7 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { formatDate, formatTime } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { useNotifications, startBatchOperation, endBatchOperation, BatchOperationType } from '@/components/providers/notification-provider';
+import { useNotifications } from '@/components/providers/notification-provider';
+import type { BatchOperationType } from '@/components/providers/notification-provider';
 
 interface AddNTModalProps {
   open: boolean;
@@ -99,6 +100,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       
       // Start batch operation to prevent redundant notifications
       const batchId = `nt-creation-${Date.now()}`;
+      // Alteração aqui: usar o startBatchOperation do hook
       startBatchOperation(batchId, 'nt_creation' as BatchOperationType);
       
       // Create the NT
@@ -147,6 +149,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       }
       
       // End batch operation
+      // Alteração aqui: usar o endBatchOperation do hook
       endBatchOperation(batchId);
       
       form.reset();

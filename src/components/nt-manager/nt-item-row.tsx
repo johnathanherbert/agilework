@@ -340,7 +340,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
           className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
           onClick={() => handleCellClick('batch', 'Lote')}
         >
-          <span className="truncate max-w-[60px] block">{item.batch || '-'}</span>
+          <span className="block">{item.batch || '-'}</span>
         </td>
         <td className="px-3 py-2.5">
           <div className="flex items-center gap-2">
