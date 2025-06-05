@@ -19,6 +19,7 @@ import { AddNTModal } from '@/components/nt-manager/add-nt-modal';
 import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
+import { PaidItemsTimeline } from '@/components/nt-manager/paid-items-timeline';
 
 export default function NTManager() {
   const [nts, setNts] = useState<NT[]>([]);
@@ -31,6 +32,7 @@ export default function NTManager() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
+  const [timelineCollapsed, setTimelineCollapsed] = useState(false);
   const { user } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -368,124 +370,154 @@ export default function NTManager() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
-      <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
-        <Topbar />
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-50 flex items-center">
-                {filters.isCompletedView 
-                  ? "NTs Concluídas" 
-                  : "Gerenciamento de NTs"}
-                <span className="ml-2 text-xs font-normal bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                  {filteredNts.length} {filteredNts.length === 1 ? 'NT' : 'NTs'}
-                </span>
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {filters.isCompletedView
-                  ? "Histórico de Notas Técnicas 100% concluídas"
-                  : "Visualize e gerencie suas Notas Técnicas ativas"}
-              </p>
+      <div className="flex-1 flex ml-[64px] transition-all duration-300">
+        {/* Main content area - responsive width */}
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${
+          nts.length === 0 || timelineCollapsed ? 'w-full' : 'w-4/5 lg:w-4/5 xl:w-4/5'
+        }`}>
+          <Topbar />
+          <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-50 flex items-center">
+                  {filters.isCompletedView 
+                    ? "NTs Concluídas" 
+                    : "Gerenciamento de NTs"}
+                  <span className="ml-2 text-xs font-normal bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                    {filteredNts.length} {filteredNts.length === 1 ? 'NT' : 'NTs'}
+                  </span>
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {filters.isCompletedView
+                    ? "Histórico de Notas Técnicas 100% concluídas"
+                    : "Visualize e gerencie suas Notas Técnicas ativas"}
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div className="relative flex-1 md:flex-none md:min-w-[240px]">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
+                  <Input
+                    placeholder="Buscar NT..."
+                    value={filters.search}
+                    onChange={handleSearch}
+                    className="pl-9"
+                  />
+                </div>
+                
+                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} 
+                  className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filtros
+                  {Object.values(filters).some(v => 
+                    (Array.isArray(v) && v.length > 0) || 
+                    (typeof v === 'boolean' && v === true) || 
+                    (v !== null && v !== '')
+                  ) && (
+                    <span className="w-2 h-2 rounded-full bg-blue-500 ml-1"></span>
+                  )}
+                </Button>
+                
+                <Button variant="outline" size="sm" onClick={fetchNTs}
+                  className="flex items-center gap-2">
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+                
+                <Button size="sm" onClick={() => setShowAddModal(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Nova NT
+                </Button>
+              </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-              <div className="relative flex-1 md:flex-none md:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
-                <Input
-                  placeholder="Buscar NT..."
-                  value={filters.search}
-                  onChange={handleSearch}
-                  className="pl-9"
+            {/* Filters panel */}
+            {showFilters && (
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <NTFilters 
+                    filters={filters} 
+                    onChange={handleFilterChange} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* NT List */}
+            <div className="space-y-5">
+              {loading ? (
+                // Skeleton loaders while loading
+                <div className="space-y-5">
+                  <NTSkeleton />
+                  <NTSkeleton />
+                  <NTSkeleton />
+                </div>
+              ) : filteredNts.length > 0 ? (
+                <NTList
+                  nts={filteredNts}
+                  onEdit={handleEditNT}
+                  onDelete={handleDeleteNT}
+                  onRefresh={fetchNTs}
                 />
-              </div>
-              
-              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} 
-                className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Filtros
-                {Object.values(filters).some(v => 
-                  (Array.isArray(v) && v.length > 0) || 
-                  (typeof v === 'boolean' && v === true) || 
-                  (v !== null && v !== '')
-                ) && (
-                  <span className="w-2 h-2 rounded-full bg-blue-500 ml-1"></span>
-                )}
-              </Button>
-              
-              <Button variant="outline" size="sm" onClick={fetchNTs}
-                className="flex items-center gap-2">
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
-              
-              <Button size="sm" onClick={() => setShowAddModal(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Nova NT
-              </Button>
+              ) : (
+                <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <FileSearch className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Nenhuma NT encontrada</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    {filters.search ? 
+                      `Não encontramos NTs com "${filters.search}" ou com os filtros aplicados.` : 
+                      'Não encontramos NTs com os filtros aplicados.'}
+                  </p>
+                  <Button onClick={() => {
+                    setFilters({
+                      search: '',
+                      status: [],
+                      dateRange: null,
+                      shift: null,
+                      overdueOnly: false,
+                      hideOldNts: false,
+                      priorityOnly: false
+                    });
+                    applyFilters(nts, {
+                      search: '',
+                      status: [],
+                      dateRange: null,
+                      shift: null,
+                      overdueOnly: false,
+                      hideOldNts: false,
+                      priorityOnly: false
+                    });
+                  }} variant="outline" size="sm">Limpar filtros</Button>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* Timeline sidebar - enhanced dark mode support */}
+        {nts.length > 0 && (
+          <div className={`
+            border-l border-gray-200 dark:border-gray-700/80 
+            bg-white/95 dark:bg-gray-900/30 backdrop-blur-md
+            transition-all duration-300 flex flex-col
+            shadow-lg dark:shadow-gray-900/20
+            ${timelineCollapsed ? 'w-16' : 'w-1/5 lg:w-1/5 xl:w-1/5 min-w-[280px]'}
+          `}>
+            {/* Timeline header spacer with enhanced dark mode */}
+            <div className="h-16 border-b border-gray-200 dark:border-gray-700/80 flex items-center px-4 bg-gray-50/50 dark:bg-gray-800/50">
+              {!timelineCollapsed && (
+                <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">Timeline</h2>
+              )}
+            </div>
+            {/* Timeline content with enhanced spacing */}
+            <div className="flex-1 p-4 overflow-hidden">
+              <PaidItemsTimeline 
+                isCollapsed={timelineCollapsed}
+                onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
+              />
             </div>
           </div>
-          
-          {/* Filters panel */}
-          {showFilters && (
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <NTFilters 
-                  filters={filters} 
-                  onChange={handleFilterChange} 
-                />
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* NT List */}
-          <div className="space-y-5">
-            {loading ? (
-              // Skeleton loaders while loading
-              <div className="space-y-5">
-                <NTSkeleton />
-                <NTSkeleton />
-                <NTSkeleton />
-              </div>
-            ) : filteredNts.length > 0 ? (
-              <NTList
-                nts={filteredNts}
-                onEdit={handleEditNT}
-                onDelete={handleDeleteNT}
-                onRefresh={fetchNTs}
-              />
-            ) : (
-              <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <FileSearch className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Nenhuma NT encontrada</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  {filters.search ? 
-                    `Não encontramos NTs com "${filters.search}" ou com os filtros aplicados.` : 
-                    'Não encontramos NTs com os filtros aplicados.'}
-                </p>
-                <Button onClick={() => {
-                  setFilters({
-                    search: '',
-                    status: [],
-                    dateRange: null,
-                    shift: null,
-                    overdueOnly: false,
-                    hideOldNts: false,
-                    priorityOnly: false
-                  });
-                  applyFilters(nts, {
-                    search: '',
-                    status: [],
-                    dateRange: null,
-                    shift: null,
-                    overdueOnly: false,
-                    hideOldNts: false,
-                    priorityOnly: false
-                  });
-                }} variant="outline" size="sm">Limpar filtros</Button>
-              </div>
-            )}
-          </div>
-        </main>
+        )}
       </div>
 
       {/* Modals */}

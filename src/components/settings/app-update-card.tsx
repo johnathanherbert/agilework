@@ -35,12 +35,18 @@ export const AppUpdateCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="space-y-2">          <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">Versão atual:</span>
-            <span className="text-sm font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-              {currentVersion}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-700">
+                v{currentVersion}
+              </span>
+              {process.env.NODE_ENV === 'development' && (
+                <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">
+                  DEV
+                </span>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center justify-between">

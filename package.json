@@ -1,12 +1,16 @@
 {
   "name": "nt-management-app",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run version:increment && next build",
+    "build:no-version": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "version:increment": "node scripts/version-manager.js increment",
+    "version:current": "node scripts/version-manager.js current",
+    "version:reset": "node scripts/version-manager.js reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

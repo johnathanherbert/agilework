@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 interface AppUpdateState {
@@ -15,9 +15,11 @@ export const useAppUpdate = () => {
     isChecking: false,
     lastChecked: null,
   });
-
-  // Versão atual do app (será gerada em build time)
-  const currentVersion = process.env.NEXT_PUBLIC_BUILD_ID || 'development';
+  // Versão atual do app - usar versão semântica do environment
+  const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || process.env.NEXT_PUBLIC_BUILD_ID || 'development';
+  
+  // Ref para controlar se já foi mostrado o toast para esta versão
+  const toastShownForVersion = useRef<string | null>(null);
 
   // Função para verificar se há uma nova versão
   const checkForUpdate = useCallback(async () => {
@@ -42,13 +44,17 @@ export const useAppUpdate = () => {
         
         // Comparar versões
         const updateAvailable = serverVersion !== currentVersion && serverVersion !== 'development';
-        
-        setState({
+          setState({
           updateAvailable,
           isChecking: false,
           lastChecked: new Date(),
-        });        // Se há uma atualização disponível, mostrar notificação e atualizar automaticamente
-        if (updateAvailable) {
+        });
+
+        // Se há uma atualização disponível, mostrar notificação e atualizar automaticamente
+        // Mas apenas se ainda não foi mostrado o toast para esta versão
+        if (updateAvailable && toastShownForVersion.current !== serverVersion) {
+          toastShownForVersion.current = serverVersion;
+          
           toast.success('Nova versão detectada! Atualizando aplicação...', {
             duration: 3000,
             icon: '🚀',
