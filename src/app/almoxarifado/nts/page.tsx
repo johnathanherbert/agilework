@@ -100,7 +100,7 @@ export default function NTManager() {
         { event: 'INSERT', schema: 'public', table: 'nts' },
         (payload: any) => {
           console.log('NT inserted:', payload);
-          toast.success('Nova NT criada!');
+          // Remover toast - será tratado pelo notification provider
           fetchNTs();
         }
       )
@@ -109,7 +109,7 @@ export default function NTManager() {
         { event: 'UPDATE', schema: 'public', table: 'nts' },
         (payload: any) => {
           console.log('NT updated:', payload);
-          toast.success('NT atualizada');
+          // Remover toast - apenas atualizar lista
           fetchNTs();
         }
       )
@@ -118,7 +118,7 @@ export default function NTManager() {
         { event: 'DELETE', schema: 'public', table: 'nts' },
         (payload: any) => {
           console.log('NT deleted:', payload);
-          toast.success('NT removida');
+          // Remover toast - será tratado pelo notification provider
           fetchNTs();
         }
       )
@@ -131,7 +131,7 @@ export default function NTManager() {
         { event: 'INSERT', schema: 'public', table: 'nt_items' },
         (payload: any) => {
           console.log('Item inserted:', payload);
-          toast.success('Novo item adicionado');
+          // Remover toast - será tratado pelo notification provider
           fetchNTs();
         }
       )
@@ -140,7 +140,7 @@ export default function NTManager() {
         { event: 'UPDATE', schema: 'public', table: 'nt_items' },
         (payload: any) => {
           console.log('Item updated:', payload);
-          toast.success('Item atualizado');
+          // Remover toast - será tratado pelo notification provider para pagamentos
           fetchNTs();
         }
       )
@@ -149,7 +149,7 @@ export default function NTManager() {
         { event: 'DELETE', schema: 'public', table: 'nt_items' },
         (payload: any) => {
           console.log('Item deleted:', payload);
-          toast.success('Item removido');
+          // Remover toast - será tratado pelo notification provider
           fetchNTs();
         }
       )

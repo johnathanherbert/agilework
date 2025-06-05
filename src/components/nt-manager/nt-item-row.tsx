@@ -53,7 +53,6 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
 
       if (error) throw error;
       
-      toast.success(`Status atualizado para ${newStatus}`);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);

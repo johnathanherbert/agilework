@@ -15,10 +15,9 @@ import { Save, User, Bell, Shield, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '@/components/providers/notification-provider';
 
-export default function SettingsPage() {
-  const { user } = useSupabase();
+export default function SettingsPage() {  const { user } = useSupabase();
   const router = useRouter();
-  const { notificationsEnabled, setNotificationsEnabled } = useNotifications();
+  const { notificationsEnabled, setNotificationsEnabled, soundEnabled, setSoundEnabled } = useNotifications();
   
   const [name, setName] = useState(user?.user_metadata?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -33,7 +32,6 @@ export default function SettingsPage() {
       router.push('/login');
     }
   }, [user, router]);
-
   // Carrega configurações do usuário
   useEffect(() => {
     if (user?.user_metadata) {
@@ -49,8 +47,12 @@ export default function SettingsPage() {
       if (user.user_metadata.notifyRobotAlerts !== undefined) {
         setNotifyRobotAlerts(user.user_metadata.notifyRobotAlerts);
       }
+      // Carregar configuração de som das notificações
+      if (user.user_metadata.soundEnabled !== undefined) {
+        setSoundEnabled(user.user_metadata.soundEnabled);
+      }
     }
-  }, [user]);
+  }, [user, setSoundEnabled]);
   
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -60,7 +62,6 @@ export default function SettingsPage() {
       </div>
     </div>;
   }
-
   const saveUserProfile = async () => {
     setSaving(true);
     
@@ -71,7 +72,8 @@ export default function SettingsPage() {
           name,
           notifyNewNTs,
           notifyPayments,
-          notifyRobotAlerts
+          notifyRobotAlerts,
+          soundEnabled
         }
       });
       
@@ -79,6 +81,7 @@ export default function SettingsPage() {
       
       // Atualizar configuração de notificações no contexto
       setNotificationsEnabled(notifyNewNTs);
+      setSoundEnabled(soundEnabled);
       
       toast.success('Configurações salvas com sucesso');
     } catch (error) {
@@ -174,8 +177,7 @@ export default function SettingsPage() {
                     <Bell className="h-5 w-5 mr-2" />
                     Notificações
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
+                </CardHeader>                <CardContent>
                   <div className="space-y-4">                    <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium">Novas NTs</h3>
@@ -196,6 +198,18 @@ export default function SettingsPage() {
                         <p className="text-sm text-gray-500">Receba notificações quando itens forem pagos</p>
                       </div>
                       <Switch checked={notifyPayments} onCheckedChange={setNotifyPayments} />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">Som das Notificações</h3>
+                        <p className="text-sm text-gray-500">Tocar som quando uma nova NT for criada</p>
+                      </div>
+                      <Switch 
+                        checked={soundEnabled} 
+                        onCheckedChange={setSoundEnabled}
+                        disabled={!notifyNewNTs}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">

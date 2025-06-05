@@ -5,6 +5,17 @@ import { supabase } from '@/lib/supabase';
 import { useSupabase } from './supabase-provider';
 import toast from 'react-hot-toast';
 
+// Helper function to get user display name
+const getUserDisplayName = (user: any): string => {
+  if (user?.user_metadata?.name) {
+    return user.user_metadata.name;
+  }
+  if (user?.email) {
+    return user.email.split('@')[0];
+  }
+  return 'usuário';
+};
+
 // Definição do tipo de notificação
 export type Notification = {
   id: string;
@@ -35,6 +46,8 @@ type NotificationContextType = {
   clearNotifications: () => void;
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
   // Batch operation tracking
   startBatchOperation: (type: BatchOperation['type'], entityId: string, itemCount?: number) => string;
   endBatchOperation: (operationId: string) => void;
@@ -96,7 +109,40 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     if (user) {
       localStorage.setItem(`notifications_enabled_${user.id}`, notificationsEnabled.toString());
     }
-  }, [notificationsEnabled, user]);
+  }, [notificationsEnabled, user]);  // Estado para controlar se o som está habilitado
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Função para tocar som de notificação
+  const playNotificationSound = () => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Verificar se o navegador suporta Web Audio API
+      if (typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext)) {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configurar frequência e tipo de onda para um som agradável
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz
+        oscillator.type = 'sine';
+        
+        // Configurar volume baixo para não ser intrusivo
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        // Tocar som por 300ms
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      }
+    } catch (error) {
+      console.log('Não foi possível reproduzir som de notificação:', error);
+    }
+  };
+
   // Escutar por eventos do Supabase para novas NTs
   useEffect(() => {
     if (!user || !notificationsEnabled) return;
@@ -105,32 +151,33 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       .channel('nt_notifications')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'nts' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const newNT = payload.new as any;
+        { event: 'INSERT', schema: 'public', table: 'nts' },        (payload) => {
+          if (notificationsEnabled) {            const newNT = payload.new as any;
+            const createdByName = newNT.created_by_name || 'usuário';
             
             // Check if this is part of a batch operation
             if (!isBatchOperationActive('nt_creation', newNT.id)) {
               addNotification({
                 title: 'Nova NT Criada',
-                message: `NT ${newNT.nt_number} foi criada às ${newNT.created_time}`,
+                message: `NT ${newNT.nt_number} criada pelo ${createdByName}`,
                 type: 'nt_created',
                 entityId: newNT.id
               });
               
-              // Mostrar toast para notificações imediatas
+              // Tocar som de notificação para nova NT
+              playNotificationSound();
+              
+              // Mostrar toast para NT criada
               toast.success(`Nova NT ${newNT.nt_number} criada!`, {
                 icon: '🔔',
-                duration: 5000,
+                duration: 4000,
               });
             }
           }
         }
       )
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'nt_items' },
+        'postgres_changes',        { event: 'INSERT', schema: 'public', table: 'nt_items' },
         (payload) => {
           if (notificationsEnabled) {
             const newItem = payload.new as any;
@@ -145,33 +192,47 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 entityId: newItem.id
               });
               
-              toast.success(`Item ${newItem.code} adicionado!`, {
-                icon: '➕',
-                duration: 3000,
+              // Remover toast - apenas notificação
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',        { event: 'UPDATE', schema: 'public', table: 'nt_items' },        (payload) => {
+          if (notificationsEnabled) {
+            const updatedItem = payload.new as any;
+            const oldItem = payload.old as any;
+            const paidByName = updatedItem.paid_by_name || 'usuário';
+            
+            // Check if item status changed to "Pago"
+            if (oldItem.status !== 'Pago' && updatedItem.status === 'Pago') {
+              addNotification({
+                title: 'Item Pago',
+                message: `item pago pelo ${paidByName}`,
+                type: 'item_updated',
+                entityId: updatedItem.id
+              });
+                // Mostrar toast para item pago
+              toast.success(`Item ${updatedItem.code} pago!`, {
+                icon: '✅',
+                duration: 4000,
+              });
+            }
+            
+            // Check if item status changed to "Pago Parcial"
+            if (oldItem.status !== 'Pago Parcial' && updatedItem.status === 'Pago Parcial') {
+              addNotification({
+                title: 'Item Pago Parcial',
+                message: `item pago parcial ${paidByName}`,
+                type: 'item_updated',
+                entityId: updatedItem.id
               });
             }
           }
         }
       )
       .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'nt_items' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const updatedItem = payload.new as any;
-            
-            addNotification({
-              title: 'Item Atualizado',
-              message: `Item ${updatedItem.code} foi atualizado`,
-              type: 'item_updated',
-              entityId: updatedItem.id
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'nt_items' },
+        'postgres_changes',        { event: 'DELETE', schema: 'public', table: 'nt_items' },
         (payload) => {
           if (notificationsEnabled) {
             const deletedItem = payload.old as any;
@@ -185,17 +246,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 entityId: deletedItem.id
               });
               
-              toast.success(`Item ${deletedItem.code} removido!`, {
-                icon: '🗑️',
-                duration: 3000,
-              });
+              // Remover toast - apenas notificação
             }
           }
         }
       )
       .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'nts' },
+        'postgres_changes',        { event: 'DELETE', schema: 'public', table: 'nts' },
         (payload) => {
           if (notificationsEnabled) {
             const deletedNT = payload.old as any;
@@ -209,10 +266,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 entityId: deletedNT.id
               });
               
-              toast.success(`NT ${deletedNT.nt_number} removida!`, {
-                icon: '🗑️',
-                duration: 4000,
-              });
+              // Remover toast - apenas notificação
             }
           }
         }
@@ -344,8 +398,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   // Limpar todas as notificações
   const clearNotifications = () => {
     setNotifications([]);
-  };
-  const value = {
+  };  const value = {
     notifications,
     unreadCount,
     addNotification,
@@ -354,6 +407,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     clearNotifications,
     notificationsEnabled,
     setNotificationsEnabled,
+    soundEnabled,
+    setSoundEnabled,
     startBatchOperation,
     endBatchOperation,
     isBatchOperationActive,
