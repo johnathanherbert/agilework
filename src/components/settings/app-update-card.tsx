@@ -14,7 +14,8 @@ export const AppUpdateCard = () => {
     lastChecked, 
     currentVersion,
     checkForUpdate, 
-    reloadApp 
+    reloadApp,
+    resetUpdateState
   } = useAppUpdate();
 
   const formatLastChecked = (date: Date | null) => {
@@ -73,9 +74,7 @@ export const AppUpdateCard = () => {
               </>
             )}
           </div>
-        </div>
-
-        <div className="flex gap-2">
+        </div>        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -97,12 +96,27 @@ export const AppUpdateCard = () => {
               Atualizar Agora
             </Button>
           )}
+          
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetUpdateState}
+              className="flex items-center gap-2 text-orange-600 border-orange-300"
+            >
+              <AlertCircle className="h-4 w-4" />
+              Reset Estado
+            </Button>
+          )}
         </div>
 
         <div className="text-xs text-gray-500 dark:text-gray-400 border-t pt-3">
-          <p>• O sistema verifica automaticamente por atualizações a cada 5 minutos</p>
+          <p>• O sistema verifica automaticamente por atualizações a cada 10 minutos</p>
           <p>• Atualizações também são verificadas quando você volta para a aba</p>
           <p>• Quando uma nova versão estiver disponível, você será notificado</p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-orange-500">• Auto-update desabilitado em desenvolvimento</p>
+          )}
         </div>
       </CardContent>
     </Card>
