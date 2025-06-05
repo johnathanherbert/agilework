@@ -20,10 +20,15 @@ export const useAppUpdate = () => {
   
   // Ref para controlar se já foi mostrado o toast para esta versão
   const toastShownForVersion = useRef<string | null>(null);
-
   // Função para verificar se há uma nova versão
   const checkForUpdate = useCallback(async () => {
     if (typeof window === 'undefined') return;
+
+    // Não verificar atualizações em desenvolvimento
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auto-update desabilitado em desenvolvimento');
+      return;
+    }
 
     setState(prev => ({ ...prev, isChecking: true }));
 
@@ -42,9 +47,13 @@ export const useAppUpdate = () => {
         const data = await response.json();
         const serverVersion = data.version;
         
-        // Comparar versões
-        const updateAvailable = serverVersion !== currentVersion && serverVersion !== 'development';
-          setState({
+        // Comparar versões - só considerar atualização se as versões forem realmente diferentes
+        // e não estivermos em desenvolvimento
+        const updateAvailable = serverVersion !== currentVersion && 
+                                serverVersion !== 'development' && 
+                                currentVersion !== 'development';
+                                
+        setState({
           updateAvailable,
           isChecking: false,
           lastChecked: new Date(),
@@ -93,16 +102,21 @@ export const useAppUpdate = () => {
       window.location.reload();
     }
   }, []);
-
   // Verificar atualizações periodicamente
   useEffect(() => {
-    // Verificar imediatamente quando o hook é montado
+    // Em desenvolvimento, não verificar atualizações automaticamente
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auto-update desabilitado em desenvolvimento');
+      return;
+    }
+
+    // Verificar imediatamente quando o hook é montado (apenas em produção)
     checkForUpdate();
 
-    // Configurar verificação periódica a cada 5 minutos
+    // Configurar verificação periódica a cada 5 minutos (apenas em produção)
     const interval = setInterval(checkForUpdate, 5 * 60 * 1000);
 
-    // Verificar quando a aba ganha foco
+    // Verificar quando a aba ganha foco (apenas em produção)
     const handleFocus = () => {
       const now = new Date();
       const lastCheck = state.lastChecked;

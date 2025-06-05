@@ -4,16 +4,21 @@ import { useEffect } from 'react';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 
 export function AppUpdateManager() {
-  const { updateAvailable, checkForUpdate } = useAppUpdate();
+  const { updateAvailable, checkForUpdate, currentVersion } = useAppUpdate();
 
   // O hook já faz a verificação automática, este componente apenas
   // garante que o sistema esteja ativo no layout principal
   useEffect(() => {
     // Log para desenvolvimento
     if (process.env.NODE_ENV === 'development') {
-      console.log('Sistema de auto-atualização ativo');
+      console.log('🔄 Sistema de auto-atualização inicializado');
+      console.log('📱 Versão atual:', currentVersion);
+      console.log('⚠️  Auto-update desabilitado em desenvolvimento');
+    } else {
+      console.log('🚀 Sistema de auto-atualização ativo em produção');
+      console.log('📱 Versão atual:', currentVersion);
     }
-  }, []);
+  }, [currentVersion]);
 
   // Este componente não renderiza nada visualmente
   // Toda a lógica está no hook useAppUpdate
