@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { AppUpdateCard } from '@/components/settings/app-update-card';
 import { Save, User, Bell, Shield, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '@/components/providers/notification-provider';
@@ -135,8 +136,7 @@ export default function SettingsPage() {  const { user } = useSupabase();
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Quick Actions */}
+              {/* Quick Actions */}
             <div>
               <Card>
                 <CardHeader>
@@ -167,6 +167,9 @@ export default function SettingsPage() {  const { user } = useSupabase();
                   </Button>
                 </CardContent>
               </Card>
+              
+              {/* App Update Controls */}
+              <AppUpdateCard />
             </div>
             
             {/* Notification Settings */}

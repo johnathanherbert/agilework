@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { NotificationProvider } from '@/components/providers/notification-provider';
+import { AppUpdateManager } from '@/components/app-update-manager';
 import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -51,6 +52,7 @@ export default function RootLayout({
         >
           <SupabaseProvider>
             <NotificationProvider>
+              <AppUpdateManager />
               {children}
               <Toaster position="top-center" />
             </NotificationProvider>
