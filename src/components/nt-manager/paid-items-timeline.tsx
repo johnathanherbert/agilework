@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Clock, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, Package, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTimelineRealtime } from '@/hooks/useTimelineRealtime';
 
 interface PaidItem {
   id: string;
@@ -13,25 +13,28 @@ interface PaidItem {
   paid_at: string;
   nt_number: string;
   paid_by_name?: string;
+  updated_at: string;
+  status: string;
 }
 
 interface TimelineItemProps {
   item: PaidItem;
   isLatest: boolean;
+  isNew?: boolean;
 }
 
-const TimelineItem = ({ item, isLatest }: TimelineItemProps) => {
-  const [showHighlight, setShowHighlight] = useState(isLatest);
+const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
+  const [showHighlight, setShowHighlight] = useState(isLatest || isNew);
 
   useEffect(() => {
-    if (isLatest) {
+    if (isLatest || isNew) {
       const timer = setTimeout(() => {
         setShowHighlight(false);
-      }, 30000); // 30 segundos
+      }, isNew ? 45000 : 30000); // 45s para novos, 30s para último
 
       return () => clearTimeout(timer);
     }
-  }, [isLatest]);
+  }, [isLatest, isNew]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -41,29 +44,32 @@ const TimelineItem = ({ item, isLatest }: TimelineItemProps) => {
     });
   };  return (
     <div className={`
-      relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs
-      border backdrop-blur-sm
+      relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs      border backdrop-blur-sm
       ${showHighlight 
-        ? 'bg-green-50/80 dark:bg-green-950/40 border-green-200 dark:border-green-700/50 shadow-sm dark:shadow-green-900/20' 
+        ? isNew 
+          ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 shadow-sm dark:shadow-blue-900/20' 
+          : 'bg-green-50/80 dark:bg-green-950/40 border-green-200 dark:border-green-700/50 shadow-sm dark:shadow-green-900/20'
         : 'bg-white/60 dark:bg-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/80 dark:hover:bg-gray-700/70 hover:border-gray-300/60 dark:hover:border-gray-600/60'
       }
-    `}>
-      {/* Timeline dot with glow effect */}
+    `}>      {/* Timeline dot with glow effect */}
       <div className={`
         mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300
         ${showHighlight 
-          ? 'bg-green-500 dark:bg-green-400 shadow-md shadow-green-500/40 dark:shadow-green-400/60 ring-2 ring-green-200 dark:ring-green-800/50' 
+          ? isNew
+            ? 'bg-blue-500 dark:bg-blue-400 shadow-md shadow-blue-500/40 dark:shadow-blue-400/60 ring-2 ring-blue-200 dark:ring-blue-800/50'
+            : 'bg-green-500 dark:bg-green-400 shadow-md shadow-green-500/40 dark:shadow-green-400/60 ring-2 ring-green-200 dark:ring-green-800/50'
           : 'bg-gray-400 dark:bg-gray-500 shadow-sm dark:shadow-gray-700/50'
         }
       `} />
       
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-1 mb-1">
-          <span className={`
+        <div className="flex items-center justify-between gap-1 mb-1">          <span className={`
             text-xs font-semibold truncate
             ${showHighlight 
-              ? 'text-green-700 dark:text-green-200' 
+              ? isNew
+                ? 'text-blue-700 dark:text-blue-200'
+                : 'text-green-700 dark:text-green-200'
               : 'text-gray-800 dark:text-gray-100'
             }
           `}>
@@ -74,22 +80,24 @@ const TimelineItem = ({ item, isLatest }: TimelineItemProps) => {
             {formatTime(item.paid_at)}
           </span>
         </div>
-        
-        <p className={`
+          <p className={`
           text-xs leading-tight mb-1 truncate
           ${showHighlight 
-            ? 'text-green-700 dark:text-green-300' 
+            ? isNew
+              ? 'text-blue-700 dark:text-blue-300'
+              : 'text-green-700 dark:text-green-300'
             : 'text-gray-600 dark:text-gray-300'
           }
         `} title={item.description}>
           {item.description}
         </p>
         
-        <div className="flex items-center justify-between text-xs">
-          <span className={`
+        <div className="flex items-center justify-between text-xs">          <span className={`
             font-medium
             ${showHighlight 
-              ? 'text-green-600 dark:text-green-300' 
+              ? isNew
+                ? 'text-blue-600 dark:text-blue-300'
+                : 'text-green-600 dark:text-green-300'
               : 'text-gray-600 dark:text-gray-400'
             }
           `}>
@@ -110,76 +118,20 @@ interface PaidItemsTimelineProps {
 }
 
 export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: PaidItemsTimelineProps) => {
-  const [paidItems, setPaidItems] = useState<PaidItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchPaidItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('nt_items')
-        .select(`
-          id,
-          code,
-          description,
-          quantity,
-          updated_at,
-          paid_by_name,
-          nt:nt_id (
-            nt_number
-          )
-        `)
-        .eq('status', 'Pago')
-        .order('updated_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error fetching paid items:', error);
-        return;
-      }
-
-      const formattedItems: PaidItem[] = data?.map(item => ({
-        id: item.id,
-        code: item.code,
-        description: item.description,
-        quantity: item.quantity,
-        paid_at: item.updated_at,
-        nt_number: (item.nt as any)?.nt_number || 'N/A',
-        paid_by_name: item.paid_by_name
-      })) || [];
-
-      setPaidItems(formattedItems);
-    } catch (error) {
-      console.error('Error in fetchPaidItems:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPaidItems();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('paid_items_timeline')
-      .on(
-        'postgres_changes' as any,
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'nt_items',
-          filter: 'status=eq.Pago'
-        },
-        (payload: any) => {
-          console.log('Item paid - timeline update:', payload);
-          fetchPaidItems();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);  if (loading) {
+  const { 
+    paidItems, 
+    loading, 
+    newItemIds, 
+    connectionStatus, 
+    refreshItems, 
+    reconnect,
+    isConnected,
+    hasNewItems 
+  } = useTimelineRealtime({
+    limit: 20,
+    autoReconnect: true,
+    debounceMs: 500
+  });if (loading) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="flex items-center justify-between mb-4">
@@ -230,7 +182,48 @@ export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: Pai
               <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Últimos Pagamentos</span>
               <span className="text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200/50 dark:border-blue-700/50">
                 {paidItems.length}
-              </span>
+              </span>              {/* Indicador de status de conexão realtime */}
+              <div className={`
+                flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium
+                ${isConnected 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/50 dark:border-green-700/50' 
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200/50 dark:border-red-700/50'
+                }
+              `} title={isConnected ? 'Conectado ao tempo real' : `Desconectado (${connectionStatus.reconnectAttempts} tentativas)`}>
+                {isConnected ? (
+                  <Wifi className="w-2.5 h-2.5" />
+                ) : (
+                  <WifiOff className="w-2.5 h-2.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {isConnected ? 'Live' : 'Off'}
+                </span>
+              </div>
+
+              {/* Botão de refresh manual */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => refreshItems()}
+                disabled={loading}
+                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="Atualizar timeline manualmente"
+              >
+                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+
+              {/* Botão de reconectar (se desconectado) */}
+              {!isConnected && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => reconnect()}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200"
+                  title="Tentar reconectar ao tempo real"
+                >
+                  <Wifi className="w-3 h-3" />
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -342,13 +335,13 @@ export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: Pai
       </div>
       
       {!isCollapsed && (        <div className="flex-1 overflow-y-auto">
-          {paidItems.length > 0 ? (
-            <div className="space-y-3">
+          {paidItems.length > 0 ? (            <div className="space-y-3">
               {paidItems.map((item, index) => (
                 <TimelineItem 
                   key={item.id} 
                   item={item} 
                   isLatest={index === 0}
+                  isNew={newItemIds.has(item.id)}
                 />
               ))}
             </div>

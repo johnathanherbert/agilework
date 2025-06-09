@@ -27,14 +27,12 @@ export const Sidebar = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [currentPath, setCurrentPath] = useState('');
-  
-  // Update active item when pathname or search params change
+  const [currentPath, setCurrentPath] = useState('');  // Update active item when pathname or search params change
   useEffect(() => {
-    const status = searchParams.get('status');
+    const status = searchParams?.get('status') || null;
     
     // Construct full path including query params
-    let fullPath = pathname;
+    let fullPath = pathname || '';
     if (status) {
       fullPath += `?status=${status}`;
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
 import { PaidItemsTimeline } from '@/components/nt-manager/paid-items-timeline';
+import { RealtimeStatsCard } from '@/components/nt-manager/realtime-stats-card';
 
 export default function NTManager() {
   const [nts, setNts] = useState<NT[]>([]);
@@ -36,8 +37,7 @@ export default function NTManager() {
   const { user } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Default filters
+    // Default filters
   const [filters, setFilters] = useState<NTFiltersType>({
     search: '',
     status: [],
@@ -48,6 +48,9 @@ export default function NTManager() {
     priorityOnly: false,
     isCompletedView: false
   });
+  
+  // Ref para controlar throttling de atualizações por foco/visibilidade
+  const lastFocusUpdateRef = useRef<Date>(new Date());
   
   // Redirect if not authenticated
   useEffect(() => {
@@ -155,13 +158,49 @@ export default function NTManager() {
           fetchNTs();
         }
       )
-      .subscribe();
-
-    return () => {
+      .subscribe();    return () => {
       supabase.removeChannel(ntsChannel);
       supabase.removeChannel(ntItemsChannel);
     };
   }, [fetchNTs, user]);
+
+  // Focus/Visibility Change - Atualiza quando o usuário volta à aba/janela
+  useEffect(() => {
+    const checkForNTsUpdate = () => {
+      const now = new Date();
+      const timeSinceLastUpdate = now.getTime() - lastFocusUpdateRef.current.getTime();
+      
+      // Se passou mais de 5 segundos desde a última atualização, atualizar
+      if (timeSinceLastUpdate > 5000) {
+        console.log('👁️ NTs Page - Usuário voltou à aba/janela, atualizando lista de NTs...');
+        fetchNTs();
+      }
+      
+      lastFocusUpdateRef.current = now;
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Usuário voltou à aba
+        checkForNTsUpdate();
+      }
+    };
+
+    const handleFocus = () => {
+      // Janela ganhou foco
+      checkForNTsUpdate();
+    };
+
+    // Adicionar listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchNTs]);
   
   // Apply filters function
   const applyFilters = (ntsData: NT[], currentFilters: NTFiltersType) => {
@@ -310,10 +349,9 @@ export default function NTManager() {
     setNtToDelete(null);
     fetchNTs();
   };
-  
-  // Processar parâmetros de URL
+    // Processar parâmetros de URL
   useEffect(() => {
-    const statusParam = searchParams.get('status');
+    const statusParam = searchParams?.get('status');
     
     // Resetar os filtros primeiro
     setFilters(prevFilters => ({
@@ -430,8 +468,7 @@ export default function NTManager() {
                 </Button>
               </div>
             </div>
-            
-            {/* Filters panel */}
+              {/* Filters panel */}
             {showFilters && (
               <Card className="mb-6">
                 <CardContent className="pt-6">
@@ -502,19 +539,26 @@ export default function NTManager() {
             transition-all duration-300 flex flex-col
             shadow-lg dark:shadow-gray-900/20
             ${timelineCollapsed ? 'w-16' : 'w-1/5 lg:w-1/5 xl:w-1/5 min-w-[280px]'}
-          `}>
-            {/* Timeline header spacer with enhanced dark mode */}
+          `}>            {/* Timeline header spacer with enhanced dark mode */}
             <div className="h-16 border-b border-gray-200 dark:border-gray-700/80 flex items-center px-4 bg-gray-50/50 dark:bg-gray-800/50">
               {!timelineCollapsed && (
                 <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">Timeline</h2>
               )}
             </div>
             {/* Timeline content with enhanced spacing */}
-            <div className="flex-1 p-4 overflow-hidden">
-              <PaidItemsTimeline 
-                isCollapsed={timelineCollapsed}
-                onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
-              />
+            <div className="flex-1 p-4 overflow-hidden flex flex-col gap-4">
+              {/* Realtime Stats Card */}
+              {!timelineCollapsed && (
+                <RealtimeStatsCard className="flex-shrink-0" />
+              )}
+              
+              {/* Timeline component */}
+              <div className="flex-1 min-h-0">
+                <PaidItemsTimeline 
+                  isCollapsed={timelineCollapsed}
+                  onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
+                />
+              </div>
             </div>
           </div>
         )}
