@@ -20,7 +20,7 @@ export const Topbar = () => {
   };
 
   return (
-    <div className="w-full h-16 border-b flex items-center justify-between px-4 bg-white dark:bg-gray-900 shadow-sm z-40 transition-all duration-300">
+    <div className="w-full h-16 border-b flex items-center justify-between px-4 bg-white dark:bg-gray-900 shadow-sm dark:shadow-lg dark:shadow-gray-900/30 z-40 transition-all duration-300">
       <div className="flex items-center gap-4">
         <div className="hidden sm:block">
           <HeaderClock />

@@ -27,13 +27,25 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
   const [showHighlight, setShowHighlight] = useState(isLatest || isNew);
 
   useEffect(() => {
-    if (isLatest || isNew) {
+    // Sempre mostrar highlight se for o último item
+    if (isLatest) {
+      setShowHighlight(true);
+      return; // Não criar timer para o último item - ele deve sempre ter o efeito
+    }
+    
+    // Para novos itens (que não são o último), criar timer
+    if (isNew) {
       const timer = setTimeout(() => {
         setShowHighlight(false);
-      }, isNew ? 45000 : 30000); // 45s para novos, 30s para último
+      }, 45000); // 45s para novos itens
 
       return () => clearTimeout(timer);
     }
+  }, [isLatest, isNew]);
+
+  // Atualizar highlight quando isLatest muda
+  useEffect(() => {
+    setShowHighlight(isLatest || isNew);
   }, [isLatest, isNew]);
 
   const formatTime = (dateString: string) => {
@@ -42,23 +54,16 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
       hour: '2-digit', 
       minute: '2-digit'
     });
-  };  return (
-    <div className={`
+  };  return (    <div className={`
       relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs      border backdrop-blur-sm
       ${showHighlight 
-        ? isNew 
-          ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 shadow-sm dark:shadow-blue-900/20' 
-          : 'bg-green-50/80 dark:bg-green-950/40 border-green-200 dark:border-green-700/50 shadow-sm dark:shadow-green-900/20'
+        ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 shadow-sm dark:shadow-blue-900/20'
         : 'bg-white/60 dark:bg-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/80 dark:hover:bg-gray-700/70 hover:border-gray-300/60 dark:hover:border-gray-600/60'
       }
-    `}>      {/* Timeline dot with glow effect */}
-      <div className={`
-        mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300
-        ${showHighlight 
-          ? isNew
-            ? 'bg-blue-500 dark:bg-blue-400 shadow-md shadow-blue-500/40 dark:shadow-blue-400/60 ring-2 ring-blue-200 dark:ring-blue-800/50'
-            : 'bg-green-500 dark:bg-green-400 shadow-md shadow-green-500/40 dark:shadow-green-400/60 ring-2 ring-green-200 dark:ring-green-800/50'
-          : 'bg-gray-400 dark:bg-gray-500 shadow-sm dark:shadow-gray-700/50'
+    `}>{/* Timeline dot with glow effect */}      <div className={`
+        mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300        ${showHighlight 
+          ? 'bg-blue-500 dark:bg-blue-400 shadow-md shadow-blue-500/40 dark:shadow-blue-400/80 ring-2 ring-blue-200 dark:ring-blue-800/50'
+          : 'bg-gray-400 dark:bg-gray-500 shadow-sm dark:shadow-black/50'
         }
       `} />
       
@@ -67,9 +72,7 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
         <div className="flex items-center justify-between gap-1 mb-1">          <span className={`
             text-xs font-semibold truncate
             ${showHighlight 
-              ? isNew
-                ? 'text-blue-700 dark:text-blue-200'
-                : 'text-green-700 dark:text-green-200'
+              ? 'text-blue-700 dark:text-blue-200'
               : 'text-gray-800 dark:text-gray-100'
             }
           `}>
@@ -79,13 +82,10 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
             <Clock className="w-2.5 h-2.5" />
             {formatTime(item.paid_at)}
           </span>
-        </div>
-          <p className={`
+        </div>        <p className={`
           text-xs leading-tight mb-1 truncate
           ${showHighlight 
-            ? isNew
-              ? 'text-blue-700 dark:text-blue-300'
-              : 'text-green-700 dark:text-green-300'
+            ? 'text-blue-700 dark:text-blue-300'
             : 'text-gray-600 dark:text-gray-300'
           }
         `} title={item.description}>
@@ -95,9 +95,7 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
         <div className="flex items-center justify-between text-xs">          <span className={`
             font-medium
             ${showHighlight 
-              ? isNew
-                ? 'text-blue-600 dark:text-blue-300'
-                : 'text-green-600 dark:text-green-300'
+              ? 'text-blue-600 dark:text-blue-300'
               : 'text-gray-600 dark:text-gray-400'
             }
           `}>

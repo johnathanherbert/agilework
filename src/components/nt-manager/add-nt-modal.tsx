@@ -138,13 +138,10 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
           
         if (itemsError) {
           console.error('Erro ao adicionar itens:', itemsError);
-          toast.error('NT criada com sucesso, mas houve erro ao adicionar alguns itens');
-        } else {
-          toast.success(`NT ${ntData[0].nt_number} criada com ${itemsToInsert.length} item(ns)!`);
+          // Não mostrar toast - o notification-provider já cuida das notificações
         }
-      } else {
-        toast.success(`NT ${data.nt_number} foi criada com sucesso!`);
       }
+      // Não mostrar toast aqui - o notification-provider já cuida das notificações de NT criada
       
       // End batch operation
       endBatchOperation(batchId);

@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   ClipboardCheck, ClipboardList, 
   Home, Settings, Plus, Archive, History,
-  ChevronLeft, ChevronRight, Menu
+  ChevronLeft, ChevronRight, Menu, Github, ExternalLink
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -48,10 +48,9 @@ export const Sidebar = () => {
     return () => clearTimeout(timeoutId);
   }, [collapsed]);
 
-  return (
-    <div 
+  return (    <div 
       className={cn(
-        "h-screen fixed left-0 top-0 z-50 bg-white dark:bg-gray-900 border-r flex flex-col transition-all duration-300 shadow-lg",
+        "h-screen fixed left-0 top-0 z-50 bg-white dark:bg-gray-900 border-r flex flex-col transition-all duration-300 shadow-lg dark:shadow-xl dark:shadow-gray-900/50",
         collapsed ? "w-[64px]" : "w-[240px]"
       )}
       onMouseEnter={() => setCollapsed(false)}
@@ -89,9 +88,35 @@ export const Sidebar = () => {
               </div>
               {!collapsed && <span className="text-sm whitespace-nowrap">{item.label}</span>}
             </button>
-          ))}
-        </nav>
+          ))}        </nav>
       </div>
+
+      {/* Informações do Desenvolvedor */}
+      {!collapsed && (
+        <div className="border-t dark:border-gray-800 p-3">
+          <div className="text-center space-y-2">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Desenvolvido por
+            </div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Johnathan Herbert
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              ID: 75710
+            </div>
+            <a
+              href="https://github.com/johnathanherbert"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            >
+              <Github size={12} />
+              <span>GitHub</span>
+              <ExternalLink size={10} />
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="border-t dark:border-gray-800 p-2">
         <button

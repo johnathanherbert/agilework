@@ -167,12 +167,10 @@ export default function NTManager() {
   // Focus/Visibility Change - Atualiza quando o usuário volta à aba/janela
   useEffect(() => {
     const checkForNTsUpdate = () => {
-      const now = new Date();
-      const timeSinceLastUpdate = now.getTime() - lastFocusUpdateRef.current.getTime();
+      const now = new Date();      const timeSinceLastUpdate = now.getTime() - lastFocusUpdateRef.current.getTime();
       
       // Se passou mais de 5 segundos desde a última atualização, atualizar
       if (timeSinceLastUpdate > 5000) {
-        console.log('👁️ NTs Page - Usuário voltou à aba/janela, atualizando lista de NTs...');
         fetchNTs();
       }
       

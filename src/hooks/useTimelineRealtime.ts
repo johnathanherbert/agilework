@@ -322,12 +322,10 @@ export function useTimelineRealtime(options: UseTimelineRealtimeOptions = {}) {
   // Page Visibility API e Window Focus - Atualiza quando o usuário volta à aba/janela
   useEffect(() => {
     const checkForTimelineUpdate = () => {
-      const now = new Date();
-      const timeSinceLastVisibility = now.getTime() - visibilityTimeRef.current.getTime();
+      const now = new Date();      const timeSinceLastVisibility = now.getTime() - visibilityTimeRef.current.getTime();
       
       // Se passou mais de 5 segundos desde a última atualização, atualizar
       if (timeSinceLastVisibility > 5000) {
-        console.log('👁️ Timeline Hook - Usuário voltou à aba/janela, atualizando timeline...');
         fetchPaidItems();
         
         // Se o canal realtime não estiver conectado, tentar reconectar

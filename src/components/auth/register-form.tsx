@@ -1,4 +1,4 @@
-   "use client";
+"use client";
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -66,67 +66,74 @@ export const RegisterForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+    <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-950 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Criar Conta</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+          Criar Conta
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
           Registre-se para começar a usar o sistema
         </p>
       </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
+          <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Email
           </label>
           <input
             id="email"
             type="email"
             {...register('email')}
-            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400"
             disabled={isLoading}
             placeholder="seu@email.com"
           />
           {errors.email && (
-            <p className="text-sm text-red-500">{errors.email.message}</p>
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {errors.email.message}
+            </p>
           )}
         </div>
         
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Senha
           </label>
           <input
             id="password"
             type="password"
             {...register('password')}
-            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400"
             disabled={isLoading}
-            placeholder="******"
+            placeholder="••••••••"
           />
           {errors.password && (
-            <p className="text-sm text-red-500">{errors.password.message}</p>
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {errors.password.message}
+            </p>
           )}
         </div>
         
         <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="text-sm font-medium">
+          <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Confirmar Senha
           </label>
           <input
             id="confirmPassword"
             type="password"
             {...register('confirmPassword')}
-            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400"
             disabled={isLoading}
-            placeholder="******"
+            placeholder="••••••••"
           />
           {errors.confirmPassword && (
-            <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {errors.confirmPassword.message}
+            </p>
           )}
         </div>
-        
-        <Button
+          <Button
           type="submit"
           className="w-full"
           disabled={isLoading}
@@ -136,9 +143,9 @@ export const RegisterForm = () => {
       </form>
       
       <div className="text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Já tem uma conta?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
             Faça login
           </Link>
         </p>

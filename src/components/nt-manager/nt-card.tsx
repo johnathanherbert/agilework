@@ -155,28 +155,26 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
           }
           
           onToggle();
-        }}
-        className={cn(
-          "transition-all duration-200 hover:shadow-sm border cursor-pointer",
+        }}        className={cn(
+          "transition-all duration-200 hover:shadow-md border cursor-pointer",
           "border-slate-200/60 dark:border-slate-700/60",
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
           // Left border color indicator - compact but visible
-          `border-l-[3px] hover:border-l-[4px]`,
-          isDelayed 
-            ? "border-l-red-500 hover:border-l-red-600" 
+          `border-l-[3px] hover:border-l-[4px]`,          isDelayed 
+            ? "border-l-red-500 hover:border-l-red-600 dark:border-l-red-400 dark:hover:border-l-red-300" 
             : delayedCount > 0 
-              ? "border-l-amber-500 hover:border-l-amber-600"
+              ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300"
               : ntStatus.color === "emerald" 
-                ? "border-l-emerald-500 hover:border-l-emerald-600"
+                ? "border-l-emerald-500 hover:border-l-emerald-600 dark:border-l-emerald-400 dark:hover:border-l-emerald-300"
                 : ntStatus.color === "blue"
-                  ? "border-l-blue-500 hover:border-l-blue-600"
+                  ? "border-l-blue-500 hover:border-l-blue-600 dark:border-l-blue-400 dark:hover:border-l-blue-300"
                   : ntStatus.color === "red"
-                    ? "border-l-red-500 hover:border-l-red-600"
+                    ? "border-l-red-500 hover:border-l-red-600 dark:border-l-red-400 dark:hover:border-l-red-300"
                     : ntStatus.color === "amber"
-                      ? "border-l-amber-500 hover:border-l-amber-600"
-                      : "border-l-slate-400 hover:border-l-slate-500",
-          // Compact size optimized for desktop
-          "rounded-md shadow-sm"
+                      ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300"
+                      : "border-l-slate-400 hover:border-l-slate-500 dark:border-l-slate-300 dark:hover:border-l-slate-200",
+          // Enhanced shadow for better card definition
+          "rounded-md shadow-md hover:shadow-lg dark:shadow-black/25 dark:hover:shadow-black/40"
         )}>
         <CardHeader className="pb-1.5 pt-2.5 px-3 space-y-1.5">
           {/* Main header row */}

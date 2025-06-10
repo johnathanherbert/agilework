@@ -113,7 +113,7 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
         throw error;
       }
       
-      toast.success(`${itemsToInsert.length} item(ns) adicionado(s) com sucesso!`);
+      // Não mostrar toast - operação silenciosa
       setItemsData('');
       setParsedItems([]);
       onOpenChange(false);

@@ -147,11 +147,10 @@ export function AddBulkNTModal({ open, onOpenChange, onSuccess }: AddBulkNTModal
       
       const { error: itemsError } = await supabase.from('nt_items').insert(items);
       
-      if (itemsError) {
-        throw itemsError;
+      if (itemsError) {        throw itemsError;
       }
       
-      toast.success(`NT ${data.nt_number} foi criada com ${items.length} itens!`);
+      // Não mostrar toast aqui - o notification-provider já cuida das notificações de NT criada
       
       // End batch operation
       endBatchOperation(batchId);

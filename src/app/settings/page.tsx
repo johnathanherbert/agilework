@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AppUpdateCard } from '@/components/settings/app-update-card';
+import { SoundConfigurationCard } from '@/components/settings/sound-configuration-card';
 import { Save, User, Bell, Shield, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '@/components/providers/notification-provider';
@@ -171,17 +172,18 @@ export default function SettingsPage() {  const { user } = useSupabase();
               {/* App Update Controls */}
               <AppUpdateCard />
             </div>
-            
-            {/* Notification Settings */}
-            <div className="md:col-span-3">
+              {/* Notification Settings */}
+            <div className="md:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Bell className="h-5 w-5 mr-2" />
                     Notificações
                   </CardTitle>
-                </CardHeader>                <CardContent>
-                  <div className="space-y-4">                    <div className="flex items-center justify-between">
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium">Novas NTs</h3>
                         <p className="text-sm text-gray-500">Receba notificações quando novas NTs forem criadas</p>
@@ -205,18 +207,6 @@ export default function SettingsPage() {  const { user } = useSupabase();
                     
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium">Som das Notificações</h3>
-                        <p className="text-sm text-gray-500">Tocar som quando uma nova NT for criada</p>
-                      </div>
-                      <Switch 
-                        checked={soundEnabled} 
-                        onCheckedChange={setSoundEnabled}
-                        disabled={!notifyNewNTs}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
                         <h3 className="font-medium">Alertas de Robôs</h3>
                         <p className="text-sm text-gray-500">Receba notificações sobre alertas de robôs</p>
                       </div>
@@ -225,6 +215,11 @@ export default function SettingsPage() {  const { user } = useSupabase();
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Sound Configuration */}
+            <div>
+              <SoundConfigurationCard />
             </div>
           </div>
           

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useSupabase } from './supabase-provider';
+import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
 import toast from 'react-hot-toast';
 
 // Helper function to get user display name
@@ -47,7 +48,11 @@ type NotificationContextType = {
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
   soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
+  setSoundEnabled: (enabled: boolean) => void;  // Audio configuration
+  audioConfig: AudioConfig;
+  setAudioConfig: (config: AudioConfig) => void;
+  updateAudioConfig: (config: Partial<AudioConfig>) => void;
+  testSound: () => void;
   // Batch operation tracking
   startBatchOperation: (type: BatchOperation['type'], entityId: string, itemCount?: number) => string;
   endBatchOperation: (operationId: string) => void;
@@ -64,40 +69,55 @@ export const useNotifications = () => {
   return context;
 };
 
-export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
-  const [batchOperations, setBatchOperations] = useState<BatchOperation[]>([]);
-  const batchTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useSupabase();
+  const { playSound, testSound: testAudioSound, loadAudioConfig, saveAudioConfig } = useAudioNotification();
+  
+  // Estados das notificações
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // Configuração de áudio
+  const [audioConfig, setAudioConfig] = useState<AudioConfig>({
+    enabled: true,
+    volume: 0.5,
+    soundType: 'default' as SoundType
+  });
 
-  // Carregar configuração de notificações do localStorage ao iniciar
+  // Batch operations tracking
+  const [batchOperations, setBatchOperations] = useState<BatchOperation[]>([]);
+  const batchTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  // Carregar notificações do localStorage
   useEffect(() => {
     if (user) {
-      const savedSetting = localStorage.getItem(`notifications_enabled_${user.id}`);
-      if (savedSetting !== null) {
-        setNotificationsEnabled(savedSetting === 'true');
-      }
-      
-      // Carregar notificações salvas do localStorage
       const savedNotifications = localStorage.getItem(`notifications_${user.id}`);
       if (savedNotifications) {
         try {
-          const parsedNotifications = JSON.parse(savedNotifications);
-          // Converter strings de data para objetos Date
-          const formattedNotifications = parsedNotifications.map((notif: any) => ({
+          const parsed = JSON.parse(savedNotifications);
+          setNotifications(parsed.map((notif: any) => ({
             ...notif,
             createdAt: new Date(notif.createdAt)
-          }));
-          setNotifications(formattedNotifications);
+          })));
         } catch (error) {
-          console.error('Erro ao carregar notificações:', error);
+          console.error('Error parsing saved notifications:', error);
         }
       }
-    }
-  }, [user]);
 
-  // Salvar notificações no localStorage quando houver mudanças
+      // Carregar configuração de notificações
+      const savedNotificationsEnabled = localStorage.getItem(`notifications_enabled_${user.id}`);
+      if (savedNotificationsEnabled !== null) {
+        setNotificationsEnabled(savedNotificationsEnabled === 'true');
+      }
+
+      // Carregar configuração de áudio usando o hook
+      const loadedAudioConfig = loadAudioConfig(user.id);
+      setAudioConfig(loadedAudioConfig);
+      setSoundEnabled(loadedAudioConfig.enabled);
+    }
+  }, [user, loadAudioConfig]);
+
+  // Salvar notificações no localStorage quando mudarem
   useEffect(() => {
     if (user) {
       localStorage.setItem(`notifications_${user.id}`, JSON.stringify(notifications));
@@ -109,38 +129,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     if (user) {
       localStorage.setItem(`notifications_enabled_${user.id}`, notificationsEnabled.toString());
     }
-  }, [notificationsEnabled, user]);  // Estado para controlar se o som está habilitado
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  }, [notificationsEnabled, user]);
+  // Salvar configuração de áudio quando mudar
+  useEffect(() => {
+    if (user) {
+      saveAudioConfig(audioConfig, user.id);
+    }
+  }, [audioConfig, user, saveAudioConfig]);
+
+  // Atualizar soundEnabled quando audioConfig.enabled mudar
+  useEffect(() => {
+    setSoundEnabled(audioConfig.enabled);
+  }, [audioConfig.enabled]);
 
   // Função para tocar som de notificação
   const playNotificationSound = () => {
-    if (!soundEnabled) return;
-    
-    try {
-      // Verificar se o navegador suporta Web Audio API
-      if (typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext)) {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        // Configurar frequência e tipo de onda para um som agradável
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz
-        oscillator.type = 'sine';
-        
-        // Configurar volume baixo para não ser intrusivo
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        // Tocar som por 300ms
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-      }
-    } catch (error) {
-      console.log('Não foi possível reproduzir som de notificação:', error);
-    }
+    if (!soundEnabled || !audioConfig.enabled) return;
+    playSound(audioConfig);
+  };
+
+  // Função de teste de som
+  const testSound = () => {
+    testAudioSound(audioConfig);
   };
 
   // Escutar por eventos do Supabase para novas NTs
@@ -151,15 +161,17 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       .channel('nt_notifications')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'nts' },        (payload) => {
-          if (notificationsEnabled) {            const newNT = payload.new as any;
+        { event: 'INSERT', schema: 'public', table: 'nts' },
+        (payload) => {
+          if (notificationsEnabled) {
+            const newNT = payload.new as any;
             const createdByName = newNT.created_by_name || 'usuário';
             
             // Check if this is part of a batch operation
             if (!isBatchOperationActive('nt_creation', newNT.id)) {
               addNotification({
                 title: 'Nova NT Criada',
-                message: `NT ${newNT.nt_number} criada pelo ${createdByName}`,
+                message: `NT ${newNT.nt_number} criada por ${createdByName}`,
                 type: 'nt_created',
                 entityId: newNT.id
               });
@@ -176,107 +188,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
           }
         }
       )
-      .on(
-        'postgres_changes',        { event: 'INSERT', schema: 'public', table: 'nt_items' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const newItem = payload.new as any;
-            
-            // Check if this is part of a batch operation (item addition or nt creation)
-            if (!isBatchOperationActive('item_addition', newItem.nt_id) && 
-                !isBatchOperationActive('nt_creation', newItem.nt_id)) {
-              addNotification({
-                title: 'Item Adicionado',
-                message: `Item ${newItem.code} foi adicionado à NT`,
-                type: 'item_added',
-                entityId: newItem.id
-              });
-              
-              // Remover toast - apenas notificação
-            }
-          }
-        }
-      )
-      .on(
-        'postgres_changes',        { event: 'UPDATE', schema: 'public', table: 'nt_items' },        (payload) => {
-          if (notificationsEnabled) {
-            const updatedItem = payload.new as any;
-            const oldItem = payload.old as any;
-            const paidByName = updatedItem.paid_by_name || 'usuário';
-            
-            // Check if item status changed to "Pago"
-            if (oldItem.status !== 'Pago' && updatedItem.status === 'Pago') {
-              addNotification({
-                title: 'Item Pago',
-                message: `item pago pelo ${paidByName}`,
-                type: 'item_updated',
-                entityId: updatedItem.id
-              });
-                // Mostrar toast para item pago
-              toast.success(`Item ${updatedItem.code} pago!`, {
-                icon: '✅',
-                duration: 4000,
-              });
-            }
-            
-            // Check if item status changed to "Pago Parcial"
-            if (oldItem.status !== 'Pago Parcial' && updatedItem.status === 'Pago Parcial') {
-              addNotification({
-                title: 'Item Pago Parcial',
-                message: `item pago parcial ${paidByName}`,
-                type: 'item_updated',
-                entityId: updatedItem.id
-              });
-            }
-          }
-        }
-      )
-      .on(
-        'postgres_changes',        { event: 'DELETE', schema: 'public', table: 'nt_items' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const deletedItem = payload.old as any;
-            
-            // Check if this is part of a batch operation (nt deletion)
-            if (!isBatchOperationActive('nt_deletion', deletedItem.nt_id)) {
-              addNotification({
-                title: 'Item Removido',
-                message: `Item ${deletedItem.code} foi removido`,
-                type: 'item_deleted',
-                entityId: deletedItem.id
-              });
-              
-              // Remover toast - apenas notificação
-            }
-          }
-        }
-      )
-      .on(
-        'postgres_changes',        { event: 'DELETE', schema: 'public', table: 'nts' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const deletedNT = payload.old as any;
-            
-            // Check if this is part of a batch operation
-            if (!isBatchOperationActive('nt_deletion', deletedNT.id)) {
-              addNotification({
-                title: 'NT Removida',
-                message: `NT ${deletedNT.nt_number} foi removida`,
-                type: 'nt_deleted',
-                entityId: deletedNT.id
-              });
-              
-              // Remover toast - apenas notificação
-            }
-          }
-        }
-      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(ntsChannel);
     };
-  }, [user, notificationsEnabled]);
+  }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {
@@ -292,12 +209,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     setBatchOperations(prev => [...prev, operation]);
     
     // Set a timeout to automatically end the operation after 5 seconds
-    // This prevents stuck operations if something goes wrong
     const timeout = setTimeout(() => {
       endBatchOperation(operationId);
     }, 5000);
     
-    batchTimeoutRef.current.set(operationId, timeout);
+    batchTimeoutRef.current[operationId] = timeout;
     
     return operationId;
   };
@@ -307,10 +223,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     
     if (operation) {
       // Clear timeout
-      const timeout = batchTimeoutRef.current.get(operationId);
+      const timeout = batchTimeoutRef.current[operationId];
       if (timeout) {
         clearTimeout(timeout);
-        batchTimeoutRef.current.delete(operationId);
+        delete batchTimeoutRef.current[operationId];
       }
       
       // Remove operation from active operations
@@ -321,7 +237,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         switch (operation.type) {
           case 'nt_creation':
             if (operation.itemCount && operation.itemCount > 0) {
-              const message = `NT foi criada com ${operation.itemCount} item${operation.itemCount > 1 ? 'ns' : ''}`;
+              const message = `NT criada com ${operation.itemCount} item${operation.itemCount > 1 ? 'ns' : ''}`;
               addNotification({
                 title: 'NT Criada com Sucesso',
                 message,
@@ -331,25 +247,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
             break;
             
+          // Não mostrar notificações para outras operações
           case 'item_addition':
-            if (operation.itemCount && operation.itemCount > 0) {
-              const message = `${operation.itemCount} item${operation.itemCount > 1 ? 'ns foram adicionados' : ' foi adicionado'} à NT`;
-              addNotification({
-                title: 'Itens Adicionados',
-                message,
-                type: 'item_added',
-                entityId: operation.entityId
-              });
-            }
-            break;
-            
           case 'nt_deletion':
-            addNotification({
-              title: 'NT Removida',
-              message: 'NT e todos os seus itens foram removidos',
-              type: 'nt_deleted',
-              entityId: operation.entityId
-            });
             break;
         }
       }
@@ -394,11 +294,48 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       prev.map(notif => ({ ...notif, read: true }))
     );
   };
-
   // Limpar todas as notificações
   const clearNotifications = () => {
     setNotifications([]);
-  };  const value = {
+  };
+
+  // Atualizar configuração de áudio com feedback
+  const updateAudioConfig = (newConfig: Partial<AudioConfig>) => {
+    const updatedConfig = { ...audioConfig, ...newConfig };
+    setAudioConfig(updatedConfig);
+    setSoundEnabled(updatedConfig.enabled);
+    
+    // Feedback visual baseado na mudança
+    if (newConfig.enabled !== undefined) {
+      if (newConfig.enabled) {
+        toast.success('Sons de notificação ativados', { icon: '🔊' });
+      } else {
+        toast.success('Sons de notificação desativados', { icon: '🔇' });
+      }
+    }
+    
+    if (newConfig.soundType !== undefined) {
+      toast.success(`Som alterado para: ${getSoundTypeName(newConfig.soundType)}`, { icon: '🎵' });
+    }
+    
+    if (newConfig.volume !== undefined) {
+      const volumePercent = Math.round(newConfig.volume * 100);
+      toast.success(`Volume: ${volumePercent}%`, { icon: '🔊', duration: 2000 });
+    }
+  };
+  // Helper para obter nome amigável do tipo de som
+  const getSoundTypeName = (soundType: SoundType): string => {
+    const names = {
+      impact: '💥 Impacto Dramático',
+      triumph: '🏆 Triunfo Épico',
+      alert: '🚨 Alerta Urgente',
+      fanfare: '🎺 Fanfarra Completa',
+      power: '⚡ Poder Absoluto',
+      classic: '👑 Clássico Refinado'
+    };
+    return names[soundType] || soundType;
+  };
+  const value = {
     notifications,
     unreadCount,
     addNotification,
@@ -409,6 +346,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     setNotificationsEnabled,
     soundEnabled,
     setSoundEnabled,
+    audioConfig,
+    setAudioConfig,
+    updateAudioConfig,
+    testSound,
     startBatchOperation,
     endBatchOperation,
     isBatchOperationActive,
