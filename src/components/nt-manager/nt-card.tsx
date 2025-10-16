@@ -3,7 +3,7 @@
 import { NT } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, AlertTriangle, Clock, CheckCircle2, Package } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, AlertTriangle, Clock, CheckCircle2, Package, Copy, Check } from 'lucide-react';
 import { NTItemRow } from './nt-item-row';
 import { parseDateTime, getDelayInfo } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,19 @@ interface NTCardProps {
 
 export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }: NTCardProps) => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Function to copy NT number to clipboard
+  const handleCopyNTNumber = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(nt.nt_number);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   // Check if NT is delayed
   const isNTDelayed = () => {
@@ -180,10 +193,32 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
           {/* Main header row */}
           <div className="flex items-center justify-between">
             {/* Left side - NT info */}
-            <div className="flex items-center gap-2">              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                NT {nt.nt_number}
-              </h3>
-                {/* Compact warning indicators */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  NT {nt.nt_number}
+                </h3>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyNTNumber}
+                      className="h-5 w-5 p-0 hover:bg-slate-100 dark:hover:bg-slate-800 interactive-element"
+                    >
+                      {isCopied ? (
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Copy className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{isCopied ? 'Copiado!' : 'Copiar número da NT'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              {/* Compact warning indicators */}
               <div className="flex items-center gap-1">
                 {isDelayed && (
                   <Tooltip>
