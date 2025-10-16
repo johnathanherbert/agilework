@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ChevronDown, ChevronUp, Edit, Trash2, Plus, AlertTriangle, Clock, CheckCircle2, Package, Copy, Check } from 'lucide-react';
 import { NTItemRow } from './nt-item-row';
-import { parseDateTime, getDelayInfo } from '@/lib/utils';
+import { parseDateTime, getDelayInfo, isItemDelayed } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AddItemModal } from './add-item-modal';
@@ -89,8 +89,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
           const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
           const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
           if (isNaN(creationDate.getTime())) return false;
-          const delayInfo = getDelayInfo(creationDate);
-          return delayInfo.isDelayed;
+          // Usar a nova função que considera a categoria do material
+          return isItemDelayed(creationDate, item.code);
         } catch (error) {
           return false;
         }

@@ -1,8 +1,40 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import materialCategories from '@/data/material-categories.json'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Configurações de tempo limite em minutos
+export const TIME_LIMITS = {
+  CFA: materialCategories.timeLimits.CFA, // 4 horas = 240 minutos
+  INF: materialCategories.timeLimits.INF, // 4 horas = 240 minutos
+  NORMAL: materialCategories.timeLimits.NORMAL // 2 horas = 120 minutos
+}
+
+// Tipos de categoria de material
+export type MaterialCategory = 'CFA' | 'INF' | 'NORMAL'
+
+// Função para identificar a categoria do material
+export function getMaterialCategory(materialCode: string): MaterialCategory {
+  const cleanCode = materialCode.trim()
+  
+  if (materialCategories.materials.CFA.includes(cleanCode)) {
+    return 'CFA'
+  }
+  
+  if (materialCategories.materials.INF.includes(cleanCode)) {
+    return 'INF'
+  }
+  
+  return 'NORMAL'
+}
+
+// Função para obter o limite de tempo em minutos para um material
+export function getTimeLimitForMaterial(materialCode: string): number {
+  const category = getMaterialCategory(materialCode)
+  return TIME_LIMITS[category]
 }
 
 // Format date to Brazilian format (DD/MM/YYYY)
@@ -58,6 +90,25 @@ export function isDelayed(startDate: string | Date, endDate?: string | Date | nu
   }
 }
 
+// Nova função: Verificar se um item está em atraso considerando sua categoria
+export function isItemDelayed(
+  startDate: string | Date, 
+  materialCode: string, 
+  endDate?: string | Date | null
+): boolean {
+  if (!startDate) return false;
+  
+  try {
+    const timeLimitMinutes = getTimeLimitForMaterial(materialCode)
+    const timeLimitMs = timeLimitMinutes * 60 * 1000
+    const elapsedTime = calculateElapsedTime(startDate, endDate)
+    return elapsedTime > timeLimitMs
+  } catch (error) {
+    console.error("Erro ao verificar atraso do item:", error)
+    return false
+  }
+}
+
 // Calcular o tempo de atraso excedente (apenas o tempo além das 2 horas)
 export function calculateDelayTime(startDate: string | Date, endDate?: string | Date | null): number {
   if (!startDate) return 0;
@@ -74,6 +125,30 @@ export function calculateDelayTime(startDate: string | Date, endDate?: string | 
   } catch (error) {
     console.error("Erro ao calcular tempo de atraso:", error);
     return 0;
+  }
+}
+
+// Nova função: Calcular o tempo de atraso considerando a categoria do material
+export function calculateItemDelayTime(
+  startDate: string | Date, 
+  materialCode: string, 
+  endDate?: string | Date | null
+): number {
+  if (!startDate) return 0
+  
+  try {
+    const timeLimitMinutes = getTimeLimitForMaterial(materialCode)
+    const timeLimitMs = timeLimitMinutes * 60 * 1000
+    const elapsedTime = calculateElapsedTime(startDate, endDate)
+    
+    // Se não passou do limite, não há atraso
+    if (elapsedTime <= timeLimitMs) return 0
+    
+    // Retornar apenas o tempo excedente após o limite
+    return elapsedTime - timeLimitMs
+  } catch (error) {
+    console.error("Erro ao calcular tempo de atraso do item:", error)
+    return 0
   }
 }
 
@@ -172,6 +247,127 @@ export function formatElapsedTime(milliseconds: number): string {
   return hours === 1
     ? `1 hora e ${remainingMinutes} min`
     : `${hours} horas e ${remainingMinutes} min`;
+}
+
+// Nova função: Formatar tempo de item baseado na categoria e status
+export function formatItemTime(
+  createdDate: string,
+  createdTime: string,
+  materialCode: string,
+  status: string,
+  paymentTime?: string | null
+): {
+  displayText: string;
+  isDelayed: boolean;
+  category: MaterialCategory;
+} {
+  try {
+    const category = getMaterialCategory(materialCode)
+    const { creationDate, paymentDate } = parseDateTime(createdDate, createdTime, paymentTime)
+    
+    // Se o item está pago, calcular tempo até o pagamento
+    if (status === 'Pago' && paymentDate) {
+      const timeLimitMinutes = getTimeLimitForMaterial(materialCode)
+      const timeLimitMs = timeLimitMinutes * 60 * 1000
+      const elapsedTime = calculateElapsedTime(creationDate, paymentDate)
+      
+      // Verificar se foi pago dentro do prazo
+      if (elapsedTime <= timeLimitMs) {
+        // Pago dentro do prazo - mostrar tempo decorrido
+        const minutes = Math.floor(elapsedTime / 60000)
+        const hours = Math.floor(minutes / 60)
+        const remainingMinutes = minutes % 60
+        
+        if (hours > 0) {
+          return {
+            displayText: `Pago ${hours}h${remainingMinutes > 0 ? remainingMinutes + 'min' : ''}`,
+            isDelayed: false,
+            category
+          }
+        } else {
+          return {
+            displayText: `Pago ${minutes}min`,
+            isDelayed: false,
+            category
+          }
+        }
+      } else {
+        // Pago com atraso - mostrar tempo de atraso
+        const delayMs = elapsedTime - timeLimitMs
+        const minutes = Math.floor(delayMs / 60000)
+        const hours = Math.floor(minutes / 60)
+        const remainingMinutes = minutes % 60
+        
+        if (hours > 0) {
+          return {
+            displayText: `${hours}h${remainingMinutes > 0 ? remainingMinutes + 'min' : ''} de atraso`,
+            isDelayed: true,
+            category
+          }
+        } else {
+          return {
+            displayText: `${minutes}min de atraso`,
+            isDelayed: true,
+            category
+          }
+        }
+      }
+    }
+    
+    // Se não está pago, calcular tempo desde a criação
+    const timeLimitMinutes = getTimeLimitForMaterial(materialCode)
+    const timeLimitMs = timeLimitMinutes * 60 * 1000
+    const elapsedTime = calculateElapsedTime(creationDate)
+    
+    // Verificar se está dentro do prazo
+    if (elapsedTime <= timeLimitMs) {
+      // Dentro do prazo - mostrar tempo decorrido
+      const minutes = Math.floor(elapsedTime / 60000)
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      
+      if (hours > 0) {
+        return {
+          displayText: `${hours}h${remainingMinutes > 0 ? remainingMinutes + 'min' : ''}`,
+          isDelayed: false,
+          category
+        }
+      } else {
+        return {
+          displayText: `${minutes}min`,
+          isDelayed: false,
+          category
+        }
+      }
+    } else {
+      // Em atraso - mostrar tempo de atraso
+      const delayMs = elapsedTime - timeLimitMs
+      const minutes = Math.floor(delayMs / 60000)
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      
+      if (hours > 0) {
+        return {
+          displayText: `${hours}h${remainingMinutes > 0 ? remainingMinutes + 'min' : ''} atraso`,
+          isDelayed: true,
+          category
+        }
+      } else {
+        return {
+          displayText: `${minutes}min atraso`,
+          isDelayed: true,
+          category
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao formatar tempo do item:', error)
+    return {
+      displayText: 'erro',
+      isDelayed: false,
+      category: 'NORMAL'
+    }
+  }
 }
 
 // Format timestamp to data e hora legível

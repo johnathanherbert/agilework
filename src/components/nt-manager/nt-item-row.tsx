@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { NTItem, ItemStatus } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Clock, Check, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
-import { cn, calculateElapsedTime, isDelayed, formatElapsedTime, formatTimestamp, normalizeDate, debugDate, parseDateTime } from '@/lib/utils';
+import { Edit, Trash2, Clock, Check, AlertCircle, AlertTriangle, Calendar, Snowflake, Flame } from 'lucide-react';
+import { cn, calculateElapsedTime, isDelayed, formatElapsedTime, formatTimestamp, normalizeDate, debugDate, parseDateTime, formatItemTime, getMaterialCategory } from '@/lib/utils';
 import { EditFieldModal } from './edit-field-modal';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
 import { StatusSwitch } from '@/components/ui/status-switch';
@@ -89,179 +89,24 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
     return () => clearInterval(interval);
   }, [item.created_at]);
   
+  // Obter informações de tempo usando a nova função
+  const itemTimeInfo = formatItemTime(
+    item.created_date,
+    item.created_time,
+    item.code,
+    item.status,
+    item.payment_time
+  );
+  
   // Verificar se há atraso (mais de 2 horas) - apenas para itens não pagos
-  const delayed = item.status !== 'Pago' && isDelayed(item.created_at);
+  const delayed = itemTimeInfo.isDelayed && item.status !== 'Pago';
   
-  // Verificar se está próximo do limite (entre 1h30 e 2h)
-  const isApproachingDeadline = () => {
-    if (item.status === 'Pago') return false;
-    
-    const oneHour30Min = 90 * 60 * 1000; // 1h30m em milissegundos
-    const twoHours = 2 * 60 * 60 * 1000; // 2h em milissegundos
-    const elapsed = calculateElapsedTime(item.created_at);
-    
-    return elapsed >= oneHour30Min && elapsed < twoHours;
-  };
-  
-  const approachingDeadline = isApproachingDeadline();
-  
-  // Calcular o tempo formatado
-  const formattedTime = formatElapsedTime(elapsedTime);
-  
-  // Calcular o tempo que levou para ser pago
-  const getPaymentTime = (): { 
-    timeToPayment: number, 
-    wasDelayed: boolean, 
-    formattedTime: string,
-    timeBeforeDeadline?: string,
-    timeAfterDeadline?: string,
-    minutesBeforeDeadline?: number,
-    minutesAfterDeadline?: number
-  } => {
-    if (item.status === 'Pago') {
-      try {
-        // Verificar se o item tem horário de pagamento registrado
-        if (!item.payment_time) {
-          return { timeToPayment: 0, wasDelayed: false, formattedTime: "tempo não registrado" };
-        }
-        
-        // Usar a função parseDateTime para obter os objetos Date
-        const { creationDate, paymentDate } = parseDateTime(
-          item.created_date,
-          item.created_time,
-          item.payment_time
-        );
-
-        // Se o paymentDate for null (improvável neste ponto), retornar um erro
-        if (!paymentDate) {
-          console.warn(`Não foi possível processar o horário de pagamento para o item #${item.id}:`, {
-            payment_time: item.payment_time
-          });
-          return { timeToPayment: 0, wasDelayed: false, formattedTime: "horário inválido" };
-        }
-        
-        // Verificar se as datas são válidas
-        if (isNaN(creationDate.getTime()) || isNaN(paymentDate.getTime())) {
-          console.warn(`Datas inválidas para item #${item.id}:`, {
-            created_date: item.created_date,
-            created_time: item.created_time,
-            payment_time: item.payment_time,
-            creationDate: creationDate.toString(),
-            paymentDate: paymentDate.toString()
-          });
-          return { timeToPayment: 0, wasDelayed: false, formattedTime: "horário inválido" };
-        }
-        
-        // Calcular a diferença em milissegundos
-        const timeToPayment = paymentDate.getTime() - creationDate.getTime();
-        
-        // Se o tempo for negativo (possível erro), usar valor absoluto para formatação
-        const absoluteTimeToPayment = Math.abs(timeToPayment);
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`Item #${item.id} - Tempo de pagamento:`, {
-            creationDate: creationDate.toISOString(),
-            paymentDate: paymentDate.toISOString(),
-            timeToPaymentMs: timeToPayment,
-            timeToPaymentMinutes: Math.floor(timeToPayment / (1000 * 60)),
-            paymentTimeFormat: item.payment_time.includes(':') && !item.payment_time.includes('/') ? 'Formato somente hora' : 'Formato completo'
-          });
-        }
-        
-        const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 horas em milissegundos
-        const wasDelayed = timeToPayment > twoHoursInMs; // Usar o valor real para determinar atraso
-        
-        // Calcular o quanto o item foi pago antes ou depois do limite
-        let timeBeforeDeadline, timeAfterDeadline;
-        let minutesBeforeDeadline, minutesAfterDeadline;
-        
-        if (wasDelayed) {
-          // Tempo depois do limite de 2h
-          const timeAfterTwoHours = timeToPayment - twoHoursInMs;
-          timeAfterDeadline = formatElapsedTime(timeAfterTwoHours);
-          minutesAfterDeadline = Math.floor(timeAfterTwoHours / 60000); // Converter para minutos
-        } else {
-          // Tempo antes do limite de 2h
-          const timeBeforeTwoHours = twoHoursInMs - timeToPayment;
-          timeBeforeDeadline = formatElapsedTime(timeBeforeTwoHours);
-          minutesBeforeDeadline = Math.floor(timeBeforeTwoHours / 60000); // Converter para minutos
-        }
-        
-        return { 
-          timeToPayment: timeToPayment,
-          wasDelayed, 
-          formattedTime: formatElapsedTime(absoluteTimeToPayment),
-          timeBeforeDeadline,
-          timeAfterDeadline,
-          minutesBeforeDeadline,
-          minutesAfterDeadline
-        };
-      } catch (error) {
-        console.error(`Erro ao calcular tempo de pagamento para item #${item.id}:`, error, {
-          payment_time: item.payment_time,
-          created_date: item.created_date,
-          created_time: item.created_time
-        });
-        return { timeToPayment: 0, wasDelayed: false, formattedTime: "problema no cálculo" };
-      }
-    }
-    
-    return { timeToPayment: 0, wasDelayed: false, formattedTime: "" };
-  };
-  
-  const paymentTimeInfo = getPaymentTime();
+  // Obter a categoria do material
+  const materialCategory = getMaterialCategory(item.code);
   
   // Determinar mensagem de status baseada no estado e tempo
   const getStatusMessage = (): string => {
-    // Verifica se há dados de criação
-    if (!item.created_date || !item.created_time) {
-      return "Data de criação indisponível";
-    }
-    
-    // Caso o item esteja pago
-    if (item.status === 'Pago') {
-      // Se tiver tempo de pagamento, mostra quanto tempo levou
-      if (item.payment_time) {
-        // Verifica se o cálculo de tempo foi bem-sucedido
-        if (paymentTimeInfo.formattedTime === "tempo indisponível" || 
-            paymentTimeInfo.formattedTime === "erro de cálculo" ||
-            paymentTimeInfo.formattedTime === "horário inválido") {
-          return `Pago (horário registrado)`;
-        }
-        
-        // Verifica se foi pago com atraso
-        if (paymentTimeInfo.wasDelayed) {
-          return `Pago com atraso (${paymentTimeInfo.minutesAfterDeadline}min após 2h)`;
-        } else {
-          return `${paymentTimeInfo.minutesBeforeDeadline}min (pago a tempo)`;
-        }
-      }
-      return "Pago (horário não registrado)";
-    } 
-    // Caso seja pagamento parcial
-    else if (item.status === 'Pago Parcial') {
-      if (delayed) {
-        return `Parcialmente pago (Em atraso: ${formattedTime})`;
-      } else if (approachingDeadline) {
-        const twoHoursInMs = 2 * 60 * 60 * 1000;
-        const remaining = twoHoursInMs - elapsedTime;
-        return `Parcialmente pago (Limite em ${formatElapsedTime(remaining)})`;
-      } else {
-        return `Parcialmente pago (${formattedTime})`;
-      }
-    } 
-    // Caso esteja aguardando pagamento
-    else {
-      if (delayed) {
-        return `⚠️ ATENÇÃO: Em atraso há ${formattedTime} (limite de 2h excedido)`;
-      } else if (approachingDeadline) {
-        const twoHoursInMs = 2 * 60 * 60 * 1000;
-        const remaining = twoHoursInMs - elapsedTime;
-        return `⏰ URGENTE: Limite em apenas ${formatElapsedTime(remaining)}`;
-      } else {
-        return `Aguardando: ${formattedTime}`;
-      }
-    }
+    return itemTimeInfo.displayText;
   };
 
   const getStatusIcon = (status: ItemStatus) => {
@@ -353,34 +198,49 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
               />
             </div>
             
+            {/* Material category icon */}
+            {materialCategory !== 'NORMAL' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 rounded-full interactive-element",
+                    materialCategory === 'CFA' 
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400" 
+                      : "bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400"
+                  )}>
+                    {materialCategory === 'CFA' ? (
+                      <Snowflake className="h-3 w-3" />
+                    ) : (
+                      <Flame className="h-3 w-3" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    {materialCategory === 'CFA' ? 'Câmara Fria - Limite 4h' : 'Inflamável - Limite 4h'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            
             {/* Status indicator with time info */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={cn(
                   "flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap border min-w-[60px] justify-center interactive-element",
-                  item.status === 'Pago' && paymentTimeInfo.wasDelayed 
-                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800" : 
-                  item.status === 'Pago' && !paymentTimeInfo.wasDelayed
+                  item.status === 'Pago' && itemTimeInfo.isDelayed 
+                    ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800" : 
+                  item.status === 'Pago' && !itemTimeInfo.isDelayed
                     ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800" : 
                   delayed 
                     ? "bg-red-100 text-red-800 border-red-300 animate-pulse dark:bg-red-950/50 dark:text-red-200 dark:border-red-700 font-bold" : 
-                  approachingDeadline 
-                    ? "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-950/50 dark:text-yellow-200 dark:border-yellow-700 font-bold" : 
                   "bg-muted text-muted-foreground border-border"
                 )}>
                   {delayed && <AlertTriangle className="h-2.5 w-2.5" />}
-                  {approachingDeadline && <Clock className="h-2.5 w-2.5" />}
-                  {item.status === 'Pago' && paymentTimeInfo.wasDelayed && <AlertTriangle className="h-2.5 w-2.5" />}
-                  {item.status === 'Pago' && !paymentTimeInfo.wasDelayed && <Check className="h-2.5 w-2.5" />}
+                  {item.status === 'Pago' && itemTimeInfo.isDelayed && <AlertTriangle className="h-2.5 w-2.5" />}
+                  {item.status === 'Pago' && !itemTimeInfo.isDelayed && <Check className="h-2.5 w-2.5" />}
                   <span className="truncate">
-                    {item.status === 'Pago'
-                      ? (paymentTimeInfo.formattedTime === "horário inválido" || paymentTimeInfo.formattedTime === "problema no cálculo"
-                         ? "OK" 
-                         : paymentTimeInfo.wasDelayed 
-                           ? `+${paymentTimeInfo.minutesAfterDeadline || 0}m` 
-                           : `-${paymentTimeInfo.minutesBeforeDeadline || 0}m`)
-                      : formattedTime || "..."
-                    }
+                    {itemTimeInfo.displayText}
                   </span>
                 </div>
               </TooltipTrigger>
@@ -388,74 +248,37 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
                 <div className="space-y-1.5">
                   <p className={cn(
                     "font-medium text-sm",
-                    delayed ? "text-destructive" : 
-                    approachingDeadline ? "text-yellow-600 dark:text-yellow-400" : ""
+                    delayed ? "text-destructive" : ""
                   )}>
                     {getStatusMessage()}
                   </p>
                   
-                  {item.status === 'Pago' && (
-                    <div className="flex flex-col text-xs mt-2 pt-2 border-t">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3 opacity-70" />
-                        <span>Criado: {item.created_date} às {item.created_time}</span>
-                      </div>
+                  <div className="flex flex-col text-xs mt-2 pt-2 border-t">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3 opacity-70" />
+                      <span>Criado: {item.created_date} às {item.created_time}</span>
+                    </div>
+                    
+                    {item.status === 'Pago' && item.payment_time && (
                       <div className="flex items-center gap-1.5 mt-1">
                         <Check className="h-3 w-3 opacity-70" />
-                        <span>Pago: {item.payment_time 
-                          ? (item.payment_time.includes(':') && !item.payment_time.includes('/') && !item.payment_time.includes('T')
-                              ? `${item.created_date} às ${item.payment_time}`
-                              : (() => {
-                                  try {
-                                    const { paymentDate } = parseDateTime(item.created_date, item.created_time, item.payment_time);
-                                    return paymentDate ? paymentDate.toLocaleString('pt-BR', { 
-                                      day: '2-digit', 
-                                      month: '2-digit',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    }) : "Formato desconhecido";
-                                  } catch (e) {
-                                    return "Formato inválido";
-                                  }
-                                })()
-                            ) 
-                          : "Horário não registrado"}</span>
+                        <span>Pago: {item.payment_time.includes(':') && !item.payment_time.includes('/') && !item.payment_time.includes('T')
+                          ? `${item.created_date} às ${item.payment_time}`
+                          : item.payment_time}</span>
                       </div>
-                      
-                      <div className="flex items-center gap-1.5 text-xs mt-1">
-                        <Clock className="h-3 w-3 opacity-70" />
-                        <span>Duração: {paymentTimeInfo.formattedTime !== "tempo indisponível" && 
-                          paymentTimeInfo.formattedTime !== "erro de cálculo" && 
-                          paymentTimeInfo.formattedTime !== "horário inválido" ? 
-                          paymentTimeInfo.formattedTime : 
-                          "Não calculável"}</span>
+                    )}
+                    
+                    {materialCategory !== 'NORMAL' && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {materialCategory === 'CFA' ? (
+                          <Snowflake className="h-3 w-3 opacity-70" />
+                        ) : (
+                          <Flame className="h-3 w-3 opacity-70" />
+                        )}
+                        <span>Categoria: {materialCategory === 'CFA' ? 'Câmara Fria (4h)' : 'Inflamável (4h)'}</span>
                       </div>
-                      
-                      {paymentTimeInfo.wasDelayed !== undefined && paymentTimeInfo.formattedTime !== "horário inválido" && paymentTimeInfo.formattedTime !== "problema no cálculo" && (
-                        <div className={`flex items-center gap-1.5 text-xs mt-1 ${paymentTimeInfo.wasDelayed ? 'text-destructive' : 'text-green-600'}`}>
-                          {paymentTimeInfo.wasDelayed ? (
-                            <>
-                              <AlertTriangle className="h-3 w-3" />
-                              <span>{paymentTimeInfo.minutesAfterDeadline}m após limite</span>
-                            </>
-                          ) : (
-                            <>
-                              <Check className="h-3 w-3" />
-                              <span>{paymentTimeInfo.minutesBeforeDeadline}m antes do limite</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {item.status !== 'Pago' && (
-                    <div className="flex items-center gap-1.5 text-xs mt-2 pt-2 border-t">
-                      <Calendar className="h-3 w-3 opacity-70" />
-                      <span>Criado: {formatTimestamp(item.created_at)}</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </TooltipContent>
             </Tooltip>
