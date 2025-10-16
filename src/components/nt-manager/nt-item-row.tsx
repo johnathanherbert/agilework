@@ -152,41 +152,41 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
   return (
     <TooltipProvider>
       <tr className={cn(
-        "border-b border-border hover:bg-muted/50 transition-colors duration-200 interactive-element",
+        "border-b border-border hover:bg-muted/50 transition-colors duration-150 interactive-element group",
         item.priority ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-2 border-amber-400 dark:border-amber-700" : ""
       )}>
-        <td className="px-3 py-2.5 text-xs text-muted-foreground font-medium">{item.item_number}</td>
+        <td className="px-3 py-3 text-xs text-muted-foreground font-semibold">{item.item_number}</td>
         <td 
-          className="px-3 py-2.5 text-xs font-medium cursor-pointer hover:text-primary transition-colors duration-150 hover:underline interactive-element"
+          className="px-3 py-3 text-xs font-semibold cursor-pointer hover:text-primary transition-colors duration-150 hover:underline interactive-element"
           onClick={() => handleCellClick('code', 'Código')}
         >
           {item.code}
         </td>
         <td 
-          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 group interactive-element"
+          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-150 group/desc interactive-element"
           onClick={() => handleCellClick('description', 'Descrição')}
         >
-          <div className="max-w-[200px] truncate group-hover:underline">
+          <div className="max-w-[200px] truncate group-hover/desc:underline font-medium">
             {item.description}
           </div>
         </td>
         <td 
-          className="px-3 py-2.5 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
+          className="px-3 py-3 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
           onClick={() => handleCellClick('quantity', 'Quantidade')}
         >
           <div className="flex justify-center">
-            <span className="bg-muted px-2 py-0.5 rounded-full min-w-[32px] text-center font-medium">
+            <span className="bg-muted px-2.5 py-1 rounded-md min-w-[36px] text-center font-bold text-xs shadow-sm">
               {item.quantity}
             </span>
           </div>
         </td>
         <td 
-          className="px-3 py-2.5 text-xs cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
+          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-150 interactive-element font-medium"
           onClick={() => handleCellClick('batch', 'Lote')}
         >
           <span className="block">{item.batch || '-'}</span>
         </td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-3">
           <div className="flex items-center gap-2">
             <div className="min-w-[120px]">
               <StatusSwitch
@@ -203,20 +203,20 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded-full interactive-element",
+                    "flex items-center justify-center w-7 h-7 rounded-lg interactive-element shadow-sm transition-all",
                     materialCategory === 'CFA' 
-                      ? "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400" 
-                      : "bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400"
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-950/70" 
+                      : "bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-950/70"
                   )}>
                     {materialCategory === 'CFA' ? (
-                      <Snowflake className="h-3 w-3" />
+                      <Snowflake className="h-3.5 w-3.5" />
                     ) : (
-                      <Flame className="h-3 w-3" />
+                      <Flame className="h-3.5 w-3.5" />
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">
+                  <p className="text-xs font-medium">
                     {materialCategory === 'CFA' ? 'Câmara Fria - Limite 4h' : 'Inflamável - Limite 4h'}
                   </p>
                 </TooltipContent>
@@ -227,55 +227,55 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={cn(
-                  "flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap border min-w-[60px] justify-center interactive-element",
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold whitespace-nowrap border min-w-[70px] justify-center interactive-element transition-all shadow-sm",
                   item.status === 'Pago' && itemTimeInfo.isDelayed 
                     ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800" : 
                   item.status === 'Pago' && !itemTimeInfo.isDelayed
                     ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800" : 
                   delayed 
-                    ? "bg-red-100 text-red-800 border-red-300 animate-pulse dark:bg-red-950/50 dark:text-red-200 dark:border-red-700 font-bold" : 
+                    ? "bg-red-100 text-red-800 border-red-300 animate-pulse dark:bg-red-950/50 dark:text-red-200 dark:border-red-700" : 
                   "bg-muted text-muted-foreground border-border"
                 )}>
-                  {delayed && <AlertTriangle className="h-2.5 w-2.5" />}
-                  {item.status === 'Pago' && itemTimeInfo.isDelayed && <AlertTriangle className="h-2.5 w-2.5" />}
-                  {item.status === 'Pago' && !itemTimeInfo.isDelayed && <Check className="h-2.5 w-2.5" />}
+                  {delayed && <AlertTriangle className="h-3 w-3" />}
+                  {item.status === 'Pago' && itemTimeInfo.isDelayed && <AlertTriangle className="h-3 w-3" />}
+                  {item.status === 'Pago' && !itemTimeInfo.isDelayed && <Check className="h-3 w-3" />}
                   <span className="truncate">
                     {itemTimeInfo.displayText}
                   </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs bg-background shadow-lg border rounded-lg p-3">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <p className={cn(
-                    "font-medium text-sm",
+                    "font-semibold text-sm",
                     delayed ? "text-destructive" : ""
                   )}>
                     {getStatusMessage()}
                   </p>
                   
-                  <div className="flex flex-col text-xs mt-2 pt-2 border-t">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3 opacity-70" />
-                      <span>Criado: {item.created_date} às {item.created_time}</span>
+                  <div className="flex flex-col text-xs mt-2 pt-2 border-t space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 opacity-70" />
+                      <span className="font-medium">Criado: {item.created_date} às {item.created_time}</span>
                     </div>
                     
                     {item.status === 'Pago' && item.payment_time && (
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <Check className="h-3 w-3 opacity-70" />
-                        <span>Pago: {item.payment_time.includes(':') && !item.payment_time.includes('/') && !item.payment_time.includes('T')
+                      <div className="flex items-center gap-2">
+                        <Check className="h-3.5 w-3.5 opacity-70" />
+                        <span className="font-medium">Pago: {item.payment_time.includes(':') && !item.payment_time.includes('/') && !item.payment_time.includes('T')
                           ? `${item.created_date} às ${item.payment_time}`
                           : item.payment_time}</span>
                       </div>
                     )}
                     
                     {materialCategory !== 'NORMAL' && (
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center gap-2">
                         {materialCategory === 'CFA' ? (
-                          <Snowflake className="h-3 w-3 opacity-70" />
+                          <Snowflake className="h-3.5 w-3.5 opacity-70" />
                         ) : (
-                          <Flame className="h-3 w-3 opacity-70" />
+                          <Flame className="h-3.5 w-3.5 opacity-70" />
                         )}
-                        <span>Categoria: {materialCategory === 'CFA' ? 'Câmara Fria (4h)' : 'Inflamável (4h)'}</span>
+                        <span className="font-medium">Categoria: {materialCategory === 'CFA' ? 'Câmara Fria (4h)' : 'Inflamável (4h)'}</span>
                       </div>
                     )}
                   </div>
@@ -284,23 +284,23 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             </Tooltip>
           </div>
         </td>
-        <td className="px-3 py-2.5">
-          <div className="flex items-center justify-center gap-1">
+        <td className="px-3 py-3">
+          <div className="flex items-center justify-center gap-1.5">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 w-7 p-0 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 interactive-element" 
+              className="h-8 w-8 p-0 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 interactive-element" 
               onClick={() => handleCellClick('priority', 'Prioridade')}
             >
-              <Edit className="h-3 w-3" />
+              <Edit className="h-3.5 w-3.5" />
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 w-7 p-0 rounded-full hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 interactive-element" 
+              className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 interactive-element" 
               onClick={handleDeleteItem}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </td>
