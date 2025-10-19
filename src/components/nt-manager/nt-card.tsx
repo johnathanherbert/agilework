@@ -3,9 +3,9 @@
 import { NT } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, AlertTriangle, Clock, CheckCircle2, Package, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, AlertTriangle, Clock, CheckCircle2, Package, Copy, Check, Snowflake, Flame } from 'lucide-react';
 import { NTItemRow } from './nt-item-row';
-import { parseDateTime, getDelayInfo, isItemDelayed } from '@/lib/utils';
+import { parseDateTime, getDelayInfo, isItemDelayed, getMaterialCategory } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AddItemModal } from './add-item-modal';
@@ -145,7 +145,23 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
 
   const ntStatus = getNTStatus();
   const ntDelayInfo = getNTDelayInfo();
-  const isDelayed = isNTDelayed();  return (
+  const isDelayed = isNTDelayed();
+
+  // Check if NT contains special category items (CFA or INF)
+  const getNTCategories = () => {
+    if (!nt.items || nt.items.length === 0) {
+      return { hasCFA: false, hasINF: false };
+    }
+
+    const hasCFA = nt.items.some(item => getMaterialCategory(item.code) === 'CFA');
+    const hasINF = nt.items.some(item => getMaterialCategory(item.code) === 'INF');
+
+    return { hasCFA, hasINF };
+  };
+
+  const { hasCFA, hasINF } = getNTCategories();
+
+  return (
     <TooltipProvider>      <Card 
         onClick={(e) => {
           // Prevent card click when clicking on buttons, interactive elements or form controls
@@ -218,7 +234,25 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                   </TooltipContent>
                 </Tooltip>
               </div>
-              {/* Compact warning indicators */}
+
+              {/* Compact status badge */}
+              <Badge 
+                variant={ntStatus.variant}
+                className={cn(                  "text-xs px-2 py-0.5 font-semibold shadow-sm",
+                  ntStatus.color === "emerald" && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
+                  ntStatus.color === "blue" && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+                  ntStatus.color === "amber" && "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+                  ntStatus.color === "slate" && "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                  ntStatus.color === "red" && "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                )}
+              >
+                {ntStatus.label}
+              </Badge>
+            </div>
+
+            {/* Right side - Stats and actions */}
+            <div className="flex items-center gap-3">
+              {/* Compact warning and category indicators */}
               <div className="flex items-center gap-1.5">
                 {isDelayed && (
                   <Tooltip>
@@ -249,25 +283,32 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                     </TooltipContent>
                   </Tooltip>
                 )}
+                {hasCFA && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-5 h-5 bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-sm">
+                        <Snowflake className="h-3 w-3" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs font-medium">Contém itens de Câmara Fria</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {hasINF && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-5 h-5 bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-sm">
+                        <Flame className="h-3 w-3" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs font-medium">Contém itens Inflamáveis</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
 
-              {/* Compact status badge */}
-              <Badge 
-                variant={ntStatus.variant}
-                className={cn(                  "text-xs px-2 py-0.5 font-semibold shadow-sm",
-                  ntStatus.color === "emerald" && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
-                  ntStatus.color === "blue" && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-                  ntStatus.color === "amber" && "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-                  ntStatus.color === "slate" && "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-                  ntStatus.color === "red" && "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-                )}
-              >
-                {ntStatus.label}
-              </Badge>
-            </div>
-
-            {/* Right side - Stats and actions */}
-            <div className="flex items-center gap-3">
               {/* Inline compact stats */}
               {total > 0 && (                <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
                   <div className="flex items-center gap-1.5">
