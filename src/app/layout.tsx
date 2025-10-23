@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { FirebaseProvider } from '@/components/providers/firebase-provider';
+import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { NotificationProvider } from '@/components/providers/notification-provider';
 import { AppUpdateManager } from '@/components/app-update-manager';
 import { Toaster } from 'react-hot-toast';
@@ -51,11 +52,13 @@ export default function RootLayout({
           enableSystem
         >
           <FirebaseProvider>
-            <NotificationProvider>
-              <AppUpdateManager />
-              {children}
-              <Toaster position="top-center" />
-            </NotificationProvider>
+            <SupabaseProvider>
+              <NotificationProvider>
+                <AppUpdateManager />
+                {children}
+                <Toaster position="top-center" />
+              </NotificationProvider>
+            </SupabaseProvider>
           </FirebaseProvider>
         </ThemeProvider>
       </body>

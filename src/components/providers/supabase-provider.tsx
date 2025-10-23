@@ -3,6 +3,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useFirebase } from './firebase-provider';
+
+// DEPRECATED: This provider is being replaced by FirebaseProvider
+// Keeping for backward compatibility during migration
+// TODO: Remove after all components migrate to useFirebase
 
 interface SupabaseContextType {
   user: User | null;
@@ -28,68 +33,22 @@ export function SupabaseProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const setData = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    setData();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    return { error, success: !error };
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    return { error, success: !error };
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-  };
+  // Redirect to Firebase
+  const firebase = useFirebase();
+  
+  // Convert Firebase user to Supabase-like format
+  const user = firebase.user ? {
+    id: firebase.user.uid,
+    ...firebase.user
+  } as any : null;
 
   const value = {
     user,
-    session,
-    loading,
-    signIn,
-    signUp,
-    signOut,
+    session: null, // Firebase doesn't use sessions the same way
+    loading: firebase.loading,
+    signIn: firebase.signIn,
+    signUp: firebase.signUp,
+    signOut: firebase.signOut,
   };
 
   return (

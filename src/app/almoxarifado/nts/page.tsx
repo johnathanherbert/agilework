@@ -5,12 +5,11 @@ import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
-import { useSupabase } from '@/components/providers/supabase-provider';
+import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { NT, NTFilters as NTFiltersType, NTItem } from '@/types';
-import { RealtimePostgresChangesPayload } from '@/types/supabase';
 import { PlusCircle, FileSearch, Filter, RefreshCw, Search } from 'lucide-react';
+import { getNTs, subscribeToNTs } from '@/lib/firestore-helpers';
 import { Input } from '@/components/ui/input';
 import toast from 'react-hot-toast';
 import { NTList } from '@/components/nt-manager/nt-list';
@@ -34,7 +33,7 @@ export default function NTManager() {
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
-  const { user } = useSupabase();
+  const { user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
     // Default filters
@@ -63,33 +62,29 @@ export default function NTManager() {
   const fetchNTs = useCallback(async () => {
     setLoading(true);
     
-    const { data, error } = await supabase
-      .from('nts')
-      .select(`
-        *,
-        items:nt_items(*)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const data = await getNTs();
       
-    if (error) {
+      // Filtrar NTs para mostrar apenas dos últimos 2 dias
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      
+      const recentNTs = data.filter((nt: NT) => {
+        if (!nt.created_date) return false;
+        // Parse created_date format "DD/MM/YYYY"
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const ntDate = new Date(year, month - 1, day);
+        return ntDate >= twoDaysAgo;
+      });
+      
+      setNts(recentNTs);
+      applyFilters(recentNTs, filters);
+    } catch (error) {
       console.error('Error fetching NTs:', error);
       toast.error('Erro ao carregar as NTs');
+    } finally {
       setLoading(false);
-      return;
     }
-    
-    // Filtrar NTs para mostrar apenas dos últimos 2 dias
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-    
-    const recentNTs = data?.filter(nt => {
-      if (!nt.created_at) return false;
-      return new Date(nt.created_at) >= twoDaysAgo;
-    }) || [];
-    
-    setNts(recentNTs);
-    applyFilters(recentNTs, filters);
-    setLoading(false);
   }, [filters]);
 
   useEffect(() => {
@@ -97,72 +92,36 @@ export default function NTManager() {
       fetchNTs();
     }
     
-    // Subscribe to changes in nts and nt_items tables with more granular event handling
-    const ntsChannel = supabase
-      .channel('nts_changes')
-      .on(
-        'postgres_changes' as any,
-        { event: 'INSERT', schema: 'public', table: 'nts' },
-        (payload: any) => {
-          console.log('NT inserted:', payload);
-          // Remover toast - será tratado pelo notification provider
-          fetchNTs();
-        }
-      )
-      .on(
-        'postgres_changes' as any,
-        { event: 'UPDATE', schema: 'public', table: 'nts' },
-        (payload: any) => {
-          console.log('NT updated:', payload);
-          // Remover toast - apenas atualizar lista
-          fetchNTs();
-        }
-      )
-      .on(
-        'postgres_changes' as any,
-        { event: 'DELETE', schema: 'public', table: 'nts' },
-        (payload: any) => {
-          console.log('NT deleted:', payload);
-          // Remover toast - será tratado pelo notification provider
-          fetchNTs();
-        }
-      )
-      .subscribe();
-      
-    const ntItemsChannel = supabase
-      .channel('nt_items_changes')
-      .on(
-        'postgres_changes' as any,
-        { event: 'INSERT', schema: 'public', table: 'nt_items' },
-        (payload: any) => {
-          console.log('Item inserted:', payload);
-          // Remover toast - será tratado pelo notification provider
-          fetchNTs();
-        }
-      )
-      .on(
-        'postgres_changes' as any,
-        { event: 'UPDATE', schema: 'public', table: 'nt_items' },
-        (payload: any) => {
-          console.log('Item updated:', payload);
-          // Remover toast - será tratado pelo notification provider para pagamentos
-          fetchNTs();
-        }
-      )
-      .on(
-        'postgres_changes' as any,
-        { event: 'DELETE', schema: 'public', table: 'nt_items' },
-        (payload: any) => {
-          console.log('Item deleted:', payload);
-          // Remover toast - será tratado pelo notification provider
-          fetchNTs();
-        }
-      )
-      .subscribe();    return () => {
-      supabase.removeChannel(ntsChannel);
-      supabase.removeChannel(ntItemsChannel);
+    // Subscribe to real-time changes in Firestore
+    const unsubscribe = subscribeToNTs(
+      (ntsData) => {
+        console.log('Real-time update received:', ntsData.length, 'NTs');
+        
+        // Filtrar NTs para mostrar apenas dos últimos 2 dias
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        
+        const recentNTs = ntsData.filter((nt: NT) => {
+          if (!nt.created_date) return false;
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const ntDate = new Date(year, month - 1, day);
+          return ntDate >= twoDaysAgo;
+        });
+        
+        setNts(recentNTs);
+        applyFilters(recentNTs, filters);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error in real-time subscription:', error);
+        toast.error('Erro na atualização em tempo real');
+      }
+    );
+
+    return () => {
+      unsubscribe();
     };
-  }, [fetchNTs, user]);
+  }, [fetchNTs, user, filters]);
 
   // Focus/Visibility Change - Atualiza quando o usuário volta à aba/janela
   useEffect(() => {
@@ -242,7 +201,9 @@ export default function NTManager() {
     // Date range filter
     if (currentFilters.dateRange && currentFilters.dateRange.from && currentFilters.dateRange.to) {
       filtered = filtered.filter(nt => {
-        const createdDate = new Date(nt.created_at);
+        // Parse created_date format "DD/MM/YYYY"
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const createdDate = new Date(year, month - 1, day);
         const fromDate = new Date(currentFilters.dateRange!.from);
         const toDate = new Date(currentFilters.dateRange!.to);
         
@@ -278,7 +239,9 @@ export default function NTManager() {
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       
       filtered = filtered.filter(nt => {
-        const createdDate = new Date(nt.created_at);
+        // Parse created_date format "DD/MM/YYYY"
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const createdDate = new Date(year, month - 1, day);
         return createdDate >= threeDaysAgo;
       });
     }
