@@ -1,5 +1,3 @@
-   "use client";
-
 import { useState } from 'react';
 import { createNTItem } from '@/lib/firestore-helpers';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
@@ -16,13 +14,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatTime } from '@/lib/utils';
 import { NT } from '@/types';
-import { useNotifications } from '@/components/providers/notification-provider';
 
 interface AddItemModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-  nt: NT | null;
+  nt: NT;
 }
 
 interface ParsedItem {
@@ -74,7 +71,7 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
   };
 
   async function handleSubmit() {
-    if (!nt || parsedItems.length === 0) {
+    if (parsedItems.length === 0) {
       toast.error('Nenhum item válido para adicionar');
       return;
     }
@@ -120,6 +117,8 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
       
       await Promise.all(createPromises);
       
+      toast.success(`${parsedItems.length} ${parsedItems.length === 1 ? 'item adicionado' : 'itens adicionados'} com sucesso!`);
+      
       setItemsData('');
       setParsedItems([]);
       onOpenChange(false);
@@ -140,7 +139,7 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            Adicionar Itens à NT {nt?.nt_number}
+            Adicionar Itens à NT {nt.nt_number}
           </DialogTitle>
           <p className="text-sm text-gray-500 mt-2">
             Cole os dados dos itens diretamente do SAP. O formato esperado é: código, descrição e quantidade, separados por tabulações.
