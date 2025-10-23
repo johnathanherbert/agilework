@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Button } from '@/components/ui/button';
@@ -48,9 +48,6 @@ export default function NTManager() {
     isCompletedView: false
   });
   
-  // Ref para controlar throttling de atualizações por foco/visibilidade
-  const lastFocusUpdateRef = useRef<Date>(new Date());
-  
   // Redirect if not authenticated
   useEffect(() => {
     if (!user) {
@@ -77,20 +74,18 @@ export default function NTManager() {
         return ntDate >= twoDaysAgo;
       });
       
-      setNts(recentNTs);
-      applyFilters(recentNTs, filters);
+      return recentNTs;
     } catch (error) {
       console.error('Error fetching NTs:', error);
       toast.error('Erro ao carregar as NTs');
+      return [];
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []); // Sem dependências - função pura
 
   useEffect(() => {
-    if (user) {
-      fetchNTs();
-    }
+    if (!user) return;
     
     // Subscribe to real-time changes in Firestore
     const unsubscribe = subscribeToNTs(
@@ -121,43 +116,12 @@ export default function NTManager() {
     return () => {
       unsubscribe();
     };
-  }, [fetchNTs, user, filters]);
-
-  // Focus/Visibility Change - Atualiza quando o usuário volta à aba/janela
+  }, [user]); // Apenas user como dependência
+  
+  // Aplicar filtros sempre que filters ou nts mudarem
   useEffect(() => {
-    const checkForNTsUpdate = () => {
-      const now = new Date();      const timeSinceLastUpdate = now.getTime() - lastFocusUpdateRef.current.getTime();
-      
-      // Se passou mais de 5 segundos desde a última atualização, atualizar
-      if (timeSinceLastUpdate > 5000) {
-        fetchNTs();
-      }
-      
-      lastFocusUpdateRef.current = now;
-    };
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Usuário voltou à aba
-        checkForNTsUpdate();
-      }
-    };
-
-    const handleFocus = () => {
-      // Janela ganhou foco
-      checkForNTsUpdate();
-    };
-
-    // Adicionar listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    // Cleanup
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [fetchNTs]);
+    applyFilters(nts, filters);
+  }, [filters, nts]);
   
   // Apply filters function
   const applyFilters = (ntsData: NT[], currentFilters: NTFiltersType) => {
@@ -308,7 +272,14 @@ export default function NTManager() {
   const handleConfirmDeleteNT = () => {
     setShowDeleteModal(false);
     setNtToDelete(null);
-    fetchNTs();
+    // Não precisa chamar fetchNTs - o real-time listener atualiza automaticamente
+  };
+  
+  // Função para refresh manual (apenas força re-render, dados já estão atualizados pelo real-time)
+  const handleRefresh = () => {
+    // O real-time listener já mantém os dados atualizados
+    // Esta função existe apenas para feedback visual
+    toast.success('Dados atualizados!');
   };
     // Processar parâmetros de URL
   useEffect(() => {
@@ -417,7 +388,7 @@ export default function NTManager() {
                   )}
                 </Button>
                 
-                <Button variant="outline" size="sm" onClick={fetchNTs}
+                <Button variant="outline" size="sm" onClick={handleRefresh}
                   className="flex items-center gap-2">
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Atualizar
@@ -455,7 +426,7 @@ export default function NTManager() {
                   nts={filteredNts}
                   onEdit={handleEditNT}
                   onDelete={handleDeleteNT}
-                  onRefresh={fetchNTs}
+                  onRefresh={handleRefresh}
                 />
               ) : (
                 <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -529,19 +500,19 @@ export default function NTManager() {
       <AddNTModal 
         open={showAddModal} 
         onOpenChange={setShowAddModal} 
-        onSuccess={fetchNTs}
+        onSuccess={handleRefresh}
       />
       
       <AddBulkNTModal
         open={showBulkAddModal}
         onOpenChange={setShowBulkAddModal}
-        onSuccess={fetchNTs}
+        onSuccess={handleRefresh}
       />
       
       <EditNTModal 
         open={showEditModal}
         onOpenChange={setShowEditModal}
-        onSuccess={fetchNTs}
+        onSuccess={handleRefresh}
         nt={selectedNT}
       />
       
