@@ -177,9 +177,33 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
         const items: TimelinePaidItem[] = [];
         const currentIds = new Set<string>();
 
+        snapshot.docChanges().forEach((change) => {
+          const itemId = change.doc.id;
+          
+          // Se o item foi removido ou mudou para um status que não é Pago/Pago Parcial
+          if (change.type === 'removed') {
+            console.log('🗑️ Timeline Firebase - Item removido da timeline:', itemId);
+            // Remover do conjunto de IDs atuais
+            currentIds.delete(itemId);
+            // Remover dos itens destacados se estava lá
+            setNewItemIds(prev => {
+              const updated = new Set(prev);
+              updated.delete(itemId);
+              return updated;
+            });
+          }
+        });
+
         snapshot.docs.forEach(doc => {
           const data = doc.data();
           const itemId = doc.id;
+          
+          // Verificar se o status ainda é Pago ou Pago Parcial
+          if (data.status !== 'Pago' && data.status !== 'Pago Parcial') {
+            console.log('⚠️ Timeline Firebase - Item com status inválido ignorado:', itemId, data.status);
+            return;
+          }
+          
           currentIds.add(itemId);
 
           // Pegar o número da NT do mapeamento
@@ -220,7 +244,7 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
           });
         });
 
-        // Detectar novos itens
+        // Detectar novos itens (apenas adições, não remoções)
         const newIds = new Set<string>();
         currentIds.forEach(id => {
           if (!previousItemsRef.current.has(id)) {

@@ -19,7 +19,6 @@ import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
 import { PaidItemsTimelineFirebase } from '@/components/nt-manager/paid-items-timeline-firebase';
-import { RealtimeStatsCard } from '@/components/nt-manager/realtime-stats-card';
 
 export default function NTManager() {
   const [nts, setNts] = useState<NT[]>([]);
@@ -442,12 +441,7 @@ export default function NTManager() {
               )}
             </div>
             {/* Timeline content with enhanced spacing */}
-            <div className="flex-1 p-4 overflow-hidden flex flex-col gap-4">
-              {/* Realtime Stats Card */}
-              {!timelineCollapsed && (
-                <RealtimeStatsCard className="flex-shrink-0" />
-              )}
-              
+            <div className="flex-1 p-4 overflow-hidden flex flex-col">
               {/* Timeline component */}
               <div className="flex-1 min-h-0">
                 <PaidItemsTimelineFirebase 
