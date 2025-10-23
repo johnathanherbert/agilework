@@ -155,6 +155,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Firebase real-time listeners for notifications
+  // Apenas para NTs criadas e atualizadas (não items para evitar spam)
   useEffect(() => {
     if (!user || !notificationsEnabled) return;
     
@@ -188,7 +189,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         }
         
-        // Notificar sobre NT editada
+        // Notificar sobre NT editada (número alterado)
         if (change.type === 'modified') {
           const editorName = ntData.updated_by_name || 'Um usuário';
           addNotification({
@@ -198,79 +199,21 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             entityId: ntId,
           });
           playNotificationSound();
+          toast.success(`NT #${ntData.nt_number} editada por ${editorName}`, {
+            icon: '✏️',
+            duration: 4000,
+          });
         }
         
-        // Notificar sobre NT deletada
-        if (change.type === 'removed') {
-          const deletorName = ntData.updated_by_name || ntData.created_by_name || 'Um usuário';
-          addNotification({
-            title: 'NT Deletada',
-            message: `${deletorName} deletou a NT #${ntData.nt_number}`,
-            type: 'nt_deleted',
-            entityId: ntId,
-          });
-          playNotificationSound();
-        }
+        // Não notificamos sobre NTs deletadas para evitar excesso de notificações
       });
     });
 
-    // Listener para items criados/editados por outros usuários
-    const itemsQuery = query(collection(db, 'nt_items'), orderBy('created_at', 'desc'));
-    const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        const itemData = change.doc.data();
-        const itemId = change.doc.id;
-        
-        // Não notificar sobre ações do próprio usuário
-        if (itemData.created_by === user.uid || itemData.updated_by === user.uid) {
-          return;
-        }
-        
-        // Notificar sobre item adicionado
-        if (change.type === 'added') {
-          const creatorName = itemData.created_by_name || 'Um usuário';
-          addNotification({
-            title: 'Item Adicionado',
-            message: `${creatorName} adicionou item ${itemData.code} - ${itemData.description}`,
-            type: 'item_added',
-            entityId: itemId,
-          });
-          playNotificationSound();
-        }
-        
-        // Notificar sobre item editado
-        if (change.type === 'modified') {
-          const editorName = itemData.updated_by_name || 'Um usuário';
-          const statusChange = itemData.status ? ` (Status: ${itemData.status})` : '';
-          addNotification({
-            title: 'Item Atualizado',
-            message: `${editorName} editou item ${itemData.code}${statusChange}`,
-            type: 'item_updated',
-            entityId: itemId,
-          });
-          playNotificationSound();
-        }
-        
-        // Notificar sobre item deletado
-        if (change.type === 'removed') {
-          const deletorName = itemData.updated_by_name || itemData.created_by_name || 'Um usuário';
-          addNotification({
-            title: 'Item Deletado',
-            message: `${deletorName} deletou item ${itemData.code}`,
-            type: 'item_deleted',
-            entityId: itemId,
-          });
-          playNotificationSound();
-        }
-      });
-    });
-
-    console.log('✅ Listeners de notificação Firebase configurados');
+    console.log('✅ Listeners de notificação Firebase configurados (apenas NTs)');
 
     return () => {
       console.log('🔇 Desconectando listeners de notificação Firebase');
       unsubscribeNTs();
-      unsubscribeItems();
     };
   }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
