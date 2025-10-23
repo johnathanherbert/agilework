@@ -1,8 +1,38 @@
-# NT Manager
+# NT Manager 2.0
 
-Sistema de gerenciamento de Notas Técnicas (NTs) desenvolvido com Next.js 13, TypeScript, Tailwind CSS e Supabase.
+Sistema de gerenciamento de Notas Técnicas (NTs) desenvolvido com Next.js 13, TypeScript, Tailwind CSS e Firebase.
 
-## 🚀 Funcionalidades
+## 🌟 Novidades da Versão 2.0 (Branch agile2.0)
+
+### 👥 Sistema de Presença Online
+- Cascata de avatares mostrando usuários online
+- Indicador visual de status (online/offline)
+- Atualização em tempo real a cada 45 segundos
+- Badge com contagem de mensagens não lidas
+
+### 💬 Chat Privado Integrado
+- Chat 1-on-1 entre usuários
+- Integrado no popover de Usuários Online
+- Notificações sonoras (envio e recebimento)
+- Highlights automáticos de lotes (ex: M4R5767) e códigos (ex: 010311)
+- Mensagens marcadas como lidas automaticamente
+- Scroll automático para última mensagem
+- Foco mantido no input após enviar
+
+### 🎨 UI 2.0
+- Redesign completo da página de login
+- Gradientes modernos (blue→indigo→purple)
+- Glassmorphism e efeitos de blur
+- Animações suaves e responsivas
+- Badges e indicadores visuais melhorados
+
+### 🔊 Sistema de Sons
+- 8 tipos de sons diferentes (notification, subtle, impact, triumph, etc)
+- Sons contextuais (NT criada, item pago, mensagem recebida/enviada)
+- Volumes diferenciados por ação
+- Web Audio API com síntese de múltiplas camadas
+
+## 🚀 Funcionalidades (v1.0 + v2.0)
 
 - ✅ Gerenciamento completo de NTs (Criar, Editar, Excluir)
 - 📋 Adição de itens via colagem direta do SAP
@@ -14,16 +44,32 @@ Sistema de gerenciamento de Notas Técnicas (NTs) desenvolvido com Next.js 13, T
 - 📊 Dashboard com estatísticas
 - 🤖 Monitoramento de robôs
 - 🔔 Sistema de notificações
+- 👥 **NOVO:** Usuários online com presença em tempo real
+- 💬 **NOVO:** Chat privado integrado
+- 🎨 **NOVO:** UI modernizada
+- 🔊 **NOVO:** Sistema de áudio contextual
 
 ## 🛠️ Tecnologias
 
-- [Next.js 13](https://nextjs.org/)
-- [React](https://reactjs.org/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Shadcn/UI](https://ui.shadcn.com/)
-- [Supabase](https://supabase.com/)
-- [Lucide Icons](https://lucide.dev/)
+### Core
+- [Next.js 14](https://nextjs.org/) - React Framework
+- [React 18](https://reactjs.org/) - UI Library
+- [TypeScript 5](https://www.typescriptlang.org/) - Type Safety
+- [Tailwind CSS 3](https://tailwindcss.com/) - Styling
+
+### UI Components
+- [Shadcn/UI](https://ui.shadcn.com/) - Component Library
+- [Radix UI](https://www.radix-ui.com/) - Headless Components
+- [Lucide Icons](https://lucide.dev/) - Icon Library
+
+### Backend & Database
+- [Firebase](https://firebase.google.com/) - Authentication, Firestore, Real-time
+- [Supabase](https://supabase.com/) - (Deprecated, migrated to Firebase)
+
+### Audio & Real-time
+- Web Audio API - Sound synthesis
+- Firestore onSnapshot - Real-time updates
+- Firebase Presence - Online status tracking
 
 ## 📦 Instalação
 

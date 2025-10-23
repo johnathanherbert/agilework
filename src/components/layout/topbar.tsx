@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { LogOut, Moon, Settings, Sun, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NotificationBell } from '../notifications/notification-bell';
+import { OnlineUsers } from './online-users';
 
 export const Topbar = () => {
   const { user, userData, signOut } = useFirebase();
@@ -28,6 +29,11 @@ export const Topbar = () => {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Online Users with integrated chat */}
+        <div className="relative">
+          <OnlineUsers />
+        </div>
+
         {/* Notifications */}
         <div className="relative">
           <NotificationBell />

@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface UserData {
@@ -64,6 +64,12 @@ export function FirebaseProvider({
             const data = userDoc.data() as UserData;
             console.log('✅ Documento do usuário encontrado:', data.name);
             setUserData(data);
+            
+            // Update presence status
+            await setDoc(userDocRef, {
+              lastActive: serverTimestamp(),
+              isOnline: true
+            }, { merge: true });
           } else {
             // If user document doesn't exist, create it from auth data
             console.log('⚠️ Documento do usuário não existe - criando automaticamente...');
@@ -75,7 +81,11 @@ export function FirebaseProvider({
               updated_at: new Date().toISOString(),
             };
             
-            await setDoc(userDocRef, newUserData);
+            await setDoc(userDocRef, {
+              ...newUserData,
+              lastActive: serverTimestamp(),
+              isOnline: true
+            });
             console.log('✅ Documento do usuário criado:', newUserData.name);
             setUserData(newUserData);
           }
