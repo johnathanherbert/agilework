@@ -136,7 +136,11 @@ export const createNTItem = async (
 
 export const updateNTItem = async (itemId: string, itemData: Partial<NTItem>): Promise<void> => {
   const itemRef = doc(db, COLLECTIONS.NT_ITEMS, itemId);
-  await updateDoc(itemRef, itemData);
+  const now = Timestamp.now();
+  await updateDoc(itemRef, {
+    ...itemData,
+    updated_at: now,
+  });
 };
 
 export const deleteNTItem = async (itemId: string): Promise<void> => {
@@ -150,41 +154,102 @@ export const subscribeToNTs = (
   errorCallback?: (error: Error) => void
 ) => {
   const ntsRef = collection(db, COLLECTIONS.NTS);
-  const q = query(ntsRef, orderBy('created_at', 'desc'));
+  const ntsQuery = query(ntsRef, orderBy('created_at', 'desc'));
   
-  return onSnapshot(
-    q,
-    async (snapshot) => {
-      const nts: NT[] = [];
-      for (const docSnap of snapshot.docs) {
-        const data = docSnap.data();
-        const itemsSnapshot = await getDocs(
-          query(collection(db, COLLECTIONS.NT_ITEMS), where('nt_id', '==', docSnap.id))
-        );
+  const itemsRef = collection(db, COLLECTIONS.NT_ITEMS);
+  
+  let ntsCache: Map<string, any> = new Map();
+  let itemsCache: Map<string, NTItem[]> = new Map();
+  
+  // Função para compilar e enviar dados atualizados
+  const compileAndSend = () => {
+    const nts: NT[] = [];
+    ntsCache.forEach((ntData, ntId) => {
+      const items = itemsCache.get(ntId) || [];
+      nts.push({
+        id: ntId,
+        nt_number: ntData.nt_number,
+        created_date: timestampToDateString(ntData.created_at),
+        created_time: timestampToTimeString(ntData.created_at),
+        status: ntData.status || 'pending',
+        created_at: ntData.created_at.toDate().toISOString(),
+        updated_at: ntData.updated_at?.toDate().toISOString() || ntData.created_at.toDate().toISOString(),
+        items,
+      });
+    });
+    
+    // Ordenar por created_at (mais recente primeiro)
+    nts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    callback(nts);
+  };
+  
+  // Listener para NTs
+  const unsubscribeNTs = onSnapshot(
+    ntsQuery,
+    (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const ntId = change.doc.id;
+        const data = change.doc.data();
         
-        const items = itemsSnapshot.docs.map(itemDoc => ({
-          id: itemDoc.id,
-          ...itemDoc.data(),
-        })) as NTItem[];
-        
-        nts.push({
-          id: docSnap.id,
-          nt_number: data.nt_number,
-          created_date: timestampToDateString(data.created_at),
-          created_time: timestampToTimeString(data.created_at),
-          status: data.status || 'pending',
-          created_at: data.created_at.toDate().toISOString(),
-          updated_at: data.updated_at?.toDate().toISOString() || data.created_at.toDate().toISOString(),
-          items,
-        });
-      }
-      callback(nts);
+        if (change.type === 'added' || change.type === 'modified') {
+          ntsCache.set(ntId, data);
+        } else if (change.type === 'removed') {
+          ntsCache.delete(ntId);
+          itemsCache.delete(ntId);
+        }
+      });
+      
+      compileAndSend();
     },
     (error) => {
       console.error('Error in NT subscription:', error);
       errorCallback?.(error);
     }
   );
+  
+  // Listener para TODOS os items (mais eficiente que um listener por NT)
+  const unsubscribeItems = onSnapshot(
+    itemsRef,
+    (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const itemData = change.doc.data();
+        const ntId = itemData.nt_id as string;
+        const itemId = change.doc.id;
+        
+        if (!itemsCache.has(ntId)) {
+          itemsCache.set(ntId, []);
+        }
+        
+        const items = itemsCache.get(ntId)!;
+        
+        if (change.type === 'added') {
+          items.push({ ...itemData, id: itemId } as NTItem);
+        } else if (change.type === 'modified') {
+          const index = items.findIndex(item => item.id === itemId);
+          if (index !== -1) {
+            items[index] = { ...itemData, id: itemId } as NTItem;
+          }
+        } else if (change.type === 'removed') {
+          const index = items.findIndex(item => item.id === itemId);
+          if (index !== -1) {
+            items.splice(index, 1);
+          }
+        }
+      });
+      
+      compileAndSend();
+    },
+    (error) => {
+      console.error('Error in items subscription:', error);
+      errorCallback?.(error);
+    }
+  );
+  
+  // Retornar função para cancelar ambos os listeners
+  return () => {
+    unsubscribeNTs();
+    unsubscribeItems();
+  };
 };
 
 export const subscribeToNTItems = (

@@ -35,6 +35,8 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
   const handleStatusChange = async (newStatus: ItemStatus) => {
     setIsUpdating(true);
     try {
+      console.log('Atualizando status do item:', item.id, 'para:', newStatus);
+      
       // Se estiver atualizando para "Pago", registrar o tempo de pagamento
       const updateData: Partial<NTItem> = { status: newStatus };
       
@@ -44,9 +46,13 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         updateData.payment_time = `${hours}:${minutes}`;
+        console.log('Registrando payment_time:', updateData.payment_time);
       }
       
       await updateNTItem(item.id, updateData);
+      console.log('Item atualizado com sucesso no Firestore');
+      
+      toast.success('Status atualizado com sucesso!');
       
       if (onSuccess) onSuccess();
     } catch (error) {
