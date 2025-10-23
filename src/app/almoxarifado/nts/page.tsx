@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
 import { PaidItemsTimelineFirebase } from '@/components/nt-manager/paid-items-timeline-firebase';
 
-export default function NTManager() {
+function NTManagerContent() {
   const [nts, setNts] = useState<NT[]>([]);
   const [filteredNts, setFilteredNts] = useState<NT[]>([]);
   const [loading, setLoading] = useState(true);
@@ -533,5 +533,20 @@ export default function NTManager() {
         entityId={ntToDelete || ''}
       />
     </div>
+  );
+}
+
+export default function NTManager() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <NTManagerContent />
+    </Suspense>
   );
 }
