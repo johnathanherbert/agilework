@@ -13,7 +13,7 @@ import {
   Timestamp,
   QueryConstraint
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { auth, db } from './firebase';
 import { NT, NTItem } from '@/types';
 
 // Collections
@@ -22,6 +22,30 @@ export const COLLECTIONS = {
   NT_ITEMS: 'nt_items',
   USERS: 'users',
   NOTIFICATIONS: 'notifications',
+};
+
+// Helper to get current user info
+export const getCurrentUserInfo = async () => {
+  const user = auth.currentUser;
+  if (!user) return null;
+  
+  try {
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, user.uid));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return {
+        uid: user.uid,
+        name: userData.name || user.displayName || user.email?.split('@')[0] || 'Usuário'
+      };
+    }
+  } catch (error) {
+    console.error('Error getting user info:', error);
+  }
+  
+  return {
+    uid: user.uid,
+    name: user.displayName || user.email?.split('@')[0] || 'Usuário'
+  };
 };
 
 // Helper to convert Firestore timestamp to date string
@@ -77,18 +101,42 @@ export const getNTs = async (): Promise<NT[]> => {
 
 export const createNT = async (ntNumber: string): Promise<string> => {
   const ntsRef = collection(db, COLLECTIONS.NTS);
-  const docRef = await addDoc(ntsRef, {
+  const userInfo = await getCurrentUserInfo();
+  
+  const ntData: any = {
     nt_number: ntNumber,
     created_at: Timestamp.now(),
-  });
+    updated_at: Timestamp.now(),
+  };
+  
+  if (userInfo) {
+    ntData.created_by = userInfo.uid;
+    ntData.created_by_name = userInfo.name;
+    ntData.updated_by = userInfo.uid;
+    ntData.updated_by_name = userInfo.name;
+  }
+  
+  const docRef = await addDoc(ntsRef, ntData);
+  console.log(`✅ NT criada por ${userInfo?.name || 'Usuário'} (${userInfo?.uid})`);
   return docRef.id;
 };
 
 export const updateNT = async (ntId: string, ntNumber: string): Promise<void> => {
   const ntRef = doc(db, COLLECTIONS.NTS, ntId);
-  await updateDoc(ntRef, {
+  const userInfo = await getCurrentUserInfo();
+  
+  const updateData: any = {
     nt_number: ntNumber,
-  });
+    updated_at: Timestamp.now(),
+  };
+  
+  if (userInfo) {
+    updateData.updated_by = userInfo.uid;
+    updateData.updated_by_name = userInfo.name;
+  }
+  
+  await updateDoc(ntRef, updateData);
+  console.log(`✅ NT atualizada por ${userInfo?.name || 'Usuário'} (${userInfo?.uid})`);
 };
 
 export const deleteNT = async (ntId: string): Promise<void> => {
@@ -125,22 +173,44 @@ export const createNTItem = async (
 ): Promise<string> => {
   const itemsRef = collection(db, COLLECTIONS.NT_ITEMS);
   const now = Timestamp.now();
-  const docRef = await addDoc(itemsRef, {
+  const userInfo = await getCurrentUserInfo();
+  
+  const newItemData: any = {
     ...itemData,
     nt_id: ntId,
     created_at: now,
     updated_at: now,
-  });
+  };
+  
+  if (userInfo) {
+    newItemData.created_by = userInfo.uid;
+    newItemData.created_by_name = userInfo.name;
+    newItemData.updated_by = userInfo.uid;
+    newItemData.updated_by_name = userInfo.name;
+  }
+  
+  const docRef = await addDoc(itemsRef, newItemData);
+  console.log(`✅ Item criado por ${userInfo?.name || 'Usuário'} (${userInfo?.uid})`);
   return docRef.id;
 };
 
 export const updateNTItem = async (itemId: string, itemData: Partial<NTItem>): Promise<void> => {
   const itemRef = doc(db, COLLECTIONS.NT_ITEMS, itemId);
   const now = Timestamp.now();
-  await updateDoc(itemRef, {
+  const userInfo = await getCurrentUserInfo();
+  
+  const updateData: any = {
     ...itemData,
     updated_at: now,
-  });
+  };
+  
+  if (userInfo) {
+    updateData.updated_by = userInfo.uid;
+    updateData.updated_by_name = userInfo.name;
+  }
+  
+  await updateDoc(itemRef, updateData);
+  console.log(`✅ Item atualizado por ${userInfo?.name || 'Usuário'} (${userInfo?.uid})`);
 };
 
 export const deleteNTItem = async (itemId: string): Promise<void> => {

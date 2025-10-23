@@ -7,6 +7,10 @@ export type NT = {
   status: string;
   created_at: string;
   updated_at: string;
+  created_by?: string; // User ID
+  created_by_name?: string; // User display name
+  updated_by?: string; // User ID
+  updated_by_name?: string; // User display name
   items?: NTItem[];
 };
 
@@ -26,6 +30,10 @@ export type NTItem = {
   created_at: string;
   updated_at: string;
   priority: boolean;
+  created_by?: string; // User ID
+  created_by_name?: string; // User display name
+  updated_by?: string; // User ID
+  updated_by_name?: string; // User display name
 };
 
 // Item Status Type

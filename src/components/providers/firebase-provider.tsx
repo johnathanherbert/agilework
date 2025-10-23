@@ -6,18 +6,29 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+
+interface UserData {
+  uid: string;
+  email: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface FirebaseContextType {
   user: User | null;
+  userData: UserData | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{
     error: any;
     success: boolean;
   }>;
-  signUp: (email: string, password: string) => Promise<{
+  signUp: (email: string, password: string, name: string) => Promise<{
     error: any;
     success: boolean;
   }>;
@@ -34,12 +45,39 @@ export function FirebaseProvider({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      // Load user data from Firestore
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data() as UserData);
+          } else {
+            // If user document doesn't exist, create it from auth data
+            const newUserData: UserData = {
+              uid: user.uid,
+              email: user.email || '',
+              name: user.displayName || user.email?.split('@')[0] || 'Usuário',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            await setDoc(doc(db, 'users', user.uid), newUserData);
+            setUserData(newUserData);
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
+      } else {
+        setUserData(null);
+      }
+      
       setLoading(false);
     });
 
@@ -55,11 +93,31 @@ export function FirebaseProvider({
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Update user profile with display name
+      await updateProfile(user, {
+        displayName: name
+      });
+      
+      // Create user document in Firestore
+      const newUserData: UserData = {
+        uid: user.uid,
+        email: user.email || email,
+        name: name,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      await setDoc(doc(db, 'users', user.uid), newUserData);
+      console.log('✅ Usuário criado com sucesso:', newUserData);
+      
       return { error: null, success: true };
     } catch (error) {
+      console.error('❌ Erro ao criar usuário:', error);
       return { error, success: false };
     }
   };
@@ -75,6 +133,7 @@ export function FirebaseProvider({
 
   const value = {
     user,
+    userData,
     loading,
     signIn,
     signUp,

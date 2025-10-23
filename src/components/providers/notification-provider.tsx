@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useFirebase } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
 import toast from 'react-hot-toast';
@@ -152,19 +154,125 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     testAudioSound(audioConfig);
   };
 
-  // TODO: Implement Firebase real-time listeners for notifications
-  // Currently disabled during migration from Supabase to Firebase
-  // useEffect(() => {
-  //   if (!user || !notificationsEnabled) return;
-  //   
-  //   // Setup Firestore listeners here
-  //   // onSnapshot for nts collection
-  //   // onSnapshot for nt_items collection
-  //   
-  //   return () => {
-  //     // Cleanup listeners
-  //   };
-  // }, [user, notificationsEnabled, audioConfig, soundEnabled]);
+  // Firebase real-time listeners for notifications
+  useEffect(() => {
+    if (!user || !notificationsEnabled) return;
+    
+    console.log('🔔 Configurando listeners de notificação Firebase para usuário:', user.uid);
+    
+    // Listener para NTs criadas/editadas por outros usuários
+    const ntsQuery = query(collection(db, 'nts'), orderBy('created_at', 'desc'));
+    const unsubscribeNTs = onSnapshot(ntsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const ntData = change.doc.data();
+        const ntId = change.doc.id;
+        
+        // Não notificar sobre ações do próprio usuário
+        if (ntData.created_by === user.uid || ntData.updated_by === user.uid) {
+          return;
+        }
+        
+        // Notificar sobre NT criada
+        if (change.type === 'added') {
+          const creatorName = ntData.created_by_name || 'Um usuário';
+          addNotification({
+            title: 'Nova NT Criada',
+            message: `${creatorName} criou a NT #${ntData.nt_number}`,
+            type: 'nt_created',
+            entityId: ntId,
+          });
+          playNotificationSound();
+          toast.success(`Nova NT #${ntData.nt_number} criada por ${creatorName}`, {
+            icon: '📋',
+            duration: 4000,
+          });
+        }
+        
+        // Notificar sobre NT editada
+        if (change.type === 'modified') {
+          const editorName = ntData.updated_by_name || 'Um usuário';
+          addNotification({
+            title: 'NT Atualizada',
+            message: `${editorName} editou a NT #${ntData.nt_number}`,
+            type: 'nt_updated',
+            entityId: ntId,
+          });
+          playNotificationSound();
+        }
+        
+        // Notificar sobre NT deletada
+        if (change.type === 'removed') {
+          const deletorName = ntData.updated_by_name || ntData.created_by_name || 'Um usuário';
+          addNotification({
+            title: 'NT Deletada',
+            message: `${deletorName} deletou a NT #${ntData.nt_number}`,
+            type: 'nt_deleted',
+            entityId: ntId,
+          });
+          playNotificationSound();
+        }
+      });
+    });
+
+    // Listener para items criados/editados por outros usuários
+    const itemsQuery = query(collection(db, 'nt_items'), orderBy('created_at', 'desc'));
+    const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const itemData = change.doc.data();
+        const itemId = change.doc.id;
+        
+        // Não notificar sobre ações do próprio usuário
+        if (itemData.created_by === user.uid || itemData.updated_by === user.uid) {
+          return;
+        }
+        
+        // Notificar sobre item adicionado
+        if (change.type === 'added') {
+          const creatorName = itemData.created_by_name || 'Um usuário';
+          addNotification({
+            title: 'Item Adicionado',
+            message: `${creatorName} adicionou item ${itemData.code} - ${itemData.description}`,
+            type: 'item_added',
+            entityId: itemId,
+          });
+          playNotificationSound();
+        }
+        
+        // Notificar sobre item editado
+        if (change.type === 'modified') {
+          const editorName = itemData.updated_by_name || 'Um usuário';
+          const statusChange = itemData.status ? ` (Status: ${itemData.status})` : '';
+          addNotification({
+            title: 'Item Atualizado',
+            message: `${editorName} editou item ${itemData.code}${statusChange}`,
+            type: 'item_updated',
+            entityId: itemId,
+          });
+          playNotificationSound();
+        }
+        
+        // Notificar sobre item deletado
+        if (change.type === 'removed') {
+          const deletorName = itemData.updated_by_name || itemData.created_by_name || 'Um usuário';
+          addNotification({
+            title: 'Item Deletado',
+            message: `${deletorName} deletou item ${itemData.code}`,
+            type: 'item_deleted',
+            entityId: itemId,
+          });
+          playNotificationSound();
+        }
+      });
+    });
+
+    console.log('✅ Listeners de notificação Firebase configurados');
+
+    return () => {
+      console.log('🔇 Desconectando listeners de notificação Firebase');
+      unsubscribeNTs();
+      unsubscribeItems();
+    };
+  }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {

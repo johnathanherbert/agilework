@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 const formSchema = z
   .object({
+    name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }),
     email: z.string().email({ message: 'Email inválido.' }),
     password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
     confirmPassword: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
@@ -35,6 +36,7 @@ export const RegisterForm = () => {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -45,7 +47,7 @@ export const RegisterForm = () => {
     setIsLoading(true);
     
     try {
-      const { error, success } = await signUp(data.email, data.password);
+      const { error, success } = await signUp(data.email, data.password, data.name);
       
       if (error) {
         toast.error('Falha no registro. Tente novamente.');
@@ -77,6 +79,25 @@ export const RegisterForm = () => {
       </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Nome
+          </label>
+          <input
+            id="name"
+            type="text"
+            {...register('name')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400"
+            disabled={isLoading}
+            placeholder="Seu nome completo"
+          />
+          {errors.name && (
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {errors.name.message}
+            </p>
+          )}
+        </div>
+        
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Email
