@@ -196,10 +196,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             entityId: ntId,
           });
           playNotificationSound();
-          toast.success(`Nova NT #${ntData.nt_number} criada por ${creatorName}`, {
-            icon: '📋',
-            duration: 4000,
-          });
         }
         
         // Notificar sobre NT editada (número alterado)
@@ -213,10 +209,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             entityId: ntId,
           });
           playNotificationSound();
-          toast.success(`NT #${ntData.nt_number} editada por ${editorName}`, {
-            icon: '✏️',
-            duration: 4000,
-          });
         }
         
         // Não notificamos sobre NTs deletadas para evitar excesso de notificações
@@ -263,10 +255,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             entityId: itemId,
           });
           playNotificationSound();
-          toast.success(`${payerName} pagou: ${itemData.code} - ${itemData.description}`, {
-            icon: '💰',
-            duration: 4000,
-          });
         }
       });
     });
