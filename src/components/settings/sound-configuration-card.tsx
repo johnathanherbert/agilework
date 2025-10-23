@@ -42,6 +42,8 @@ export const SoundConfigurationCard = () => {
     try {
       testSound();
       const soundName = {
+        notification: '🔔 Notificação Moderna',
+        subtle: '🤫 Discreto',
         impact: '💥 Impacto Dramático',
         triumph: '🏆 Triunfo Épico',
         alert: '🚨 Alerta Urgente',
@@ -103,7 +105,9 @@ export const SoundConfigurationCard = () => {
                   {Object.entries(SOUND_DESCRIPTIONS).map(([type, description]) => (
                     <SelectItem key={type} value={type}>
                       <div className="flex flex-col">                        <span className="font-medium capitalize">
-                          {type === 'impact' ? '💥 Impacto Dramático MÁXIMO (PADRÃO)' : 
+                          {type === 'notification' ? '🔔 Notificação Moderna (PADRÃO)' :
+                           type === 'subtle' ? '🤫 Discreto' :
+                           type === 'impact' ? '💥 Impacto Dramático MÁXIMO' : 
                            type === 'triumph' ? '🏆 Triunfo Épico' :
                            type === 'alert' ? '🚨 Alerta Urgente' :
                            type === 'fanfare' ? '🎺 Fanfarra Completa' :
@@ -122,6 +126,8 @@ export const SoundConfigurationCard = () => {
                 <div className="flex items-center justify-between">
                   <div>                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                       Som Selecionado: {
+                        audioConfig.soundType === 'notification' ? '🔔 Notificação Moderna' :
+                        audioConfig.soundType === 'subtle' ? '🤫 Discreto' :
                         audioConfig.soundType === 'impact' ? '💥 Impacto Dramático' : 
                         audioConfig.soundType === 'triumph' ? '🏆 Triunfo Épico' :
                         audioConfig.soundType === 'alert' ? '🚨 Alerta Urgente' :
@@ -148,6 +154,8 @@ export const SoundConfigurationCard = () => {
                 {/* Informações técnicas e intensidade */}
                 <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
                   <div className="text-xs text-blue-500 dark:text-blue-400 mb-2">
+                    {audioConfig.soundType === 'notification' && '🔔 3 camadas harmônicas • Duração: 1.2s • Som moderno e agradável'}
+                    {audioConfig.soundType === 'subtle' && '🤫 2 camadas suaves • Duração: 0.6s • Ultra discreto e leve'}
                     {audioConfig.soundType === 'impact' && '⚡ 3 camadas sonoras • Duração: 1.5s • Bass poderoso + harmônicos'}
                     {audioConfig.soundType === 'triumph' && '🎼 4 vozes harmônicas • Duração: 2.5s • Progressão épica crescente'}
                     {audioConfig.soundType === 'alert' && '🔥 2 frequências alternadas • Duração: 1.0s • Máxima urgência'}
@@ -161,6 +169,8 @@ export const SoundConfigurationCard = () => {
                     <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5].map((level) => {
                         const intensity = {
+                          notification: 3,
+                          subtle: 1,
                           impact: 4,
                           triumph: 5,
                           alert: 3,
