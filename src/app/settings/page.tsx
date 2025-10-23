@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
-import { supabase } from '@/lib/supabase';
-import { useSupabase } from '@/components/providers/supabase-provider';
+import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,13 +15,17 @@ import { SoundConfigurationCard } from '@/components/settings/sound-configuratio
 import { Save, User, Bell, Shield, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '@/components/providers/notification-provider';
+import { doc, updateDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
+import { db } from '@/lib/firebase';
 
-export default function SettingsPage() {  const { user } = useSupabase();
+export default function SettingsPage() {
+  const { user, userData, signOut } = useFirebase();
   const router = useRouter();
   const { notificationsEnabled, setNotificationsEnabled, soundEnabled, setSoundEnabled } = useNotifications();
   
-  const [name, setName] = useState(user?.user_metadata?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [notifyNewNTs, setNotifyNewNTs] = useState(true);
   const [notifyPayments, setNotifyPayments] = useState(true);
   const [notifyRobotAlerts, setNotifyRobotAlerts] = useState(true);
@@ -34,27 +37,19 @@ export default function SettingsPage() {  const { user } = useSupabase();
       router.push('/login');
     }
   }, [user, router]);
-  // Carrega configurações do usuário
+
+  // Carrega dados do usuário do Firebase
   useEffect(() => {
-    if (user?.user_metadata) {
-      if (user.user_metadata.name) {
-        setName(user.user_metadata.name);
-      }
-      if (user.user_metadata.notifyNewNTs !== undefined) {
-        setNotifyNewNTs(user.user_metadata.notifyNewNTs);
-      }
-      if (user.user_metadata.notifyPayments !== undefined) {
-        setNotifyPayments(user.user_metadata.notifyPayments);
-      }
-      if (user.user_metadata.notifyRobotAlerts !== undefined) {
-        setNotifyRobotAlerts(user.user_metadata.notifyRobotAlerts);
-      }
-      // Carregar configuração de som das notificações
-      if (user.user_metadata.soundEnabled !== undefined) {
-        setSoundEnabled(user.user_metadata.soundEnabled);
-      }
+    if (userData) {
+      setName(userData.name || '');
+      setEmail(userData.email || '');
+      console.log('📝 Configurações carregadas:', userData);
+    } else if (user) {
+      // Fallback para dados do Auth se userData ainda não carregou
+      setName(user.displayName || '');
+      setEmail(user.email || '');
     }
-  }, [user, setSoundEnabled]);
+  }, [user, userData]);
   
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -65,30 +60,40 @@ export default function SettingsPage() {  const { user } = useSupabase();
     </div>;
   }
   const saveUserProfile = async () => {
+    if (!user || !userData) {
+      toast.error('Usuário não autenticado');
+      return;
+    }
+
     setSaving(true);
     
     try {
-      // Update user metadata
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { 
-          name,
-          notifyNewNTs,
-          notifyPayments,
-          notifyRobotAlerts,
-          soundEnabled
-        }
+      console.log('💾 Salvando configurações do usuário...');
+
+      // 1. Atualizar displayName no Firebase Auth
+      if (name !== user.displayName) {
+        await updateProfile(user, {
+          displayName: name
+        });
+        console.log('✅ DisplayName atualizado no Auth');
+      }
+
+      // 2. Atualizar documento do usuário no Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        name: name,
+        updated_at: new Date().toISOString(),
       });
+      console.log('✅ Documento do usuário atualizado no Firestore');
       
-      if (updateError) throw updateError;
-      
-      // Atualizar configuração de notificações no contexto
+      // 3. Atualizar configuração de notificações no contexto
       setNotificationsEnabled(notifyNewNTs);
       setSoundEnabled(soundEnabled);
       
-      toast.success('Configurações salvas com sucesso');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Erro ao salvar configurações');
+      toast.success('Configurações salvas com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao salvar configurações:', error);
+      toast.error(error.message || 'Erro ao salvar configurações');
     } finally {
       setSaving(false);
     }
@@ -150,17 +155,17 @@ export default function SettingsPage() {  const { user } = useSupabase();
                   <Button 
                     variant="outline" 
                     className="w-full" 
-                    onClick={() => supabase.auth.refreshSession()}
+                    onClick={() => window.location.reload()}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Atualizar Sessão
+                    Recarregar Página
                   </Button>
                   
                   <Button 
                     variant="destructive" 
                     className="w-full"
                     onClick={async () => {
-                      await supabase.auth.signOut();
+                      await signOut();
                       router.push('/login');
                     }}
                   >

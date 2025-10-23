@@ -1,6 +1,6 @@
    "use client";
 
-import { useSupabase } from '../providers/supabase-provider';
+import { useFirebase } from '../providers/firebase-provider';
 import { Button } from '../ui/button';
 import { HeaderClock } from '../clock/header-clock';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import { useTheme } from 'next-themes';
 import { NotificationBell } from '../notifications/notification-bell';
 
 export const Topbar = () => {
-  const { user, signOut } = useSupabase();
+  const { user, userData, signOut } = useFirebase();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
@@ -53,7 +53,9 @@ export const Topbar = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[250px] p-0 shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="p-4 border-b dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800">
-              <p className="font-bold text-gray-900 dark:text-gray-100">{user?.user_metadata?.name || 'Usuário'}</p>
+              <p className="font-bold text-gray-900 dark:text-gray-100">
+                {userData?.name || user?.displayName || 'Usuário'}
+              </p>
               <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">{user?.email}</p>
             </div>
             <div className="py-1.5">
