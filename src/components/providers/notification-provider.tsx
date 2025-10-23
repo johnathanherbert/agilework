@@ -168,14 +168,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const ntData = change.doc.data();
         const ntId = change.doc.id;
         
+        console.log('🔔 Notificação - Mudança detectada em NT:', {
+          type: change.type,
+          ntId,
+          nt_number: ntData.nt_number,
+          created_by: ntData.created_by,
+          created_by_name: ntData.created_by_name,
+          updated_by: ntData.updated_by,
+          updated_by_name: ntData.updated_by_name,
+          currentUserId: user.uid
+        });
+        
         // Não notificar sobre ações do próprio usuário
         if (ntData.created_by === user.uid || ntData.updated_by === user.uid) {
+          console.log('⏭️ Ignorando notificação - ação do próprio usuário');
           return;
         }
         
         // Notificar sobre NT criada
         if (change.type === 'added') {
           const creatorName = ntData.created_by_name || 'Um usuário';
+          console.log('📋 Notificando NT criada por:', creatorName);
           addNotification({
             title: 'Nova NT Criada',
             message: `${creatorName} criou a NT #${ntData.nt_number}`,
@@ -192,6 +205,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Notificar sobre NT editada (número alterado)
         if (change.type === 'modified') {
           const editorName = ntData.updated_by_name || 'Um usuário';
+          console.log('✏️ Notificando NT editada por:', editorName);
           addNotification({
             title: 'NT Atualizada',
             message: `${editorName} editou a NT #${ntData.nt_number}`,

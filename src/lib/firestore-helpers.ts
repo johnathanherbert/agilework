@@ -27,24 +27,37 @@ export const COLLECTIONS = {
 // Helper to get current user info
 export const getCurrentUserInfo = async () => {
   const user = auth.currentUser;
-  if (!user) return null;
+  if (!user) {
+    console.warn('⚠️ getCurrentUserInfo: Nenhum usuário autenticado');
+    return null;
+  }
+  
+  console.log('🔍 getCurrentUserInfo: Buscando dados do usuário', user.uid);
   
   try {
     const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, user.uid));
     if (userDoc.exists()) {
       const userData = userDoc.data();
+      const userName = userData.name || user.displayName || user.email?.split('@')[0] || 'Usuário';
+      console.log('✅ getCurrentUserInfo: Dados encontrados no Firestore -', userName);
       return {
         uid: user.uid,
-        name: userData.name || user.displayName || user.email?.split('@')[0] || 'Usuário'
+        name: userName
       };
+    } else {
+      console.warn('⚠️ getCurrentUserInfo: Documento do usuário não existe no Firestore');
     }
   } catch (error) {
-    console.error('Error getting user info:', error);
+    console.error('❌ getCurrentUserInfo: Erro ao buscar dados do Firestore:', error);
   }
+  
+  // Fallback: usar dados do Firebase Auth
+  const fallbackName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+  console.log('ℹ️ getCurrentUserInfo: Usando fallback do Auth -', fallbackName);
   
   return {
     uid: user.uid,
-    name: user.displayName || user.email?.split('@')[0] || 'Usuário'
+    name: fallbackName
   };
 };
 
