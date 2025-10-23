@@ -56,11 +56,17 @@ export function FirebaseProvider({
       // Load user data from Firestore
       if (user) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          console.log('👤 Usuário autenticado:', user.uid, user.email);
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          
           if (userDoc.exists()) {
-            setUserData(userDoc.data() as UserData);
+            const data = userDoc.data() as UserData;
+            console.log('✅ Documento do usuário encontrado:', data.name);
+            setUserData(data);
           } else {
             // If user document doesn't exist, create it from auth data
+            console.log('⚠️ Documento do usuário não existe - criando automaticamente...');
             const newUserData: UserData = {
               uid: user.uid,
               email: user.email || '',
@@ -68,13 +74,16 @@ export function FirebaseProvider({
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
-            await setDoc(doc(db, 'users', user.uid), newUserData);
+            
+            await setDoc(userDocRef, newUserData);
+            console.log('✅ Documento do usuário criado:', newUserData.name);
             setUserData(newUserData);
           }
         } catch (error) {
-          console.error('Error loading user data:', error);
+          console.error('❌ Erro ao carregar/criar dados do usuário:', error);
         }
       } else {
+        console.log('👋 Usuário deslogado');
         setUserData(null);
       }
       
