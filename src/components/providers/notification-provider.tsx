@@ -1,8 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useSupabase } from './supabase-provider';
+import { useFirebase } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
 import toast from 'react-hot-toast';
 
@@ -70,7 +69,7 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useSupabase();
+  const { user } = useFirebase();
   const { playSound, testSound: testAudioSound, loadAudioConfig, saveAudioConfig } = useAudioNotification();
   
   // Estados das notificações
@@ -91,7 +90,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Carregar notificações do localStorage
   useEffect(() => {
     if (user) {
-      const savedNotifications = localStorage.getItem(`notifications_${user.id}`);
+      const savedNotifications = localStorage.getItem(`notifications_${user.uid}`);
       if (savedNotifications) {
         try {
           const parsed = JSON.parse(savedNotifications);
@@ -105,13 +104,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       // Carregar configuração de notificações
-      const savedNotificationsEnabled = localStorage.getItem(`notifications_enabled_${user.id}`);
+      const savedNotificationsEnabled = localStorage.getItem(`notifications_enabled_${user.uid}`);
       if (savedNotificationsEnabled !== null) {
         setNotificationsEnabled(savedNotificationsEnabled === 'true');
       }
 
       // Carregar configuração de áudio usando o hook
-      const loadedAudioConfig = loadAudioConfig(user.id);
+      const loadedAudioConfig = loadAudioConfig(user.uid);
       setAudioConfig(loadedAudioConfig);
       setSoundEnabled(loadedAudioConfig.enabled);
     }
@@ -120,20 +119,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Salvar notificações no localStorage quando mudarem
   useEffect(() => {
     if (user) {
-      localStorage.setItem(`notifications_${user.id}`, JSON.stringify(notifications));
+      localStorage.setItem(`notifications_${user.uid}`, JSON.stringify(notifications));
     }
   }, [notifications, user]);
 
   // Salvar configuração de notificações quando mudar
   useEffect(() => {
     if (user) {
-      localStorage.setItem(`notifications_enabled_${user.id}`, notificationsEnabled.toString());
+      localStorage.setItem(`notifications_enabled_${user.uid}`, notificationsEnabled.toString());
     }
   }, [notificationsEnabled, user]);
   // Salvar configuração de áudio quando mudar
   useEffect(() => {
     if (user) {
-      saveAudioConfig(audioConfig, user.id);
+      saveAudioConfig(audioConfig, user.uid);
     }
   }, [audioConfig, user, saveAudioConfig]);
 
@@ -153,47 +152,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     testAudioSound(audioConfig);
   };
 
-  // Escutar por eventos do Supabase para novas NTs
-  useEffect(() => {
-    if (!user || !notificationsEnabled) return;
-
-    const ntsChannel = supabase
-      .channel('nt_notifications')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'nts' },
-        (payload) => {
-          if (notificationsEnabled) {
-            const newNT = payload.new as any;
-            const createdByName = newNT.created_by_name || 'usuário';
-            
-            // Check if this is part of a batch operation
-            if (!isBatchOperationActive('nt_creation', newNT.id)) {
-              addNotification({
-                title: 'Nova NT Criada',
-                message: `NT ${newNT.nt_number} criada por ${createdByName}`,
-                type: 'nt_created',
-                entityId: newNT.id
-              });
-              
-              // Tocar som de notificação para nova NT
-              playNotificationSound();
-              
-              // Mostrar toast para NT criada
-              toast.success(`Nova NT ${newNT.nt_number} criada!`, {
-                icon: '🔔',
-                duration: 4000,
-              });
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(ntsChannel);
-    };
-  }, [user, notificationsEnabled, audioConfig, soundEnabled]);
+  // TODO: Implement Firebase real-time listeners for notifications
+  // Currently disabled during migration from Supabase to Firebase
+  // useEffect(() => {
+  //   if (!user || !notificationsEnabled) return;
+  //   
+  //   // Setup Firestore listeners here
+  //   // onSnapshot for nts collection
+  //   // onSnapshot for nt_items collection
+  //   
+  //   return () => {
+  //     // Cleanup listeners
+  //   };
+  // }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {
