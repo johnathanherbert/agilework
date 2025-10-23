@@ -1,7 +1,9 @@
    "use client";
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createNTItem } from '@/lib/firestore-helpers';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -81,39 +83,43 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
     
     try {
       // Get the next item number
-      const { data: lastItems, error: countError } = await supabase
-        .from('nt_items')
-        .select('item_number')
-        .eq('nt_id', nt.id)
-        .order('item_number', { ascending: false })
-        .limit(1);
+      const itemsRef = collection(db, 'nt_items');
+      const q = query(
+        itemsRef,
+        where('nt_id', '==', nt.id),
+        orderBy('item_number', 'desc'),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
       
-      if (countError) throw countError;
+      let nextItemNumber = 1;
+      if (!snapshot.empty) {
+        const lastItem = snapshot.docs[0].data();
+        nextItemNumber = lastItem.item_number + 1;
+      }
       
-      let nextItemNumber = lastItems && lastItems.length > 0 ? lastItems[0].item_number + 1 : 1;
       const now = new Date();
       const brazilianDate = formatDate(now);
       const brazilianTime = formatTime(now);
       
-      const itemsToInsert = parsedItems.map((item, index) => ({
-        nt_id: nt.id,
-        item_number: nextItemNumber + index,
-        code: item.code,
-        description: item.description,
-        quantity: item.quantity,
-        created_date: brazilianDate,
-        created_time: brazilianTime,
-        status: 'Ag. Pagamento',
-        priority: false,
-      }));
+      // Create all items
+      const createPromises = parsedItems.map((item, index) =>
+        createNTItem(nt.id, {
+          item_number: nextItemNumber + index,
+          code: item.code,
+          description: item.description,
+          quantity: item.quantity,
+          batch: null,
+          created_date: brazilianDate,
+          created_time: brazilianTime,
+          payment_time: null,
+          status: 'Ag. Pagamento',
+          priority: false,
+        })
+      );
       
-      const { error } = await supabase.from('nt_items').insert(itemsToInsert);
+      await Promise.all(createPromises);
       
-      if (error) {
-        throw error;
-      }
-      
-      // Não mostrar toast - operação silenciosa
       setItemsData('');
       setParsedItems([]);
       onOpenChange(false);

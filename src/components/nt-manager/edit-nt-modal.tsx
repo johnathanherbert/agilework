@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
+import { updateNT } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,18 +68,7 @@ export function EditNTModal({ open, onOpenChange, onSuccess, nt }: EditNTModalPr
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('nts')
-        .update({
-          nt_number: data.nt_number,
-          status: data.status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', nt.id);
-      
-      if (error) {
-        throw error;
-      }
+      await updateNT(nt.id, data.nt_number);
       
       toast.success('NT atualizada com sucesso!');
       onOpenChange(false);

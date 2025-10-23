@@ -8,7 +8,7 @@ import { cn, calculateElapsedTime, isDelayed, formatElapsedTime, formatTimestamp
 import { EditFieldModal } from './edit-field-modal';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
 import { StatusSwitch } from '@/components/ui/status-switch';
-import { supabase } from '@/lib/supabase';
+import { updateNTItem } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
@@ -36,7 +36,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
     setIsUpdating(true);
     try {
       // Se estiver atualizando para "Pago", registrar o tempo de pagamento
-      const updateData: any = { status: newStatus };
+      const updateData: Partial<NTItem> = { status: newStatus };
       
       // Se estiver marcando como pago, registrar o horário de pagamento (apenas HH:MM)
       if (newStatus === 'Pago') {
@@ -46,12 +46,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
         updateData.payment_time = `${hours}:${minutes}`;
       }
       
-      const { error } = await supabase
-        .from('nt_items')
-        .update(updateData)
-        .eq('id', item.id);
-
-      if (error) throw error;
+      await updateNTItem(item.id, updateData);
       
       if (onSuccess) onSuccess();
     } catch (error) {

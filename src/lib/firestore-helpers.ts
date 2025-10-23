@@ -108,12 +108,28 @@ export const deleteNT = async (ntId: string): Promise<void> => {
 };
 
 // NT Item Operations
-export const createNTItem = async (ntId: string, itemData: Omit<NTItem, 'id'>): Promise<string> => {
+export const createNTItem = async (
+  ntId: string, 
+  itemData: {
+    item_number: number;
+    code: string;
+    description: string;
+    quantity: string;
+    batch: string | null;
+    created_date: string;
+    created_time: string;
+    payment_time: string | null;
+    status: 'Ag. Pagamento' | 'Pago' | 'Pago Parcial';
+    priority: boolean;
+  }
+): Promise<string> => {
   const itemsRef = collection(db, COLLECTIONS.NT_ITEMS);
+  const now = Timestamp.now();
   const docRef = await addDoc(itemsRef, {
     ...itemData,
     nt_id: ntId,
-    created_at: Timestamp.now(),
+    created_at: now,
+    updated_at: now,
   });
   return docRef.id;
 };

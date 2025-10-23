@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
+import { createNT, createNTItem } from '@/lib/firestore-helpers';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -98,50 +98,34 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       const brazilianTime = formatTime(now);
       
       // Create the NT first
-      const { data: ntData, error: ntError } = await supabase
-        .from('nts')
-        .insert({
-          nt_number: data.nt_number,
-          created_date: brazilianDate,
-          created_time: brazilianTime,
-          status: 'Ativa',
-        })
-        .select();
+      const ntId = await createNT(data.nt_number);
       
-      if (ntError) {
-        throw ntError;
-      }
-
       // Start batch operation to prevent redundant notifications
-      const ntId = ntData[0].id;
       const batchId = startBatchOperation('nt_creation', ntId, parsedItems.length);
       
       // Create items if we have parsed data
-      if (parsedItems.length > 0 && ntData && ntData[0]) {
-        const ntId = ntData[0].id;
+      if (parsedItems.length > 0) {
+        const itemPromises = parsedItems.map((item, index) => 
+          createNTItem(ntId, {
+            item_number: index + 1,
+            code: item.code,
+            description: item.description,
+            quantity: item.quantity,
+            batch: null,
+            created_date: brazilianDate,
+            created_time: brazilianTime,
+            payment_time: null,
+            status: 'Ag. Pagamento',
+            priority: false,
+          })
+        );
         
-        const itemsToInsert = parsedItems.map((item, index) => ({
-          nt_id: ntId,
-          item_number: index + 1,
-          code: item.code,
-          description: item.description,
-          quantity: item.quantity,
-          created_date: brazilianDate,
-          created_time: brazilianTime,
-          status: 'Ag. Pagamento',
-          priority: false,
-        }));
-        
-        const { error: itemsError } = await supabase
-          .from('nt_items')
-          .insert(itemsToInsert);
-          
-        if (itemsError) {
+        try {
+          await Promise.all(itemPromises);
+        } catch (itemsError) {
           console.error('Erro ao adicionar itens:', itemsError);
-          // Não mostrar toast - o notification-provider já cuida das notificações
         }
       }
-      // Não mostrar toast aqui - o notification-provider já cuida das notificações de NT criada
       
       // End batch operation
       endBatchOperation(batchId);

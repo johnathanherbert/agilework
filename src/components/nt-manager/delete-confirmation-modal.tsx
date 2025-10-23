@@ -1,7 +1,7 @@
    "use client";
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { deleteNT, deleteNTItem } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,35 +49,10 @@ export function DeleteConfirmationModal({
     setLoading(true);
     
     try {
-      let error;
-      
       if (entityType === 'nt') {
-        // Delete NT items first
-        const { error: itemsError } = await supabase
-          .from('nt_items')
-          .delete()
-          .eq('nt_id', entityId);
-          
-        if (itemsError) throw itemsError;
-        
-        // Then delete the NT
-        const { error: ntError } = await supabase
-          .from('nts')
-          .delete()
-          .eq('id', entityId);
-          
-        error = ntError;
+        await deleteNT(entityId);
       } else if (entityType === 'item') {
-        const { error: itemError } = await supabase
-          .from('nt_items')
-          .delete()
-          .eq('id', entityId);
-          
-        error = itemError;
-      }
-      
-      if (error) {
-        throw error;
+        await deleteNTItem(entityId);
       }
       
       toast.success(`${entityType === 'nt' ? 'NT' : 'Item'} excluído com sucesso!`);

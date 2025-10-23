@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
+import { updateNTItem } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -96,23 +96,15 @@ export function EditItemModal({ open, onOpenChange, onSuccess, item }: EditItemM
         payment_time = now.toLocaleTimeString('pt-BR');
       }
       
-      const { error } = await supabase
-        .from('nt_items')
-        .update({
-          code: data.code,
-          description: data.description,
-          quantity: data.quantity,
-          batch: data.batch || null,
-          status: data.status,
-          payment_time: payment_time || null,
-          priority: data.priority,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', item.id);
-      
-      if (error) {
-        throw error;
-      }
+      await updateNTItem(item.id, {
+        code: data.code,
+        description: data.description,
+        quantity: data.quantity,
+        batch: data.batch || null,
+        status: data.status,
+        payment_time: payment_time || null,
+        priority: data.priority,
+      });
       
       toast.success('Item atualizado com sucesso!');
       onOpenChange(false);
