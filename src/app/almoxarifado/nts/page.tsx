@@ -346,8 +346,12 @@ export default function NTManager() {
                   />
                 </div>
                 
-                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} 
-                  className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowFilters(!showFilters)} 
+                  className="relative flex items-center gap-2 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200 hover:scale-105 hover:shadow-md border-gray-300 dark:border-gray-600"
+                >
                   <Filter className="h-4 w-4" />
                   Filtros
                   {Object.values(filters).some(v => 
@@ -355,26 +359,50 @@ export default function NTManager() {
                     (typeof v === 'boolean' && v === true) || 
                     (v !== null && v !== '')
                   ) && (
-                    <span className="w-2 h-2 rounded-full bg-blue-500 ml-1"></span>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-900 shadow-md animate-pulse"></span>
                   )}
                 </Button>
                 
-                <Button variant="outline" size="sm" onClick={handleRefresh}
-                  className="flex items-center gap-2">
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 hover:scale-105 hover:shadow-md border-gray-300 dark:border-gray-600 group"
+                >
+                  <RefreshCw className={`h-4 w-4 transition-all duration-300 ${loading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
                   Atualizar
                 </Button>
                 
-                <Button size="sm" onClick={() => setShowAddModal(true)}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Nova NT
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowAddModal(true)}
+                  className="relative flex items-center gap-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border-0 overflow-hidden group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  <PlusCircle className="h-4 w-4 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                  <span className="relative z-10">Nova NT</span>
                 </Button>
               </div>
             </div>
               {/* Filters panel */}
             {showFilters && (
-              <Card className="mb-6">
-                <CardContent className="pt-6">
+              <Card className="mb-6 relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-2xl bg-gradient-to-br from-white via-gray-50/50 to-white dark:from-gray-900/95 dark:via-gray-900/80 dark:to-gray-900/95 backdrop-blur-xl animate-in slide-in-from-top-4 duration-300">
+                {/* Top gradient accent */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-75" />
+                
+                {/* Background decorative elements */}
+                <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl opacity-50" />
+                <div className="absolute bottom-4 left-4 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl opacity-50" />
+                
+                <CardContent className="pt-6 pb-6 relative z-10">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Filtros Avançados
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">
+                      Refine sua busca por status, data, turno e outras opções
+                    </p>
+                  </div>
                   <NTFilters 
                     filters={filters} 
                     onChange={handleFilterChange} 
@@ -400,26 +428,46 @@ export default function NTManager() {
                   onRefresh={handleRefresh}
                 />
               ) : (
-                <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <FileSearch className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Nenhuma NT encontrada</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    {filters.search ? 
-                      `Não encontramos NTs com "${filters.search}" ou com os filtros aplicados.` : 
-                      'Não encontramos NTs com os filtros aplicados.'}
-                  </p>
-                  <Button onClick={() => {
-                    setFilters({
-                      search: '',
-                      status: [],
-                      dateRange: null,
-                      shift: null,
-                      overdueOnly: false,
-                      hideOldNts: false,
-                      priorityOnly: false
-                    });
-                    // O useEffect vai aplicar os filtros automaticamente
-                  }} variant="outline" size="sm">Limpar filtros</Button>
+                <div className="relative p-12 text-center bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-lg overflow-hidden">
+                  {/* Background gradient effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent opacity-50"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="relative inline-block mb-4">
+                      <FileSearch className="h-16 w-16 mx-auto text-gray-400 dark:text-gray-500 animate-float" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-2xl opacity-50"></div>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                      Nenhuma NT encontrada
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto font-medium">
+                      {filters.search ? 
+                        `Não encontramos NTs com "${filters.search}" ou com os filtros aplicados.` : 
+                        'Não encontramos NTs com os filtros aplicados.'}
+                    </p>
+                    
+                    <Button 
+                      onClick={() => {
+                        setFilters({
+                          search: '',
+                          status: [],
+                          dateRange: null,
+                          shift: null,
+                          overdueOnly: false,
+                          hideOldNts: false,
+                          priorityOnly: false
+                        });
+                      }} 
+                      variant="outline" 
+                      size="sm"
+                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 hover:scale-105 hover:shadow-lg border-gray-300 dark:border-gray-600 font-bold group"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-300" />
+                      Limpar filtros
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

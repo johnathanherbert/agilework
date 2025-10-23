@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createNTItem } from '@/lib/firestore-helpers';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
@@ -79,21 +79,20 @@ export function AddItemModal({ open, onOpenChange, onSuccess, nt }: AddItemModal
     setIsSubmitting(true);
     
     try {
-      // Get the next item number
+      // Get all items from this NT to find the highest item_number
+      // This avoids needing a composite index (nt_id + item_number)
       const itemsRef = collection(db, 'nt_items');
-      const q = query(
-        itemsRef,
-        where('nt_id', '==', nt.id),
-        orderBy('item_number', 'desc'),
-        limit(1)
-      );
+      const q = query(itemsRef, where('nt_id', '==', nt.id));
       const snapshot = await getDocs(q);
       
+      // Find the highest item_number
       let nextItemNumber = 1;
-      if (!snapshot.empty) {
-        const lastItem = snapshot.docs[0].data();
-        nextItemNumber = lastItem.item_number + 1;
-      }
+      snapshot.forEach((doc) => {
+        const itemData = doc.data();
+        if (itemData.item_number >= nextItemNumber) {
+          nextItemNumber = itemData.item_number + 1;
+        }
+      });
       
       const now = new Date();
       const brazilianDate = formatDate(now);

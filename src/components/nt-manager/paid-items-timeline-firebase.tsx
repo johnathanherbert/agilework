@@ -49,58 +49,73 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={cn(
-            "relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs border backdrop-blur-sm cursor-pointer",
+            "relative flex items-start gap-3 p-3 rounded-xl transition-all duration-500 text-xs border backdrop-blur-sm cursor-pointer group overflow-hidden",
             showHighlight 
-              ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 shadow-sm dark:shadow-blue-900/20'
-              : 'bg-white/60 dark:bg-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/80 dark:hover:bg-gray-700/70 hover:border-gray-300/60 dark:hover:border-gray-600/60'
+              ? 'bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 dark:from-blue-950/60 dark:via-indigo-950/40 dark:to-blue-950/60 border-blue-300 dark:border-blue-600/50 shadow-lg shadow-blue-500/20 dark:shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-900/40'
+              : 'bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-800/60 dark:via-gray-800/40 dark:to-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gradient-to-br hover:from-gray-50 hover:via-gray-100/50 hover:to-gray-50 dark:hover:from-gray-700/70 dark:hover:via-gray-700/50 dark:hover:to-gray-700/70 hover:border-gray-300/70 dark:hover:border-gray-600/70 hover:shadow-lg',
+            "hover:scale-[1.02] active:scale-[0.99]"
           )}>
-            {/* Timeline dot with status indicator */}
+            {/* Gradient overlay on hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            
+            {/* Timeline dot with enhanced glow */}
             <div className={cn(
-              "mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300",
+              "relative mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-300 z-10",
               showHighlight 
-                ? 'bg-blue-500 dark:bg-blue-400 shadow-md shadow-blue-500/40 dark:shadow-blue-400/80 ring-2 ring-blue-200 dark:ring-blue-800/50'
+                ? 'bg-gradient-to-br from-blue-400 to-indigo-600 shadow-lg shadow-blue-500/50 dark:shadow-blue-400/80 ring-4 ring-blue-200/50 dark:ring-blue-800/30 animate-pulse'
                 : item.status === 'Pago'
-                  ? 'bg-green-500 dark:bg-green-400 shadow-sm'
-                  : 'bg-yellow-500 dark:bg-yellow-400 shadow-sm'
-            )} />
+                  ? 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-md shadow-green-500/40 ring-2 ring-green-200/50 dark:ring-green-800/30'
+                  : 'bg-gradient-to-br from-amber-400 to-orange-600 shadow-md shadow-amber-500/40 ring-2 ring-amber-200/50 dark:ring-amber-800/30'
+            )}>
+              {showHighlight && (
+                <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-75" />
+              )}
+            </div>
             
             {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1 mb-1">
+            <div className="flex-1 min-w-0 relative z-10">
+              <div className="flex items-center justify-between gap-1 mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
-                    "text-xs font-semibold truncate",
+                    "text-xs font-bold truncate px-2 py-0.5 rounded-lg",
                     showHighlight 
-                      ? 'text-blue-700 dark:text-blue-200'
-                      : 'text-gray-800 dark:text-gray-100'
+                      ? 'text-blue-800 dark:text-blue-100 bg-blue-100/80 dark:bg-blue-900/40'
+                      : 'text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-700/60'
                   )}>
                     {item.code}
                   </span>
                   
                   {/* Priority badge */}
                   {item.isPriority && (
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-md">
+                      <Star className="w-3 h-3 text-white fill-white" />
+                    </div>
                   )}
                   
                   {/* Status badge */}
                   {item.status === 'Pago Parcial' && (
-                    <span className="text-[10px] bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 px-1.5 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 dark:from-amber-900/40 dark:to-orange-900/40 dark:text-amber-200 px-2 py-1 rounded-full font-bold border border-amber-300/50 dark:border-amber-700/50 shadow-sm">
                       PARCIAL
                     </span>
                   )}
                 </div>
                 
-                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-0.5 flex-shrink-0">
-                  <Clock className="w-2.5 h-2.5" />
+                <span className={cn(
+                  "text-xs flex items-center gap-1 flex-shrink-0 font-semibold px-2 py-0.5 rounded-lg",
+                  showHighlight
+                    ? "text-blue-700 dark:text-blue-300 bg-blue-100/80 dark:bg-blue-900/40"
+                    : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/60"
+                )}>
+                  <Clock className="w-3 h-3" />
                   {formatTime(item.paid_at)}
                 </span>
               </div>
               
               <p className={cn(
-                "text-xs leading-tight mb-1 truncate",
+                "text-xs leading-tight mb-2 truncate font-medium",
                 showHighlight 
-                  ? 'text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-300'
+                  ? 'text-blue-800 dark:text-blue-200'
+                  : 'text-gray-700 dark:text-gray-300'
               )} title={item.description}>
                 {item.description}
               </p>
@@ -108,10 +123,10 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
               <div className="flex items-center justify-between text-xs gap-2">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    "font-medium",
+                    "font-bold px-2 py-1 rounded-lg",
                     showHighlight 
-                      ? 'text-blue-600 dark:text-blue-300'
-                      : 'text-gray-600 dark:text-gray-400'
+                      ? 'text-blue-700 dark:text-blue-300 bg-blue-100/80 dark:bg-blue-900/40'
+                      : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/60'
                   )}>
                     Qtd: {item.quantity}
                   </span>
@@ -119,18 +134,18 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
                   {/* Elapsed time indicator */}
                   {item.elapsedTime && item.elapsedTime !== '-' && (
                     <span className={cn(
-                      "flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold",
+                      "flex items-center gap-1 px-2 py-1 rounded-lg font-bold shadow-sm",
                       isDelayed
-                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                        : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                        ? "bg-gradient-to-r from-red-500 to-pink-600 text-white border border-red-600/50 shadow-red-500/30"
+                        : "bg-gradient-to-r from-green-500 to-emerald-600 text-white border border-green-600/50 shadow-green-500/30"
                     )}>
-                      <Zap className="w-2.5 h-2.5" />
+                      <Zap className="w-3 h-3" />
                       {item.elapsedTime}
                     </span>
                   )}
                 </div>
                 
-                <span className="text-xs text-gray-500 dark:text-gray-500 text-right bg-gray-100 dark:bg-gray-700/50 px-1.5 py-0.5 rounded font-medium">
+                <span className="text-xs text-white text-right bg-gradient-to-r from-gray-700 to-gray-800 dark:from-gray-600 dark:to-gray-700 px-2 py-1 rounded-lg font-bold shadow-sm">
                   NT {item.nt_number}
                 </span>
               </div>
@@ -222,28 +237,34 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {!isCollapsed && <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          {!isCollapsed && (
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Activity className="w-4 h-4 text-white drop-shadow-md" />
+            </div>
+          )}
           {!isCollapsed && (
             <>
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Timeline de Pagamentos</span>
-              <span className="text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200/50 dark:border-blue-700/50">
+              <span className="text-sm font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                Timeline de Pagamentos
+              </span>
+              <span className="text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2.5 py-1 rounded-lg shadow-md shadow-blue-500/30">
                 {paidItems.length}
               </span>
               
               {/* Live indicator */}
               <div className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium",
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow-md transition-all duration-300",
                 isConnected 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/50 dark:border-green-700/50' 
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200/50 dark:border-red-700/50'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-500/30 animate-pulse' 
+                  : 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-red-500/30'
               )}>
                 <div className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                  "w-2 h-2 rounded-full",
+                  isConnected ? "bg-white shadow-lg shadow-white/50" : "bg-white"
                 )} />
-                <span>LIVE</span>
+                <span className="uppercase tracking-wide">LIVE</span>
               </div>
             </>
           )}
@@ -295,37 +316,49 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
       {!isCollapsed && (
         <>
           {/* Statistics Cards */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/60 p-2.5 rounded-lg border border-blue-200/50 dark:border-blue-700/50">
-              <div className="flex items-center gap-1.5 mb-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">Pagos Hoje</span>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 p-3 rounded-xl shadow-lg shadow-blue-500/30 dark:shadow-blue-900/40 border border-blue-400/50 dark:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <div className="flex items-center gap-2 mb-1.5 relative z-10">
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-white drop-shadow-md" />
+                </div>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wide">Pagos Hoje</span>
               </div>
-              <span className="text-lg font-bold text-blue-900 dark:text-blue-100">{stats.totalPaidToday}</span>
+              <span className="text-2xl font-black text-white drop-shadow-lg relative z-10">{stats.totalPaidToday}</span>
             </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/40 dark:to-green-900/60 p-2.5 rounded-lg border border-green-200/50 dark:border-green-700/50">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                <span className="text-[10px] font-medium text-green-700 dark:text-green-300">Tempo Médio</span>
+            <div className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 dark:from-green-600 dark:via-emerald-600 dark:to-green-700 p-3 rounded-xl shadow-lg shadow-green-500/30 dark:shadow-green-900/40 border border-green-400/50 dark:border-green-500/50 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <div className="flex items-center gap-2 mb-1.5 relative z-10">
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-white drop-shadow-md" />
+                </div>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wide">Tempo Médio</span>
               </div>
-              <span className="text-sm font-bold text-green-900 dark:text-green-100">{stats.averagePaymentTime}</span>
+              <span className="text-lg font-black text-white drop-shadow-lg relative z-10">{stats.averagePaymentTime}</span>
             </div>
             
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/40 dark:to-emerald-900/60 p-2.5 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">Mais Rápido</span>
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 dark:from-emerald-600 dark:via-teal-600 dark:to-emerald-700 p-3 rounded-xl shadow-lg shadow-emerald-500/30 dark:shadow-emerald-900/40 border border-emerald-400/50 dark:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <div className="flex items-center gap-2 mb-1.5 relative z-10">
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-white drop-shadow-md" />
+                </div>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wide">Mais Rápido</span>
               </div>
-              <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{stats.fastestPayment}</span>
+              <span className="text-lg font-black text-white drop-shadow-lg relative z-10">{stats.fastestPayment}</span>
             </div>
             
-            <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/40 dark:to-amber-900/60 p-2.5 rounded-lg border border-amber-200/50 dark:border-amber-700/50">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="text-[10px] font-medium text-amber-700 dark:text-amber-300">Mais Lento</span>
+            <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 dark:from-amber-600 dark:via-orange-600 dark:to-amber-700 p-3 rounded-xl shadow-lg shadow-amber-500/30 dark:shadow-amber-900/40 border border-amber-400/50 dark:border-amber-500/50 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <div className="flex items-center gap-2 mb-1.5 relative z-10">
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-white drop-shadow-md" />
+                </div>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wide">Mais Lento</span>
               </div>
-              <span className="text-sm font-bold text-amber-900 dark:text-amber-100">{stats.slowestPayment}</span>
+              <span className="text-lg font-black text-white drop-shadow-lg relative z-10">{stats.slowestPayment}</span>
             </div>
           </div>
 
@@ -343,15 +376,26 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 px-4">
-                <div className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-6">
-                  <Package className="w-10 h-10 mx-auto mb-3 text-gray-400 dark:text-gray-500 opacity-60" />
-                  <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
-                    Nenhum item pago ainda
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Os itens pagos aparecerão aqui em tempo real
-                  </p>
+              <div className="text-center py-16 px-4">
+                <div className="relative bg-gradient-to-br from-white via-gray-50/50 to-white dark:from-gray-900/60 dark:via-gray-900/40 dark:to-gray-900/60 backdrop-blur-sm border-2 border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-8 overflow-hidden shadow-xl">
+                  {/* Background decorative elements */}
+                  <div className="absolute top-4 right-4 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-2xl" />
+                  <div className="absolute bottom-4 left-4 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl" />
+                  
+                  <div className="relative z-10">
+                    <div className="relative inline-block mb-4">
+                      <Package className="w-14 h-14 mx-auto text-gray-400 dark:text-gray-500 animate-float" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-2xl opacity-50" />
+                    </div>
+                    
+                    <h3 className="text-base font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                      Nenhum item pago ainda
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      Os itens pagos aparecerão aqui em tempo real ⚡
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
