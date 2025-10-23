@@ -1,6 +1,6 @@
 "use client";
 
-import { useSupabase } from '@/components/providers/supabase-provider';
+import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useSupabase();
+  const { user, loading } = useFirebase();
   const router = useRouter();
 
   useEffect(() => {

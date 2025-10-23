@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useSupabase } from '@/components/providers/supabase-provider';
+import { useFirebase } from '@/components/providers/firebase-provider';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export const RegisterForm = () => {
   const router = useRouter();
-  const { signUp } = useSupabase();
+  const { signUp } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
   
   const {
