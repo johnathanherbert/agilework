@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
+import { updateNTItem } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -150,6 +150,7 @@ export function EditFieldModal({
     try {
       // Handle special case for payment_time when status is changing to Pago
       let updateData: any = {};
+      
       // If status is changing to Pago, automatically set payment_time
       if (fieldToEdit === 'status' && data.value === 'Pago' && 
           (item.status !== 'Pago' || !item.payment_time)) {
@@ -162,15 +163,12 @@ export function EditFieldModal({
       // Add updated_at timestamp
       updateData.updated_at = new Date().toISOString();
       
-      const { error } = await supabase
-        .from('nt_items')
-        .update(updateData)
-        .eq('id', item.id);
+      console.log(`🔧 Editando campo "${fieldToEdit}" do item ${item.id}:`, updateData);
       
-      if (error) {
-        throw error;
-      }
+      // Update item in Firestore
+      await updateNTItem(item.id, updateData);
       
+      console.log(`✅ Campo "${fieldToEdit}" atualizado com sucesso!`);
       toast.success('Campo atualizado com sucesso!');
       onOpenChange(false);
       
@@ -178,7 +176,7 @@ export function EditFieldModal({
         onSuccess();
       }
     } catch (error: any) {
-      console.error(`Erro ao atualizar ${fieldLabel}:`, error);
+      console.error(`❌ Erro ao atualizar ${fieldLabel}:`, error);
       toast.error(error.message || `Ocorreu um erro ao atualizar ${fieldLabel.toLowerCase()}`);
     } finally {
       setIsSubmitting(false);
