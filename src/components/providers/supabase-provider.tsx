@@ -17,7 +17,7 @@ interface SupabaseContextType {
     error: any;
     success: boolean;
   }>;
-  signUp: (email: string, password: string) => Promise<{
+  signUp: (email: string, password: string, name: string) => Promise<{
     error: any;
     success: boolean;
   }>;
