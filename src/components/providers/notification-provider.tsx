@@ -155,7 +155,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Firebase real-time listeners for notifications
-  // Apenas para NTs criadas e atualizadas (não items para evitar spam)
+  // NTs criadas/editadas e Items pagos
   useEffect(() => {
     if (!user || !notificationsEnabled) return;
     
@@ -223,11 +223,60 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     });
 
-    console.log('✅ Listeners de notificação Firebase configurados (apenas NTs)');
+    // Listener para items marcados como Pago/Pago Parcial por outros usuários
+    const itemsQuery = query(collection(db, 'nt_items'), orderBy('updated_at', 'desc'));
+    const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const itemData = change.doc.data();
+        const itemId = change.doc.id;
+        
+        // Apenas notificar sobre modificações (mudança de status)
+        if (change.type !== 'modified') {
+          return;
+        }
+        
+        console.log('🔔 Notificação - Item modificado:', {
+          itemId,
+          code: itemData.code,
+          status: itemData.status,
+          updated_by: itemData.updated_by,
+          updated_by_name: itemData.updated_by_name,
+          currentUserId: user.uid
+        });
+        
+        // Não notificar sobre ações do próprio usuário
+        if (itemData.updated_by === user.uid) {
+          console.log('⏭️ Ignorando notificação - ação do próprio usuário');
+          return;
+        }
+        
+        // Notificar apenas quando item for marcado como Pago ou Pago Parcial
+        if (itemData.status === 'Pago' || itemData.status === 'Pago Parcial') {
+          const payerName = itemData.updated_by_name || 'Um usuário';
+          const statusText = itemData.status === 'Pago' ? 'pago' : 'pago parcialmente';
+          console.log(`💰 Notificando item ${statusText} por:`, payerName);
+          
+          addNotification({
+            title: `Item ${itemData.status}`,
+            message: `${payerName} marcou o item ${itemData.code} como ${statusText}`,
+            type: 'item_updated',
+            entityId: itemId,
+          });
+          playNotificationSound();
+          toast.success(`${payerName} pagou: ${itemData.code} - ${itemData.description}`, {
+            icon: '💰',
+            duration: 4000,
+          });
+        }
+      });
+    });
+
+    console.log('✅ Listeners de notificação Firebase configurados (NTs e Items pagos)');
 
     return () => {
       console.log('🔇 Desconectando listeners de notificação Firebase');
       unsubscribeNTs();
+      unsubscribeItems();
     };
   }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
