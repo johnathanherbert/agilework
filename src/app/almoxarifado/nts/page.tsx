@@ -18,7 +18,7 @@ import { AddNTModal } from '@/components/nt-manager/add-nt-modal';
 import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
-import { PaidItemsTimeline } from '@/components/nt-manager/paid-items-timeline';
+import { PaidItemsTimelineFirebase } from '@/components/nt-manager/paid-items-timeline-firebase';
 import { RealtimeStatsCard } from '@/components/nt-manager/realtime-stats-card';
 
 export default function NTManager() {
@@ -450,7 +450,7 @@ export default function NTManager() {
               
               {/* Timeline component */}
               <div className="flex-1 min-h-0">
-                <PaidItemsTimeline 
+                <PaidItemsTimelineFirebase 
                   isCollapsed={timelineCollapsed}
                   onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
                 />
