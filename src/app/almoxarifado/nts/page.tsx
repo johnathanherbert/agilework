@@ -104,7 +104,6 @@ export default function NTManager() {
         });
         
         setNts(recentNTs);
-        applyFilters(recentNTs, filters);
         setLoading(false);
       },
       (error) => {
@@ -120,90 +119,65 @@ export default function NTManager() {
   
   // Aplicar filtros sempre que filters ou nts mudarem
   useEffect(() => {
-    applyFilters(nts, filters);
-  }, [filters, nts]);
-  
-  // Apply filters function
-  const applyFilters = (ntsData: NT[], currentFilters: NTFiltersType) => {
-    let filtered = [...ntsData];
+    let filtered = [...nts];
     
     // Filtrar NTs concluídas ou não concluídas com base na vista
-    if (currentFilters.isCompletedView === true) {
-      // Vista de NTs concluídas - mostrar apenas NTs 100% concluídas
+    if (filters.isCompletedView === true) {
       filtered = filtered.filter(nt => {
-        // Verificar se a NT tem itens
         if (!nt.items || nt.items.length === 0) return false;
-        
-        // Verificar se todos os itens estão pagos
         return nt.items.every(item => item.status === 'Pago');
       });
-    } else if (currentFilters.isCompletedView === false) {
-      // Vista de NTs em andamento - mostrar apenas NTs que não estão 100% concluídas
+    } else if (filters.isCompletedView === false) {
       filtered = filtered.filter(nt => {
-        // NTs sem itens são consideradas não concluídas
         if (!nt.items || nt.items.length === 0) return true;
-        
-        // Verificar se pelo menos um item não está pago
         return nt.items.some(item => item.status !== 'Pago');
       });
     }
     
     // Search by NT number
-    if (currentFilters.search) {
+    if (filters.search) {
       filtered = filtered.filter(nt => 
-        nt.nt_number.toLowerCase().includes(currentFilters.search.toLowerCase())
+        nt.nt_number.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
     
     // Status filter
-    if (currentFilters.status && currentFilters.status.length > 0) {
+    if (filters.status && filters.status.length > 0) {
       filtered = filtered.filter(nt => 
-        currentFilters.status!.includes(nt.status)
+        filters.status!.includes(nt.status)
       );
     }
     
     // Date range filter
-    if (currentFilters.dateRange && currentFilters.dateRange.from && currentFilters.dateRange.to) {
+    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
       filtered = filtered.filter(nt => {
-        // Parse created_date format "DD/MM/YYYY"
         const [day, month, year] = nt.created_date.split('/').map(Number);
         const createdDate = new Date(year, month - 1, day);
-        const fromDate = new Date(currentFilters.dateRange!.from);
-        const toDate = new Date(currentFilters.dateRange!.to);
-        
+        const fromDate = new Date(filters.dateRange!.from);
+        const toDate = new Date(filters.dateRange!.to);
         return createdDate >= fromDate && createdDate <= toDate;
       });
     }
     
     // Shift filter
-    if (currentFilters.shift !== null) {
+    if (filters.shift !== null) {
       filtered = filtered.filter(nt => {
         const createdTime = nt.created_time;
         const hour = parseInt(createdTime.split(':')[0], 10);
         
-        // Define shift hours
-        if (currentFilters.shift === 1) {
-          // 1st shift: 06:00-14:00
-          return hour >= 6 && hour < 14;
-        } else if (currentFilters.shift === 2) {
-          // 2nd shift: 14:00-22:00
-          return hour >= 14 && hour < 22;
-        } else if (currentFilters.shift === 3) {
-          // 3rd shift: 22:00-06:00
-          return hour >= 22 || hour < 6;
-        }
-        
+        if (filters.shift === 1) return hour >= 6 && hour < 14;
+        if (filters.shift === 2) return hour >= 14 && hour < 22;
+        if (filters.shift === 3) return hour >= 22 || hour < 6;
         return true;
       });
     }
     
     // Hide old NTs (older than 3 days)
-    if (currentFilters.hideOldNts) {
+    if (filters.hideOldNts) {
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       
       filtered = filtered.filter(nt => {
-        // Parse created_date format "DD/MM/YYYY"
         const [day, month, year] = nt.created_date.split('/').map(Number);
         const createdDate = new Date(year, month - 1, day);
         return createdDate >= threeDaysAgo;
@@ -211,14 +185,14 @@ export default function NTManager() {
     }
     
     // Filter for priority items
-    if (currentFilters.priorityOnly) {
+    if (filters.priorityOnly) {
       filtered = filtered.filter(nt => 
         nt.items?.some(item => item.priority === true)
       );
     }
     
     // Filter for overdue items
-    if (currentFilters.overdueOnly) {
+    if (filters.overdueOnly) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -226,12 +200,10 @@ export default function NTManager() {
         const createdDate = new Date(nt.created_date);
         createdDate.setHours(0, 0, 0, 0);
         
-        // Consider items overdue if they are more than 1 day old and still pending payment
         const isOverdue = nt.items?.some(item => {
           const itemDate = new Date(item.created_date);
           itemDate.setHours(0, 0, 0, 0);
           const daysSinceCreation = Math.floor((today.getTime() - itemDate.getTime()) / (1000 * 3600 * 24));
-          
           return daysSinceCreation > 1 && item.status === 'Ag. Pagamento';
         });
         
@@ -240,7 +212,7 @@ export default function NTManager() {
     }
     
     setFilteredNts(filtered);
-  };
+  }, [filters, nts]);
   
   // Handle filter changes
   const handleFilterChange = (newFilters: Partial<NTFiltersType>) => {
@@ -249,7 +221,7 @@ export default function NTManager() {
       ...newFilters,
     };
     setFilters(updatedFilters);
-    applyFilters(nts, updatedFilters);
+    // O useEffect vai aplicar os filtros automaticamente
   };
   
   // Handle search input change
@@ -447,15 +419,7 @@ export default function NTManager() {
                       hideOldNts: false,
                       priorityOnly: false
                     });
-                    applyFilters(nts, {
-                      search: '',
-                      status: [],
-                      dateRange: null,
-                      shift: null,
-                      overdueOnly: false,
-                      hideOldNts: false,
-                      priorityOnly: false
-                    });
+                    // O useEffect vai aplicar os filtros automaticamente
                   }} variant="outline" size="sm">Limpar filtros</Button>
                 </div>
               )}
