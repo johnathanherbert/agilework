@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 
-export type SoundType = 'impact' | 'triumph' | 'alert' | 'fanfare' | 'power' | 'classic';
+export type SoundType = 'notification' | 'subtle' | 'impact' | 'triumph' | 'alert' | 'fanfare' | 'power' | 'classic';
 
 export interface AudioConfig {
   enabled: boolean;
@@ -13,7 +13,7 @@ export interface AudioConfig {
 const DEFAULT_AUDIO_CONFIG: AudioConfig = {
   enabled: true,
   volume: 1.0, // Volume máximo para máximo impacto
-  soundType: 'impact'
+  soundType: 'notification' // Som moderno e agradável como padrão
 };
 
 export const useAudioNotification = () => {
@@ -124,6 +124,10 @@ export const useAudioNotification = () => {
 // Helper function to get number of sound layers
 const getLayerCount = (soundType: SoundType): number => {
   switch (soundType) {
+    case 'notification':
+      return 3; // Som moderno com 3 camadas harmônicas
+    case 'subtle':
+      return 2; // Som discreto e leve com 2 camadas
     case 'impact':
       return 3; // Camada grave, média e aguda
     case 'triumph':
@@ -143,6 +147,10 @@ const getLayerCount = (soundType: SoundType): number => {
 
 // Helper function to get sound duration
 const getSoundDuration = (soundType: SoundType): number => {  switch (soundType) {
+    case 'notification':
+      return 1.2; // Som curto e agradável
+    case 'subtle':
+      return 0.6; // Som muito rápido e discreto
     case 'impact':
       return 2.0; // Som de impacto dramático mais longo e marcante
     case 'triumph':
@@ -170,7 +178,77 @@ const configureAdvancedSoundType = (
   duration: number,
   layerIndex: number
 ) => {
-  switch (soundType) {    case 'impact':
+  switch (soundType) {    
+    case 'notification':
+      // Som moderno, agradável e profissional tipo "pop" suave
+      if (layerIndex === 0) {
+        // Camada principal - tom médio-agudo agradável
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, startTime); // A5 - tom claro e agradável
+        oscillator.frequency.exponentialRampToValueAtTime(1174.66, startTime + 0.15); // D6
+        oscillator.frequency.exponentialRampToValueAtTime(880, startTime + 0.4); // Volta para A5
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3500, startTime);
+        filter.frequency.exponentialRampToValueAtTime(2000, startTime + duration);
+        filter.Q.setValueAtTime(1, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.6, startTime + 0.02); // Ataque rápido
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      } else if (layerIndex === 1) {
+        // Camada harmônica - adiciona riqueza
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(1318.51, startTime + 0.05); // E6 - delay leve
+        oscillator.frequency.exponentialRampToValueAtTime(1760, startTime + 0.2); // A6
+        oscillator.frequency.exponentialRampToValueAtTime(1318.51, startTime + 0.5); // Volta E6
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2500, startTime);
+        filter.Q.setValueAtTime(2, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.35, startTime + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.1);
+      } else {
+        // Camada grave sutil - corpo do som
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(220, startTime); // A3 - grave suave
+        oscillator.frequency.linearRampToValueAtTime(293.66, startTime + 0.2); // D4
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, startTime);
+        filter.Q.setValueAtTime(0.5, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.25, startTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.15);
+      }
+      break;
+
+    case 'subtle':
+      // Som muito discreto e agradável - tipo "click" suave
+      if (layerIndex === 0) {
+        // Camada principal - tom médio suave
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1046.50, startTime); // C6 - tom claro e discreto
+        oscillator.frequency.exponentialRampToValueAtTime(1318.51, startTime + 0.08); // E6
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2500, startTime);
+        filter.frequency.exponentialRampToValueAtTime(1500, startTime + duration);
+        filter.Q.setValueAtTime(0.7, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.25, startTime + 0.01); // Volume baixo
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.02);
+      } else {
+        // Camada harmônica sutil
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(2093, startTime + 0.02); // C7 - oitava acima
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2000, startTime);
+        filter.Q.setValueAtTime(1.5, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.15, startTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.03);
+      }
+      break;
+
+    case 'impact':
       if (layerIndex === 0) {
         // Camada grave - impacto bass ultra poderoso
         oscillator.type = 'square';
@@ -450,7 +528,9 @@ const configureSoundType = (
 
 // Sound type descriptions for UI
 export const SOUND_DESCRIPTIONS = {
-  impact: 'Impacto Dramático MÁXIMO - som ultra poderoso e dominante (PADRÃO)',
+  notification: 'Notificação Moderna - som agradável e profissional (PADRÃO)',
+  subtle: 'Discreto - notificação leve e sutil para ações secundárias',
+  impact: 'Impacto Dramático MÁXIMO - som ultra poderoso e dominante',
   triumph: 'Triunfo Épico - fanfarra majestosa de vitória',
   alert: 'Alerta Urgente - som chamativo e imediato',
   fanfare: 'Fanfarra Completa - celebração épica prolongada',

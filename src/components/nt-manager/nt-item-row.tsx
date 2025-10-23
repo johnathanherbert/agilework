@@ -154,7 +154,10 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
     <TooltipProvider>
       <tr className={cn(
         "border-b border-border hover:bg-muted/50 transition-colors duration-150 interactive-element group",
-        item.priority ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-2 border-amber-400 dark:border-amber-700" : ""
+        item.priority ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-2 border-amber-400 dark:border-amber-700" : "",
+        // Coloração leve para categorias especiais
+        materialCategory === 'CFA' && !item.priority ? "bg-blue-50/30 dark:bg-blue-950/10 hover:bg-blue-50/50 dark:hover:bg-blue-950/20" : "",
+        materialCategory === 'INF' && !item.priority ? "bg-orange-50/30 dark:bg-orange-950/10 hover:bg-orange-50/50 dark:hover:bg-orange-950/20" : ""
       )}>
         <td className="px-3 py-3 text-xs text-muted-foreground font-semibold">{item.item_number}</td>
         <td 
@@ -199,31 +202,6 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
               />
             </div>
             
-            {/* Material category icon */}
-            {materialCategory !== 'NORMAL' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className={cn(
-                    "flex items-center justify-center w-7 h-7 rounded-lg interactive-element shadow-sm transition-all",
-                    materialCategory === 'CFA' 
-                      ? "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-950/70" 
-                      : "bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-950/70"
-                  )}>
-                    {materialCategory === 'CFA' ? (
-                      <Snowflake className="h-3.5 w-3.5" />
-                    ) : (
-                      <Flame className="h-3.5 w-3.5" />
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs font-medium">
-                    {materialCategory === 'CFA' ? 'Câmara Fria - Limite 4h' : 'Inflamável - Limite 4h'}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            
             {/* Status indicator with time info */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -243,6 +221,30 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
                   <span className="truncate">
                     {itemTimeInfo.displayText}
                   </span>
+                  {/* Material category icon - lado direito do tempo */}
+                  {materialCategory !== 'NORMAL' && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={cn(
+                          "flex items-center justify-center",
+                          materialCategory === 'CFA' 
+                            ? "text-blue-600 dark:text-blue-400" 
+                            : "text-orange-600 dark:text-orange-400"
+                        )}>
+                          {materialCategory === 'CFA' ? (
+                            <Snowflake className="h-3 w-3" />
+                          ) : (
+                            <Flame className="h-3 w-3" />
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs font-medium">
+                          {materialCategory === 'CFA' ? 'Câmara Fria - Limite 4h' : 'Inflamável - Limite 4h'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs bg-background shadow-lg border rounded-lg p-3">

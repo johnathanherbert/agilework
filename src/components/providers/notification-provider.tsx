@@ -144,9 +144,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [audioConfig.enabled]);
 
   // Função para tocar som de notificação
-  const playNotificationSound = () => {
+  const playNotificationSound = (soundType?: 'notification' | 'subtle') => {
     if (!soundEnabled || !audioConfig.enabled) return;
-    playSound(audioConfig);
+    
+    // Se um tipo específico foi passado, use-o temporariamente
+    if (soundType) {
+      playSound({ ...audioConfig, soundType });
+    } else {
+      playSound(audioConfig);
+    }
   };
 
   // Função de teste de som
@@ -160,6 +166,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!user || !notificationsEnabled) return;
     
     console.log('🔔 Configurando listeners de notificação Firebase para usuário:', user.uid);
+    
+    // Timestamp de quando o listener foi iniciado - ignora eventos anteriores
+    const listenerStartTime = Date.now();
     
     // Listener para NTs criadas/editadas por outros usuários
     const ntsQuery = query(collection(db, 'nts'), orderBy('created_at', 'desc'));
@@ -187,6 +196,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Notificar sobre NT criada
         if (change.type === 'added') {
+          // Verificar se a NT foi criada recentemente (últimos 10 segundos)
+          const createdAtTimestamp = ntData.created_at?.toMillis ? ntData.created_at.toMillis() : 0;
+          const secondsSinceCreation = (Date.now() - createdAtTimestamp) / 1000;
+          
+          // Ignorar NTs antigas (criadas antes do listener iniciar ou há mais de 10s)
+          if (createdAtTimestamp < listenerStartTime - 10000 || secondsSinceCreation > 10) {
+            console.log(`⏭️ Ignorando NT antiga (criada há ${secondsSinceCreation.toFixed(0)}s)`);
+            return;
+          }
+          
           const creatorName = ntData.created_by_name || 'Um usuário';
           console.log('📋 Notificando NT criada por:', creatorName);
           addNotification({
@@ -200,6 +219,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Notificar sobre NT editada (número alterado)
         if (change.type === 'modified') {
+          // Verificar se a NT foi atualizada recentemente (últimos 10 segundos)
+          const updatedAtTimestamp = ntData.updated_at?.toMillis ? ntData.updated_at.toMillis() : 0;
+          const secondsSinceUpdate = (Date.now() - updatedAtTimestamp) / 1000;
+          
+          // Ignorar atualizações antigas
+          if (updatedAtTimestamp < listenerStartTime - 10000 || secondsSinceUpdate > 10) {
+            console.log(`⏭️ Ignorando atualização antiga (atualizada há ${secondsSinceUpdate.toFixed(0)}s)`);
+            return;
+          }
+          
           const editorName = ntData.updated_by_name || 'Um usuário';
           console.log('✏️ Notificando NT editada por:', editorName);
           addNotification({
@@ -244,6 +273,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Notificar apenas quando item for marcado como Pago ou Pago Parcial
         if (itemData.status === 'Pago' || itemData.status === 'Pago Parcial') {
+          // Verificar se o item foi atualizado recentemente (últimos 10 segundos)
+          const updatedAtTimestamp = itemData.updated_at?.toMillis ? itemData.updated_at.toMillis() : 0;
+          const secondsSinceUpdate = (Date.now() - updatedAtTimestamp) / 1000;
+          
+          // Ignorar atualizações antigas
+          if (updatedAtTimestamp < listenerStartTime - 10000 || secondsSinceUpdate > 10) {
+            console.log(`⏭️ Ignorando item pago antigo (atualizado há ${secondsSinceUpdate.toFixed(0)}s)`);
+            return;
+          }
+          
           const payerName = itemData.updated_by_name || 'Um usuário';
           const statusText = itemData.status === 'Pago' ? 'pago' : 'pago parcialmente';
           console.log(`💰 Notificando item ${statusText} por:`, payerName);
@@ -254,7 +293,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             type: 'item_updated',
             entityId: itemId,
           });
-          playNotificationSound();
+          playNotificationSound('subtle'); // Som discreto para itens pagos
         }
       });
     });
@@ -399,6 +438,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Helper para obter nome amigável do tipo de som
   const getSoundTypeName = (soundType: SoundType): string => {
     const names = {
+      notification: '🔔 Notificação Moderna',
+      subtle: '🔕 Discreto',
       impact: '💥 Impacto Dramático',
       triumph: '🏆 Triunfo Épico',
       alert: '🚨 Alerta Urgente',
