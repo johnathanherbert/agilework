@@ -49,14 +49,11 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={cn(
-            "relative flex items-start gap-3 p-3 rounded-xl transition-all duration-500 text-xs border backdrop-blur-sm cursor-pointer group overflow-hidden",
+            "relative flex items-start gap-3 p-3 rounded-xl transition-all duration-300 text-xs border backdrop-blur-sm cursor-pointer group overflow-hidden",
             showHighlight 
-              ? 'bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 dark:from-blue-950/60 dark:via-indigo-950/40 dark:to-blue-950/60 border-blue-300 dark:border-blue-600/50 shadow-lg shadow-blue-500/20 dark:shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-900/40'
-              : 'bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-800/60 dark:via-gray-800/40 dark:to-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gradient-to-br hover:from-gray-50 hover:via-gray-100/50 hover:to-gray-50 dark:hover:from-gray-700/70 dark:hover:via-gray-700/50 dark:hover:to-gray-700/70 hover:border-gray-300/70 dark:hover:border-gray-600/70 hover:shadow-lg',
-            "hover:scale-[1.02] active:scale-[0.99]"
+              ? 'bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 dark:from-blue-950/60 dark:via-indigo-950/40 dark:to-blue-950/60 border-blue-300 dark:border-blue-600/50 shadow-lg shadow-blue-500/20 dark:shadow-blue-900/30 hover:shadow-xl'
+              : 'bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-800/60 dark:via-gray-800/40 dark:to-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gradient-to-br hover:from-gray-50 hover:via-gray-100/50 hover:to-gray-50 dark:hover:from-gray-700/70 dark:hover:via-gray-700/50 dark:hover:to-gray-700/70 hover:border-gray-300/70 dark:hover:border-gray-600/70 hover:shadow-md'
           )}>
-            {/* Gradient overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             
             {/* Timeline dot with enhanced glow */}
             <div className={cn(
@@ -279,14 +276,13 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
                   variant="ghost"
                   size="sm"
                   onClick={onToggleCollapse}
-                  className="h-12 w-12 p-0 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/60 dark:to-blue-900/80 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/80 dark:hover:to-blue-800/90 border border-blue-200/60 dark:border-blue-700/80 shadow-lg hover:shadow-xl dark:shadow-blue-950/40 dark:hover:shadow-blue-900/50 backdrop-blur-sm transition-all duration-300 ease-out hover:scale-110 active:scale-95 group"
+                  className="h-12 w-12 p-0 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/60 dark:to-blue-900/80 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/80 dark:hover:to-blue-800/90 border border-blue-200/60 dark:border-blue-700/80 shadow-lg hover:shadow-xl dark:shadow-blue-950/40 dark:hover:shadow-blue-900/50 transition-shadow duration-200 group"
                   title="Expandir timeline de pagamentos"
                 >
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/0 via-blue-400/10 to-blue-500/20 dark:from-blue-300/0 dark:via-blue-400/15 dark:to-blue-500/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   <div className="relative flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-blue-600 dark:text-blue-300 group-hover:text-blue-700 dark:group-hover:text-blue-200 transition-all duration-300 group-hover:scale-110 drop-shadow-sm dark:drop-shadow-md" />
-                    <ChevronLeft className="w-3 h-3 text-blue-500 dark:text-blue-400 absolute -right-0.5 -top-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-all duration-300 group-hover:scale-125 drop-shadow-sm dark:drop-shadow-md" />
+                    <Activity className="w-5 h-5 text-blue-600 dark:text-blue-300 group-hover:text-blue-700 dark:group-hover:text-blue-200 transition-colors duration-150" />
+                    <ChevronLeft className="w-3 h-3 text-blue-500 dark:text-blue-400 absolute -right-0.5 -top-0.5" />
                   </div>
                 </Button>
                   
@@ -303,10 +299,10 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
                 variant="ghost"
                 size="sm"
                 onClick={onToggleCollapse}
-                className="h-8 w-8 p-0 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/70 border border-transparent hover:border-gray-200 dark:hover:border-gray-600/80 hover:shadow-md dark:hover:shadow-gray-900/30 transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+                className="h-8 w-8 p-0 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/70 border border-transparent hover:border-gray-200 dark:hover:border-gray-600/80 transition-colors duration-150"
                 title="Recolher timeline"
               >
-                <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all duration-200 drop-shadow-sm" />
+                <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               </Button>
             )}
           </div>
@@ -317,8 +313,7 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
         <>
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 gap-3 mb-5">
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 p-3 rounded-xl shadow-lg shadow-blue-500/30 dark:shadow-blue-900/40 border border-blue-400/50 dark:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 group">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 p-3 rounded-xl shadow-lg shadow-blue-500/30 dark:shadow-blue-900/40 border border-blue-400/50 dark:border-blue-500/50 hover:shadow-xl transition-shadow duration-200 group">
               <div className="flex items-center gap-2 mb-1.5 relative z-10">
                 <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-white drop-shadow-md" />
@@ -328,8 +323,7 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
               <span className="text-2xl font-black text-white drop-shadow-lg relative z-10">{stats.totalPaidToday}</span>
             </div>
             
-            <div className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 dark:from-green-600 dark:via-emerald-600 dark:to-green-700 p-3 rounded-xl shadow-lg shadow-green-500/30 dark:shadow-green-900/40 border border-green-400/50 dark:border-green-500/50 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 hover:scale-105 group">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 dark:from-green-600 dark:via-emerald-600 dark:to-green-700 p-3 rounded-xl shadow-lg shadow-green-500/30 dark:shadow-green-900/40 border border-green-400/50 dark:border-green-500/50 hover:shadow-xl transition-shadow duration-200 group">
               <div className="flex items-center gap-2 mb-1.5 relative z-10">
                 <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-white drop-shadow-md" />
@@ -339,8 +333,7 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
               <span className="text-lg font-black text-white drop-shadow-lg relative z-10">{stats.averagePaymentTime}</span>
             </div>
             
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 dark:from-emerald-600 dark:via-teal-600 dark:to-emerald-700 p-3 rounded-xl shadow-lg shadow-emerald-500/30 dark:shadow-emerald-900/40 border border-emerald-400/50 dark:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 group">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 dark:from-emerald-600 dark:via-teal-600 dark:to-emerald-700 p-3 rounded-xl shadow-lg shadow-emerald-500/30 dark:shadow-emerald-900/40 border border-emerald-400/50 dark:border-emerald-500/50 hover:shadow-xl transition-shadow duration-200 group">
               <div className="flex items-center gap-2 mb-1.5 relative z-10">
                 <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <Zap className="w-4 h-4 text-white drop-shadow-md" />
@@ -350,8 +343,7 @@ export const PaidItemsTimelineFirebase = ({ isCollapsed = false, onToggleCollaps
               <span className="text-lg font-black text-white drop-shadow-lg relative z-10">{stats.fastestPayment}</span>
             </div>
             
-            <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 dark:from-amber-600 dark:via-orange-600 dark:to-amber-700 p-3 rounded-xl shadow-lg shadow-amber-500/30 dark:shadow-amber-900/40 border border-amber-400/50 dark:border-amber-500/50 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 hover:scale-105 group">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 dark:from-amber-600 dark:via-orange-600 dark:to-amber-700 p-3 rounded-xl shadow-lg shadow-amber-500/30 dark:shadow-amber-900/40 border border-amber-400/50 dark:border-amber-500/50 hover:shadow-xl transition-shadow duration-200 group">
               <div className="flex items-center gap-2 mb-1.5 relative z-10">
                 <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <TrendingDown className="w-4 h-4 text-white drop-shadow-md" />

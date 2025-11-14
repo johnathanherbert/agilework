@@ -35,11 +35,16 @@ export const HeaderClock = () => {
   // Determine which shift is active based on the current time
   const getShift = () => {
     const hours = new Date().getHours();
+    const minutes = new Date().getMinutes();
+    const totalMinutes = hours * 60 + minutes;
     
-    if (hours >= 6 && hours < 14) {
+    // 1º Turno: 7:20 às 15:50
+    if (totalMinutes >= 440 && totalMinutes < 950) {
       return '1º Turno';
-    } else if (hours >= 14 && hours < 22) {
+    // 2º Turno: 15:50 às 23:00
+    } else if (totalMinutes >= 950 && totalMinutes < 1380) {
       return '2º Turno';
+    // 3º Turno: 23:00 às 7:20
     } else {
       return '3º Turno';
     }

@@ -36,10 +36,16 @@ export const Clock = ({
       
       // Determine shift
       const currentHours = now.getHours();
-      if (currentHours >= 6 && currentHours < 14) {
+      const currentMinutes = now.getMinutes();
+      const totalMinutes = currentHours * 60 + currentMinutes;
+      
+      // 1º Turno: 7:20 às 15:50
+      if (totalMinutes >= 440 && totalMinutes < 950) {
         setShift('1º Turno');
-      } else if (currentHours >= 14 && currentHours < 22) {
+      // 2º Turno: 15:50 às 23:00
+      } else if (totalMinutes >= 950 && totalMinutes < 1380) {
         setShift('2º Turno');
+      // 3º Turno: 23:00 às 7:20
       } else {
         setShift('3º Turno');
       }

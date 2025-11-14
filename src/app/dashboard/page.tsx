@@ -5,12 +5,22 @@ import { Topbar } from "@/components/layout/topbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useFirebase } from "@/components/providers/firebase-provider";
 import ProtectedRoute from "@/components/auth/protected-route";
-import { Clock, TrendingUp, Package, CheckCircle2, Zap, AlertTriangle, Activity, ArrowRight, Calendar, BarChart3, RefreshCw } from "lucide-react";
+import { Clock, TrendingUp, Package, CheckCircle2, Zap, AlertTriangle, Activity, ArrowRight, Calendar, BarChart3, RefreshCw, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { cn } from "@/lib/utils";
+import { cn, getCurrentShift } from "@/lib/utils";
+
+interface ShiftStats {
+  shiftNumber: number;
+  totalNTs: number;
+  totalItems: number;
+  paidItems: number;
+  pendingItems: number;
+  completedNTs: number;
+  averagePaymentTime: number;
+}
 
 interface DashboardStats {
   totalNTs: number;
@@ -21,9 +31,14 @@ interface DashboardStats {
   overdueItems: number;
   completedNTs: number;
   recentActivity: string | null;
+  currentShift: ShiftStats;
+  previousShift: ShiftStats;
 }
 
 export default function Dashboard() {
+  const currentShiftNum = getCurrentShift();
+  const previousShiftNum = currentShiftNum === 1 ? 3 : currentShiftNum - 1;
+  
   const [stats, setStats] = useState<DashboardStats>({
     totalNTs: 0,
     totalItems: 0,
@@ -32,7 +47,25 @@ export default function Dashboard() {
     paidThisWeek: 0,
     overdueItems: 0,
     completedNTs: 0,
-    recentActivity: null
+    recentActivity: null,
+    currentShift: {
+      shiftNumber: currentShiftNum,
+      totalNTs: 0,
+      totalItems: 0,
+      paidItems: 0,
+      pendingItems: 0,
+      completedNTs: 0,
+      averagePaymentTime: 0
+    },
+    previousShift: {
+      shiftNumber: previousShiftNum,
+      totalNTs: 0,
+      totalItems: 0,
+      paidItems: 0,
+      pendingItems: 0,
+      completedNTs: 0,
+      averagePaymentTime: 0
+    }
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,160 +77,290 @@ export default function Dashboard() {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - 7);
+
+      // Helper function to check if a time string is in a specific shift
+      const isInShift = (timeStr: string, shiftNum: number): boolean => {
+        const time = new Date(timeStr);
+        const hours = time.getHours();
+        const minutes = time.getMinutes();
+        const totalMinutes = hours * 60 + minutes;
         
-        // Get all NTs
-        const ntsRef = collection(db, 'nts');
-        const ntsSnapshot = await getDocs(ntsRef);
-        
-        // Get all items
-        const itemsRef = collection(db, 'nt_items');
-        const itemsSnapshot = await getDocs(itemsRef);
-        
-        // Calculate stats
-        const totalNTs = ntsSnapshot.size;
-        const totalItems = itemsSnapshot.size;
-        let pendingItems = 0;
-        let paidToday = 0;
-        let paidThisWeek = 0;
-        let overdueItems = 0;
-        let completedNTs = 0;
-  let recentActivityDate: Date | null = null;
+        // Shift 1: 7:20-15:50 (440-950 minutes)
+        // Shift 2: 15:50-23:00 (950-1380 minutes)
+        // Shift 3: 23:00-7:20 (1380+ or 0-440 minutes)
+        if (shiftNum === 1) return totalMinutes >= 440 && totalMinutes < 950;
+        if (shiftNum === 2) return totalMinutes >= 950 && totalMinutes < 1380;
+        if (shiftNum === 3) return totalMinutes >= 1380 || totalMinutes < 440;
+        return false;
+      };
 
-        // Group items by NT
-        const itemsByNT = new Map<string, any[]>();
-        itemsSnapshot.forEach(doc => {
-          const itemData = doc.data();
-          const item = { id: doc.id, ...itemData };
-          const ntId = itemData.nt_id as string;
-          if (!itemsByNT.has(ntId)) {
-            itemsByNT.set(ntId, []);
-          }
-          itemsByNT.get(ntId)?.push(item);
-        });
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - 7);
+      
+      // Get all NTs
+      const ntsRef = collection(db, 'nts');
+      const ntsSnapshot = await getDocs(ntsRef);
+      
+      // Get all items
+      const itemsRef = collection(db, 'nt_items');
+      const itemsSnapshot = await getDocs(itemsRef);
+      
+      // Calculate stats
+      const totalNTs = ntsSnapshot.size;
+      const totalItems = itemsSnapshot.size;
+      let pendingItems = 0;
+      let paidToday = 0;
+      let paidThisWeek = 0;
+      let overdueItems = 0;
+      let completedNTs = 0;
+      let recentActivityDate: Date | null = null;
 
-        // Calculate NT completion
-        ntsSnapshot.forEach(ntDoc => {
-          const items = itemsByNT.get(ntDoc.id) || [];
-          if (items.length > 0) {
-            const allPaid = items.every(item => item.status === 'Pago');
-            if (allPaid) completedNTs++;
-          }
-        });
+      // Group items by NT
+      const itemsByNT = new Map<string, any[]>();
+      itemsSnapshot.forEach(doc => {
+        const itemData = doc.data();
+        const item = { id: doc.id, ...itemData };
+        const ntId = itemData.nt_id as string;
+        if (!itemsByNT.has(ntId)) {
+          itemsByNT.set(ntId, []);
+        }
+        itemsByNT.get(ntId)?.push(item);
+      });
 
-        // Helper: convert various stored date/time formats to JS Date
-        const toDateFromField = (field: any, timeField?: any, fallbackDate?: Date | null) => {
-          if (!field && !timeField) return fallbackDate || null;
-          // Firestore Timestamp
-          if (field && typeof field === 'object' && typeof field.toDate === 'function') {
-            // If there's also a timeField that's a simple time (HH:MM), try to combine
-            if (timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
-              const base = field.toDate();
-              const [h, m] = timeField.split(':').map((s: string) => parseInt(s, 10) || 0);
-              return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, m);
-            }
-            return field.toDate();
-          }
+      // Calculate NT completion
+      ntsSnapshot.forEach(ntDoc => {
+        const items = itemsByNT.get(ntDoc.id) || [];
+        if (items.length > 0) {
+          const allPaid = items.every(item => item.status === 'Pago');
+          if (allPaid) completedNTs++;
+        }
+      });
 
-          // ISO string or other parsable strings
-          if (typeof field === 'string') {
-            // Try ISO parse
-            const iso = new Date(field);
-            if (!isNaN(iso.getTime())) return iso;
-
-            // Try DD/MM/YYYY possibly combined with timeField
-            const dateParts = field.split('/');
-            if (dateParts.length === 3) {
-              const day = parseInt(dateParts[0], 10);
-              const month = parseInt(dateParts[1], 10) - 1;
-              const year = parseInt(dateParts[2], 10);
-              if (timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
-                const [h, m] = timeField.split(':').map((s: string) => parseInt(s, 10) || 0);
-                return new Date(year, month, day, h, m);
-              }
-              return new Date(year, month, day);
-            }
-          }
-
-          // Fallback to combining fallbackDate and timeField
-          if (fallbackDate && timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
+      // Helper: convert various stored date/time formats to JS Date
+      const toDateFromField = (field: any, timeField?: any, fallbackDate?: Date | null) => {
+        if (!field && !timeField) return fallbackDate || null;
+        // Firestore Timestamp
+        if (field && typeof field === 'object' && typeof field.toDate === 'function') {
+          // If there's also a timeField that's a simple time (HH:MM), try to combine
+          if (timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
+            const base = field.toDate();
             const [h, m] = timeField.split(':').map((s: string) => parseInt(s, 10) || 0);
-            return new Date(fallbackDate.getFullYear(), fallbackDate.getMonth(), fallbackDate.getDate(), h, m);
+            return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, m);
+          }
+          return field.toDate();
+        }
+
+        // ISO string or other parsable strings
+        if (typeof field === 'string') {
+          // Try ISO parse
+          const iso = new Date(field);
+          if (!isNaN(iso.getTime())) return iso;
+
+          // Try DD/MM/YYYY possibly combined with timeField
+          const dateParts = field.split('/');
+          if (dateParts.length === 3) {
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            if (timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
+              const [h, m] = timeField.split(':').map((s: string) => parseInt(s, 10) || 0);
+              return new Date(year, month, day, h, m);
+            }
+            return new Date(year, month, day);
+          }
+        }
+
+        // Fallback to combining fallbackDate and timeField
+        if (fallbackDate && timeField && typeof timeField === 'string' && /^\d{1,2}:\d{2}/.test(timeField)) {
+          const [h, m] = timeField.split(':').map((s: string) => parseInt(s, 10) || 0);
+          return new Date(fallbackDate.getFullYear(), fallbackDate.getMonth(), fallbackDate.getDate(), h, m);
+        }
+
+        return fallbackDate || null;
+      };
+
+      // Calculate item stats
+      itemsSnapshot.forEach(doc => {
+        const item = doc.data();
+
+        // Determine timestamps robustly
+        const createdAt = toDateFromField(item.created_at, item.created_time) || toDateFromField(item.created_date, item.created_time);
+        const updatedAt = toDateFromField(item.updated_at) || createdAt || new Date();
+
+        // Payment timestamp: could be ISO, time-only (combined with created_date) or recorded in updated_at
+        let paidTimestamp: Date | null = null;
+        if (item.payment_time) {
+          // If payment_time looks like ISO or full date
+          if (typeof item.payment_time === 'string' && (item.payment_time.includes('T') || item.payment_time.includes('-'))) {
+            const parsed = new Date(item.payment_time);
+            if (!isNaN(parsed.getTime())) paidTimestamp = parsed;
           }
 
-          return fallbackDate || null;
-        };
+          // If payment_time is a time only (HH:MM), combine with created_date or createdAt
+          if (!paidTimestamp && typeof item.payment_time === 'string' && /^\d{1,2}:\d{2}/.test(item.payment_time)) {
+            paidTimestamp = toDateFromField(item.created_date, item.payment_time, createdAt) || toDateFromField(item.created_at, item.payment_time, createdAt);
+          }
+        }
 
-        // Calculate item stats
-        itemsSnapshot.forEach(doc => {
-          const item = doc.data();
+        if (item.status === 'Pago' || item.status === 'Pago Parcial') {
+          const effectivePaid = paidTimestamp || updatedAt || new Date();
 
-          // Determine timestamps robustly
-          const createdAt = toDateFromField(item.created_at, item.created_time) || toDateFromField(item.created_date, item.created_time);
-          const updatedAt = toDateFromField(item.updated_at) || createdAt || new Date();
-
-          // Payment timestamp: could be ISO, time-only (combined with created_date) or recorded in updated_at
-          let paidTimestamp: Date | null = null;
-          if (item.payment_time) {
-            // If payment_time looks like ISO or full date
-            if (typeof item.payment_time === 'string' && (item.payment_time.includes('T') || item.payment_time.includes('-'))) {
-              const parsed = new Date(item.payment_time);
-              if (!isNaN(parsed.getTime())) paidTimestamp = parsed;
-            }
-
-            // If payment_time is a time only (HH:MM), combine with created_date or createdAt
-            if (!paidTimestamp && typeof item.payment_time === 'string' && /^\d{1,2}:\d{2}/.test(item.payment_time)) {
-              paidTimestamp = toDateFromField(item.created_date, item.payment_time, createdAt) || toDateFromField(item.created_at, item.payment_time, createdAt);
-            }
+          // Check if paid today
+          if (effectivePaid >= today) {
+            paidToday++;
           }
 
-          if (item.status === 'Pago' || item.status === 'Pago Parcial') {
-            const effectivePaid = paidTimestamp || updatedAt || new Date();
-
-            // Check if paid today
-            if (effectivePaid >= today) {
-              paidToday++;
-            }
-
-            // Check if paid this week
-            if (effectivePaid >= startOfWeek) {
-              paidThisWeek++;
-            }
-
-            // Update recent activity (keep as Date)
-            if (!recentActivityDate || effectivePaid > recentActivityDate) {
-              recentActivityDate = effectivePaid;
-            }
-          } else {
-            pendingItems++;
-
-            // Check for overdue items (created more than 2 hours ago)
-            const createdTimestamp = createdAt || updatedAt || new Date();
-            const twoHoursAgo = new Date(now.getTime() - (2 * 60 * 60 * 1000));
-
-            if (createdTimestamp < twoHoursAgo) {
-              overdueItems++;
-            }
+          // Check if paid this week
+          if (effectivePaid >= startOfWeek) {
+            paidThisWeek++;
           }
-        });
+
+          // Update recent activity (keep as Date)
+          if (!recentActivityDate || effectivePaid > recentActivityDate) {
+            recentActivityDate = effectivePaid;
+          }
+        } else {
+          pendingItems++;
+
+          // Check for overdue items (created more than 2 hours ago)
+          const createdTimestamp = createdAt || updatedAt || new Date();
+          const twoHoursAgo = new Date(now.getTime() - (2 * 60 * 60 * 1000));
+
+          if (createdTimestamp < twoHoursAgo) {
+            overdueItems++;
+          }
+        }
+      });
+      
+      const recentActivityISO = recentActivityDate ? (recentActivityDate as unknown as Date).toISOString() : null;
+
+      // Calculate shift-specific statistics (last 24 hours only)
+      const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+      const currentShiftData: ShiftStats = {
+        shiftNumber: currentShiftNum,
+        totalNTs: 0,
+        totalItems: 0,
+        paidItems: 0,
+        pendingItems: 0,
+        completedNTs: 0,
+        averagePaymentTime: 0
+      };
+      const previousShiftData: ShiftStats = {
+        shiftNumber: previousShiftNum,
+        totalNTs: 0,
+        totalItems: 0,
+        paidItems: 0,
+        pendingItems: 0,
+        completedNTs: 0,
+        averagePaymentTime: 0
+      };
+
+      const shiftPaymentTimes: { current: number[], previous: number[] } = { current: [], previous: [] };
+
+      ntsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const createdAt = toDateFromField(data.created_at);
         
-        const recentActivityISO = recentActivityDate ? (recentActivityDate as unknown as Date).toISOString() : null;
+        if (!createdAt || createdAt < twentyFourHoursAgo) return;
 
-        setStats({
-          totalNTs,
-          totalItems,
-          pendingItems,
-          paidToday,
-          paidThisWeek,
-          overdueItems,
-          completedNTs,
-          recentActivity: recentActivityISO
-        });
+        const createdTimeStr = createdAt.toISOString();
+        const isCurrentShift = isInShift(createdTimeStr, currentShiftNum);
+        const isPreviousShift = isInShift(createdTimeStr, previousShiftNum);
+
+        if (isCurrentShift) {
+          currentShiftData.totalNTs++;
+          const ntItems = itemsByNT.get(doc.id);
+          if (ntItems) {
+            const allPaid = ntItems.every((item: any) => item.status?.toLowerCase() === 'pago');
+            if (allPaid && ntItems.length > 0) currentShiftData.completedNTs++;
+          }
+        } else if (isPreviousShift) {
+          previousShiftData.totalNTs++;
+          const ntItems = itemsByNT.get(doc.id);
+          if (ntItems) {
+            const allPaid = ntItems.every((item: any) => item.status?.toLowerCase() === 'pago');
+            if (allPaid && ntItems.length > 0) previousShiftData.completedNTs++;
+          }
+        }
+      });
+
+      itemsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const createdAt = toDateFromField(data.created_at);
+        const updatedAt = toDateFromField(data.updated_at);
         
-        setLastUpdate(new Date());
+        if (!createdAt || createdAt < twentyFourHoursAgo) return;
+
+        const createdTimeStr = createdAt.toISOString();
+        const isCurrentShift = isInShift(createdTimeStr, currentShiftNum);
+        const isPreviousShift = isInShift(createdTimeStr, previousShiftNum);
+
+        if (isCurrentShift) {
+          currentShiftData.totalItems++;
+          const statusLower = data.status?.toLowerCase();
+          if (statusLower === 'pago' || statusLower === 'pago parcial') {
+            currentShiftData.paidItems++;
+            // Calculate payment time
+            if (updatedAt && createdAt) {
+              const paymentTimeMinutes = (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60);
+              shiftPaymentTimes.current.push(paymentTimeMinutes);
+            }
+          } else if (statusLower === 'pendente') {
+            currentShiftData.pendingItems++;
+          }
+        } else if (isPreviousShift) {
+          previousShiftData.totalItems++;
+          const statusLower = data.status?.toLowerCase();
+          if (statusLower === 'pago' || statusLower === 'pago parcial') {
+            previousShiftData.paidItems++;
+            // Calculate payment time
+            if (updatedAt && createdAt) {
+              const paymentTimeMinutes = (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60);
+              shiftPaymentTimes.previous.push(paymentTimeMinutes);
+            }
+          } else if (statusLower === 'pendente') {
+            previousShiftData.pendingItems++;
+          }
+        }
+      });
+
+      // Calculate average payment times
+      if (shiftPaymentTimes.current.length > 0) {
+        const sum = shiftPaymentTimes.current.reduce((a, b) => a + b, 0);
+        currentShiftData.averagePaymentTime = Math.round(sum / shiftPaymentTimes.current.length);
+      }
+      if (shiftPaymentTimes.previous.length > 0) {
+        const sum = shiftPaymentTimes.previous.reduce((a, b) => a + b, 0);
+        previousShiftData.averagePaymentTime = Math.round(sum / shiftPaymentTimes.previous.length);
+      }
+
+      // Debug: Log shift data
+      console.log('Shift Debug:', {
+        currentShiftNum,
+        previousShiftNum,
+        currentShiftData,
+        previousShiftData,
+        twentyFourHoursAgo,
+        totalNTsInDB: ntsSnapshot.size,
+        totalItemsInDB: itemsSnapshot.size
+      });
+
+      setStats({
+        totalNTs,
+        totalItems,
+        pendingItems,
+        paidToday,
+        paidThisWeek,
+        overdueItems,
+        completedNTs,
+        recentActivity: recentActivityISO,
+        currentShift: currentShiftData,
+        previousShift: previousShiftData
+      });
+      
+      setLastUpdate(new Date());
         
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -241,6 +404,21 @@ export default function Dashboard() {
     
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d atrás`;
+  };
+
+  const getShiftName = (shiftNum: number): string => {
+    if (shiftNum === 1) return '1° Turno (7:20-15:50)';
+    if (shiftNum === 2) return '2° Turno (15:50-23:00)';
+    if (shiftNum === 3) return '3° Turno (23:00-7:20)';
+    return 'Desconhecido';
+  };
+
+  const formatMinutes = (minutes: number): string => {
+    if (minutes === 0) return '-';
+    if (minutes < 60) return `${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
   };
   
   return (
@@ -288,8 +466,8 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Stats grid - Modern UI 2.0 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Shift Analysis Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Auto-refresh indicator */}
               {refreshing && (
                 <div className="col-span-full flex items-center justify-center gap-2 py-2">
@@ -297,6 +475,193 @@ export default function Dashboard() {
                   <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Atualizando dados...</span>
                 </div>
               )}
+              {/* Current Shift Card */}
+              <Card className="border-none shadow-xl overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-bold text-white/90 uppercase tracking-wide">Turno Atual</p>
+                      <p className="text-2xl font-black text-white drop-shadow-lg mt-1">
+                        {getShiftName(stats.currentShift.shiftNumber)}
+                      </p>
+                    </div>
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Clock className="w-7 h-7 text-white drop-shadow-md" />
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6 bg-white dark:bg-gray-800">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Total NTs */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800">
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">NTs Criadas</p>
+                      <p className="text-3xl font-black text-blue-700 dark:text-blue-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-blue-200 dark:bg-blue-800 rounded animate-pulse" /> : stats.currentShift.totalNTs}
+                      </p>
+                    </div>
+
+                    {/* Total Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-100 dark:border-purple-800">
+                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-1">Total Itens</p>
+                      <p className="text-3xl font-black text-purple-700 dark:text-purple-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-purple-200 dark:bg-purple-800 rounded animate-pulse" /> : stats.currentShift.totalItems}
+                      </p>
+                    </div>
+
+                    {/* Paid Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800">
+                      <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">Itens Pagos</p>
+                      <p className="text-3xl font-black text-green-700 dark:text-green-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-green-200 dark:bg-green-800 rounded animate-pulse" /> : stats.currentShift.paidItems}
+                      </p>
+                    </div>
+
+                    {/* Pending Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-100 dark:border-orange-800">
+                      <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide mb-1">Pendentes</p>
+                      <p className="text-3xl font-black text-orange-700 dark:text-orange-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-orange-200 dark:bg-orange-800 rounded animate-pulse" /> : stats.currentShift.pendingItems}
+                      </p>
+                    </div>
+
+                    {/* Completed NTs */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-100 dark:border-teal-800">
+                      <p className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wide mb-1">NTs Completas</p>
+                      <p className="text-3xl font-black text-teal-700 dark:text-teal-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-teal-200 dark:bg-teal-800 rounded animate-pulse" /> : stats.currentShift.completedNTs}
+                      </p>
+                    </div>
+
+                    {/* Average Payment Time */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-800">
+                      <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1">Tempo Médio</p>
+                      <p className="text-2xl font-black text-indigo-700 dark:text-indigo-300">
+                        {loading ? <span className="inline-block w-16 h-7 bg-indigo-200 dark:bg-indigo-800 rounded animate-pulse" /> : formatMinutes(stats.currentShift.averagePaymentTime)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Previous Shift Card */}
+              <Card className="border-none shadow-xl overflow-hidden">
+                <div className="bg-gradient-to-br from-gray-600 via-slate-600 to-zinc-600 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-bold text-white/90 uppercase tracking-wide">Turno Anterior</p>
+                      <p className="text-2xl font-black text-white drop-shadow-lg mt-1">
+                        {getShiftName(stats.previousShift.shiftNumber)}
+                      </p>
+                    </div>
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Clock className="w-7 h-7 text-white drop-shadow-md" />
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6 bg-white dark:bg-gray-800">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Total NTs - with comparison */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">NTs Criadas</p>
+                        {stats.previousShift.totalNTs > 0 && stats.currentShift.totalNTs > stats.previousShift.totalNTs && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.totalNTs > 0 && stats.currentShift.totalNTs < stats.previousShift.totalNTs && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-3xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : stats.previousShift.totalNTs}
+                      </p>
+                    </div>
+
+                    {/* Total Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total Itens</p>
+                        {stats.previousShift.totalItems > 0 && stats.currentShift.totalItems > stats.previousShift.totalItems && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.totalItems > 0 && stats.currentShift.totalItems < stats.previousShift.totalItems && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-3xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : stats.previousShift.totalItems}
+                      </p>
+                    </div>
+
+                    {/* Paid Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Itens Pagos</p>
+                        {stats.previousShift.paidItems > 0 && stats.currentShift.paidItems > stats.previousShift.paidItems && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.paidItems > 0 && stats.currentShift.paidItems < stats.previousShift.paidItems && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-3xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : stats.previousShift.paidItems}
+                      </p>
+                    </div>
+
+                    {/* Pending Items */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pendentes</p>
+                        {stats.previousShift.pendingItems > 0 && stats.currentShift.pendingItems < stats.previousShift.pendingItems && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.pendingItems > 0 && stats.currentShift.pendingItems > stats.previousShift.pendingItems && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-3xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : stats.previousShift.pendingItems}
+                      </p>
+                    </div>
+
+                    {/* Completed NTs */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">NTs Completas</p>
+                        {stats.previousShift.completedNTs > 0 && stats.currentShift.completedNTs > stats.previousShift.completedNTs && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.completedNTs > 0 && stats.currentShift.completedNTs < stats.previousShift.completedNTs && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-3xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : stats.previousShift.completedNTs}
+                      </p>
+                    </div>
+
+                    {/* Average Payment Time */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/40 dark:to-slate-900/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Tempo Médio</p>
+                        {stats.previousShift.averagePaymentTime > 0 && stats.currentShift.averagePaymentTime < stats.previousShift.averagePaymentTime && (
+                          <ArrowUpRight className="w-4 h-4 text-green-500" />
+                        )}
+                        {stats.previousShift.averagePaymentTime > 0 && stats.currentShift.averagePaymentTime > stats.previousShift.averagePaymentTime && (
+                          <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-2xl font-black text-gray-700 dark:text-gray-300">
+                        {loading ? <span className="inline-block w-16 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> : formatMinutes(stats.previousShift.averagePaymentTime)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Stats grid - Modern UI 2.0 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Total NTs */}
               <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 group animate-in fade-in slide-in-from-bottom-4"
                 style={{ animationDelay: '0ms', animationDuration: '500ms' }}

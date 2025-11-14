@@ -406,13 +406,18 @@ export function getCurrentTime(): string {
 // Get current shift based on time
 export function getCurrentShift(): number {
   const hour = new Date().getHours()
+  const minute = new Date().getMinutes()
+  const totalMinutes = hour * 60 + minute
   
-  if (hour >= 6 && hour < 14) {
-    return 1 // 1st shift (6:00 - 14:00)
-  } else if (hour >= 14 && hour < 22) {
-    return 2 // 2nd shift (14:00 - 22:00)
+  // 1º Turno: 7:20 às 15:50 (440 minutos até 950 minutos)
+  if (totalMinutes >= 440 && totalMinutes < 950) {
+    return 1
+  // 2º Turno: 15:50 às 23:00 (950 minutos até 1380 minutos)
+  } else if (totalMinutes >= 950 && totalMinutes < 1380) {
+    return 2
+  // 3º Turno: 23:00 às 7:20 (1380+ minutos ou 0-440 minutos)
   } else {
-    return 3 // 3rd shift (22:00 - 6:00)
+    return 3
   }
 }
 

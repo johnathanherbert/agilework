@@ -9,7 +9,7 @@ import { parseDateTime, getDelayInfo, isItemDelayed, getMaterialCategory } from 
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AddItemModal } from './add-item-modal';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 interface NTCardProps {
@@ -25,8 +25,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Function to copy NT number to clipboard
-  const handleCopyNTNumber = async (e: React.MouseEvent) => {
+  // Memoize copy handler
+  const handleCopyNTNumber = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(nt.nt_number);
@@ -35,38 +35,10 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  };
+  }, [nt.nt_number]);
 
-  // Check if NT is delayed
-  const isNTDelayed = () => {
-    try {
-      const { creationDate } = parseDateTime(nt.created_date, nt.created_time);
-      const { completionPercentage } = getStatusCounts();
-      const delayInfo = getDelayInfo(creationDate);
-      return delayInfo.isDelayed && completionPercentage < 100;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Get NT delay information
-  const getNTDelayInfo = () => {
-    try {
-      const { creationDate } = parseDateTime(nt.created_date, nt.created_time);
-      return getDelayInfo(creationDate);
-    } catch (error) {
-      return {
-        isDelayed: false,
-        delayTime: 0,
-        formattedDelayTime: "",
-        totalElapsed: 0,
-        formattedTotalElapsed: ""
-      };
-    }
-  };
-  
-  // Get status counts and check for delays
-  const getStatusCounts = () => {
+  // Memoize status counts calculation
+  const statusCounts = useMemo(() => {
     if (!nt.items || nt.items.length === 0) {
       return { 
         pendingCount: 0, 
@@ -89,7 +61,6 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
           const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
           const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
           if (isNaN(creationDate.getTime())) return false;
-          // Usar a nova função que considera a categoria do material
           return isItemDelayed(creationDate, item.code);
         } catch (error) {
           return false;
@@ -110,12 +81,30 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
       completionPercentage,
       total,
     };
-  };
+  }, [nt.items]);
   
-  const { pendingCount, paidCount, partialCount, delayedCount, completionPercentage, total } = getStatusCounts();
+  const { pendingCount, paidCount, partialCount, delayedCount, completionPercentage, total } = statusCounts;
 
-  // Get NT status with compact color coding
-  const getNTStatus = () => {
+  // Memoize NT delay check
+  const ntDelayInfo = useMemo(() => {
+    try {
+      const { creationDate } = parseDateTime(nt.created_date, nt.created_time);
+      return getDelayInfo(creationDate);
+    } catch (error) {
+      return {
+        isDelayed: false,
+        delayTime: 0,
+        formattedDelayTime: "",
+        totalElapsed: 0,
+        formattedTotalElapsed: ""
+      };
+    }
+  }, [nt.created_date, nt.created_time]);
+
+  const isDelayed = ntDelayInfo.isDelayed && completionPercentage < 100;
+
+  // Memoize NT status
+  const ntStatus = useMemo(() => {
     if (total === 0) return { 
       label: "Vazia", 
       variant: "secondary" as const,
@@ -141,14 +130,10 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
       variant: "outline" as const,
       color: "amber"
     };
-  };
+  }, [total, completionPercentage, delayedCount]);
 
-  const ntStatus = getNTStatus();
-  const ntDelayInfo = getNTDelayInfo();
-  const isDelayed = isNTDelayed();
-
-  // Check if NT contains special category items (CFA or INF)
-  const getNTCategories = () => {
+  // Memoize category checks
+  const ntCategories = useMemo(() => {
     if (!nt.items || nt.items.length === 0) {
       return { hasCFA: false, hasINF: false };
     }
@@ -157,9 +142,9 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
     const hasINF = nt.items.some(item => getMaterialCategory(item.code) === 'INF');
 
     return { hasCFA, hasINF };
-  };
+  }, [nt.items]);
 
-  const { hasCFA, hasINF } = getNTCategories();
+  const { hasCFA, hasINF } = ntCategories;
 
   return (
     <TooltipProvider>      <Card 
@@ -185,28 +170,25 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
           
           onToggle();
         }}        className={cn(
-          "relative overflow-hidden transition-all duration-300 hover:shadow-2xl border cursor-pointer group",
+          "relative overflow-hidden transition-shadow duration-200 hover:shadow-xl border cursor-pointer group",
           "border-gray-200/50 dark:border-gray-700/50",
           "bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900",
-          "backdrop-blur-sm",
-          // Left border color indicator with glow effect
-          `border-l-[6px] hover:border-l-[8px]`,          isDelayed 
-            ? "border-l-red-500 hover:border-l-red-600 dark:border-l-red-400 dark:hover:border-l-red-300 shadow-red-500/10 hover:shadow-red-500/20" 
+          // Left border color indicator
+          `border-l-[6px]`,          isDelayed 
+            ? "border-l-red-500 dark:border-l-red-400" 
             : delayedCount > 0 
-              ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300 shadow-amber-500/10 hover:shadow-amber-500/20"
+              ? "border-l-amber-500 dark:border-l-amber-400"
               : ntStatus.color === "emerald" 
-                ? "border-l-emerald-500 hover:border-l-emerald-600 dark:border-l-emerald-400 dark:hover:border-l-emerald-300 shadow-emerald-500/10 hover:shadow-emerald-500/20"
+                ? "border-l-emerald-500 dark:border-l-emerald-400"
                 : ntStatus.color === "blue"
-                  ? "border-l-blue-500 hover:border-l-blue-600 dark:border-l-blue-400 dark:hover:border-l-blue-300 shadow-blue-500/10 hover:shadow-blue-500/20"
+                  ? "border-l-blue-500 dark:border-l-blue-400"
                   : ntStatus.color === "red"
-                    ? "border-l-red-500 hover:border-l-red-600 dark:border-l-red-400 dark:hover:border-l-red-300 shadow-red-500/10 hover:shadow-red-500/20"
+                    ? "border-l-red-500 dark:border-l-red-400"
                     : ntStatus.color === "amber"
-                      ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300 shadow-amber-500/10 hover:shadow-amber-500/20"
-                      : "border-l-gray-400 hover:border-l-gray-500 dark:border-l-gray-600 dark:hover:border-l-gray-500",
-          // Modern card effects
-          "rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-black/20 dark:hover:shadow-black/30",
-          "hover:scale-[1.01] hover:-translate-y-0.5",
-          "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300 before:pointer-events-none"
+                      ? "border-l-amber-500 dark:border-l-amber-400"
+                      : "border-l-gray-400 dark:border-l-gray-600",
+          // Simplified card effects
+          "rounded-2xl shadow-md hover:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30"
         )}>
         {/* Subtle top gradient accent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-50" />
@@ -226,7 +208,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                       variant="ghost"
                       size="sm"
                       onClick={handleCopyNTNumber}
-                      className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 interactive-element transition-all duration-200 hover:scale-110 rounded-lg"
+                      className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 interactive-element transition-colors duration-150 rounded-lg"
                     >
                       {isCopied ? (
                         <Check className="h-4 w-4 text-green-600 dark:text-green-400 animate-in zoom-in duration-200" />
@@ -244,7 +226,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
               {/* Modern status badge with gradient */}
               <Badge 
                 variant={ntStatus.variant}
-                className={cn(                  "text-xs px-3 py-1 font-bold shadow-md backdrop-blur-sm border-0 transition-all duration-200 hover:scale-105",
+                className={cn(                  "text-xs px-3 py-1 font-bold shadow-md backdrop-blur-sm border-0",
                   ntStatus.color === "emerald" && "bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 text-white shadow-emerald-500/30",
                   ntStatus.color === "blue" && "bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white shadow-blue-500/30",
                   ntStatus.color === "amber" && "bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white shadow-amber-500/30",
@@ -263,7 +245,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                 {isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="relative w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 hover:scale-110 group">
+                      <div className="relative w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-red-500/30 transition-shadow duration-150 group">
                         <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-30" />
                         <AlertTriangle className="h-4 w-4 text-white relative z-10" />
                       </div>
@@ -276,7 +258,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                 {delayedCount > 0 && !isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="relative w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-200 hover:scale-110">
+                      <div className="relative w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-amber-500/30 transition-shadow duration-150">
                         <Clock className="h-4 w-4 text-white" />
                         {delayedCount > 1 && (
                           <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-md border border-white dark:border-gray-900">
@@ -293,7 +275,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                 {hasCFA && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-cyan-500 dark:from-blue-500 dark:to-cyan-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:scale-110">
+                      <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-cyan-500 dark:from-blue-500 dark:to-cyan-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-blue-500/30 transition-shadow duration-150">
                         <Snowflake className="h-4 w-4 text-white" />
                       </div>
                     </TooltipTrigger>
@@ -305,7 +287,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                 {hasINF && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 hover:scale-110">
+                      <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-orange-500/30 transition-shadow duration-150">
                         <Flame className="h-4 w-4 text-white" />
                       </div>
                     </TooltipTrigger>
@@ -335,7 +317,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                       variant="ghost" 
                       size="sm" 
                       onClick={onEdit} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 interactive-element rounded-xl transition-colors duration-150 group"
                     >
                       <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                     </Button>
@@ -351,7 +333,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                       variant="ghost" 
                       size="sm" 
                       onClick={() => setShowAddItemModal(true)} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0 hover:bg-green-50 dark:hover:bg-green-900/30 interactive-element rounded-xl transition-colors duration-150 group"
                     >
                       <Plus className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
                     </Button>
@@ -367,7 +349,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                       variant="ghost" 
                       size="sm" 
                       onClick={onDelete} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/30 dark:hover:to-pink-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0 hover:bg-red-50 dark:hover:bg-red-900/30 interactive-element rounded-xl transition-colors duration-150 group"
                     >
                       <Trash2 className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
                     </Button>
@@ -381,7 +363,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                   variant="ghost" 
                   size="sm" 
                   onClick={onToggle} 
-                  className="h-8 w-8 p-0 interactive-element rounded-xl transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:scale-110"
+                  className="h-8 w-8 p-0 interactive-element rounded-xl transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-800/60"
                 >
                   {isExpanded ? (
                     <ChevronUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -399,12 +381,11 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
               <div className="relative w-full bg-gray-200 dark:bg-gray-700/50 rounded-full h-2 overflow-hidden shadow-inner">
                 <div 
                   className={cn(
-                    "h-2 rounded-full transition-all duration-700 ease-out relative",
-                    "before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:animate-shimmer",
+                    "h-2 rounded-full transition-all duration-500 ease-out",
                     completionPercentage === 100 
-                      ? "bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-500 shadow-lg shadow-emerald-500/50" :
+                      ? "bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-500" :
                     completionPercentage > 0 
-                      ? "bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-500 shadow-lg shadow-blue-500/50" : 
+                      ? "bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-500" : 
                     "bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-500 dark:to-gray-600"
                   )}
                   style={{ width: `${completionPercentage}%` }}
@@ -456,7 +437,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                   variant="outline" 
                   size="sm" 
                   onClick={() => setShowAddItemModal(true)}
-                  className="interactive-element mt-3 h-9 px-6 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 hover:border-green-500 dark:hover:border-green-400 transition-all duration-200 hover:scale-105 hover:shadow-lg font-bold text-sm"
+                  className="interactive-element mt-3 h-9 px-6 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/30 border-2 hover:border-green-500 dark:hover:border-green-400 transition-colors duration-150 font-bold text-sm"
                 >
                   <Plus className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                   Adicionar primeiro item

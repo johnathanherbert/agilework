@@ -161,13 +161,13 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
       )}>
         <td className="px-3 py-3 text-xs text-muted-foreground font-semibold">{item.item_number}</td>
         <td 
-          className="px-3 py-3 text-xs font-semibold cursor-pointer hover:text-primary transition-colors duration-150 hover:underline interactive-element"
+          className="px-3 py-3 text-xs font-semibold cursor-pointer hover:text-primary transition-colors duration-100 hover:underline interactive-element"
           onClick={() => handleCellClick('code', 'Código')}
         >
           {item.code}
         </td>
         <td 
-          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-150 group/desc interactive-element"
+          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-100 group/desc interactive-element"
           onClick={() => handleCellClick('description', 'Descrição')}
         >
           <div className="max-w-[200px] truncate group-hover/desc:underline font-medium">
@@ -175,7 +175,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
           </div>
         </td>
         <td 
-          className="px-3 py-3 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-150 interactive-element"
+          className="px-3 py-3 text-xs text-center cursor-pointer hover:text-primary transition-colors duration-100 interactive-element"
           onClick={() => handleCellClick('quantity', 'Quantidade')}
         >
           <div className="flex justify-center">
@@ -185,7 +185,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
           </div>
         </td>
         <td 
-          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-150 interactive-element font-medium"
+          className="px-3 py-3 text-xs cursor-pointer hover:text-primary transition-colors duration-100 interactive-element font-medium"
           onClick={() => handleCellClick('batch', 'Lote')}
         >
           <span className="block">{item.batch || '-'}</span>
@@ -292,7 +292,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-8 w-8 p-0 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 interactive-element" 
+              className="h-8 w-8 p-0 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150 interactive-element" 
               onClick={() => handleCellClick('priority', 'Prioridade')}
             >
               <Edit className="h-3.5 w-3.5" />
@@ -300,7 +300,7 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 interactive-element" 
+              className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-150 interactive-element" 
               onClick={handleDeleteItem}
             >
               <Trash2 className="h-3.5 w-3.5" />

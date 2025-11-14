@@ -50,7 +50,7 @@ export const NotificationBell = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300 h-10 w-10 shadow-sm hover:shadow-md hover:scale-105"
+            className="relative text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 rounded-xl transition-colors duration-150 h-10 w-10"
           >
             <Bell size={20} />
             {notificationsEnabled && unreadCount > 0 && (

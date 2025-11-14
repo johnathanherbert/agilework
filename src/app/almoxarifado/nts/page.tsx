@@ -120,7 +120,45 @@ function NTManagerContent() {
   useEffect(() => {
     let filtered = [...nts];
     
+    // Search by NT number (aplicado primeiro para filtrar antes de outras condições)
+    if (filters.search) {
+      filtered = filtered.filter(nt => 
+        nt.nt_number.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    
+    // Date range filter (aplicado antes do filtro de turno)
+    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
+      filtered = filtered.filter(nt => {
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const createdDate = new Date(year, month - 1, day);
+        const fromDate = new Date(filters.dateRange!.from);
+        const toDate = new Date(filters.dateRange!.to);
+        return createdDate >= fromDate && createdDate <= toDate;
+      });
+    }
+    
+    // Shift filter (aplicado em TODAS as NTs, incluindo concluídas)
+    if (filters.shift !== null) {
+      filtered = filtered.filter(nt => {
+        const createdTime = nt.created_time;
+        const [hourStr, minuteStr] = createdTime.split(':');
+        const hour = parseInt(hourStr, 10);
+        const minute = parseInt(minuteStr, 10);
+        const totalMinutes = hour * 60 + minute;
+        
+        // 1º Turno: 7:20 às 15:50 (440 minutos até 950 minutos)
+        if (filters.shift === 1) return totalMinutes >= 440 && totalMinutes < 950;
+        // 2º Turno: 15:50 às 23:00 (950 minutos até 1380 minutos)
+        if (filters.shift === 2) return totalMinutes >= 950 && totalMinutes < 1380;
+        // 3º Turno: 23:00 às 7:20 (1380+ minutos ou 0-440 minutos)
+        if (filters.shift === 3) return totalMinutes >= 1380 || totalMinutes < 440;
+        return true;
+      });
+    }
+    
     // Filtrar NTs concluídas ou não concluídas com base na vista
+    // (aplicado DEPOIS do filtro de turno para garantir que funcione)
     if (filters.isCompletedView === true) {
       filtered = filtered.filter(nt => {
         if (!nt.items || nt.items.length === 0) return false;
@@ -133,42 +171,11 @@ function NTManagerContent() {
       });
     }
     
-    // Search by NT number
-    if (filters.search) {
-      filtered = filtered.filter(nt => 
-        nt.nt_number.toLowerCase().includes(filters.search.toLowerCase())
-      );
-    }
-    
-    // Status filter
+    // Status filter (aplicado apenas se houver status selecionados)
     if (filters.status && filters.status.length > 0) {
       filtered = filtered.filter(nt => 
         filters.status!.includes(nt.status)
       );
-    }
-    
-    // Date range filter
-    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
-      filtered = filtered.filter(nt => {
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const createdDate = new Date(year, month - 1, day);
-        const fromDate = new Date(filters.dateRange!.from);
-        const toDate = new Date(filters.dateRange!.to);
-        return createdDate >= fromDate && createdDate <= toDate;
-      });
-    }
-    
-    // Shift filter
-    if (filters.shift !== null) {
-      filtered = filtered.filter(nt => {
-        const createdTime = nt.created_time;
-        const hour = parseInt(createdTime.split(':')[0], 10);
-        
-        if (filters.shift === 1) return hour >= 6 && hour < 14;
-        if (filters.shift === 2) return hour >= 14 && hour < 22;
-        if (filters.shift === 3) return hour >= 22 || hour < 6;
-        return true;
-      });
     }
     
     // Hide old NTs (older than 3 days)
