@@ -19,9 +19,10 @@ interface NTCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onRefresh?: () => void;
+  highlightedItems?: string[];
 }
 
-export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }: NTCardProps) => {
+export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, highlightedItems = [] }: NTCardProps) => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -466,6 +467,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
                           onDelete={() => {}}
                           onToggleStatus={() => console.log('Toggle status for item:', item.id)}
                           onSuccess={onRefresh}
+                          isHighlighted={highlightedItems.includes(item.id)}
                         />
                       ))}
                     </tbody>

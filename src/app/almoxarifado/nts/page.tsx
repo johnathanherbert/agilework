@@ -32,6 +32,8 @@ function NTManagerContent() {
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
+  const [autoExpandedNTs, setAutoExpandedNTs] = useState<string[]>([]);
+  const [highlightedItems, setHighlightedItems] = useState<string[]>([]);
   const { user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -119,15 +121,11 @@ function NTManagerContent() {
   // Aplicar filtros sempre que filters ou nts mudarem
   useEffect(() => {
     let filtered = [...nts];
+    const searchTerm = filters.search?.toLowerCase().trim();
+    let ntsWithMatchingItems: Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}> = [];
+    let shouldAutoExpand = false;
     
-    // Search by NT number (aplicado primeiro para filtrar antes de outras condições)
-    if (filters.search) {
-      filtered = filtered.filter(nt => 
-        nt.nt_number.toLowerCase().includes(filters.search.toLowerCase())
-      );
-    }
-    
-    // Date range filter (aplicado antes do filtro de turno)
+    // Date range filter (aplicar ANTES da busca)
     if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
       filtered = filtered.filter(nt => {
         const [day, month, year] = nt.created_date.split('/').map(Number);
@@ -217,7 +215,76 @@ function NTManagerContent() {
       });
     }
     
+    // Search by NT number OR material name/code (aplicar POR ÚLTIMO)
+    if (searchTerm) {
+      // First, try to find NTs by number
+      const ntsByNumber = filtered.filter(nt => 
+        nt.nt_number.toLowerCase().includes(searchTerm)
+      );
+      
+      // Also search within items for material name or code
+      const ntsWithItems = filtered.map(nt => {
+        if (!nt.items || nt.items.length === 0) return null;
+        
+        const matchedItemIds = nt.items
+          .filter(item => 
+            item.description?.toLowerCase().includes(searchTerm) ||
+            item.code?.toLowerCase().includes(searchTerm)
+          )
+          .map(item => item.id);
+        
+        if (matchedItemIds.length > 0) {
+          // Create datetime for sorting (oldest first)
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const [hour, minute] = nt.created_time.split(':').map(Number);
+          const createdDateTime = new Date(year, month - 1, day, hour, minute).getTime();
+          
+          return { nt, matchedItemIds, createdDateTime };
+        }
+        return null;
+      }).filter(Boolean) as Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}>;
+      
+      // If we found items matching the search, use those NTs
+      if (ntsWithItems.length > 0) {
+        // Sort by creation date/time (oldest first)
+        ntsWithMatchingItems = ntsWithItems.sort((a, b) => a.createdDateTime - b.createdDateTime);
+        filtered = ntsWithMatchingItems.map(item => item.nt);
+        shouldAutoExpand = true;
+      } else if (ntsByNumber.length > 0) {
+        // If no items match but NT number matches, use those
+        filtered = ntsByNumber;
+        setAutoExpandedNTs([]);
+        setHighlightedItems([]);
+      } else {
+        // No matches found
+        filtered = [];
+        setAutoExpandedNTs([]);
+        setHighlightedItems([]);
+      }
+    } else {
+      // Clear auto-expansion when search is cleared
+      setAutoExpandedNTs([]);
+      setHighlightedItems([]);
+    }
+    
     setFilteredNts(filtered);
+    
+    // Apply auto-expand and highlight AFTER setting filtered NTs
+    if (shouldAutoExpand && ntsWithMatchingItems.length > 0) {
+      const firstNTId = ntsWithMatchingItems[0].nt.id;
+      const allMatchedItemIds = ntsWithMatchingItems.flatMap(item => item.matchedItemIds);
+      
+      // Use setTimeout to ensure state is updated after render
+      setTimeout(() => {
+        setAutoExpandedNTs([firstNTId]);
+        setHighlightedItems(allMatchedItemIds);
+        
+        // Remove highlight after 1 second
+        setTimeout(() => {
+          setHighlightedItems([]);
+        }, 1000);
+      }, 100);
+    }
   }, [filters, nts]);
   
   // Handle filter changes
@@ -346,7 +413,7 @@ function NTManagerContent() {
                 <div className="relative flex-1 md:flex-none md:min-w-[240px]">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
                   <Input
-                    placeholder="Buscar NT..."
+                    placeholder="Buscar NT, material ou código..."
                     value={filters.search}
                     onChange={handleSearch}
                     className="pl-9"
@@ -433,6 +500,8 @@ function NTManagerContent() {
                   onEdit={handleEditNT}
                   onDelete={handleDeleteNT}
                   onRefresh={handleRefresh}
+                  autoExpandedNTs={autoExpandedNTs}
+                  highlightedItems={highlightedItems}
                 />
               ) : (
                 <div className="relative p-12 text-center bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-lg overflow-hidden">
