@@ -65,7 +65,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh }
     }
   };
   
-  // Get status counts and check for delays
+  // Get status counts and check for delays in items
   const getStatusCounts = () => {
     if (!nt.items || nt.items.length === 0) {
       return { 
