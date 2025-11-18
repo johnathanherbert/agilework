@@ -163,7 +163,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
   const { hasCFA, hasINF } = getNTCategories();
 
   return (
-    <TooltipProvider>      <Card 
+    <TooltipProvider delayDuration={300}>
+      <Card 
         onClick={(e) => {
           // Prevent card click when clicking on buttons, interactive elements or form controls
           if ((e.target as HTMLElement).closest('button') || 
@@ -186,7 +187,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
           
           onToggle();
         }}        className={cn(
-          "relative overflow-hidden transition-all duration-300 hover:shadow-2xl border cursor-pointer group",
+          "relative transition-all duration-300 hover:shadow-2xl border cursor-pointer group",
           "border-gray-200/50 dark:border-gray-700/50",
           "bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900",
           "backdrop-blur-sm",
@@ -205,9 +206,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300 shadow-amber-500/10 hover:shadow-amber-500/20"
                       : "border-l-gray-400 hover:border-l-gray-500 dark:border-l-gray-600 dark:hover:border-l-gray-500",
           // Modern card effects
-          "rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-black/20 dark:hover:shadow-black/30",
-          "hover:scale-[1.01] hover:-translate-y-0.5",
-          "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300 before:pointer-events-none"
+          "rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-black/20 dark:hover:shadow-black/30"
         )}>
         {/* Subtle top gradient accent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-50" />
@@ -236,7 +235,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-gray-900 dark:bg-gray-800 text-white border-gray-700">
+                  <TooltipContent side="top" className="bg-gray-900 dark:bg-gray-800 text-white border-gray-700">
                     <p className="text-xs font-medium">{isCopied ? '✓ Copiado!' : 'Copiar número da NT'}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -264,12 +263,12 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="relative w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 hover:scale-110 group">
+                      <button className="relative w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 hover:scale-110 group border-0 p-0">
                         <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-30" />
                         <AlertTriangle className="h-4 w-4 text-white relative z-10" />
-                      </div>
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-red-600 text-white border-red-500">
+                    <TooltipContent side="top" className="bg-red-600 text-white border-red-500">
                       <p className="text-xs font-bold">⚠️ NT em atraso: {ntDelayInfo.formattedDelayTime}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -277,16 +276,16 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {delayedCount > 0 && !isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="relative w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-200 hover:scale-110">
+                      <button className="relative w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
                         <Clock className="h-4 w-4 text-white" />
                         {delayedCount > 1 && (
                           <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-md border border-white dark:border-gray-900">
                             {delayedCount}
                           </span>
                         )}
-                      </div>
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-amber-600 text-white border-amber-500">
+                    <TooltipContent side="top" className="bg-amber-600 text-white border-amber-500">
                       <p className="text-xs font-bold">⏰ {delayedCount} {delayedCount === 1 ? 'item em atraso' : 'itens em atraso'}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -294,11 +293,11 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {hasCFA && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-cyan-500 dark:from-blue-500 dark:to-cyan-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:scale-110">
+                      <button className="w-7 h-7 bg-gradient-to-br from-blue-400 to-cyan-500 dark:from-blue-500 dark:to-cyan-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
                         <Snowflake className="h-4 w-4 text-white" />
-                      </div>
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-blue-600 text-white border-blue-500">
+                    <TooltipContent side="top" className="bg-blue-600 text-white border-blue-500">
                       <p className="text-xs font-bold">❄️ Contém itens de Câmara Fria</p>
                     </TooltipContent>
                   </Tooltip>
@@ -306,11 +305,11 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {hasINF && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 hover:scale-110">
+                      <button className="w-7 h-7 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
                         <Flame className="h-4 w-4 text-white" />
-                      </div>
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-orange-600 text-white border-orange-500">
+                    <TooltipContent side="top" className="bg-orange-600 text-white border-orange-500">
                       <p className="text-xs font-bold">🔥 Contém itens Inflamáveis</p>
                     </TooltipContent>
                   </Tooltip>
@@ -341,7 +340,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-blue-600 text-white border-blue-500">
+                  <TooltipContent side="top" className="bg-blue-600 text-white border-blue-500">
                     <p className="text-xs font-bold">✏️ Editar NT</p>
                   </TooltipContent>
                 </Tooltip>
@@ -357,7 +356,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       <Plus className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-green-600 text-white border-green-500">
+                  <TooltipContent side="top" className="bg-green-600 text-white border-green-500">
                     <p className="text-xs font-bold">➕ Adicionar item</p>
                   </TooltipContent>
                 </Tooltip>
@@ -373,7 +372,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       <Trash2 className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-red-600 text-white border-red-500">
+                  <TooltipContent side="top" className="bg-red-600 text-white border-red-500">
                     <p className="text-xs font-bold">🗑️ Excluir NT</p>
                   </TooltipContent>
                 </Tooltip>
