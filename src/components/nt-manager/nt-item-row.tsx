@@ -20,9 +20,10 @@ interface NTItemRowProps {
   onDelete: () => void;
   onToggleStatus: () => void;
   onSuccess?: () => void;
+  isHighlighted?: boolean;
 }
 
-export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }: NTItemRowProps) => {
+export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess, isHighlighted = false }: NTItemRowProps) => {
   const [showEditFieldModal, setShowEditFieldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldToEdit, setFieldToEdit] = useState<FieldType>('code');
@@ -157,7 +158,9 @@ export const NTItemRow = ({ item, onEdit, onDelete, onToggleStatus, onSuccess }:
         item.priority ? "bg-amber-50/50 dark:bg-amber-900/10 border-l-2 border-amber-400 dark:border-amber-700" : "",
         // Coloração leve para categorias especiais
         materialCategory === 'CFA' && !item.priority ? "bg-blue-50/30 dark:bg-blue-950/10 hover:bg-blue-50/50 dark:hover:bg-blue-950/20" : "",
-        materialCategory === 'INF' && !item.priority ? "bg-orange-50/30 dark:bg-orange-950/10 hover:bg-orange-50/50 dark:hover:bg-orange-950/20" : ""
+        materialCategory === 'INF' && !item.priority ? "bg-orange-50/30 dark:bg-orange-950/10 hover:bg-orange-50/50 dark:hover:bg-orange-950/20" : "",
+        // Highlight animation (1 second)
+        isHighlighted ? "animate-highlight bg-yellow-200 dark:bg-yellow-600/30" : ""
       )}>
         <td className="px-3 py-3 text-xs text-muted-foreground font-semibold">{item.item_number}</td>
         <td 

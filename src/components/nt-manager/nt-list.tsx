@@ -1,6 +1,6 @@
    "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NT } from '@/types';
 import { NTCard } from './nt-card';
 
@@ -9,10 +9,19 @@ interface NTListProps {
   onEdit: (nt: NT) => void;
   onDelete: (ntId: string) => void;
   onRefresh?: () => void;
+  autoExpandedNTs?: string[];
+  highlightedItems?: string[];
 }
 
-export const NTList = ({ nts, onEdit, onDelete, onRefresh }: NTListProps) => {
+export const NTList = ({ nts, onEdit, onDelete, onRefresh, autoExpandedNTs = [], highlightedItems = [] }: NTListProps) => {
   const [expandedNT, setExpandedNT] = useState<string | null>(null);
+
+  // Auto-expand NTs when autoExpandedNTs changes
+  useEffect(() => {
+    if (autoExpandedNTs.length > 0) {
+      setExpandedNT(autoExpandedNTs[0]);
+    }
+  }, [autoExpandedNTs]);
 
   const toggleExpand = (ntId: string) => {
     setExpandedNT(expandedNT === ntId ? null : ntId);
@@ -29,6 +38,7 @@ export const NTList = ({ nts, onEdit, onDelete, onRefresh }: NTListProps) => {
           onEdit={() => onEdit(nt)}
           onDelete={() => onDelete(nt.id)}
           onRefresh={onRefresh}
+          highlightedItems={highlightedItems}
         />
       ))}
     </div>

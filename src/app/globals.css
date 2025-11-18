@@ -166,6 +166,19 @@
   animation: highlight 2s ease-out;
 }
 
+@keyframes highlight-flash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(234, 179, 8, 0.3);
+  }
+}
+
+.animate-highlight {
+  animation: highlight-flash 1s ease-in-out;
+}
+
 /* Animações para os cards de NT */
 @keyframes fadeIn {
   from {

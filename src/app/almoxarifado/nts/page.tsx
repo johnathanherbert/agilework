@@ -32,6 +32,8 @@ function NTManagerContent() {
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
+  const [autoExpandedNTs, setAutoExpandedNTs] = useState<string[]>([]);
+  const [highlightedItems, setHighlightedItems] = useState<string[]>([]);
   const { user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -119,8 +121,36 @@ function NTManagerContent() {
   // Aplicar filtros sempre que filters ou nts mudarem
   useEffect(() => {
     let filtered = [...nts];
+    const searchTerm = filters.search?.toLowerCase().trim();
+    let ntsWithMatchingItems: Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}> = [];
+    let shouldAutoExpand = false;
+    
+    // Date range filter (aplicar ANTES da busca)
+    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
+      filtered = filtered.filter(nt => {
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const createdDate = new Date(year, month - 1, day);
+        const fromDate = new Date(filters.dateRange!.from);
+        const toDate = new Date(filters.dateRange!.to);
+        return createdDate >= fromDate && createdDate <= toDate;
+      });
+    }
+    
+    // Shift filter (aplicado em TODAS as NTs, incluindo concluídas)
+    if (filters.shift !== null) {
+      filtered = filtered.filter(nt => {
+        const createdTime = nt.created_time;
+        const hour = parseInt(createdTime.split(':')[0], 10);
+        
+        if (filters.shift === 1) return hour >= 6 && hour < 14;
+        if (filters.shift === 2) return hour >= 14 && hour < 22;
+        if (filters.shift === 3) return hour >= 22 || hour < 6;
+        return true;
+      });
+    }
     
     // Filtrar NTs concluídas ou não concluídas com base na vista
+    // (aplicado DEPOIS do filtro de turno para garantir que funcione)
     if (filters.isCompletedView === true) {
       filtered = filtered.filter(nt => {
         if (!nt.items || nt.items.length === 0) return false;
@@ -133,11 +163,98 @@ function NTManagerContent() {
       });
     }
     
-    // Search by NT number
-    if (filters.search) {
+    // Status filter (aplicado apenas se houver status selecionados)
+    if (filters.status && filters.status.length > 0) {
       filtered = filtered.filter(nt => 
-        nt.nt_number.toLowerCase().includes(filters.search.toLowerCase())
+        filters.status!.includes(nt.status)
       );
+    }
+    
+    // Hide old NTs (older than 3 days)
+    if (filters.hideOldNts) {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      filtered = filtered.filter(nt => {
+        const [day, month, year] = nt.created_date.split('/').map(Number);
+        const ntDate = new Date(year, month - 1, day);
+        return ntDate >= threeDaysAgo;
+      });
+    }
+    
+    // Filter for priority items
+    if (filters.priorityOnly) {
+      filtered = filtered.filter(nt => 
+        nt.items && nt.items.some(item => item.priority === true)
+      );
+    }
+    
+    // Filter for overdue items
+    if (filters.overdueOnly) {
+      filtered = filtered.filter(nt => {
+        if (!nt.items || nt.items.length === 0) return false;
+        return nt.items.some(item => {
+          if (item.status === 'Pago') return false;
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const [hour, minute] = nt.created_time.split(':').map(Number);
+          const createdDate = new Date(year, month - 1, day, hour, minute);
+          const now = new Date();
+          const diffHours = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+          return diffHours > 2;
+        });
+      });
+    }
+    
+    // Search by NT number OR material name/code (aplicar POR ÚLTIMO)
+    if (searchTerm) {
+      // First, filter by NT number
+      const ntsByNumber = filtered.filter(nt => 
+        nt.nt_number.toLowerCase().includes(searchTerm)
+      );
+      
+      // Then search within items for matching code or description
+      const ntsWithItems = filtered.map(nt => {
+        if (!nt.items || nt.items.length === 0) return null;
+        
+        const matchedItemIds = nt.items
+          .filter(item => 
+            item.description?.toLowerCase().includes(searchTerm) ||
+            item.code?.toLowerCase().includes(searchTerm)
+          )
+          .map(item => item.id);
+        
+        if (matchedItemIds.length > 0) {
+          // Create datetime for sorting (oldest first)
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const [hour, minute] = nt.created_time.split(':').map(Number);
+          const createdDateTime = new Date(year, month - 1, day, hour, minute).getTime();
+          
+          return { nt, matchedItemIds, createdDateTime };
+        }
+        return null;
+      }).filter(Boolean) as Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}>;
+      
+      // If we found items matching the search, use those NTs
+      if (ntsWithItems.length > 0) {
+        // Sort by creation date/time (oldest first)
+        ntsWithMatchingItems = ntsWithItems.sort((a, b) => a.createdDateTime - b.createdDateTime);
+        filtered = ntsWithMatchingItems.map(item => item.nt);
+        shouldAutoExpand = true;
+      } else if (ntsByNumber.length > 0) {
+        // If no items match but NT number matches, use those
+        filtered = ntsByNumber;
+        setAutoExpandedNTs([]);
+        setHighlightedItems([]);
+      } else {
+        // No matches found
+        filtered = [];
+        setAutoExpandedNTs([]);
+        setHighlightedItems([]);
+      }
+    } else {
+      // Clear auto-expansion when search is cleared
+      setAutoExpandedNTs([]);
+      setHighlightedItems([]);
     }
     
     // Status filter
@@ -211,6 +328,23 @@ function NTManagerContent() {
     }
     
     setFilteredNts(filtered);
+    
+    // Apply auto-expand and highlight AFTER setting filtered NTs
+    if (shouldAutoExpand && ntsWithMatchingItems.length > 0) {
+      const firstNTId = ntsWithMatchingItems[0].nt.id;
+      const allMatchedItemIds = ntsWithMatchingItems.flatMap(item => item.matchedItemIds);
+      
+      // Auto-expand after a small delay to ensure rendering
+      setTimeout(() => {
+        setAutoExpandedNTs([firstNTId]);
+        setHighlightedItems(allMatchedItemIds);
+        
+        // Remove highlight after 1 second
+        setTimeout(() => {
+          setHighlightedItems([]);
+        }, 1000);
+      }, 100);
+    }
   }, [filters, nts]);
   
   // Handle filter changes
@@ -339,7 +473,7 @@ function NTManagerContent() {
                 <div className="relative flex-1 md:flex-none md:min-w-[240px]">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
                   <Input
-                    placeholder="Buscar NT..."
+                    placeholder="Buscar NT, código ou material..."
                     value={filters.search}
                     onChange={handleSearch}
                     className="pl-9"
@@ -426,6 +560,8 @@ function NTManagerContent() {
                   onEdit={handleEditNT}
                   onDelete={handleDeleteNT}
                   onRefresh={handleRefresh}
+                  autoExpandedNTs={autoExpandedNTs}
+                  highlightedItems={highlightedItems}
                 />
               ) : (
                 <div className="relative p-12 text-center bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-lg overflow-hidden">
