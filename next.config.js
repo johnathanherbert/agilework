@@ -30,12 +30,12 @@ const nextConfig = {
   swcMinify: true,
   // Generate a unique build ID using our version system
   generateBuildId: async () => {
-    // Em produção (Vercel), usar git hash; em desenvolvimento/build local, usar nossa versão
-    return process.env.VERCEL_GIT_COMMIT_SHA || appVersion;
+    // Em produção (Vercel/Netlify), usar git hash; em desenvolvimento/build local, usar nossa versão
+    return process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF || appVersion;
   },
   // Add environment variables
   env: {
-    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || appVersion,
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF || appVersion,
     NEXT_PUBLIC_APP_VERSION: appVersion,
   },
   // Add any other configurations you might need
