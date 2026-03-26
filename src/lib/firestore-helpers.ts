@@ -61,6 +61,61 @@ export const getCurrentUserInfo = async () => {
   };
 };
 
+// User Operations (Admin Only)
+export const getAllUsers = async () => {
+  try {
+    const usersRef = collection(db, COLLECTIONS.USERS);
+    // Ordenar pelo nome, fallback para data de criação (necessário índice)
+    const q = query(usersRef, orderBy('name', 'asc'));
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => ({
+      uid: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('❌ getAllUsers: Erro ao buscar usuários:', error);
+    
+    // Se falhar o order (falta de índice), tenta sem order
+    try {
+      const usersRef = collection(db, COLLECTIONS.USERS);
+      const snapshot = await getDocs(usersRef);
+      return snapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      }));
+    } catch (fallbackError) {
+      console.error('❌ getAllUsers (fallback): Erro ao buscar usuários:', fallbackError);
+      throw fallbackError;
+    }
+  }
+};
+
+export const updateUserStatus = async (uid: string, isApproved: boolean): Promise<void> => {
+  try {
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    await updateDoc(userRef, {
+      isApproved,
+      updated_at: new Date().toISOString()
+    });
+    console.log(`✅ updateUserStatus: Status atualizado para ${isApproved} (UID: ${uid})`);
+  } catch (error) {
+    console.error('❌ updateUserStatus: Erro ao atualizar status:', error);
+    throw error;
+  }
+};
+
+export const deleteUserDb = async (uid: string): Promise<void> => {
+  try {
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    await deleteDoc(userRef);
+    console.log(`✅ deleteUserDb: Conta deletada (UID: ${uid})`);
+  } catch (error) {
+    console.error('❌ deleteUserDb: Erro ao deletar conta:', error);
+    throw error;
+  }
+};
+
 // Helper to convert Firestore timestamp to date string
 export const timestampToDateString = (timestamp: Timestamp): string => {
   const date = timestamp.toDate();

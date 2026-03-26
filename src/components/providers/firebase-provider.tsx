@@ -18,7 +18,10 @@ interface UserData {
   name: string;
   created_at: string;
   updated_at: string;
+  isApproved?: boolean; // Opcional para manter compatibilidade com docs antigos
 }
+
+const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
 
 interface FirebaseContextType {
   user: User | null;
@@ -73,12 +76,16 @@ export function FirebaseProvider({
           } else {
             // If user document doesn't exist, create it from auth data
             console.log('⚠️ Documento do usuário não existe - criando automaticamente...');
+            // Se não existir, apenas o admin será aprovado automaticamente
+            const isApproved = user.email === ADMIN_EMAIL;
+            
             const newUserData: UserData = {
               uid: user.uid,
               email: user.email || '',
               name: user.displayName || user.email?.split('@')[0] || 'Usuário',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
+              isApproved,
             };
             
             await setDoc(userDocRef, {
@@ -122,6 +129,8 @@ export function FirebaseProvider({
         displayName: name
       });
       
+      const isApproved = email === ADMIN_EMAIL;
+
       // Create user document in Firestore
       const newUserData: UserData = {
         uid: user.uid,
@@ -129,6 +138,7 @@ export function FirebaseProvider({
         name: name,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        isApproved,
       };
       
       await setDoc(doc(db, 'users', user.uid), newUserData);

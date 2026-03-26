@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   ClipboardCheck, ClipboardList, 
-  Home, Settings, Plus, Archive, History,
+  Home, Settings, Shield,
   ChevronLeft, ChevronRight, Menu, Github, ExternalLink
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -22,11 +22,14 @@ const navItems: NavItem[] = [
   { label: 'Configurações', href: '/settings', icon: <Settings size={20} /> },
 ];
 
+import { useFirebase } from '@/components/providers/firebase-provider';
+
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { userData } = useFirebase();
   const [currentPath, setCurrentPath] = useState('');  // Update active item when pathname or search params change
   useEffect(() => {
     const status = searchParams?.get('status') || null;
@@ -111,7 +114,39 @@ export const Sidebar = () => {
                 <div className="absolute right-3 w-2 h-2 bg-white rounded-full animate-pulse" />
               )}
             </button>
-          ))}        </nav>
+          ))}
+          
+          {/* Admin Items */}
+          {userData?.email === 'johnathan.herbert47@gmail.com' && (
+            <button
+              onClick={() => router.push('/settings/users')}
+              className={cn(
+                "relative flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group overflow-hidden mt-2 border border-blue-200 dark:border-blue-900",
+                collapsed ? "justify-center" : "justify-start",
+                currentPath === '/settings/users'
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-blue-600/30 scale-105"
+                  : "text-blue-700 dark:text-blue-300 bg-blue-50/50 dark:bg-blue-900/10 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 hover:scale-105"
+              )}
+              title={collapsed ? "Gerenciar Usuários" : ""}
+            >
+              {currentPath === '/settings/users' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-pulse" />
+              )}
+              <div className={cn(
+                "relative z-10 transition-transform duration-300",
+                currentPath === '/settings/users' ? "scale-110" : "group-hover:scale-110",
+                collapsed ? "w-6 h-6 flex items-center justify-center" : ""
+              )}>
+                <Shield className="h-5 w-5" />
+              </div>
+              {!collapsed && (
+                <span className="relative z-10 text-sm font-semibold whitespace-nowrap">
+                  Gestão Úsuarios
+                </span>
+              )}
+            </button>
+          )}
+        </nav>
       </div>
 
       {/* Informações do Desenvolvedor */}

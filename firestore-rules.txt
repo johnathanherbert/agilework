@@ -13,12 +13,18 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // Helper to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'johnathan.herbert47@gmail.com';
+    }
+
     // Users collection
     // - Qualquer usuário autenticado pode LER todos os documentos (necessário para online users)
-    // - Mas só pode ESCREVER no próprio documento
+    // - O dono pode escrever em campos permitidos (isOnline, lastActive...)
+    // - Mas apenas o Admin pode modificar a flag isApproved de qualquer usuário
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) || isAdmin();
     }
     
     // NTs collection - authenticated users can read/write all NTs
