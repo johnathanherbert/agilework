@@ -11,7 +11,8 @@ import Link from 'next/link';
 
 const formSchema = z
   .object({
-    name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }),
+    firstName: z.string().min(2, { message: 'Mínimo de 2 caracteres.' }),
+    lastName: z.string().min(2, { message: 'Mínimo de 2 caracteres.' }),
     email: z.string().email({ message: 'Email inválido.' }),
     password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
     confirmPassword: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
@@ -35,18 +36,30 @@ export const RegisterForm = () => {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
       confirmPassword: '',
     },
   });
 
+  const formatTitleCase = (str: string) => {
+    return str
+      .trim()
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     
     try {
-      const { error, success } = await signUp(data.email, data.password, data.name);
+      const formattedFirstName = formatTitleCase(data.firstName);
+      const formattedLastName = formatTitleCase(data.lastName);
+      const formattedName = `${formattedFirstName} ${formattedLastName}`;
+      const { error, success } = await signUp(data.email, data.password, formattedName);
       
       if (error) {
         toast.error('Falha no registro. Tente novamente.');
@@ -67,22 +80,18 @@ export const RegisterForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md relative group">
-      {/* Glow effect */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-500 animate-pulse"></div>
-      
-      {/* Card principal */}
-      <div className="relative p-8 space-y-8 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50">
+    <div className="w-full max-w-md">
+      <div className="p-8 space-y-8 bg-white dark:bg-gray-950 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700/70">
         {/* Header com ícone */}
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 flex items-center justify-center shadow-lg shadow-green-500/30 animate-in zoom-in duration-500">
-            <svg className="w-8 h-8 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 mx-auto rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
           
           <div>
-            <h1 className="text-3xl font-black bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-black text-foreground">
               Criar Conta
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm font-medium">
@@ -92,48 +101,66 @@ export const RegisterForm = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Nome
-            </label>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="firstName" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Nome
+              </label>
               <input
-                id="name"
+                id="firstName"
                 type="text"
-                {...register('name')}
-                className="relative w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
+                {...register('firstName')}
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
                 disabled={isLoading}
-                placeholder="Nome e sobrenome"
+                placeholder="Ex: João"
               />
+              {errors.firstName && (
+                <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {errors.firstName.message}
+                </p>
+              )}
             </div>
-            {errors.name && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1 animate-in slide-in-from-left-2 duration-300">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                {errors.name.message}
-              </p>
-            )}
+
+            <div className="space-y-2">
+              <label htmlFor="lastName" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Sobrenome
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                {...register('lastName')}
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
+                disabled={isLoading}
+                placeholder="Ex: Silva"
+              />
+              {errors.lastName && (
+                <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {errors.lastName.message}
+                </p>
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Email
             </label>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <input
-                id="email"
-                type="email"
-                {...register('email')}
-                className="relative w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
-                disabled={isLoading}
-                placeholder="seu@email.com"
-              />
-            </div>
+            <input
+              id="email"
+              type="email"
+              {...register('email')}
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
+              disabled={isLoading}
+              placeholder="seu@email.com"
+            />
             {errors.email && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1 animate-in slide-in-from-left-2 duration-300">
+              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
@@ -146,19 +173,16 @@ export const RegisterForm = () => {
             <label htmlFor="password" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Senha
             </label>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <input
-                id="password"
-                type="password"
-                {...register('password')}
-                className="relative w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
-                disabled={isLoading}
-                placeholder="••••••••"
-              />
-            </div>
+            <input
+              id="password"
+              type="password"
+              {...register('password')}
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
             {errors.password && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1 animate-in slide-in-from-left-2 duration-300">
+              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
@@ -171,19 +195,16 @@ export const RegisterForm = () => {
             <label htmlFor="confirmPassword" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Confirmar Senha
             </label>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <input
-                id="confirmPassword"
-                type="password"
-                {...register('confirmPassword')}
-                className="relative w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
-                disabled={isLoading}
-                placeholder="••••••••"
-              />
-            </div>
+            <input
+              id="confirmPassword"
+              type="password"
+              {...register('confirmPassword')}
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-accent/30 focus:border-accent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
             {errors.confirmPassword && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1 animate-in slide-in-from-left-2 duration-300">
+              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
@@ -195,11 +216,9 @@ export const RegisterForm = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="relative w-full group overflow-hidden"
+            className="w-full rounded-xl px-6 py-3 bg-primary text-primary-foreground font-bold text-base tracking-wide shadow-sm hover:bg-primary/90 transition-colors duration-200 disabled:opacity-60"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <span className="relative block px-6 py-3 text-white font-bold text-base tracking-wide shadow-lg group-hover:scale-105 transition-transform duration-300">
+            <span className="flex items-center justify-center gap-2">
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -218,7 +237,7 @@ export const RegisterForm = () => {
             Já tem uma conta?{' '}
             <Link 
               href="/login" 
-              className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 font-bold hover:from-green-700 hover:to-emerald-700 dark:hover:from-green-300 dark:hover:to-emerald-300 transition-all duration-300"
+              className="text-primary font-bold hover:opacity-80 transition-all duration-300"
             >
               Faça login
             </Link>

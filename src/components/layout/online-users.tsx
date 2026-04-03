@@ -437,14 +437,14 @@ Para corrigir, vá ao Firebase Console:
   // Generate a consistent color based on user ID
   const getColorFromId = (id: string) => {
     const colors = [
-      'from-blue-500 to-indigo-600',
-      'from-purple-500 to-pink-600',
-      'from-green-500 to-emerald-600',
-      'from-amber-500 to-orange-600',
-      'from-red-500 to-rose-600',
-      'from-cyan-500 to-blue-600',
-      'from-violet-500 to-purple-600',
-      'from-lime-500 to-green-600',
+      'bg-blue-600',
+      'bg-purple-600',
+      'bg-emerald-600',
+      'bg-amber-500',
+      'bg-red-600',
+      'bg-cyan-600',
+      'bg-violet-600',
+      'bg-lime-600',
     ];
     
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -473,7 +473,7 @@ Para corrigir, vá ao Firebase Console:
             {displayedUsers.map((onlineUser, index) => (
               <div
                 key={onlineUser.id}
-                className={`relative w-9 h-9 rounded-full bg-gradient-to-br ${getColorFromId(onlineUser.id)} flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg transition-transform hover:scale-110 hover:z-10`}
+                className={`relative w-9 h-9 rounded-full ${getColorFromId(onlineUser.id)} flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-sm`}
                 style={{
                   zIndex: displayedUsers.length - index,
                   animation: `fadeInScale 0.3s ease-out ${index * 0.1}s both`
@@ -489,7 +489,7 @@ Para corrigir, vá ao Firebase Console:
             ))}
             
             {remainingCount > 0 && (
-              <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg">
+              <div className="relative w-9 h-9 rounded-full bg-gray-500 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-sm">
                 <span className="text-xs font-bold text-white">
                   +{remainingCount}
                 </span>
@@ -514,18 +514,17 @@ Para corrigir, vá ao Firebase Console:
       </PopoverTrigger>
 
       <PopoverContent 
-        className="w-[400px] p-0 border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl overflow-hidden"
+        className="w-[400px] p-0 border border-border/70 shadow-sm bg-white dark:bg-gray-900 overflow-hidden"
         align="end"
         sideOffset={8}
       >
-        {/* Header com gradiente */}
-        <div className="relative p-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        {/* Header estático */}
+        <div className="relative p-4 bg-primary">
           <div className="relative flex items-center gap-3">
             {view === 'chat' && (
               <button
                 onClick={handleBack}
-                className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-white" />
               </button>
@@ -533,7 +532,7 @@ Para corrigir, vá ao Firebase Console:
             
             {view === 'list' ? (
               <>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                   <Users className="w-5 h-5 text-white drop-shadow-lg" />
                 </div>
                 <div>
@@ -547,8 +546,8 @@ Para corrigir, vá ao Firebase Console:
               </>
             ) : (
               <>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getColorFromId(selectedUser!.id)} flex items-center justify-center shadow-lg`}>
-                  <span className="text-sm font-bold text-white drop-shadow-md">
+                <div className={`w-10 h-10 rounded-xl ${getColorFromId(selectedUser!.id)} flex items-center justify-center shadow-sm`}>
+                  <span className="text-sm font-bold text-white">
                     {getInitials(selectedUser!.name)}
                   </span>
                 </div>
@@ -592,8 +591,8 @@ Para corrigir, vá ao Firebase Console:
                       <div className="flex items-center gap-3">
                         {/* Avatar */}
                         <div className="relative">
-                          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getColorFromId(onlineUser.id)} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow`}>
-                            <span className="text-sm font-bold text-white drop-shadow-md">
+                          <div className={`w-11 h-11 rounded-full ${getColorFromId(onlineUser.id)} flex items-center justify-center shadow-sm`}>
+                            <span className="text-sm font-bold text-white">
                               {getInitials(onlineUser.name)}
                             </span>
                           </div>
@@ -659,8 +658,8 @@ Para corrigir, vá ao Firebase Console:
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                             isOwnMessage
-                              ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white'
-                              : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                           }`}
                         >
                           <p className="text-sm break-words leading-relaxed">
@@ -696,15 +695,12 @@ Para corrigir, vá ao Firebase Console:
                 <Button
                   type="submit"
                   disabled={!newMessage.trim() || isSending}
-                  className="rounded-xl px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
+                  className="rounded-xl px-4 bg-primary hover:bg-primary/90 text-white"
                 >
                   {isSending ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <>
-                      <Send className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    </>
+                    <Send className="w-5 h-5" />
                   )}
                 </Button>
               </div>

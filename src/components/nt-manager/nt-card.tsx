@@ -187,11 +187,11 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
           
           onToggle();
         }}        className={cn(
-          "relative transition-all duration-300 hover:shadow-2xl border cursor-pointer group",
-          "border-gray-200/50 dark:border-gray-700/50",
-          "bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900",
-          "backdrop-blur-sm",
-          // Left border color indicator with glow effect
+          "relative border cursor-pointer",
+          "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
+          "hover:border-primary/50 transition-colors",
+          "",
+          // Left border color indicator
           `border-l-[6px] hover:border-l-[8px]`,          isDelayed 
             ? "border-l-red-500 hover:border-l-red-600 dark:border-l-red-400 dark:hover:border-l-red-300 shadow-red-500/10 hover:shadow-red-500/20" 
             : delayedCount > 0 
@@ -206,10 +206,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       ? "border-l-amber-500 hover:border-l-amber-600 dark:border-l-amber-400 dark:hover:border-l-amber-300 shadow-amber-500/10 hover:shadow-amber-500/20"
                       : "border-l-gray-400 hover:border-l-gray-500 dark:border-l-gray-600 dark:hover:border-l-gray-500",
           // Modern card effects
-          "rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-black/20 dark:hover:shadow-black/30"
+          "rounded-lg shadow-sm"
         )}>
-        {/* Subtle top gradient accent */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-50" />
         
         <CardHeader className="pb-3 pt-4 px-5 space-y-3 relative z-10">
           {/* Main header row */}
@@ -217,7 +215,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
             {/* Left side - NT info */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2.5">
-                <h3 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent tracking-tight">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   NT {nt.nt_number}
                 </h3>
                 <Tooltip>
@@ -226,7 +224,7 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       variant="ghost"
                       size="sm"
                       onClick={handleCopyNTNumber}
-                      className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 interactive-element transition-all duration-200 hover:scale-110 rounded-lg"
+                      className="h-7 w-7 p-0"
                     >
                       {isCopied ? (
                         <Check className="h-4 w-4 text-green-600 dark:text-green-400 animate-in zoom-in duration-200" />
@@ -244,12 +242,12 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
               {/* Modern status badge with gradient */}
               <Badge 
                 variant={ntStatus.variant}
-                className={cn(                  "text-xs px-3 py-1 font-bold shadow-md backdrop-blur-sm border-0 transition-all duration-200 hover:scale-105",
-                  ntStatus.color === "emerald" && "bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 text-white shadow-emerald-500/30",
-                  ntStatus.color === "blue" && "bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white shadow-blue-500/30",
-                  ntStatus.color === "amber" && "bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white shadow-amber-500/30",
-                  ntStatus.color === "slate" && "bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 text-white shadow-gray-500/30",
-                  ntStatus.color === "red" && "bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white shadow-red-500/30"
+                className={cn(                  "text-xs px-3 py-1 font-bold shadow-none  border-0",
+                  ntStatus.color === "emerald" && "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30",
+                  ntStatus.color === "blue" && "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30",
+                  ntStatus.color === "amber" && "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30",
+                  ntStatus.color === "slate" && "bg-slate-50 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50",
+                  ntStatus.color === "red" && "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/30"
                 )}
               >
                 {ntStatus.label}
@@ -263,9 +261,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="relative w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-200 hover:scale-110 group border-0 p-0">
-                        <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-30" />
-                        <AlertTriangle className="h-4 w-4 text-white relative z-10" />
+                      <button className="relative w-7 h-7 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded-full flex items-center justify-center cursor-pointer border-0 p-0">
+                        <AlertTriangle className="h-4 w-4" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-red-600 text-white border-red-500">
@@ -276,8 +273,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {delayedCount > 0 && !isDelayed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="relative w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
-                        <Clock className="h-4 w-4 text-white" />
+                      <button className="relative w-7 h-7 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 rounded-full flex items-center justify-center cursor-pointer border-0 p-0">
+                        <Clock className="h-4 w-4" />
                         {delayedCount > 1 && (
                           <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-md border border-white dark:border-gray-900">
                             {delayedCount}
@@ -293,8 +290,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {hasCFA && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="w-7 h-7 bg-gradient-to-br from-blue-400 to-cyan-500 dark:from-blue-500 dark:to-cyan-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
-                        <Snowflake className="h-4 w-4 text-white" />
+                      <button className="w-7 h-7 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full flex items-center justify-center cursor-pointer border-0 p-0">
+                        <Snowflake className="h-4 w-4" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-blue-600 text-white border-blue-500">
@@ -305,8 +302,8 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 {hasINF && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="w-7 h-7 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-full flex items-center justify-center cursor-pointer interactive-element shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 hover:scale-110 border-0 p-0">
-                        <Flame className="h-4 w-4 text-white" />
+                      <button className="w-7 h-7 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 rounded-full flex items-center justify-center cursor-pointer border-0 p-0">
+                        <Flame className="h-4 w-4" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-orange-600 text-white border-orange-500">
@@ -318,12 +315,25 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
 
               {/* Modern inline stats with icons */}
               {total > 0 && (                <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 font-bold">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800/60 rounded-lg backdrop-blur-sm">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800/60 rounded-lg ">
                     <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span>{total}</span>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg backdrop-blur-sm">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <div className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border",
+                    completionPercentage === 100
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50"
+                      : completionPercentage > 0
+                        ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50"
+                        : "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/50"
+                  )}>
+                    {completionPercentage === 100 ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : completionPercentage > 0 ? (
+                      <Package className="h-4 w-4" />
+                    ) : (
+                      <Clock className="h-4 w-4" />
+                    )}
                     <span>{completionPercentage}%</span>
                   </div>
                 </div>
@@ -335,9 +345,9 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       variant="ghost" 
                       size="sm" 
                       onClick={onEdit} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0"
                     >
-                      <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                      <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-blue-600 text-white border-blue-500">
@@ -351,9 +361,9 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       variant="ghost" 
                       size="sm" 
                       onClick={() => setShowAddItemModal(true)} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0"
                     >
-                      <Plus className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
+                      <Plus className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-green-600 text-white border-green-500">
@@ -367,9 +377,9 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                       variant="ghost" 
                       size="sm" 
                       onClick={onDelete} 
-                      className="h-8 w-8 p-0 hover:bg-gradient-to-br hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/30 dark:hover:to-pink-900/30 interactive-element rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md group"
+                      className="h-8 w-8 p-0"
                     >
-                      <Trash2 className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
+                      <Trash2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-red-600 text-white border-red-500">
@@ -399,13 +409,12 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
               <div className="relative w-full bg-gray-200 dark:bg-gray-700/50 rounded-full h-2 overflow-hidden shadow-inner">
                 <div 
                   className={cn(
-                    "h-2 rounded-full transition-all duration-700 ease-out relative",
-                    "before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:animate-shimmer",
+                    "h-2 rounded-full",
                     completionPercentage === 100 
-                      ? "bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-500 shadow-lg shadow-emerald-500/50" :
+                      ? "bg-emerald-500" :
                     completionPercentage > 0 
-                      ? "bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-500 shadow-lg shadow-blue-500/50" : 
-                    "bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-500 dark:to-gray-600"
+                      ? "bg-blue-500" : 
+                    "bg-gray-400"
                   )}
                   style={{ width: `${completionPercentage}%` }}
                 />
@@ -415,25 +424,25 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
                 <div className="flex items-center gap-4">
                   {paidCount > 0 && (
                     <span className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-400">
-                      <div className="w-2.5 h-2.5 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full shadow-md shadow-emerald-500/50" />
+                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
                       {paidCount} pago{paidCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   {partialCount > 0 && (
                     <span className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-400">
-                      <div className="w-2.5 h-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full shadow-md shadow-blue-500/50" />
+                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
                       {partialCount} parcial{partialCount !== 1 ? 'is' : ''}
                     </span>
                   )}
                   {pendingCount > 0 && (
                     <span className="flex items-center gap-2 font-bold text-amber-700 dark:text-amber-400">
-                      <div className="w-2.5 h-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full shadow-md shadow-amber-500/50" />
+                      <div className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
                       {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
                 
-                <div className="text-gray-600 dark:text-gray-400 font-bold text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800/60 rounded-lg backdrop-blur-sm">
+                <div className="text-gray-600 dark:text-gray-400 font-bold text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800/60 rounded-lg ">
                   {nt.created_date} {nt.created_time?.substring(0, 5)}
                 </div>
               </div>
@@ -441,32 +450,31 @@ export const NTCard = ({ nt, isExpanded, onToggle, onEdit, onDelete, onRefresh, 
           )}
         </CardHeader>        {/* Expanded content */}        
         {isExpanded && (
-          <CardContent className="pt-4 px-5 pb-5 expanded-content animate-in slide-in-from-top-2 duration-300">
-            {/* Gradient divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent mb-5 opacity-50" />
+          <CardContent className="pt-4 px-5 pb-5 expanded-content">
+            {/* Divider */}
+            <div className="h-px bg-gray-200 dark:bg-gray-700 mb-5" />
             
             {total === 0 ? (
-              <div className="text-center py-12 text-gray-600 dark:text-gray-400 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900/30 dark:via-gray-900/20 dark:to-gray-900/30 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 backdrop-blur-sm">
+              <div className="text-center py-12 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 ">
                 <div className="relative inline-block">
-                  <Package className="h-14 w-14 mx-auto mb-3 opacity-40 animate-float" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-xl opacity-50" />
+                  <Package className="h-14 w-14 mx-auto mb-3 opacity-40" />
                 </div>
-                <p className="text-sm font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">Nenhum item nesta NT</p>
+                <p className="text-sm font-bold mb-2 text-gray-900 dark:text-gray-100">Nenhum item nesta NT</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => setShowAddItemModal(true)}
-                  className="interactive-element mt-3 h-9 px-6 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 hover:border-green-500 dark:hover:border-green-400 transition-all duration-200 hover:scale-105 hover:shadow-lg font-bold text-sm"
+                  className="mt-3"
                 >
                   <Plus className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                   Adicionar primeiro item
                 </Button>
               </div>
             ) : (
-              <div className="w-full rounded-2xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white dark:bg-gray-900/30">
+              <div className="w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-full table-auto">
-                    <thead className="bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-gray-800/50 dark:via-gray-900/30 dark:to-gray-800/50 border-b border-gray-200 dark:border-gray-700/60">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                       <tr className="text-xs text-gray-900 dark:text-gray-100">
                         <th className="py-3 px-4 text-left font-bold">#</th>
                         <th className="py-3 px-4 text-left font-bold">Código</th>

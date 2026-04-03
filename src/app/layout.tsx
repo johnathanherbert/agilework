@@ -7,6 +7,7 @@ import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { NotificationProvider } from '@/components/providers/notification-provider';
 import { AppUpdateManager } from '@/components/app-update-manager';
 import { Toaster } from 'react-hot-toast';
+import { TricolorFooter } from '@/components/layout/tricolor-footer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,8 +18,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#1e293b' },
+    { media: '(prefers-color-scheme: light)', color: '#f7fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#111a2a' },
   ],
 }
 
@@ -57,6 +58,7 @@ export default function RootLayout({
                 <AppUpdateManager />
                 {children}
                 <Toaster position="top-center" />
+                <TricolorFooter />
               </NotificationProvider>
             </SupabaseProvider>
           </FirebaseProvider>

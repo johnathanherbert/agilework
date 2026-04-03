@@ -7,7 +7,9 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail,
+  confirmPasswordReset
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -32,6 +34,14 @@ interface FirebaseContextType {
     success: boolean;
   }>;
   signUp: (email: string, password: string, name: string) => Promise<{
+    error: any;
+    success: boolean;
+  }>;
+  resetPassword: (email: string) => Promise<{
+    error: any;
+    success: boolean;
+  }>;
+  confirmReset: (oobCode: string, newPassword: string) => Promise<{
     error: any;
     success: boolean;
   }>;
@@ -160,12 +170,34 @@ export function FirebaseProvider({
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { error: null, success: true };
+    } catch (error) {
+      console.error('❌ Erro de reset de senha:', error);
+      return { error, success: false };
+    }
+  };
+
+  const confirmReset = async (oobCode: string, newPassword: string) => {
+    try {
+      await confirmPasswordReset(auth, oobCode, newPassword);
+      return { error: null, success: true };
+    } catch (error) {
+      console.error('❌ Erro na confirmação do reset de senha:', error);
+      return { error, success: false };
+    }
+  };
+
   const value = {
     user,
     userData,
     loading,
     signIn,
     signUp,
+    resetPassword,
+    confirmReset,
     signOut,
   };
 

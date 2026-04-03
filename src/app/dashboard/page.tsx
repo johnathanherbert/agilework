@@ -245,7 +245,7 @@ export default function Dashboard() {
   
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
           <Topbar />
@@ -254,11 +254,11 @@ export default function Dashboard() {
             <div className="mb-8">
               <div className="flex items-center justify-between gap-4 mb-3">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    <BarChart3 className="w-6 h-6 text-white drop-shadow-md" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                    <BarChart3 className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-200 dark:to-white bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                       Dashboard
                     </h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
@@ -277,10 +277,10 @@ export default function Dashboard() {
                   <button
                     onClick={() => fetchStats(true)}
                     disabled={refreshing}
-                    className="p-3 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 hover:shadow-xl hover:shadow-blue-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    className="p-2 border rounded-lg bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400"
                   >
                     <RefreshCw className={cn(
-                      "w-5 h-5 text-white drop-shadow-md transition-transform duration-500",
+                      "w-4 h-4",
                       refreshing && "animate-spin"
                     )} />
                   </button>
@@ -293,95 +293,67 @@ export default function Dashboard() {
               {/* Auto-refresh indicator */}
               {refreshing && (
                 <div className="col-span-full flex items-center justify-center gap-2 py-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Atualizando dados...</span>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <span className="text-xs font-bold text-primary">Atualizando dados...</span>
                 </div>
               )}
               {/* Total NTs */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 dark:from-blue-600 dark:via-indigo-600 dark:to-blue-700 hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 group animate-in fade-in slide-in-from-bottom-4"
-                style={{ animationDelay: '0ms', animationDuration: '500ms' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Package className="w-6 h-6 text-white drop-shadow-lg" />
-                    </div>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Total</span>
+              <Card className="border bg-card shadow-sm">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Total Notas Técnicas</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {loading ? <span className="inline-block w-16 h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" /> : stats.totalNTs}
+                    </p>
                   </div>
-                  <p className="text-4xl font-black text-white mb-1 drop-shadow-lg">
-                    {loading ? (
-                      <span className="inline-block w-16 h-10 bg-white/30 rounded-lg animate-pulse" />
-                    ) : stats.totalNTs}
-                  </p>
-                  <p className="text-sm font-bold text-white/90">Notas Técnicas</p>
+                  <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-primary">
+                    <Package className="w-6 h-6" />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Total Itens */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 dark:from-purple-600 dark:via-pink-600 dark:to-purple-700 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105 group animate-in fade-in slide-in-from-bottom-4"
-                style={{ animationDelay: '100ms', animationDuration: '500ms' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-white drop-shadow-lg" />
-                    </div>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Itens</span>
+              <Card className="border bg-card shadow-sm">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Total de Itens</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {loading ? <span className="inline-block w-16 h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" /> : stats.totalItems}
+                    </p>
                   </div>
-                  <p className="text-4xl font-black text-white mb-1 drop-shadow-lg">
-                    {loading ? (
-                      <span className="inline-block w-16 h-10 bg-white/30 rounded-lg animate-pulse" />
-                    ) : stats.totalItems}
-                  </p>
-                  <p className="text-sm font-bold text-white/90">Total de Itens</p>
+                  <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Pendentes */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 dark:from-amber-600 dark:via-orange-600 dark:to-amber-700 hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105 group animate-in fade-in slide-in-from-bottom-4"
-                style={{ animationDelay: '200ms', animationDuration: '500ms' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-white drop-shadow-lg" />
-                    </div>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Aguardando</span>
+              <Card className="border bg-card shadow-sm">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Aguardando Pagamento</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {loading ? <span className="inline-block w-16 h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" /> : stats.pendingItems}
+                    </p>
                   </div>
-                  <p className="text-4xl font-black text-white mb-1 drop-shadow-lg">
-                    {loading ? (
-                      <span className="inline-block w-16 h-10 bg-white/30 rounded-lg animate-pulse" />
-                    ) : stats.pendingItems}
-                  </p>
-                  <p className="text-sm font-bold text-white/90">Itens Pendentes</p>
+                  <div className="w-12 h-12 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600">
+                    <Clock className="w-6 h-6" />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Concluídas */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 dark:from-green-600 dark:via-emerald-600 dark:to-green-700 hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-300 hover:scale-105 group animate-in fade-in slide-in-from-bottom-4"
-                style={{ animationDelay: '300ms', animationDuration: '500ms' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6 text-white drop-shadow-lg" />
-                    </div>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">100%</span>
+              <Card className="border bg-card shadow-sm">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">NTs Concluídas</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {loading ? <span className="inline-block w-16 h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" /> : stats.completedNTs}
+                    </p>
                   </div>
-                  <p className="text-4xl font-black text-white mb-1 drop-shadow-lg">
-                    {loading ? (
-                      <span className="inline-block w-16 h-10 bg-white/30 rounded-lg animate-pulse" />
-                    ) : stats.completedNTs}
-                  </p>
-                  <p className="text-sm font-bold text-white/90">NTs Concluídas</p>
+                  <div className="w-12 h-12 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -389,137 +361,107 @@ export default function Dashboard() {
             {/* Seção de Ações Rápidas e Estatísticas */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Card de Ações Rápidas */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 backdrop-blur-sm">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                      <Zap className="h-5 w-5 text-white drop-shadow-md" />
-                    </div>
-                    Ações Rápidas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Link 
-                      href="/almoxarifado/nts" 
-                      className="group relative overflow-hidden p-5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/50 hover:scale-105"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <Package className="h-6 w-6 text-white drop-shadow-md" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">Gerenciar NTs</h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Ver e editar NTs ativas</p>
-                        </div>
-                      </div>
-                      <ArrowRight className="absolute bottom-3 right-3 w-5 h-5 text-blue-500 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
-                    </Link>
-
-                    <button 
-                      onClick={() => {
-                        // Navegar para NTs e abrir timeline
-                        window.location.href = "/almoxarifado/nts?view=timeline";
-                      }}
-                      className="group relative overflow-hidden p-5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-500 transition-all hover:shadow-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/50 hover:scale-105 w-full text-left cursor-pointer"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <Activity className="h-6 w-6 text-white drop-shadow-md" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">Timeline ao Vivo</h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Acompanhar pagamentos</p>
-                        </div>
-                      </div>
-                      <ArrowRight className="absolute bottom-3 right-3 w-5 h-5 text-green-500 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Estatísticas Detalhadas */}
-              <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-xl bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 backdrop-blur-sm">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500" />
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
-                      <Activity className="h-5 w-5 text-white drop-shadow-md" />
-                    </div>
-                    Estatísticas Detalhadas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* Pagos Hoje */}
-                    <div className="p-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-white/90 uppercase tracking-wide">Pagos Hoje</p>
-                          <p className="text-3xl font-black text-white drop-shadow-lg mt-1">
-                            {loading ? (
-                              <span className="inline-block w-12 h-9 bg-white/30 rounded-lg animate-pulse" />
-                            ) : stats.paidToday}
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <CheckCircle2 className="w-6 h-6 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Pagos na Semana */}
-                    <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-white/90 uppercase tracking-wide">Esta Semana</p>
-                          <p className="text-3xl font-black text-white drop-shadow-lg mt-1">
-                            {loading ? (
-                              <span className="inline-block w-12 h-9 bg-white/30 rounded-lg animate-pulse" />
-                            ) : stats.paidThisWeek}
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Itens Atrasados */}
-                    <div className="p-4 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-white/90 uppercase tracking-wide">Atrasados</p>
-                          <p className="text-3xl font-black text-white drop-shadow-lg mt-1">
-                            {loading ? (
-                              <span className="inline-block w-12 h-9 bg-white/30 rounded-lg animate-pulse" />
-                            ) : stats.overdueItems}
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <AlertTriangle className="w-6 h-6 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Última Atividade */}
-                    <div className="mt-2 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                      <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Última Atividade</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatLastActivity(stats.recentActivity)}</p>
+                <Card className="border bg-card shadow-sm">
+                  <CardHeader className="pb-4 border-b border-border/50">
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-primary" />
+                      Ações Rápidas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Link 
                         href="/almoxarifado/nts" 
-                        className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mt-3 group"
+                        className="group flex items-center gap-3 p-4 rounded-lg border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                       >
-                        Ver timeline completo
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                          <Package className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Gerenciar NTs</h3>
+                          <p className="text-xs text-muted-foreground">Ver e editar NTs</p>
+                        </div>
+                        <ArrowRight className="ml-auto w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
+
+                      <button 
+                        onClick={() => {
+                          window.location.href = "/almoxarifado/nts?view=timeline";
+                        }}
+                        className="group text-left flex items-center gap-3 p-4 rounded-lg border hover:border-green-500/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+                          <Activity className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Visão de Pagamentos</h3>
+                          <p className="text-xs text-muted-foreground">Portal antigo</p>
+                        </div>
+                        <ArrowRight className="ml-auto w-4 h-4 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Estatísticas Detalhadas */}
+                <Card className="border bg-card shadow-sm">
+                  <CardHeader className="pb-4 border-b border-border/50">
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-primary" />
+                      Estatísticas Detalhadas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="space-y-4">
+                      {/* Pagos Hoje */}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20">
+                        <div>
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">Pagos Hoje</p>
+                          <p className="text-2xl font-bold text-green-800 dark:text-green-500">
+                            {loading ? <span className="inline-block w-8 h-6 bg-green-200 dark:bg-green-800 animate-pulse rounded" /> : stats.paidToday}
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/30 flex items-center justify-center text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      {/* Pagos na Semana */}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Esta Semana</p>
+                          <p className="text-2xl font-bold text-blue-800 dark:text-blue-500">
+                            {loading ? <span className="inline-block w-8 h-6 bg-blue-200 dark:bg-blue-800 animate-pulse rounded" /> : stats.paidThisWeek}
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      {/* Itens Atrasados */}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+                        <div>
+                          <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">Atrasados</p>
+                          <p className="text-2xl font-bold text-red-800 dark:text-red-500">
+                            {loading ? <span className="inline-block w-8 h-6 bg-red-200 dark:bg-red-800 animate-pulse rounded" /> : stats.overdueItems}
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/30 flex items-center justify-center text-red-600 dark:text-red-400">
+                          <AlertTriangle className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      {/* Última Atividade */}
+                      <div className="pt-2">
+                        <p className="text-xs text-muted-foreground mb-1">Última Atividade Registrada</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-foreground">{formatLastActivity(stats.recentActivity)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
             </div>
             
           </main>

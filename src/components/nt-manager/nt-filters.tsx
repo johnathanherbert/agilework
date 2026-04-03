@@ -64,64 +64,62 @@ export const NTFilters = ({ filters, onChange }: NTFiltersProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Status Filters */}
-      <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-blue-600 to-transparent opacity-50" />
+      <Card className="relative overflow-hidden border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900">
         
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md shadow-blue-500/50" />
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
+          <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             Status
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-200 group cursor-pointer">
+          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 cursor-pointer">
             <Checkbox
               id="status-pending"
               checked={filters.status?.includes('Ag. Pagamento') || false}
               onCheckedChange={() => handleStatusChange('Ag. Pagamento')}
-              className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-red-500 data-[state=checked]:to-red-600"
+              className="border-gray-400 dark:border-gray-500"
             />
             <Label 
               htmlFor="status-pending" 
               className="text-sm font-medium cursor-pointer flex items-center gap-2 flex-1"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200">
+              <div className="w-7 h-7 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
                 <XCircle className="h-4 w-4 text-white" />
               </div>
               <span className="text-gray-700 dark:text-gray-300 font-semibold">Aguardando Pagamento</span>
             </Label>
           </div>
           
-          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 transition-all duration-200 group cursor-pointer">
+          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 cursor-pointer">
             <Checkbox
               id="status-paid"
               checked={filters.status?.includes('Pago') || false}
               onCheckedChange={() => handleStatusChange('Pago')}
-              className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-green-500 data-[state=checked]:to-emerald-600"
+              className="border-gray-400 dark:border-gray-500"
             />
             <Label 
               htmlFor="status-paid" 
               className="text-sm font-medium cursor-pointer flex items-center gap-2 flex-1"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200">
+              <div className="w-7 h-7 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-white" />
               </div>
               <span className="text-gray-700 dark:text-gray-300 font-semibold">Pago</span>
             </Label>
           </div>
           
-          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20 transition-all duration-200 group cursor-pointer">
+          <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 cursor-pointer">
             <Checkbox
               id="status-partial"
               checked={filters.status?.includes('Pago Parcial') || false}
               onCheckedChange={() => handleStatusChange('Pago Parcial')}
-              className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-amber-500 data-[state=checked]:to-orange-600"
+              className="border-gray-400 dark:border-gray-500"
             />
             <Label 
               htmlFor="status-partial" 
               className="text-sm font-medium cursor-pointer flex items-center gap-2 flex-1"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200">
+              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
                 <AlertCircle className="h-4 w-4 text-white" />
               </div>
               <span className="text-gray-700 dark:text-gray-300 font-semibold">Pago Parcial</span>
@@ -131,12 +129,10 @@ export const NTFilters = ({ filters, onChange }: NTFiltersProps) => {
       </Card>
       
       {/* Date and Shift Filters */}
-      <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-300 dark:via-purple-600 to-transparent opacity-50" />
+      <Card className="relative overflow-hidden border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900">
         
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-md shadow-purple-500/50" />
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
+          <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             Data e Turno
           </CardTitle>
         </CardHeader>
@@ -195,12 +191,10 @@ export const NTFilters = ({ filters, onChange }: NTFiltersProps) => {
       </Card>
       
       {/* Options and Actions */}
-      <Card className="relative overflow-hidden border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-gradient-to-br from-white via-gray-50/30 to-white dark:from-gray-900 dark:via-gray-900/50 dark:to-gray-900 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-300 dark:via-green-600 to-transparent opacity-50" />
+      <Card className="relative overflow-hidden border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900">
         
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-md shadow-green-500/50" />
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
+          <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             Opções
           </CardTitle>
         </CardHeader>
@@ -248,12 +242,11 @@ export const NTFilters = ({ filters, onChange }: NTFiltersProps) => {
             <Button
               variant="outline"
               size="sm"
-              className="w-full relative overflow-hidden hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/30 dark:hover:to-pink-900/30 transition-all duration-200 hover:scale-105 hover:shadow-lg border-2 border-gray-300 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 font-bold group"
+              className="w-full border-gray-300 dark:border-gray-600 font-bold"
               onClick={resetFilters}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              <FilterX className="h-4 w-4 mr-2 relative z-10 text-red-600 dark:text-red-400 group-hover:rotate-180 transition-transform duration-300" />
-              <span className="relative z-10">Limpar Filtros</span>
+              <FilterX className="h-4 w-4 mr-2" />
+              <span>Limpar Filtros</span>
             </Button>
           </div>
         </CardContent>

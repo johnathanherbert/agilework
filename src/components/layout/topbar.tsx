@@ -21,7 +21,7 @@ export const Topbar = () => {
   };
 
   return (
-    <div className="w-full h-16 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between px-6 bg-gradient-to-r from-white via-gray-50/50 to-white dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-900 backdrop-blur-xl shadow-lg shadow-gray-200/50 dark:shadow-gray-950/50 z-40 transition-all duration-300">
+    <div className="w-full h-16 border-b border-border/20 flex items-center justify-between px-6 bg-[#003d6b] text-white shadow-sm z-40 transition-all duration-300">
       <div className="flex items-center gap-4">
         <div className="hidden sm:block">
           <HeaderClock />
@@ -45,7 +45,7 @@ export const Topbar = () => {
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-          className="relative text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-300 h-10 w-10 shadow-sm hover:shadow-md hover:scale-105"
+          className="relative text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 h-10 w-10"
         >
           {theme === 'dark' ? (
             <Sun size={20} className="transition-transform duration-300 rotate-0 hover:rotate-180" />
@@ -60,17 +60,15 @@ export const Topbar = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="relative rounded-full overflow-hidden border-2 border-transparent hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 h-10 w-10 group"
+              className="relative rounded-full overflow-hidden border-2 border-white/30 hover:bg-white/20 transition-colors h-10 w-10 bg-white/10 font-bold"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 dark:from-blue-600 dark:via-indigo-600 dark:to-purple-600 group-hover:scale-110 transition-transform duration-300" />
               <div className="relative w-full h-full flex items-center justify-center text-white font-bold text-sm">
                 {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[280px] p-0 shadow-2xl border border-gray-200/50 dark:border-gray-700/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl overflow-hidden">
-            <div className="relative p-5 border-b dark:border-gray-700/50 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/90 dark:to-gray-800/80">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-400/5 rounded-full blur-3xl" />
+          <DropdownMenuContent align="end" className="w-[280px] p-0 shadow-sm border bg-card rounded-xl overflow-hidden">
+            <div className="relative p-5 border-b bg-gray-50 dark:bg-gray-800/50">
               <div className="relative">
                 <p className="font-bold text-gray-900 dark:text-white text-lg truncate">
                   {userData?.name || user?.displayName || 'Usuário'}
@@ -83,31 +81,25 @@ export const Topbar = () => {
             </div>
             <div className="py-2">
               <DropdownMenuItem 
-                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 cursor-pointer transition-all duration-200 group"
+                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
                 onClick={() => router.push('/dashboard')}
               >
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200">
-                  <User size={16} />
-                </div>
+                <User size={16} />
                 <span className="font-medium text-gray-700 dark:text-gray-300">Meu Perfil</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 cursor-pointer transition-all duration-200 group"
+                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
                 onClick={() => router.push('/settings')}
               >
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-200">
-                  <Settings size={16} />
-                </div>
+                <Settings size={16} />
                 <span className="font-medium text-gray-700 dark:text-gray-300">Configurações</span>
               </DropdownMenuItem>
-              <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent my-2 mx-4" />
+              <div className="h-px bg-border my-2 mx-4" />
               <DropdownMenuItem 
-                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 cursor-pointer transition-all duration-200 group"
+                className="flex items-center gap-3 py-3 px-4 mx-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 cursor-pointer transition-colors"
                 onClick={handleSignOut}
               >
-                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 group-hover:scale-110 transition-transform duration-200">
-                  <LogOut size={16} />
-                </div>
+                <LogOut size={16} />
                 <span className="font-medium">Sair</span>
               </DropdownMenuItem>
             </div>

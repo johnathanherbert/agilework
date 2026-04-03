@@ -17,6 +17,16 @@ module.exports = {
     },
     extend: {
       colors: {
+        ems: {
+          blue: {
+            DEFAULT: "#0066B3",
+            dark: "#004d8a",
+            light: "#00A3E0",
+            bg: "rgba(0, 102, 179, 0.06)",
+          },
+          green: "#009B3A",
+          yellow: "#FEDF00",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -55,6 +65,12 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        'sm': '0 2px 10px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+        'md': '0 6px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)',
+        'lg': '0 10px 24px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08)',
+        'soft': '0 4px 20px rgba(0, 0, 0, 0.05)',
       },
       keyframes: {
         "accordion-down": {

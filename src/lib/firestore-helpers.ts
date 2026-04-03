@@ -116,6 +116,72 @@ export const deleteUserDb = async (uid: string): Promise<void> => {
   }
 };
 
+export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean }>): Promise<void> => {
+  try {
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    await updateDoc(userRef, {
+      ...data,
+      updated_at: new Date().toISOString()
+    });
+    console.log(`✅ editUserDb: Usuário atualizado (UID: ${uid})`);
+  } catch (error) {
+    console.error('❌ editUserDb: Erro ao editar conta:', error);
+    throw error;
+  }
+};
+
+export const wipeDataByCategory = async (categories: { nts: boolean; items: boolean; users: boolean }): Promise<{ nts: number; items: number; users: number }> => {
+  try {
+    console.log('⚠️ INICIANDO WIPE CUSTOMIZADO DE BANCO DE DADOS...', categories);
+    let deletedNts = 0;
+    let deletedItems = 0;
+    let deletedUsers = 0;
+
+    // Delete items
+    if (categories.items) {
+      const itemsRef = collection(db, COLLECTIONS.NT_ITEMS);
+      const itemsSnapshot = await getDocs(itemsRef);
+      const itemDeletePromises = itemsSnapshot.docs.map(docSnap => {
+        deletedItems++;
+        return deleteDoc(doc(db, COLLECTIONS.NT_ITEMS, docSnap.id));
+      });
+      await Promise.all(itemDeletePromises);
+    }
+
+    // Delete NTs
+    if (categories.nts) {
+      const ntsRef = collection(db, COLLECTIONS.NTS);
+      const ntsSnapshot = await getDocs(ntsRef);
+      const ntDeletePromises = ntsSnapshot.docs.map(docSnap => {
+        deletedNts++;
+        return deleteDoc(doc(db, COLLECTIONS.NTS, docSnap.id));
+      });
+      await Promise.all(ntDeletePromises);
+    }
+
+    // Delete Users (Protect Admins ideally, but this is DB level execution)
+    if (categories.users) {
+      const usersRef = collection(db, COLLECTIONS.USERS);
+      const usersSnapshot = await getDocs(usersRef);
+      const userDeletePromises = usersSnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        if (data.email !== 'johnathan.herbert47@gmail.com') { // Hardcoded protection
+          deletedUsers++;
+          return deleteDoc(doc(db, COLLECTIONS.USERS, docSnap.id));
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(userDeletePromises);
+    }
+
+    console.log(`✅ WIPE CONCLUÍDO: ${deletedNts} NTs, ${deletedItems} itens e ${deletedUsers} usuários removidos.`);
+    return { nts: deletedNts, items: deletedItems, users: deletedUsers };
+  } catch (error) {
+    console.error('❌ ERRO NO WIPE CUSTOMIZADO:', error);
+    throw error;
+  }
+};
+
 // Helper to convert Firestore timestamp to date string
 export const timestampToDateString = (timestamp: Timestamp): string => {
   const date = timestamp.toDate();

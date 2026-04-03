@@ -180,7 +180,7 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
         snapshot.docChanges().forEach((change) => {
           const itemId = change.doc.id;
           
-          // Se o item foi removido ou mudou para um status que não é Pago/Pago Parcial
+          // Se o item foi removido
           if (change.type === 'removed') {
             console.log('🗑️ Timeline Firebase - Item removido da timeline:', itemId);
             // Remover do conjunto de IDs atuais
@@ -198,9 +198,8 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
           const data = doc.data();
           const itemId = doc.id;
           
-          // Verificar se o status ainda é Pago ou Pago Parcial
+          // Garantir que a lógica antiga de status continue (já sendo feita na query, mas mantida por segurança)
           if (data.status !== 'Pago' && data.status !== 'Pago Parcial') {
-            console.log('⚠️ Timeline Firebase - Item com status inválido ignorado:', itemId, data.status);
             return;
           }
           
@@ -223,6 +222,7 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
           } else if (data.updated_at && data.updated_at.toDate) {
             paidAt = data.updated_at.toDate();
           } else {
+            // Se ainda não foi pago e não tem data de atualização, usa o agora
             paidAt = new Date();
           }
 

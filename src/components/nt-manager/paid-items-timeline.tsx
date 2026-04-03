@@ -27,25 +27,15 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
   const [showHighlight, setShowHighlight] = useState(isLatest || isNew);
 
   useEffect(() => {
-    // Sempre mostrar highlight se for o último item
-    if (isLatest) {
+    if (isLatest || isNew) {
       setShowHighlight(true);
-      return; // Não criar timer para o último item - ele deve sempre ter o efeito
-    }
-    
-    // Para novos itens (que não são o último), criar timer
-    if (isNew) {
       const timer = setTimeout(() => {
         setShowHighlight(false);
-      }, 45000); // 45s para novos itens
-
+      }, 5000); // Pisca/destaca por apenas 5 segundos
       return () => clearTimeout(timer);
+    } else {
+      setShowHighlight(false);
     }
-  }, [isLatest, isNew]);
-
-  // Atualizar highlight quando isLatest muda
-  useEffect(() => {
-    setShowHighlight(isLatest || isNew);
   }, [isLatest, isNew]);
 
   const formatTime = (dateString: string) => {
@@ -55,10 +45,10 @@ const TimelineItem = ({ item, isLatest, isNew = false }: TimelineItemProps) => {
       minute: '2-digit'
     });
   };  return (    <div className={`
-      relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs      border backdrop-blur-sm
+      relative flex items-start gap-2 p-3 rounded-lg transition-all duration-500 text-xs      border 
       ${showHighlight 
-        ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 shadow-sm dark:shadow-blue-900/20'
-        : 'bg-white/60 dark:bg-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/80 dark:hover:bg-gray-700/70 hover:border-gray-300/60 dark:hover:border-gray-600/60'
+        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700/50 shadow-sm'
+        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600'
       }
     `}>{/* Timeline dot with glow effect */}      <div className={`
         mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300        ${showHighlight 
@@ -151,7 +141,7 @@ export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: Pai
           {!isCollapsed && (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-lg animate-pulse backdrop-blur-sm">
+              <div key={i} className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-lg animate-pulse ">
                 <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full mt-1 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="flex justify-between items-center">
@@ -230,50 +220,20 @@ export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: Pai
           <div className="relative">
             {isCollapsed ? (
               // Botão quando colapsado - design premium
-              <div className="relative group">                <Button
+              <div className="relative group">
+                <Button
                   variant="ghost"
                   size="sm"
                   onClick={onToggleCollapse}
                   className="
-                    h-12 w-12 p-0 rounded-2xl
-                    bg-gradient-to-br from-blue-50 to-blue-100 
-                    dark:from-blue-950/60 dark:to-blue-900/80
-                    hover:from-blue-100 hover:to-blue-200 
-                    dark:hover:from-blue-900/80 dark:hover:to-blue-800/90
-                    border border-blue-200/60 dark:border-blue-700/80
-                    shadow-lg hover:shadow-xl 
-                    dark:shadow-blue-950/40 dark:hover:shadow-blue-900/50
-                    backdrop-blur-sm
+                    h-12 w-12 p-0 rounded-2xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700
                     transition-all duration-300 ease-out
-                    hover:scale-110 active:scale-95
-                    relative overflow-hidden
-                    group
                   "
                   title="Expandir timeline de pagamentos"
                 >
-                  {/* Enhanced glow effect for dark mode */}
-                  <div className="
-                    absolute inset-0 rounded-2xl
-                    bg-gradient-to-br from-blue-400/0 via-blue-400/10 to-blue-500/20
-                    dark:from-blue-300/0 dark:via-blue-400/15 dark:to-blue-500/25
-                    opacity-0 group-hover:opacity-100
-                    transition-opacity duration-300
-                  " />
-                  
                   <div className="relative flex items-center justify-center">
-                    <Package className="
-                      w-5 h-5 text-blue-600 dark:text-blue-300 
-                      group-hover:text-blue-700 dark:group-hover:text-blue-200 
-                      transition-all duration-300 group-hover:scale-110
-                      drop-shadow-sm dark:drop-shadow-md
-                    " />
-                    <ChevronLeft className="
-                      w-3 h-3 text-blue-500 dark:text-blue-400 
-                      absolute -right-0.5 -top-0.5 
-                      group-hover:text-blue-600 dark:group-hover:text-blue-300
-                      transition-all duration-300 group-hover:scale-125
-                      drop-shadow-sm dark:drop-shadow-md
-                    " />
+                    <Package className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    <ChevronLeft className="w-3 h-3 text-gray-500 dark:text-gray-400 absolute -right-0.5 -top-0.5" />
                   </div>
                 </Button>
                   {/* Indicador de itens quando colapsado - otimizado para dark mode */}
@@ -345,7 +305,7 @@ export const PaidItemsTimeline = ({ isCollapsed = false, onToggleCollapse }: Pai
             </div>
           ) : (
             <div className="text-center py-12 px-4">
-              <div className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-6">
+              <div className="bg-white/40 dark:bg-gray-800/40  border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-6">
                 <Package className="w-10 h-10 mx-auto mb-3 text-gray-400 dark:text-gray-500 opacity-60" />
                 <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                   Nenhum item pago ainda

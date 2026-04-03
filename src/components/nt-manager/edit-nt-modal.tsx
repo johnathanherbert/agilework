@@ -86,7 +86,7 @@ export function EditNTModal({ open, onOpenChange, onSuccess, nt }: EditNTModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-6 bg-white dark:bg-gray-800 border-0 shadow-xl rounded-xl">
+      <DialogContent className="sm:max-w-[425px] p-6 bg-white dark:bg-gray-800 border-0 shadow-lg rounded-xl">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-50">Editar Nota Técnica</DialogTitle>
         </DialogHeader>
