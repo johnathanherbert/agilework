@@ -1,13 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
 import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory } from "@/lib/firestore-helpers";
-import { Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, ArrowLeft, Edit, Save, X, Database, AlertTriangle, AlertCircle, RefreshCcw, Star } from "lucide-react";
-import Link from "next/link";
+import {
+  Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, Edit, Save, X,
+  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2,
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Topbar } from "@/components/layout/topbar";
+import ProtectedRoute from "@/components/auth/protected-route";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UserItem {
   uid: string;
@@ -19,18 +37,44 @@ interface UserItem {
   lastActive?: any;
 }
 
+function StatCard({ icon, label, value, tone = 'primary' }: { icon: React.ReactNode; label: string; value: string | number; tone?: 'primary' | 'green' | 'amber' | 'accent' }) {
+  const toneClasses: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary',
+    green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    accent: 'bg-accent/10 text-accent',
+  };
+  return (
+    <Card>
+      <CardContent className="p-5 flex items-center gap-4">
+        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", toneClasses[tone])}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold text-foreground truncate">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminControlPanelPage() {
   const { userData, loading } = useFirebase();
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  
+
   // Tabs & Navigation
   const [activeTab, setActiveTab] = useState<'users' | 'maintenance'>('users');
 
   // Edit User State
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [editForm, setEditForm] = useState<{ name: string; isApproved: boolean; role: 'user' | 'leader' }>({ name: '', isApproved: false, role: 'user' });
+
+  // Delete User State
+  const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   // Maintenance State
   const [wiping, setWiping] = useState(false);
@@ -41,6 +85,14 @@ export default function AdminControlPanelPage() {
     items: false,
     users: false
   });
+
+  const stats = useMemo(() => {
+    const total = users.length;
+    const ativos = users.filter((u) => u.isApproved || u.email === ADMIN_EMAIL).length;
+    const pendentes = users.filter((u) => !u.isApproved && u.email !== ADMIN_EMAIL).length;
+    const lideres = users.filter((u) => u.role === 'leader').length;
+    return { total, ativos, pendentes, lideres };
+  }, [users]);
 
   // Protection: only admin can access
   useEffect(() => {
@@ -88,20 +140,26 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  const handleDeleteUser = async (user: UserItem) => {
+  const requestDeleteUser = (user: UserItem) => {
     if (user.email === ADMIN_EMAIL) {
       toast.error("Não é possível deletar o admin principal.");
       return;
     }
-    
-    if (window.confirm(`Tem certeza que deseja DELETAR DEFINITIVAMENTE o usuário ${user.name || user.email}? (Ação irreversível no Banco)`)) {
-      try {
-        await deleteUserDb(user.uid);
-        toast.success("Usuário limado da base de dados.");
-        setUsers(prev => prev.filter(u => u.uid !== user.uid));
-      } catch (error) {
-        toast.error("Erro ao deletar usuário.");
-      }
+    setUserToDelete(user);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setDeletingUser(true);
+    try {
+      await deleteUserDb(userToDelete.uid);
+      toast.success("Usuário removido da base de dados.");
+      setUsers(prev => prev.filter(u => u.uid !== userToDelete.uid));
+      setUserToDelete(null);
+    } catch (error) {
+      toast.error("Erro ao deletar usuário.");
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -155,8 +213,8 @@ export default function AdminControlPanelPage() {
 
   if (loading || loadingUsers) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
       </div>
     );
   }
@@ -164,322 +222,341 @@ export default function AdminControlPanelPage() {
   if (!userData || userData.email !== ADMIN_EMAIL) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-12">
-      {/* App Topbar Linkage Spacer */}
-      <div className="bg-primary shadow-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between items-center">
-            <div className="flex items-center">
-              <Link href="/dashboard" className="mr-5 p-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <h1 className="text-xl font-bold text-white flex items-center gap-3">
-                <Shield className="h-6 w-6 text-blue-300" />
-                Painel de Controle Admin
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        
-        {/* Modern Tabs Navigation */}
-        <div className="flex space-x-1 p-1 bg-gray-200 dark:bg-slate-800/80 rounded-xl max-w-sm mb-6 shadow-sm">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300",
-              activeTab === 'users' 
-                ? "bg-white dark:bg-slate-700 shadow text-slate-800 dark:text-white" 
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Usuários
-          </button>
-          <button
-            onClick={() => setActiveTab('maintenance')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300",
-              activeTab === 'maintenance' 
-                ? "bg-white dark:bg-slate-700 shadow text-slate-800 dark:text-white" 
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <Database className="w-4 h-4" />
-            Manutenção
-          </button>
-        </div>
-
-        {/* Tab 1: Gestão de Usuários */}
-        {activeTab === 'users' && (
-          <div className="bg-white dark:bg-slate-800 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/60">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+    <ProtectedRoute>
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
+          <Topbar />
+          <main className="flex-1 p-6 overflow-y-auto">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-md">
+                <Shield className="h-5 w-5 text-primary-foreground" />
+              </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">CMS de Usuários</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Gerencie todo o cadastro e acessos da equipe (CRUD).
-                </p>
-              </div>
-              <div className="bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50 text-xs py-1.5 px-3 rounded-md font-bold shadow-sm">
-                Total: {users.length}
+                <h1 className="text-2xl font-bold text-foreground">Painel de Controle Admin</h1>
+                <p className="text-sm text-muted-foreground font-medium">Gestão de usuários e manutenção do sistema</p>
               </div>
             </div>
-            
-            <ul className="divide-y divide-slate-200 dark:divide-slate-700/60">
-              {users.length === 0 ? (
-                <li className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 font-medium">
-                  Nenhuma vida carbonada encontrada na base.
-                </li>
-              ) : (
-                users.map((user) => {
-                  const isAdmin = user.email === ADMIN_EMAIL;
-                  const isApproved = user.isApproved;
-                  const isEditing = editingUser?.uid === user.uid;
-                  
-                  return (
-                    <li key={user.uid} className="px-6 py-5 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        
-                        {/* Editor View */}
-                        {isEditing ? (
-                          <div className="flex-1 min-w-0 p-4 bg-slate-100 dark:bg-slate-900 rounded-xl space-y-4 shadow-inner ring-1 ring-slate-200 dark:ring-slate-700">
-                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Editando Perfil: {user.email}</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-500 uppercase">Nome de Exibição</label>
-                                <input 
-                                  autoFocus
-                                  type="text" 
-                                  value={editForm.name}
-                                  onChange={(e) => setEditForm(prev => ({...prev, name: e.target.value}))}
-                                  className="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                                  placeholder="Digite o nome..."
-                                />
-                              </div>
-                              <div className="space-y-1.5 flex flex-col justify-end">
-                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-sm">
-                                  <input 
-                                    type="checkbox" 
-                                    checked={editForm.isApproved}
-                                    onChange={(e) => setEditForm(prev => ({...prev, isApproved: e.target.checked}))}
-                                    className="w-4 h-4 text-primary rounded ring-0 focus:ring-0 checked:bg-primary"
-                                  />
-                                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Acesso Aprovado (Status Ativo)</span>
-                                </label>
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-500 uppercase">Função</label>
-                                <select
-                                  value={editForm.role}
-                                  onChange={(e) => setEditForm(prev => ({...prev, role: e.target.value as 'user' | 'leader'}))}
-                                  className="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                                >
-                                  <option value="user">Usuário</option>
-                                  <option value="leader">Líder (acessa Painel de Produção)</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 pt-2">
-                              <button onClick={handleEditSave} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
-                                <Save className="w-4 h-4" /> Salvar Alterações
-                              </button>
-                              <button onClick={() => setEditingUser(null)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg shadow-sm transition-colors">
-                                <X className="w-4 h-4" /> Cancelar
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {/* Standard View */}
-                            <div className="flex-1 min-w-0 pr-4">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <p className="text-base font-bold text-slate-900 dark:text-white truncate">
-                                  {user.name || "Sem Nome Definido"}
-                                </p>
-                                {isAdmin && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary ring-1 ring-inset ring-primary/20">
-                                    <ShieldCheck className="h-3 w-3" />
-                                    Admin Global
-                                  </span>
-                                )}
-                                {!isAdmin && user.role === 'leader' && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent ring-1 ring-inset ring-accent/20">
-                                    <Star className="h-3 w-3" />
-                                    Líder
-                                  </span>
-                                )}
-                                {!isAdmin && isApproved && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-green-50 dark:bg-green-500/10 px-2 py-0.5 text-xs font-bold text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
-                                    Status: Ativo
-                                  </span>
-                                )}
-                                {!isAdmin && !isApproved && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-red-50 dark:bg-red-500/10 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-600/20">
-                                    <ShieldAlert className="h-3 w-3" />
-                                    Acesso Revogado
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
-                                {user.email}
-                              </p>
-                              {user.created_at && (
-                                <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-wide">
-                                  Ingressou em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                                </p>
-                              )}
-                            </div>
 
-                            <div className="flex items-center gap-2">
-                              {!isAdmin && (
-                                <>
-                                  {/* Quick Toggle Status */}
-                                  <button
-                                    onClick={() => handleToggleStatus(user)}
-                                    className={cn(
-                                      "inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 shadow-sm border",
-                                      isApproved 
-                                        ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200' 
-                                        : 'bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700 text-white'
-                                    )}
-                                    title={isApproved ? "Revogar Acesso" : "Aprovar Acesso"}
-                                  >
-                                    {isApproved ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
-                                  </button>
-                                  
-                                  {/* Edit Mode */}
-                                  <button
-                                    onClick={() => handleEditInitiate(user)}
-                                    className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 shadow-sm"
-                                    title="Editar Dados e Acessos"
-                                  >
-                                    <Edit className="h-5 w-5" />
-                                  </button>
-                                  
-                                  {/* Delete Hard */}
-                                  <button
-                                    onClick={() => handleDeleteUser(user)}
-                                    className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 transition-all duration-200 shadow-sm"
-                                    title="Expurgo (Deletar Conta DB)"
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard icon={<Users className="h-5 w-5" />} label="Total de Usuários" value={stats.total} tone="primary" />
+              <StatCard icon={<UserCheck className="h-5 w-5" />} label="Ativos" value={stats.ativos} tone="green" />
+              <StatCard icon={<ShieldAlert className="h-5 w-5" />} label="Pendentes" value={stats.pendentes} tone="amber" />
+              <StatCard icon={<Star className="h-5 w-5" />} label="Líderes" value={stats.lideres} tone="accent" />
+            </div>
+
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'users' | 'maintenance')}>
+              <TabsList className="mb-6">
+                <TabsTrigger value="users" className="gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  Usuários
+                </TabsTrigger>
+                <TabsTrigger value="maintenance" className="gap-2">
+                  <Database className="w-4 h-4" />
+                  Manutenção
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="users">
+                <Card>
+                  <CardContent className="p-0">
+                    <div className="px-6 py-5 border-b border-border/80 flex justify-between items-center">
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground">Gestão de Usuários</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Gerencie o cadastro e os acessos da equipe.
+                        </p>
                       </div>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* Tab 2: Manutenção de Sistema */}
-        {activeTab === 'maintenance' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Danger Zone: Wipe Database */}
-            <div className="bg-white dark:bg-slate-800 border-2 border-red-200 dark:border-red-900/50 rounded-xl shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30 flex items-center gap-3">
-                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
-                <h3 className="text-lg font-bold text-red-800 dark:text-red-400">Danger Zone: Wipe DB</h3>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                <div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Selecione as categorias que deseja obliterar do Firestore. Cuidado: excluir Itens sem excluir NTs vai invalidar os números do painel.
-                  </p>
-                  
-                  <div className="flex flex-col gap-2 mt-4 mb-2">
-                    <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
-                      <input type="checkbox" checked={wipeCategories.nts} onChange={e => setWipeCategories(p => ({...p, nts: e.target.checked}))} className="w-4 h-4 rounded text-red-600 focus:ring-red-500" />
-                      <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Mestre (NTs Registradas)</span>
-                    </label>
-                    <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
-                      <input type="checkbox" checked={wipeCategories.items} onChange={e => setWipeCategories(p => ({...p, items: e.target.checked}))} className="w-4 h-4 rounded text-red-600 focus:ring-red-500" />
-                      <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Operacional (Sub-Itens / Cálculos KPIs)</span>
-                    </label>
-                    <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
-                      <input type="checkbox" checked={wipeCategories.users} onChange={e => setWipeCategories(p => ({...p, users: e.target.checked}))} className="w-4 h-4 rounded text-red-600 focus:ring-red-500" />
-                      <span className="text-sm font-bold text-red-900 dark:text-red-300">Usuários Comuns (Protege Admin)</span>
-                    </label>
-                  </div>
-                </div>
-
-                {!showWipeDialog ? (
-                  <button 
-                    onClick={() => setShowWipeDialog(true)}
-                    disabled={!wipeCategories.nts && !wipeCategories.items && !wipeCategories.users}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:border-red-800/50 dark:text-red-400"
-                  >
-                    <Trash2 className="w-5 h-5" /> Iniciar Protocolo de Wipe
-                  </button>
-                ) : (
-                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg space-y-4">
-                    <label className="text-sm font-bold text-red-800 dark:text-red-400 block">
-                      Tem certeza absoluta? Digite "WIPE" abaixo para habilitar a ignição:
-                    </label>
-                    <input 
-                      type="text"
-                      autoFocus
-                      placeholder="WIPE"
-                      value={wipeConfirmText}
-                      onChange={(e) => setWipeConfirmText(e.target.value)}
-                      className="w-full p-2.5 rounded-md border-red-300 text-red-900 uppercase font-black text-center tracking-widest focus:ring-red-500 focus:border-red-500 dark:bg-slate-900 dark:border-red-800 dark:text-red-400 placeholder:text-red-300/50 shadow-inner"
-                    />
-                    <div className="flex gap-3">
-                      <button 
-                        onClick={() => { setShowWipeDialog(false); setWipeConfirmText(""); }}
-                        className="flex-1 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors shadow-sm"
-                      >
-                        Abortar
-                      </button>
-                      <button 
-                        onClick={handleWipeDatabase}
-                        disabled={wipeConfirmText !== 'WIPE' || wiping}
-                        className="flex-1 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2"
-                      >
-                        {wiping ? 'Excluindo...' : 'ANULAR BASE!'}
-                      </button>
+                      <Badge variant="secondary" className="text-xs font-bold px-3 py-1.5">
+                        Total: {users.length}
+                      </Badge>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Informational Panel */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900/30 flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-lg font-bold text-blue-800 dark:text-blue-400">Guia: Status do Servidor</h3>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
-                  <Database className="w-6 h-6 text-emerald-500 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200">Backups de Rotina</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">O Firestore é redundante, mas Wipes executados manualmente nesta interface ignoram lixeiras temporárias. Muito cuidado.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
-                  <RefreshCcw className="w-6 h-6 text-amber-500 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200">Ciclo de Vida Auth</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">O Módulo de expurgo do CMS deleta pontes de acesso do banco. O e-mail da pessoa continuará na Base do Google até ela ser descadastrada do IAM principal.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                    <ul className="divide-y divide-border/80">
+                      {users.length === 0 ? (
+                        <li className="px-6 py-12 text-center text-muted-foreground font-medium">
+                          Nenhum usuário encontrado na base.
+                        </li>
+                      ) : (
+                        users.map((user) => {
+                          const isAdmin = user.email === ADMIN_EMAIL;
+                          const isApproved = user.isApproved;
+                          const isEditing = editingUser?.uid === user.uid;
 
-          </div>
-        )}
+                          return (
+                            <li key={user.uid} className="px-6 py-5 hover:bg-muted/30 transition-colors">
+                              <div className="flex flex-wrap items-center justify-between gap-4">
+                                {isEditing ? (
+                                  <div className="flex-1 min-w-0 p-4 bg-muted/40 rounded-xl space-y-4 border border-border/80">
+                                    <h3 className="text-sm font-bold text-foreground">Editando Perfil: {user.email}</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Nome de Exibição</label>
+                                        <Input
+                                          autoFocus
+                                          value={editForm.name}
+                                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                          placeholder="Digite o nome..."
+                                        />
+                                      </div>
+                                      <div className="space-y-1.5 flex flex-col justify-end">
+                                        <label className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border/80 cursor-pointer">
+                                          <Checkbox
+                                            checked={editForm.isApproved}
+                                            onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isApproved: checked === true }))}
+                                          />
+                                          <span className="text-sm font-medium text-foreground">Acesso Aprovado (Status Ativo)</span>
+                                        </label>
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Função</label>
+                                        <Select
+                                          value={editForm.role}
+                                          onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value as 'user' | 'leader' }))}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="user">Usuário</SelectItem>
+                                            <SelectItem value="leader">Líder (acessa Painel de Produção)</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 pt-2">
+                                      <Button onClick={handleEditSave} className="gap-1.5 bg-green-600 hover:bg-green-700 text-white">
+                                        <Save className="w-4 h-4" /> Salvar Alterações
+                                      </Button>
+                                      <Button variant="secondary" onClick={() => setEditingUser(null)} className="gap-1.5">
+                                        <X className="w-4 h-4" /> Cancelar
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex-1 min-w-0 pr-4">
+                                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                        <p className="text-base font-bold text-foreground truncate">
+                                          {user.name || "Sem Nome Definido"}
+                                        </p>
+                                        {isAdmin && (
+                                          <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10 border border-primary/20">
+                                            <ShieldCheck className="h-3 w-3" />
+                                            Admin Global
+                                          </Badge>
+                                        )}
+                                        {!isAdmin && user.role === 'leader' && (
+                                          <Badge className="gap-1 bg-accent/10 text-accent hover:bg-accent/10 border border-accent/20">
+                                            <Star className="h-3 w-3" />
+                                            Líder
+                                          </Badge>
+                                        )}
+                                        {!isAdmin && isApproved && (
+                                          <Badge variant="success" className="gap-1">
+                                            Status: Ativo
+                                          </Badge>
+                                        )}
+                                        {!isAdmin && !isApproved && (
+                                          <Badge variant="destructive" className="gap-1">
+                                            <ShieldAlert className="h-3 w-3" />
+                                            Acesso Revogado
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-medium text-muted-foreground truncate">
+                                        {user.email}
+                                      </p>
+                                      {user.created_at && (
+                                        <p className="text-[11px] font-semibold text-muted-foreground/70 mt-2 uppercase tracking-wide">
+                                          Ingressou em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {!isAdmin && (
+                                        <>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className={cn(
+                                              isApproved
+                                                ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-500'
+                                                : 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700'
+                                            )}
+                                            onClick={() => handleToggleStatus(user)}
+                                            title={isApproved ? "Revogar Acesso" : "Aprovar Acesso"}
+                                          >
+                                            {isApproved ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                                          </Button>
+
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400"
+                                            onClick={() => handleEditInitiate(user)}
+                                            title="Editar Dados e Acessos"
+                                          >
+                                            <Edit className="h-5 w-5" />
+                                          </Button>
+
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="text-muted-foreground hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20"
+                                            onClick={() => requestDeleteUser(user)}
+                                            title="Excluir Usuário (Ação Permanente)"
+                                          >
+                                            <Trash2 className="h-5 w-5" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })
+                      )}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="maintenance">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border-2 border-red-200 dark:border-red-900/50 flex flex-col">
+                    <div className="p-5 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30 flex items-center gap-3 rounded-t-lg">
+                      <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
+                      <h3 className="text-lg font-bold text-red-800 dark:text-red-400">Zona de Risco: Limpeza da Base</h3>
+                    </div>
+                    <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-6">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Selecione as categorias que deseja remover permanentemente do Firestore. Cuidado: excluir Itens sem excluir NTs vai invalidar os números do painel.
+                        </p>
+
+                        <div className="flex flex-col gap-2 mt-4 mb-2">
+                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                            <Checkbox checked={wipeCategories.nts} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, nts: c === true }))} />
+                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Mestre (NTs Registradas)</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                            <Checkbox checked={wipeCategories.items} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, items: c === true }))} />
+                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Operacional (Sub-Itens / Cálculos KPIs)</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                            <Checkbox checked={wipeCategories.users} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, users: c === true }))} />
+                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Usuários Comuns (Protege Admin)</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full gap-2"
+                        onClick={() => setShowWipeDialog(true)}
+                        disabled={!wipeCategories.nts && !wipeCategories.items && !wipeCategories.users}
+                      >
+                        <Trash2 className="w-5 h-5" /> Iniciar Limpeza da Base
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="flex flex-col">
+                    <div className="p-5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900/30 flex items-center gap-3 rounded-t-lg">
+                      <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      <h3 className="text-lg font-bold text-blue-800 dark:text-blue-400">Guia: Status do Servidor</h3>
+                    </div>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/40 border border-border/60">
+                        <Database className="w-6 h-6 text-emerald-500 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-foreground">Backups de Rotina</h4>
+                          <p className="text-sm text-muted-foreground mt-1">O Firestore é redundante, mas limpezas executadas manualmente nesta interface ignoram lixeiras temporárias. Muito cuidado.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/40 border border-border/60">
+                        <RefreshCcw className="w-6 h-6 text-amber-500 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-foreground">Ciclo de Vida da Autenticação</h4>
+                          <p className="text-sm text-muted-foreground mt-1">A exclusão do usuário remove o acesso do banco de dados. O e-mail da pessoa continuará na Base do Google até ela ser descadastrada do IAM principal.</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </main>
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={showWipeDialog} onOpenChange={(open) => { if (!wiping) { setShowWipeDialog(open); if (!open) setWipeConfirmText(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar Limpeza da Base
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <span className="font-semibold text-foreground">irreversível</span>. Digite <span className="font-mono font-bold">WIPE</span> abaixo para confirmar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            autoFocus
+            placeholder="WIPE"
+            value={wipeConfirmText}
+            onChange={(e) => setWipeConfirmText(e.target.value)}
+            className="text-center uppercase font-black tracking-widest"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={wiping} onClick={() => setWipeConfirmText("")}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleWipeDatabase();
+              }}
+              disabled={wipeConfirmText !== 'WIPE' || wiping}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+            >
+              {wiping && <Loader2 className="h-4 w-4 animate-spin" />}
+              Limpar Base
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && !deletingUser && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir definitivamente <span className="font-semibold text-foreground">{userToDelete?.name || userToDelete?.email}</span>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingUser}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeleteUser();
+              }}
+              disabled={deletingUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+            >
+              {deletingUser && <Loader2 className="h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </ProtectedRoute>
   );
 }

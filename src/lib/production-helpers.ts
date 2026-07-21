@@ -5,10 +5,12 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  getDocs,
   onSnapshot,
   Timestamp,
   deleteField,
   increment,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getCurrentUserInfo } from './firestore-helpers';
@@ -190,6 +192,20 @@ export const deleteProductionItem = async (itemId: string): Promise<void> => {
   const itemRef = doc(db, PRODUCTION_COLLECTION, itemId);
   await deleteDoc(itemRef);
   console.log(`✅ Item de produção excluído (ID: ${itemId})`);
+};
+
+// Limpa todos os itens do quadro de produção (todos os turnos), permitindo
+// recomeçar o preenchimento do zero. Usado pelo botão "Limpar Turno".
+export const clearAllProductionItems = async (): Promise<number> => {
+  const itemsRef = collection(db, PRODUCTION_COLLECTION);
+  const snapshot = await getDocs(itemsRef);
+
+  const batch = writeBatch(db);
+  snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+  await batch.commit();
+
+  console.log(`✅ Quadro de produção limpo: ${snapshot.size} item(ns) removido(s)`);
+  return snapshot.size;
 };
 
 // Real-time listener - mantém um cache local e reenvia a lista completa a cada mudança

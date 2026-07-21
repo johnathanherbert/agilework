@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { Factory, Wifi, WifiOff } from 'lucide-react';
+import { Eraser, Factory, Wifi, WifiOff } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
+import { Button } from '@/components/ui/button';
 import ProtectedRoute from '@/components/auth/protected-route';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { useProductionRealtime } from '@/hooks/useProductionRealtime';
@@ -13,6 +14,7 @@ import { moveProductionItem, mergeSplitProductionItem } from '@/lib/production-h
 import { TurnoColumn } from '@/components/producao/turno-column';
 import { ProductionItemModal } from '@/components/producao/production-item-modal';
 import { ProductionDeleteDialog } from '@/components/producao/production-delete-dialog';
+import { ClearTurnoDialog } from '@/components/producao/clear-turno-dialog';
 import { ProductionItem, ProductionTipo, ProductionTurno, ProductionVia } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +41,7 @@ export default function ProducaoPage() {
     defaultTurno: 1,
   });
   const [itemToDelete, setItemToDelete] = useState<ProductionItem | null>(null);
+  const [showClearTurno, setShowClearTurno] = useState(false);
 
   const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader';
 
@@ -116,16 +119,30 @@ export default function ProducaoPage() {
                 </div>
               </div>
 
-              <div
-                className={cn(
-                  'flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border',
-                  connected
-                    ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/40'
-                    : 'text-muted-foreground bg-muted border-border'
-                )}
-              >
-                {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-                {connected ? 'Tempo real ativo' : 'Conectando...'}
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    'flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border',
+                    connected
+                      ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/40'
+                      : 'text-muted-foreground bg-muted border-border'
+                  )}
+                >
+                  {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+                  {connected ? 'Tempo real ativo' : 'Conectando...'}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setShowClearTurno(true)}
+                  title="Limpar todos os itens e começar do zero"
+                >
+                  <Eraser className="h-3.5 w-3.5" />
+                  Limpar Turno
+                </Button>
               </div>
             </div>
 
@@ -173,6 +190,8 @@ export default function ProducaoPage() {
           if (!open) setItemToDelete(null);
         }}
       />
+
+      <ClearTurnoDialog open={showClearTurno} onOpenChange={setShowClearTurno} />
     </ProtectedRoute>
   );
 }
