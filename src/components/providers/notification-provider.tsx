@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useFirebase } from './firebase-provider';
+import { useFirebase, ADMIN_EMAIL } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
+import { PRODUCTION_COLLECTION } from '@/lib/production-helpers';
 import toast from 'react-hot-toast';
 
 // Helper function to get user display name
@@ -25,7 +26,7 @@ export type Notification = {
   message: string;
   createdAt: Date;
   read: boolean;
-  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'system';
+  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'production_updated' | 'system';
   entityId?: string; // ID da entidade relacionada (NT, item, etc.)
 };
 
@@ -71,7 +72,7 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useFirebase();
+  const { user, userData } = useFirebase();
   const { playSound, testSound: testAudioSound, loadAudioConfig, saveAudioConfig } = useAudioNotification();
   
   // Estados das notificações
@@ -306,6 +307,54 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       unsubscribeItems();
     };
   }, [user, notificationsEnabled, audioConfig, soundEnabled]);
+
+  // Listener para edições no Painel de Produção (somente para Líderes e Admin Global,
+  // já que são os únicos que enxergam essa tela)
+  useEffect(() => {
+    const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader';
+    if (!user || !notificationsEnabled || !isLeaderOrAdmin) return;
+
+    console.log('🔔 Configurando listener de notificação do Painel de Produção');
+
+    const listenerStartTime = Date.now();
+
+    const productionQuery = collection(db, PRODUCTION_COLLECTION);
+    const unsubscribeProduction = onSnapshot(productionQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') return; // Evita ruído em exclusões
+
+        const itemData = change.doc.data();
+        const itemId = change.doc.id;
+
+        // Não notificar sobre ações do próprio usuário
+        if (itemData.updated_by === user.uid) return;
+
+        const updatedAtTimestamp = itemData.updated_at?.toMillis ? itemData.updated_at.toMillis() : 0;
+        const secondsSinceUpdate = (Date.now() - updatedAtTimestamp) / 1000;
+
+        // Ignorar mudanças antigas (antes do listener iniciar ou há mais de 10s)
+        if (updatedAtTimestamp < listenerStartTime - 10000 || secondsSinceUpdate > 10) return;
+
+        const editorName = itemData.updated_by_name || 'Um usuário';
+        const actionText = change.type === 'added' ? 'adicionou um item em' : 'atualizou';
+
+        addNotification({
+          title: 'Quadro de Produção',
+          message: `${editorName} ${actionText} o quadro de produção (Turno ${itemData.turno})`,
+          type: 'production_updated',
+          entityId: itemId,
+        });
+        playNotificationSound('subtle');
+      });
+    });
+
+    console.log('✅ Listener de notificação do Painel de Produção configurado');
+
+    return () => {
+      console.log('🔇 Desconectando listener de notificação do Painel de Produção');
+      unsubscribeProduction();
+    };
+  }, [user, userData, notificationsEnabled, audioConfig, soundEnabled]);
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {

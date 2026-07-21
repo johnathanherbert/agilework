@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFirebase } from "@/components/providers/firebase-provider";
+import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
 import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory } from "@/lib/firestore-helpers";
-import { Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, ArrowLeft, Edit, Save, X, Database, AlertTriangle, AlertCircle, RefreshCcw } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, ArrowLeft, Edit, Save, X, Database, AlertTriangle, AlertCircle, RefreshCcw, Star } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
-
-const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
 
 interface UserItem {
   uid: string;
   email: string;
   name?: string;
   isApproved?: boolean;
+  role?: 'user' | 'leader';
   created_at?: string;
   lastActive?: any;
 }
@@ -31,7 +30,7 @@ export default function AdminControlPanelPage() {
 
   // Edit User State
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', isApproved: false });
+  const [editForm, setEditForm] = useState<{ name: string; isApproved: boolean; role: 'user' | 'leader' }>({ name: '', isApproved: false, role: 'user' });
 
   // Maintenance State
   const [wiping, setWiping] = useState(false);
@@ -112,17 +111,17 @@ export default function AdminControlPanelPage() {
       return;
     }
     setEditingUser(user);
-    setEditForm({ name: user.name || '', isApproved: user.isApproved || false });
+    setEditForm({ name: user.name || '', isApproved: user.isApproved || false, role: user.role || 'user' });
   };
 
   const handleEditSave = async () => {
     if (!editingUser) return;
     try {
-      await editUserDb(editingUser.uid, { name: editForm.name, isApproved: editForm.isApproved });
+      await editUserDb(editingUser.uid, { name: editForm.name, isApproved: editForm.isApproved, role: editForm.role });
       toast.success("Dados do usuário atualizados.");
       
       setUsers(prev => prev.map(u => 
-        u.uid === editingUser.uid ? { ...u, name: editForm.name, isApproved: editForm.isApproved } : u
+        u.uid === editingUser.uid ? { ...u, name: editForm.name, isApproved: editForm.isApproved, role: editForm.role } : u
       ));
       setEditingUser(null);
     } catch(err) {
@@ -270,6 +269,17 @@ export default function AdminControlPanelPage() {
                                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Acesso Aprovado (Status Ativo)</span>
                                 </label>
                               </div>
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">Função</label>
+                                <select
+                                  value={editForm.role}
+                                  onChange={(e) => setEditForm(prev => ({...prev, role: e.target.value as 'user' | 'leader'}))}
+                                  className="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                                >
+                                  <option value="user">Usuário</option>
+                                  <option value="leader">Líder (acessa Painel de Produção)</option>
+                                </select>
+                              </div>
                             </div>
                             <div className="flex items-center gap-3 pt-2">
                               <button onClick={handleEditSave} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
@@ -292,6 +302,12 @@ export default function AdminControlPanelPage() {
                                   <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary ring-1 ring-inset ring-primary/20">
                                     <ShieldCheck className="h-3 w-3" />
                                     Admin Global
+                                  </span>
+                                )}
+                                {!isAdmin && user.role === 'leader' && (
+                                  <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent ring-1 ring-inset ring-accent/20">
+                                    <Star className="h-3 w-3" />
+                                    Líder
                                   </span>
                                 )}
                                 {!isAdmin && isApproved && (

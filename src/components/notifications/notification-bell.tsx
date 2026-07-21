@@ -1,5 +1,5 @@
 import { useNotifications, Notification } from '@/components/providers/notification-provider';
-import { Bell, CheckCheck, Trash2, Clock, CheckCircle, ExternalLink } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, Clock, CheckCircle, ExternalLink, Factory } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
@@ -39,6 +39,10 @@ export const NotificationBell = () => {
     // Navegar para a entidade relacionada, se houver
     if (notification.type === 'nt_created' && notification.entityId) {
       router.push(`/almoxarifado/nts?nt=${notification.entityId}`);
+    }
+
+    if (notification.type === 'production_updated') {
+      router.push('/producao');
     }
     
     setIsOpen(false);
@@ -110,10 +114,12 @@ export const NotificationBell = () => {
                         "mt-0.5 p-2 rounded-full flex-shrink-0",
                         notification.type === 'nt_created' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" :
                         notification.type === 'nt_updated' ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" :
+                        notification.type === 'production_updated' ? "bg-accent/20 text-accent-foreground dark:bg-accent/20 dark:text-accent-foreground" :
                         "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       )}>
                         {notification.type === 'nt_created' && <Bell className="h-4 w-4" />}
                         {notification.type === 'nt_updated' && <Clock className="h-4 w-4" />}
+                        {notification.type === 'production_updated' && <Factory className="h-4 w-4" />}
                         {notification.type === 'system' && <CheckCircle className="h-4 w-4" />}
                       </div>
                       

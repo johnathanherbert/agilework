@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Pesagem - Novamed</title>
+    <style>
+        /* Reset e Configurações Base */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a; /* Fundo escuro para TV */
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow: hidden; /* Evita rolagem na TV */
+        }
+
+        /* Cores Padrão */
+        :root {
+            --bg-card: #1e293b;
+            --bg-header: #334155;
+            --border-color: #475569;
+            --blue-prog: #3b82f6; /* Azul: Programado */
+            --red-real: #ef4444;  /* Vermelho: Realizado a menos */
+            --green-accent: #10b981; /* Verde: Realizado completo ou acima */
+        }
+
+        /* Cabeçalho Principal */
+        header {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 20px;
+            text-align: center;
+            margin-bottom: 12px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-title-container {
+            flex-grow: 1;
+            text-align: center;
+        }
+        header h1 { font-size: 2rem; text-transform: uppercase; letter-spacing: 2px; }
+        header h1 span { color: #94a3b8; font-weight: normal; }
+        header h2 { color: var(--blue-prog); font-size: 1.1rem; text-transform: uppercase; margin-top: 3px; }
+        
+        /* Controles do Cabeçalho */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .clock { font-size: 1.4rem; font-weight: bold; color: #cbd5e1; min-width: 100px; text-align: right; }
+        
+        /* Chave Seletora de Modo (TV vs Editor) */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 3px;
+        }
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        .toggle-btn.active {
+            background-color: var(--blue-prog);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .toggle-btn.active.mode-edit {
+            background-color: var(--green-accent);
+        }
+
+        /* Grid Principal dos Turnos */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            flex-grow: 1;
+            height: calc(100% - 90px);
+        }
+
+        /* Coluna do Turno */
+        .turno-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        /* Título do Turno */
+        .turno-header {
+            background-color: var(--bg-header);
+            padding: 8px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Via Úmida / Via Seca Headers */
+        .via-headers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            text-align: center;
+            font-weight: bold;
+            background-color: #0f172a;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        .via-headers div { 
+            padding: 8px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            gap: 10px;
+        }
+        .via-headers div:first-child { border-right: 1px solid var(--border-color); }
+
+        /* Corpo Principal (Tabelas de vias) */
+        .vias-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .vias-body > div { 
+            padding: 8px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px;
+            transition: background-color 0.2s, border 0.2s;
+            min-height: 120px; /* Garante área para soltar mesmo se vazio */
+            border: 2px dashed transparent;
+        }
+        .vias-body > div:first-child { border-right: 1px solid var(--border-color); }
+
+        /* Item da Ordem de Produção */
+        .ordem-item {
+            background-color: #273548;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .ordem-item:active {
+            cursor: grabbing;
+        }
+        .ordem-item:hover { 
+            background-color: #334155; 
+            transform: scale(1.01);
+        }
+        .ordem-item.edit-mode-highlight {
+            border-color: var(--green-accent);
+        }
+        .ordem-info { display: flex; flex-direction: column; }
+        .ordem-familia { font-size: 0.7rem; color: #94a3b8; }
+        .ordem-produto { font-size: 1rem; font-weight: bold; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .ordem-valores { display: flex; align-items: center; font-size: 1.4rem; font-weight: bold; }
+        .indicador-real-prog {
+            font-size: 1.4rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .status-incompleto {
+            color: var(--red-real);
+        }
+        .status-completo {
+            color: var(--green-accent);
+        }
+
+        /* Classes auxiliares para o Drag and Drop */
+        .dragging {
+            opacity: 0.4;
+            border: 1px dashed var(--blue-prog) !important;
+        }
+        .drag-over {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            border: 2px dashed var(--blue-prog) !important;
+            border-radius: 6px;
+        }
+
+        /* Rodapé de Totais das Vias */
+        .totais-via {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            text-align: center;
+            background-color: #0f172a;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .totais-via div { padding: 6px; color: var(--blue-prog); }
+        .totais-via div:first-child { border-right: 1px solid var(--border-color); }
+
+        /* Quadrantes Inferiores (Pesagem Automática / Direta) */
+        .pesagem-extra {
+            background-color: var(--bg-card);
+            display: grid;
+            grid-template-columns: 1fr;
+            font-size: 0.85rem;
+        }
+        .pesagem-bloco { 
+            padding: 8px; 
+            min-height: 80px;
+            transition: background-color 0.2s, border 0.2s;
+            border: 2px dashed transparent;
+        }
+        .pesagem-bloco:first-child { border-bottom: 1px solid var(--border-color); }
+        .pesagem-bloco-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .pesagem-bloco h4 { color: #94a3b8; text-transform: uppercase; font-size: 0.75rem; }
+        
+        .extra-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            cursor: grab;
+            transition: background-color 0.2s;
+            border-radius: 3px;
+            padding: 2px 4px;
+        }
+        .extra-item:active {
+            cursor: grabbing;
+        }
+        .extra-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .extra-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        /* Botões CRUD discretos na Interface */
+        .btn-add-mini {
+            background-color: var(--green-accent);
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none; /* Ativado via JS no modo edição */
+            justify-content: center;
+            align-items: center;
+            margin-left: 5px;
+            transition: transform 0.2s;
+        }
+        .btn-add-mini:hover {
+            transform: scale(1.15);
+        }
+
+        /* Modal customizado elegante (Sem uso de alert) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-container {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            animation: modalFadeIn 0.25s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            background-color: var(--bg-header);
+            padding: 15px 20px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .form-control {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: white;
+            padding: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: var(--blue-prog);
+        }
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            background-color: #131c2e;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--blue-prog); color: white; }
+        .btn-success { background-color: var(--green-accent); color: white; }
+        .btn-danger { background-color: var(--red-real); color: white; }
+        .btn-secondary { background-color: #475569; color: white; }
+
+        /* Mensagem informativa quando o turno estiver vazio */
+        .empty-turno-msg {
+            color: #64748b;
+            text-align: center;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-style: italic;
+            user-select: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <div class="header-controls">
+            <div class="toggle-container">
+                <button class="toggle-btn active" id="btnModeTV" onclick="setModo('TV')">Modo TV</button>
+                <button class="toggle-btn mode-edit" id="btnModeEdit" onclick="setModo('EDIT')">Editor (CRUD)</button>
+            </div>
+        </div>
+        <div class="header-title-container">
+            <h1>Produção Novamed <span>| Por Turno | Por Família</span></h1>
+            <h2>Pesagem</h2>
+        </div>
+        <div class="clock" id="clock">00:00:00</div>
+    </header>
+
+    <!-- Container onde o JS vai renderizar os painéis -->
+    <div class="board" id="board"></div>
+
+    <!-- Modal elegante de CRUD -->
+    <div class="modal-overlay" id="modalCrud">
+        <div class="modal-container">
+            <div class="modal-header">
+                <span id="modalTitulo">Configurar Item</span>
+                <span style="cursor:pointer; font-size:1.5rem" onclick="fecharModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="formId">
+                <input type="hidden" id="formTipo"> <!-- 'ordem' ou 'auto' ou 'direta' -->
+                
+                <div class="form-group" id="groupTurno">
+                    <label for="formTurno">Mover para Turno</label>
+                    <select id="formTurno" class="form-control">
+                        <option value="1">1º TURNO</option>
+                        <option value="2">2º TURNO</option>
+                        <option value="3">3º TURNO</option>
+                    </select>
+                </div>
+
+                <div class="form-row-2" id="groupOrdemExtra">
+                    <div class="form-group" id="groupFamilia">
+                        <label for="formFamilia">Família / Máquina</label>
+                        <input type="text" id="formFamilia" class="form-control" placeholder="ex: FETTE 01">
+                    </div>
+                    <div class="form-group" id="groupVia">
+                        <label for="formVia">Via de Processo</label>
+                        <select id="formVia" class="form-control">
+                            <option value="UMIDA">ÚMIDA</option>
+                            <option value="SECA">SECA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="formProduto" id="labelProduto">Produto</label>
+                    <input type="text" id="formProduto" class="form-control" placeholder="Nome do Produto">
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="formProg">Qtd Programada</label>
+                        <input type="number" id="formProg" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="formReal">Qtd Realizada</label>
+                        <input type="number" id="formReal" class="form-control" min="0" value="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnExcluir" onclick="deletarItem()">Excluir</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+                    <button class="btn btn-success" onclick="salvarItem()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Relógio no cabeçalho
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
+        }, 1000);
+
+        // Modo Atual da Tela: 'TV' (Operação com clique rápido) ou 'EDIT' (CRUD)
+        let modoAtual = 'TV';
+
+        // Base de dados inicial sugerida (Caso o localStorage esteja vazio)
+        const dadosIniciais = [
+            {
+                id: 1, nome: "1º TURNO",
+                ordens: [
+                    { id: 'o-1', familia: 'FETTE 01', produto: 'CARISO', prog: 2, real: 1, via: 'SECA' },
+                    { id: 'o-2', familia: 'FETTE 01', produto: 'CAPTOPRIL', prog: 2, real: 2, via: 'SECA' },
+                    { id: 'o-3', familia: 'FETTE 04', produto: 'MALEATO 10MG', prog: 1, real: 1, via: 'SECA' },
+                    { id: 'o-4', familia: 'LEGACY 07', produto: 'CL. FEXO 120MG', prog: 2, real: 2, via: 'UMIDA' }
+                ],
+                auto: [
+                    { id: 'a-1', produto: 'SINVASTATINA', prog: 1, real: 0 },
+                    { id: 'a-2', produto: 'MALEATO', prog: 4, real: 2 }
+                ],
+                direta: [
+                    { id: 'd-1', produto: 'CARISO', prog: 1, real: 1 }
+                ]
+            },
+            {
+                id: 2, nome: "2º TURNO", ordens: [], auto: [], direta: []
+            },
+            {
+                id: 3, nome: "3º TURNO",
+                ordens: [
+                    { id: 'o-5', familia: 'FETTE 07', produto: 'ALPRAZOLAM 2MG', prog: 4, real: 4, via: 'UMIDA' },
+                    { id: 'o-6', familia: 'LEGACY 09', produto: 'VALSARTANA + HIDRO', prog: 1, real: 1, via: 'SECA' }
+                ],
+                auto: [
+                    { id: 'a-3', produto: 'MALEATO', prog: 1, real: 1 },
+                    { id: 'a-4', produto: 'ALPRAZOLAM 2MG', prog: 4, real: 4 }
+                ],
+                direta: [
+                    { id: 'd-2', produto: 'CARISO', prog: 1, real: 0 }
+                ]
+            }
+        ];
+
+        // Carrega os dados persistidos no navegador, se houver
+        let dados = JSON.parse(localStorage.getItem('novamed_pesagem_dados')) || dadosIniciais;
+
+        // Salva dados no LocalStorage do navegador
+        function salvarEstado() {
+            localStorage.setItem('novamed_pesagem_dados', JSON.stringify(dados));
+        }
+
+        // Altera o modo (TV ou Edição)
+        function setModo(modo) {
+            modoAtual = modo;
+            document.getElementById('btnModeTV').classList.toggle('active', modo === 'TV');
+            document.getElementById('btnModeEdit').classList.toggle('active', modo === 'EDIT');
+            render();
+        }
+
+        // Função Auxiliar atualizada para renderizar Programado/Realizado
+        function formatarFracaoRealProg(real, prog) {
+            const classeStatus = (real >= prog) ? 'status-completo' : 'status-incompleto';
+            return `<span class="indicador-real-prog ${classeStatus}">${prog}/${real}</span>`;
+        }
+
+        // Fluxo de Clique nos Itens
+        function handleItemClick(turnoId, itemId, tipo) {
+            if (modoAtual === 'TV') {
+                // Modo TV: Incrementa riscos diretamente com um toque (fluxo super ágil)
+                registrarIncrementoRapido(turnoId, itemId, tipo);
+            } else {
+                // Modo Edição: Abre painel completo para Editar, Mover ou Excluir o item
+                abrirModalEditar(turnoId, itemId, tipo);
+            }
+        }
+
+        // Fluxo de Incremento Rápido na TV
+        function registrarIncrementoRapido(turnoId, itemId, tipo) {
+            dados = dados.map(turno => {
+                if (turno.id === turnoId) {
+                    if (tipo === 'ordem') {
+                        turno.ordens = turno.ordens.map(o => {
+                            if (o.id === itemId) {
+                                if (o.real < o.prog) {
+                                    return { ...o, real: o.real + 1 };
+                                } else {
+                                    // Se já alcançou ou passou da meta, um novo toque reseta para 0
+                                    return { ...o, real: 0 };
+                                }
+                            }
+                            return o;
+                        });
+                    } else if (tipo === 'auto') {
+                        turno.auto = turno.auto.map(a => {
+                            if (a.id === itemId) {
+                                if (a.real < a.prog) return { ...a, real: a.real + 1 };
+                                else return { ...a, real: 0 };
+                            }
+                            return a;
+                        });
+                    } else if (tipo === 'direta') {
+                        turno.direta = turno.direta.map(d => {
+                            if (d.id === itemId) {
+                                if (d.real < d.prog) return { ...d, real: d.real + 1 };
+                                else return { ...d, real: 0 };
+                            }
+                            return d;
+                        });
+                    }
+                }
+                return turno;
+            });
+            salvarEstado();
+            render();
+        }
+
+        // ==========================================
+        //  SISTEMA DRAG & DROP (Arrastar e Soltar)
+        // ==========================================
+
+        function handleDragStart(event, sourceTurnoId, itemId, tipo) {
+            // Guarda dados do item sendo arrastado
+            event.dataTransfer.setData("text/plain", JSON.stringify({ sourceTurnoId, itemId, tipo }));
+            // Adiciona classe de opacidade para feedback visual
+            event.currentTarget.classList.add('dragging');
+        }
+
+        function handleDragEnd(event) {
+            event.currentTarget.classList.remove('dragging');
+            
+            // Limpa classes pontilhadas de dragover que possam ter sobrado
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault(); // Necessário para permitir a ação de soltar (drop)
+        }
+
+        // Corrige problemas comuns de disparos duplicados do dragover em tags filhas
+        function handleDragEnter(event) {
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(event, targetTurnoId, targetSubtype, targetTipo) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+
+            const rawData = event.dataTransfer.getData("text/plain");
+            if (!rawData) return;
+
+            const { sourceTurnoId, itemId, tipo } = JSON.parse(rawData);
+
+            // Regra de Consistência: Não permite misturar tipos de pesagens (Ordem nas colunas Extras ou vice-versa)
+            if (tipo !== targetTipo) return;
+
+            moverItemEntreTurnos(parseInt(sourceTurnoId), targetTurnoId, itemId, tipo, targetSubtype);
+        }
+
+        // Executa a transposição dos dados sem perder informações de realização (riscos) ou metas
+        function moverItemEntreTurnos(sourceTurnoId, targetTurnoId, itemId, tipo, targetSubtype) {
+            let itemAlvo = null;
+
+            // 1. Localiza e remove o item do seu respectivo Turno de Origem
+            dados = dados.map(turno => {
+                if (turno.id === sourceTurnoId) {
+                    if (tipo === 'ordem') {
+                        const index = turno.ordens.findIndex(o => o.id === itemId);
+                        if (index !== -1) itemAlvo = turno.ordens.splice(index, 1)[0];
+                    } else if (tipo === 'auto') {
+                        const index = turno.auto.findIndex(a => a.id === itemId);
+                        if (index !== -1) itemAlvo = turno.auto.splice(index, 1)[0];
+                    } else if (tipo === 'direta') {
+                        const index = turno.direta.findIndex(d => d.id === itemId);
+                        if (index !== -1) itemAlvo = turno.direta.splice(index, 1)[0];
+                    }
+                }
+                return turno;
+            });
+
+            // 2. Transfere o item para o Turno e Via/Área de Destino corretas
+            if (itemAlvo) {
+                if (tipo === 'ordem') {
+                    itemAlvo.via = targetSubtype; // Ajusta para a via (UMIDA ou SECA) que o operador soltou
+                    dados = dados.map(turno => {
+                        if (turno.id === targetTurnoId) {
+                            turno.ordens.push(itemAlvo);
+                        }
+                        return turno;
+                    });
+                } else if (tipo === 'auto') {
+                    dados = dados.map(turno => {
+                        if (turno.id === targetTurnoId) {
+                            turno.auto.push(itemAlvo);
+                        }
+                        return turno;
+                    });
+                } else if (tipo === 'direta') {
+                    dados = dados.map(turno => {
+                        if (turno.id === targetTurnoId) {
+                            turno.direta.push(itemAlvo);
+                        }
+                        return turno;
+                    });
+                }
+            }
+
+            salvarEstado();
+            render();
+        }
+
+        // ==========================================
+        //  MODAL CRUD - FUNÇÕES AUXILIARES
+        // ==========================================
+
+        // MODAL - Abertura para Criação (Create)
+        function abrirModalCriar(turnoId, tipo, via = 'SECA') {
+            document.getElementById('modalTitulo').innerText = `Adicionar Novo Item`;
+            document.getElementById('formId').value = '';
+            document.getElementById('formTipo').value = tipo;
+            document.getElementById('formTurno').value = turnoId;
+            document.getElementById('formTurno').disabled = false;
+            
+            // Ajustar visualização de campos de acordo com o tipo
+            if (tipo === 'ordem') {
+                document.getElementById('groupOrdemExtra').style.display = 'grid';
+                document.getElementById('formVia').value = via;
+                document.getElementById('formFamilia').value = '';
+                document.getElementById('labelProduto').innerText = 'Produto';
+            } else {
+                document.getElementById('groupOrdemExtra').style.display = 'none';
+                document.getElementById('labelProduto').innerText = tipo === 'auto' ? 'Pesagem Automática' : 'Pesagem Direta';
+            }
+
+            document.getElementById('formProduto').value = '';
+            document.getElementById('formProg').value = 1;
+            document.getElementById('formReal').value = 0;
+            
+            document.getElementById('btnExcluir').style.display = 'none';
+            document.getElementById('modalCrud').style.display = 'flex';
+        }
+
+        // MODAL - Abertura para Edição (Update/Move/Delete)
+        function abrirModalEditar(turnoId, itemId, tipo) {
+            document.getElementById('modalTitulo').innerText = `Gerenciar Registro`;
+            document.getElementById('formId').value = itemId;
+            document.getElementById('formTipo').value = tipo;
+            document.getElementById('formTurno').value = turnoId;
+            document.getElementById('formTurno').disabled = false;
+            
+            let item;
+            const turno = dados.find(t => t.id === turnoId);
+
+            if (tipo === 'ordem') {
+                item = turno.ordens.find(o => o.id === itemId);
+                document.getElementById('groupOrdemExtra').style.display = 'grid';
+                document.getElementById('formFamilia').value = item.familia;
+                document.getElementById('formVia').value = item.via;
+                document.getElementById('labelProduto').innerText = 'Produto';
+            } else {
+                item = (tipo === 'auto') ? turno.auto.find(a => a.id === itemId) : turno.direta.find(d => d.id === itemId);
+                document.getElementById('groupOrdemExtra').style.display = 'none';
+                document.getElementById('labelProduto').innerText = tipo === 'auto' ? 'Pesagem Automática' : 'Pesagem Direta';
+            }
+
+            document.getElementById('formProduto').value = item.produto;
+            document.getElementById('formProg').value = item.prog;
+            document.getElementById('formReal').value = item.real;
+
+            document.getElementById('btnExcluir').style.display = 'block';
+            document.getElementById('modalCrud').style.display = 'flex';
+        }
+
+        function fecharModal() {
+            document.getElementById('modalCrud').style.display = 'none';
+        }
+
+        // SALVAR - Salva Criação ou Atualização por formulário convencional
+        function salvarItem() {
+            const id = document.getElementById('formId').value;
+            const tipo = document.getElementById('formTipo').value;
+            const turnoDestinoId = parseInt(document.getElementById('formTurno').value);
+            
+            const produto = document.getElementById('formProduto').value.trim();
+            const prog = parseInt(document.getElementById('formProg').value) || 1;
+            const real = parseInt(document.getElementById('formReal').value) || 0;
+            const familia = document.getElementById('formFamilia').value.trim() || 'GERAL';
+            const via = document.getElementById('formVia').value;
+
+            if (!produto) {
+                alert('O nome do produto é obrigatório.');
+                return;
+            }
+
+            if (id === '') {
+                // OPERAÇÃO: CREATE
+                const novoId = tipo.charAt(0) + '-' + Date.now();
+                const novoItem = { id: novoId, produto, prog, real };
+                if (tipo === 'ordem') {
+                    novoItem.familia = familia;
+                    novoItem.via = via;
+                }
+
+                dados = dados.map(turno => {
+                    if (turno.id === turnoDestinoId) {
+                        if (tipo === 'ordem') turno.ordens.push(novoItem);
+                        else if (tipo === 'auto') turno.auto.push(novoItem);
+                        else if (tipo === 'direta') turno.direta.push(novoItem);
+                    }
+                    return turno;
+                });
+            } else {
+                // OPERAÇÃO: UPDATE e MOVER TURNO convencional
+                let itemRemovido = null;
+
+                dados = dados.map(turno => {
+                    if (tipo === 'ordem') {
+                        const index = turno.ordens.findIndex(o => o.id === id);
+                        if (index !== -1) itemRemovido = turno.ordens.splice(index, 1)[0];
+                    } else if (tipo === 'auto') {
+                        const index = turno.auto.findIndex(a => a.id === id);
+                        if (index !== -1) itemRemovido = turno.auto.splice(index, 1)[0];
+                    } else if (tipo === 'direta') {
+                        const index = turno.direta.findIndex(d => d.id === id);
+                        if (index !== -1) itemRemovido = turno.direta.splice(index, 1)[0];
+                    }
+                    return turno;
+                });
+
+                if (itemRemovido) {
+                    itemRemovido.produto = produto;
+                    itemRemovido.prog = prog;
+                    itemRemovido.real = real;
+                    if (tipo === 'ordem') {
+                        itemRemovido.familia = familia;
+                        itemRemovido.via = via;
+                    }
+
+                    dados = dados.map(turno => {
+                        if (turno.id === turnoDestinoId) {
+                            if (tipo === 'ordem') turno.ordens.push(itemRemovido);
+                            else if (tipo === 'auto') turno.auto.push(itemRemovido);
+                            else if (tipo === 'direta') turno.direta.push(itemRemovido);
+                        }
+                        return turno;
+                    });
+                }
+            }
+
+            salvarEstado();
+            fecharModal();
+            render();
+        }
+
+        // DELETAR - Excluir registro definitivamente
+        function deletarItem() {
+            const id = document.getElementById('formId').value;
+            const tipo = document.getElementById('formTipo').value;
+            
+            if (id) {
+                dados = dados.map(turno => {
+                    if (tipo === 'ordem') {
+                        turno.ordens = turno.ordens.filter(o => o.id !== id);
+                    } else if (tipo === 'auto') {
+                        turno.auto = turno.auto.filter(a => a.id !== id);
+                    } else if (tipo === 'direta') {
+                        turno.direta = turno.direta.filter(d => d.id !== id);
+                    }
+                    return turno;
+                });
+                
+                salvarEstado();
+                fecharModal();
+                render();
+            }
+        }
+
+        // ==========================================
+        //  RE-RENDERIZAÇÃO DO DASHBOARD
+        // ==========================================
+
+        function render() {
+            const board = document.getElementById('board');
+            board.innerHTML = ''; // Limpa o painel anterior
+
+            const isEdit = (modoAtual === 'EDIT');
+
+            dados.forEach(turno => {
+                // Filtra as vias daquela coluna
+                const umida = turno.ordens.filter(o => o.via === 'UMIDA');
+                const seca = turno.ordens.filter(o => o.via === 'SECA');
+                
+                // Calcula os totais do rodapé da coluna baseados na soma das quantidades realizadas
+                const totalUmida = umida.reduce((acc, curr) => acc + curr.real, 0);
+                const totalSeca = seca.reduce((acc, curr) => acc + curr.real, 0);
+
+                // Define o destaque visual dos botões de adicionar quando no modo edição
+                const addBtnStyle = isEdit ? 'display: inline-flex;' : 'display: none;';
+                const cardHighlightStyle = isEdit ? 'edit-mode-highlight' : '';
+
+                // Montagem da estrutura de cada turno na tela
+                const turnoHTML = `
+                    <div class="turno-card">
+                        
+                        <!-- Cabeçalho do Turno -->
+                        <div class="turno-header">
+                            <span>${turno.nome}</span>
+                        </div>
+                        
+                        <!-- Colunas Úmida vs Seca -->
+                        <div class="via-headers">
+                            <div>
+                                VIA ÚMIDA
+                                <button class="btn-add-mini" style="${addBtnStyle}" onclick="abrirModalCriar(${turno.id}, 'ordem', 'UMIDA')">+</button>
+                            </div>
+                            <div>
+                                VIA SECA
+                                <button class="btn-add-mini" style="${addBtnStyle}" onclick="abrirModalCriar(${turno.id}, 'ordem', 'SECA')">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Corpo das Ordens de Processos -->
+                        <div class="vias-body">
+                            <!-- Lista Úmida -->
+                            <div 
+                                ondragover="handleDragOver(event)" 
+                                ondragenter="handleDragEnter(event)" 
+                                ondragleave="handleDragLeave(event)" 
+                                ondrop="handleDrop(event, ${turno.id}, 'UMIDA', 'ordem')"
+                            >
+                                ${umida.length === 0 ? `
+                                    <div class="empty-turno-msg">${isEdit ? 'Arraste ordens para cá' : 'Sem ordens programadas'}</div>
+                                ` : umida.map(o => `
+                                    <div 
+                                        class="ordem-item ${cardHighlightStyle}" 
+                                        draggable="true"
+                                        ondragstart="handleDragStart(event, ${turno.id}, '${o.id}', 'ordem')"
+                                        ondragend="handleDragEnd(event)"
+                                        onclick="handleItemClick(${turno.id}, '${o.id}', 'ordem')"
+                                    >
+                                        <div class="ordem-info">
+                                            <span class="ordem-familia">${o.familia}</span>
+                                            <span class="ordem-produto" title="${o.produto}">${o.produto}</span>
+                                        </div>
+                                        <div class="ordem-valores">
+                                            ${formatarFracaoRealProg(o.real, o.prog)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <!-- Lista Seca -->
+                            <div 
+                                ondragover="handleDragOver(event)" 
+                                ondragenter="handleDragEnter(event)" 
+                                ondragleave="handleDragLeave(event)" 
+                                ondrop="handleDrop(event, ${turno.id}, 'SECA', 'ordem')"
+                            >
+                                ${seca.length === 0 ? `
+                                    <div class="empty-turno-msg">${isEdit ? 'Arraste ordens para cá' : 'Sem ordens programadas'}</div>
+                                ` : seca.map(o => `
+                                    <div 
+                                        class="ordem-item ${cardHighlightStyle}" 
+                                        draggable="true"
+                                        ondragstart="handleDragStart(event, ${turno.id}, '${o.id}', 'ordem')"
+                                        ondragend="handleDragEnd(event)"
+                                        onclick="handleItemClick(${turno.id}, '${o.id}', 'ordem')"
+                                    >
+                                        <div class="ordem-info">
+                                            <span class="ordem-familia">${o.familia}</span>
+                                            <span class="ordem-produto" title="${o.produto}">${o.produto}</span>
+                                        </div>
+                                        <div class="ordem-valores">
+                                            ${formatarFracaoRealProg(o.real, o.prog)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Rodapé de somatórios de cada via -->
+                        <div class="totais-via">
+                            <div title="Total Realizado Úmida">${String(totalUmida).padStart(2, '0')}</div>
+                            <div title="Total Realizado Seca">${String(totalSeca).padStart(2, '0')}</div>
+                        </div>
+
+                        <!-- Painel de Pesagens Avançadas no Rodapé -->
+                        <div class="pesagem-extra">
+                            
+                            <!-- Pesagem Automática -->
+                            <div 
+                                class="pesagem-bloco"
+                                ondragover="handleDragOver(event)" 
+                                ondragenter="handleDragEnter(event)" 
+                                ondragleave="handleDragLeave(event)" 
+                                ondrop="handleDrop(event, ${turno.id}, 'auto', 'auto')"
+                            >
+                                <div class="pesagem-bloco-title-row">
+                                    <h4>Pesagem Automática</h4>
+                                    <button class="btn-add-mini" style="${addBtnStyle}" onclick="abrirModalCriar(${turno.id}, 'auto')">+</button>
+                                </div>
+                                ${turno.auto.length === 0 ? '<div class="empty-turno-msg" style="margin-top:0">Nenhum registro</div>' : ''}
+                                ${turno.auto.map(a => `
+                                    <div 
+                                        class="extra-item" 
+                                        draggable="true"
+                                        ondragstart="handleDragStart(event, ${turno.id}, '${a.id}', 'auto')"
+                                        ondragend="handleDragEnd(event)"
+                                        onclick="handleItemClick(${turno.id}, '${a.id}', 'auto')"
+                                    >
+                                        <span style="font-weight: 500">${a.produto}</span>
+                                        <div>
+                                            ${formatarFracaoRealProg(a.real, a.prog)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <!-- Pesagem Direta -->
+                            <div 
+                                class="pesagem-bloco"
+                                ondragover="handleDragOver(event)" 
+                                ondragenter="handleDragEnter(event)" 
+                                ondragleave="handleDragLeave(event)" 
+                                ondrop="handleDrop(event, ${turno.id}, 'direta', 'direta')"
+                            >
+                                <div class="pesagem-bloco-title-row">
+                                    <h4>Pesagem Direta</h4>
+                                    <button class="btn-add-mini" style="${addBtnStyle}" onclick="abrirModalCriar(${turno.id}, 'direta')">+</button>
+                                </div>
+                                ${turno.direta.length === 0 ? '<div class="empty-turno-msg" style="margin-top:0">Nenhum registro</div>' : ''}
+                                ${turno.direta.map(d => `
+                                    <div 
+                                        class="extra-item" 
+                                        draggable="true"
+                                        ondragstart="handleDragStart(event, ${turno.id}, '${d.id}', 'direta')"
+                                        ondragend="handleDragEnd(event)"
+                                        onclick="handleItemClick(${turno.id}, '${d.id}', 'direta')"
+                                    >
+                                        <span style="font-weight: 500">${d.produto}</span>
+                                        <div>
+                                            ${formatarFracaoRealProg(d.real, d.prog)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+                board.innerHTML += turnoHTML;
+            });
+        }
+
+        // Inicialização da Aplicação
+        render();
+    </script>
+</body>
+</html>

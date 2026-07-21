@@ -18,13 +18,30 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email == 'johnathan.herbert47@gmail.com';
     }
 
+    // Helper to check if user has the 'leader' role on their own user document
+    function isLeader() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'leader';
+    }
+
+    // Helper to check if user is admin OR leader (used to gate the Painel de Produção)
+    function isLeaderOrAdmin() {
+      return isAdmin() || isLeader();
+    }
+
     // Users collection
     // - Qualquer usuário autenticado pode LER todos os documentos (necessário para online users)
-    // - O dono pode escrever em campos permitidos (isOnline, lastActive...)
-    // - Mas apenas o Admin pode modificar a flag isApproved de qualquer usuário
+    // - O dono pode escrever em campos próprios (isOnline, lastActive, name...)
+    // - Apenas o Admin pode modificar as flags de controle de acesso (isApproved, role)
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        request.resource.data.get('role', null) == resource.data.get('role', null) &&
+        request.resource.data.get('isApproved', null) == resource.data.get('isApproved', null)
+      );
+      allow delete: if isAdmin();
     }
     
     // NTs collection - authenticated users can read/write all NTs
@@ -41,6 +58,15 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
       allow delete: if isAuthenticated();
+    }
+
+    // Production Items collection - Painel de Produção (Pesagem)
+    // Acesso restrito a Líderes e ao Admin Global (mesmas pessoas que acessam a tela)
+    match /production_items/{itemId} {
+      allow read: if isLeaderOrAdmin();
+      allow create: if isLeaderOrAdmin();
+      allow update: if isLeaderOrAdmin();
+      allow delete: if isLeaderOrAdmin();
     }
     
     // Notifications collection - users can only access their own notifications

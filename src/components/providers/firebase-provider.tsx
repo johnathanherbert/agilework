@@ -14,16 +14,17 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
-interface UserData {
+export interface UserData {
   uid: string;
   email: string;
   name: string;
   created_at: string;
   updated_at: string;
   isApproved?: boolean; // Opcional para manter compatibilidade com docs antigos
+  role?: 'user' | 'leader'; // Papel de líder atribuído pelo admin global (área de produção)
 }
 
-const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
+export const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
 
 interface FirebaseContextType {
   user: User | null;

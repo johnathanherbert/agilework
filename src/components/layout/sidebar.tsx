@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ClipboardCheck, ClipboardList,
-  Home, Settings, Shield,
+  Home, Settings, Shield, Factory,
   ChevronLeft, ChevronRight, Menu, Github, ExternalLink
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   { label: 'Configurações', href: '/settings', icon: <Settings size={20} /> },
 ];
 
-import { useFirebase } from '@/components/providers/firebase-provider';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(true);
@@ -108,8 +108,35 @@ export const Sidebar = () => {
           </button>
         ))}
 
+        {/* Painel de Produção - visível para Líderes e Admin Global */}
+        {(userData?.email === ADMIN_EMAIL || userData?.role === 'leader') && (
+          <button
+            onClick={() => router.push('/producao')}
+            className={cn(
+              "relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 mt-2",
+              collapsed ? "justify-center" : "justify-start",
+              currentPath === '/producao'
+                ? "bg-blue-50 dark:bg-blue-900/40 text-primary font-bold shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100"
+            )}
+            title={collapsed ? "Painel de Produção" : ""}
+          >
+            <div className={cn(
+              "relative z-10",
+              collapsed ? "w-6 h-6 flex items-center justify-center" : ""
+            )}>
+              <Factory className="h-5 w-5" />
+            </div>
+            {!collapsed && (
+              <span className="relative z-10 text-sm font-semibold whitespace-nowrap">
+                Painel de Produção
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Admin Items */}
-        {userData?.email === 'johnathan.herbert47@gmail.com' && (
+        {userData?.email === ADMIN_EMAIL && (
           <button
             onClick={() => router.push('/settings/users')}
             className={cn(
