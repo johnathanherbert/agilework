@@ -11,6 +11,8 @@ import {
   deleteField,
   increment,
   writeBatch,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getCurrentUserInfo } from './firestore-helpers';
@@ -194,17 +196,24 @@ export const deleteProductionItem = async (itemId: string): Promise<void> => {
   console.log(`✅ Item de produção excluído (ID: ${itemId})`);
 };
 
-// Limpa todos os itens do quadro de produção (todos os turnos), permitindo
-// recomeçar o preenchimento do zero. Usado pelo botão "Limpar Turno".
-export const clearAllProductionItems = async (): Promise<number> => {
+// Limpa os itens do quadro de produção. 
+// Se `turno` for informado, limpa apenas aquele turno; caso contrário, limpa todos.
+export const clearProductionItems = async (turno?: ProductionTurno): Promise<number> => {
   const itemsRef = collection(db, PRODUCTION_COLLECTION);
-  const snapshot = await getDocs(itemsRef);
+  let snapshot;
+
+  if (turno) {
+    const q = query(itemsRef, where('turno', '==', turno));
+    snapshot = await getDocs(q);
+  } else {
+    snapshot = await getDocs(itemsRef);
+  }
 
   const batch = writeBatch(db);
   snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
   await batch.commit();
 
-  console.log(`✅ Quadro de produção limpo: ${snapshot.size} item(ns) removido(s)`);
+  console.log(`✅ Quadro de produção limpo ${turno ? `(Turno ${turno})` : '(Todos os turnos)'}: ${snapshot.size} item(ns) removido(s)`);
   return snapshot.size;
 };
 

@@ -13,22 +13,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { clearAllProductionItems } from '@/lib/production-helpers';
+import { clearProductionItems } from '@/lib/production-helpers';
+import { ProductionTurno } from '@/types';
 
 interface ClearTurnoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  turnoToClear: ProductionTurno | 'all' | null;
   onCleared?: () => void;
 }
 
-export function ClearTurnoDialog({ open, onOpenChange, onCleared }: ClearTurnoDialogProps) {
+export function ClearTurnoDialog({ open, onOpenChange, turnoToClear, onCleared }: ClearTurnoDialogProps) {
   const [clearing, setClearing] = useState(false);
 
   async function handleConfirm() {
     setClearing(true);
     try {
-      const removed = await clearAllProductionItems();
-      toast.success(`Turno limpo! ${removed} item(ns) removido(s).`);
+      const removed = await clearProductionItems(turnoToClear === 'all' ? undefined : turnoToClear || undefined);
+      toast.success(
+        turnoToClear === 'all' 
+          ? `Quadro limpo! ${removed} item(ns) removido(s).` 
+          : `${turnoToClear}º Turno limpo! ${removed} item(ns) removido(s).`
+      );
       onOpenChange(false);
       onCleared?.();
     } catch (error: any) {
@@ -43,9 +49,15 @@ export function ClearTurnoDialog({ open, onOpenChange, onCleared }: ClearTurnoDi
     <AlertDialog open={open} onOpenChange={(next) => !clearing && onOpenChange(next)}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Limpar turno</AlertDialogTitle>
+          <AlertDialogTitle>
+            {turnoToClear === 'all' ? 'Limpar quadro inteiro' : `Limpar ${turnoToClear}º Turno`}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja limpar <span className="font-semibold">todos os itens</span> do quadro de produção? Você poderá começar o preenchimento do zero. Esta ação não pode ser desfeita.
+            Tem certeza que deseja limpar{' '}
+            <span className="font-semibold text-destructive">
+              {turnoToClear === 'all' ? 'TODOS OS ITENS' : `todos os itens do ${turnoToClear}º Turno`}
+            </span>
+            ? Você poderá começar o preenchimento do zero. Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
