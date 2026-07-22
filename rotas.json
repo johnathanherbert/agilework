@@ -1,0 +1,4877 @@
+[
+    {
+        "Código Produto SA ": 700236,
+        "Descrição": "METILDOPA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704304,
+        "Descrição": "SUC. DESVENLAFAXINA (C1) 100MG C R L P",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704303,
+        "Descrição": "SUC DESVENLAFAXINA (C1) 50MG C R L P",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700042,
+        "Descrição": "DEXAMETASONA+FUM.DE CLEMASTINA COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700056,
+        "Descrição": "PIROXICAM 20MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703191,
+        "Descrição": "ROSUVASTATINA CALCICA 40 MG",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703906I",
+        "Descrição": "EMPAGLIFLOZINA 10MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703907I",
+        "Descrição": "EMPAGLIFLOZINA 25MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704366,
+        "Descrição": "PEA + COL UC II + VIT D3 COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703765I",
+        "Descrição": "LINA+CLOR.METFORMINA 2,5\/500MG COM REV",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703105I",
+        "Descrição": "LEFLUNOMIDA (C1) 20 MG COMPRIMIDO REVESTIDO",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700161,
+        "Descrição": "CLORTALIDONA 50MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700228,
+        "Descrição": "SIMETICONA COMPRIMIDOS 40MG",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700981,
+        "Descrição": "METILDOPA 250MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700810,
+        "Descrição": "CARBAMAZEPINA (C1)400MG COMP**",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700360,
+        "Descrição": "FLUCONAZOL 150MG CAP",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700411,
+        "Descrição": "BESILATO DE ANLODIPINO 5MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700411,
+        "Descrição": "BESILATO DE ANLODIPINO 5MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704068,
+        "Descrição": "ETODOLACO 500 MG",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700412,
+        "Descrição": "BESILATO DE ANLODIPINO 10MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700442,
+        "Descrição": "CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700465,
+        "Descrição": "ITRACONAZOL 100 MG CAPSULA DURA",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700465I",
+        "Descrição": "ITRACONAZOL 100 MG CAPSULA DURA",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700574,
+        "Descrição": "CLOR. FLUOXETINA (C1) 20MG COM REV**",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704527,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704528,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL2,5 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700590,
+        "Descrição": "CLORIDRATO FLUOXETINA(C1) 10MG CAP**",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700811,
+        "Descrição": "CARBAMAZEPINA (C1)200MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701146,
+        "Descrição": "CLOR.CLOMIPRAMINA (C1) 25MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702005,
+        "Descrição": "FINASTERIDA 1MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700685,
+        "Descrição": "LANSOPRAZOL 30MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702074,
+        "Descrição": "ALPRAZOLAM (B1) 0,25MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700709,
+        "Descrição": "SUCRALFATO 1G COMPS",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700723,
+        "Descrição": "CLOR.SERTRALINA (C1) 50MG COMP REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700724,
+        "Descrição": "MALEATO ENALAPRIL 5MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700725,
+        "Descrição": "MALEATO ENALAPRIL 10MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700725,
+        "Descrição": "MALEATO ENALAPRIL 10MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700726,
+        "Descrição": "MALEATO ENALAPRIL 20MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700743,
+        "Descrição": "PREDNISONA 20MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702075,
+        "Descrição": "ALPRAZOLAM (B1) 0,50MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700757,
+        "Descrição": "FLUNITRAZEPAM (B1) 2MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702076,
+        "Descrição": "ALPRAZOLAM (B1) 1MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702077,
+        "Descrição": "ALPRAZOLAM (B1) 2MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700825,
+        "Descrição": "SECNIDAZOL 1000MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700856,
+        "Descrição": "TROMETAMOL CETOROL. SL 10MG COMP S",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700905,
+        "Descrição": "CLOR.CIPROFLOXACINO 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700907,
+        "Descrição": "LORAZEPAM (B1) 2MGCOMP  LG",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700935,
+        "Descrição": "DICLOFENACO POTASSICO 50MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700948,
+        "Descrição": "CAPTOPRIL 50MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700951,
+        "Descrição": "OMEPRAZOL 20MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700956,
+        "Descrição": "DIAZEPAM (B1) 10MGCOMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700957,
+        "Descrição": "DIAZEPAM (B1) 5MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702484,
+        "Descrição": "CLORIDRATO FEXOFENADINA 180MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700972,
+        "Descrição": "CLOR.AMILORIDA 2.5MG+HIDROCLOROT.25MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700974,
+        "Descrição": "LISINOPRIL 10MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700973,
+        "Descrição": "LISINOPRIL 5MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700977,
+        "Descrição": "CAPTOPRIL 25MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700977,
+        "Descrição": "CAPTOPRIL 25MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702485,
+        "Descrição": "CLORIDRATO FEXOFENADINA 120MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702964,
+        "Descrição": "HEMIFUM. QUETIAPINA 100MG COMP.REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702964,
+        "Descrição": "HEMIFUM. QUETIAPINA 100MG COMP.REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700985,
+        "Descrição": "ATENOLOL+CLORTALIDONA 100MG\/25MG",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700996,
+        "Descrição": "LORATADINA 10MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704389,
+        "Descrição": "LORATADINA 10MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700997,
+        "Descrição": "ATENOLOL+CLORTALIDONA 50\/12,5MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700999,
+        "Descrição": "GLIBENCLAMIDA 5MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701042,
+        "Descrição": "ATENOLOL 100MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701045,
+        "Descrição": "CETOPROFENO CAPSULAS 50MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701094,
+        "Descrição": "FLUNITRAZEPAM (B1) 1MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702965,
+        "Descrição": "HEMIFUM. QUETIAPINA 25MG COMP. REV.(C1)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702965,
+        "Descrição": "HEMIFUM. QUETIAPINA 25MG COMP. REV.(C1)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701135,
+        "Descrição": "CLOR.DILTIAZEM COMP 60MG",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701136,
+        "Descrição": "ATENOLOL COMP 50MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701136,
+        "Descrição": "ATENOLOL COMP 50MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701137,
+        "Descrição": "ATENOLOL COMP 25MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701137,
+        "Descrição": "ATENOLOL COMP 25MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703004,
+        "Descrição": "CARVEDILOL 6,25MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704413,
+        "Descrição": "CARVEDILOL 6,25MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701164,
+        "Descrição": "PANTOPRAZOL COMP REV 40MG",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701165,
+        "Descrição": "PANTOPRAZOL COMP REV 20MG",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701166,
+        "Descrição": "ALENDRONATO DE SODIO 70MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701168,
+        "Descrição": "CLORTALIDONA 12,5MG COMP",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701169,
+        "Descrição": "CLORTALIDONA 25MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701169,
+        "Descrição": "CLORTALIDONA 25MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701171,
+        "Descrição": "CLOR.SERTRALINA (C1) 100MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704457,
+        "Descrição": "CLOR.SERTRALINA (C1) 100MG COMP REV",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701201,
+        "Descrição": "BROMAZEPAM (B1) 3MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703190,
+        "Descrição": "MICOFENOLATO SODICO 360MG C REV LIB RET",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703190,
+        "Descrição": "MICOFENOLATO SODICO 360MG C REV LIB RET",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701235,
+        "Descrição": "ESPIRONOLACTONA COMP 100MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701236,
+        "Descrição": "LOSARTANA POTASSICA 100MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701247,
+        "Descrição": "PENTOXIFILINA 400MG COMP REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702002,
+        "Descrição": "OMEPRAZOL 40MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703607,
+        "Descrição": "RIVAROXABANA 10 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702006,
+        "Descrição": "CLOR.DILTIAZEM COMP 30MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703608,
+        "Descrição": "RIVAROXABANA 15 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702012,
+        "Descrição": "BROMAZEPAM (B1) 6MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702013,
+        "Descrição": "CLOR.VERAPAMIL 80MG COMP REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702017,
+        "Descrição": "MALEATO DEXCLORFEN.+BETAMETASONA COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702408,
+        "Descrição": "7DIP+MES DIIDROERG+CAF 350+1+100MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702027,
+        "Descrição": "ESPIRONOLACTONA COMP 25MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702033,
+        "Descrição": "DEFLAZACORTE 30MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703609,
+        "Descrição": "RIVAROXABANA 20 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703676,
+        "Descrição": "SULF. HIDROXICLOROQUINA 400MG COM VER",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702056,
+        "Descrição": "MALEATO ENALAP.+HIDROC.20\/12,5MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 750064,
+        "Descrição": "AZITROMICINA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702073,
+        "Descrição": "MELOXICAM COMP 15MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700325,
+        "Descrição": "ACICLOVIR 200MG COM",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700290,
+        "Descrição": "ALBENDAZOL 400MG COMPRIMIDO MASTIGAVEL",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700663,
+        "Descrição": "CLARITROMICINA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700663,
+        "Descrição": "CLARITROMICINA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700672,
+        "Descrição": "METRONIDAZOL 250MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702079,
+        "Descrição": "DEFLAZACORTE 6MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700673,
+        "Descrição": "METRONIDAZOL 400MG COMP VER",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702084,
+        "Descrição": "SULFATO FERROSO 109MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702109,
+        "Descrição": "ESPIRONOLACTONA COMP 50MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702112,
+        "Descrição": "MELOXICAM COMP 7,5MG",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702113,
+        "Descrição": "DICLOFENACO COLESTIRAMINA CAPS 70MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702132,
+        "Descrição": "CARISO\/PARACET.\/CAFEINA\/DICLOF.SODIO",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702327,
+        "Descrição": "CLOR.TRAMADOL (A2)CAPS 50MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702327,
+        "Descrição": "CLOR.TRAMADOL (A2)CAPS 50MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702345,
+        "Descrição": "DEFLAZACORTE 7,5MGCOMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702360,
+        "Descrição": "GLIMEPIRIDA 2MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702361,
+        "Descrição": "GLIMEPIRIDA 1MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702363,
+        "Descrição": "PARACETAMOL COMP REV 750MG (CD)",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702369,
+        "Descrição": "ADIF.+DIP.+PROMET.10,0+500,0+5,0 MG\/COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702370,
+        "Descrição": "CAFEINA+CIT ORFENADRINA+DIP.COMP(CD)",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702377,
+        "Descrição": "ACIDO ACETIL SALICILICO 100MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702385,
+        "Descrição": "ACARBOSE 100MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702386,
+        "Descrição": "ACARBOSE 50MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702390,
+        "Descrição": "LOSARTAN POT.+HIDROCLOR.100\/25MG C.R",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702391,
+        "Descrição": "LOSARTAN POT.+HIDROCLO.50\/12,5MG C.R",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702392,
+        "Descrição": "DOXAZOSINA MESILATO 2MGCOMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702392,
+        "Descrição": "DOXAZOSINA MESILATO 2MGCOMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704317,
+        "Descrição": "DIPIRONA COMP (CD)",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702468,
+        "Descrição": "AAS+CARB.MAGNE+GLIC ALUM C.REV 100MG CD",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702480,
+        "Descrição": "NITRAZEPAM (B1) 5 MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700689,
+        "Descrição": "FINASTERIDA 5MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700749,
+        "Descrição": "PREDNISONA 5MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700971,
+        "Descrição": "CLOR.AMILORIDA 5MG+HIDROCLOROT.50MG",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702493,
+        "Descrição": "LOSARTANA POTASSICA 50MG COMP REV",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702498,
+        "Descrição": "AAS+CARB.MAGNE.+GLIC.ALUM C.REV 200MG",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702500,
+        "Descrição": "TENADREN 40MG\/12,5MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700984,
+        "Descrição": "CLOR.TERBINAFINA 250MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702532,
+        "Descrição": "LEVOFLOXACINO 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702534,
+        "Descrição": "BROMOPRIDA 10MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702535,
+        "Descrição": "GABAPENTINA (C1) 400MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702536,
+        "Descrição": "HIDROCLOROTIAZIDA 25MG COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702536,
+        "Descrição": "HIDROCLOROTIAZIDA 25MG COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702539,
+        "Descrição": "TOPIRAMATO 100MG (C1) COMP REV**",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702540,
+        "Descrição": "TOPIRAMATO 50MG (C1) COMP REV**",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702541,
+        "Descrição": "TOPIRAMATO 25MG (C1) COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702543,
+        "Descrição": "MICOFENOLATO DE MOFETILA 500MG C.REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702554,
+        "Descrição": "GABAPENTINA (C1) 300MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702563,
+        "Descrição": "BISGLICINATO FERROSO 300MG COMP REV (CD)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702564,
+        "Descrição": "BISGLICINATO FERRROSO 150MG COMP REV (CD)",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702565,
+        "Descrição": "NEUTROFER FOLICO 150MG COMP REV (CD)",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702577,
+        "Descrição": "IVERMECTINA 6MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702621,
+        "Descrição": "DINITRATO ISOSSORBIDA 10MG COMP (CD)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702626,
+        "Descrição": "PARACETAMOL 500MG COMP.REVESTIDO",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702639,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702661,
+        "Descrição": "CLOR.SIBUTRAMINA (B2) 15MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702667,
+        "Descrição": "ACIDO MEFENAMICO 500MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702668,
+        "Descrição": "CLOR.SIBUTRAMINA (B2) 10MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702726,
+        "Descrição": "ACIDO FOLICO COMP 5MG",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702755,
+        "Descrição": "PARACETAMOL+CLOR.DE PSEUDOEF.COMP REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702788,
+        "Descrição": "PARACETAMOL+CAFEINA COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702789,
+        "Descrição": "CLONAZEPAM (B1) 2MG COMPRIMIDOS",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702849,
+        "Descrição": "CLOR.AMITRIPTILINA(C1) 75MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702850,
+        "Descrição": "CLOR.AMITRIPTILINA(C1) 25MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704307,
+        "Descrição": "ORLISTATE 120MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704307I",
+        "Descrição": "ORLISTATE 120MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702863,
+        "Descrição": "ORLISTATE 120MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702892,
+        "Descrição": "CLOR.VENLAFAXINA(C1)150MG CAP.GEL.DU. LP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704252,
+        "Descrição": "DESLORATADINA 5MG COMP. REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702896,
+        "Descrição": "ATORVASTATINA CALCICA 80MG COMP.REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702899,
+        "Descrição": "DESLORATADINA 5MG COMP. REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702903,
+        "Descrição": "FENOFIBRATO 200 MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702913,
+        "Descrição": "ATORVASTATINA CALCICA 10MG COMP.REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702914,
+        "Descrição": "ATORVASTATINA CALCICA 20MG COMP.REV.",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702915,
+        "Descrição": "ATORVASTATINA CALCICA 40MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702917,
+        "Descrição": "CLOR. DE LERCANIDIPINO 10MG COMP. REV.",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702924,
+        "Descrição": "CLOR. DE CICLOBENZAPRINA 5,0MG COMP.REV.",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702927,
+        "Descrição": "PREDNISOLONA 20 MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702927,
+        "Descrição": "PREDNISOLONA 20 MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702928,
+        "Descrição": "DICLORIDRATO DE HIDROXIZINA 25MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702929,
+        "Descrição": "CLOR.DE CICLOBENZAPRINA 10MG COMP.REV.",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702930,
+        "Descrição": "OLANZAPINA (C1) 10MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702931,
+        "Descrição": "OLANZAPINA (C1) 5MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701095,
+        "Descrição": "CETOCONAZOL 200MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702937,
+        "Descrição": "SINVASTATINA 10MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702938,
+        "Descrição": "SINVASTATINA 20MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702939,
+        "Descrição": "SINVASTATINA 40MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702943,
+        "Descrição": "CITRATO DE SILDENAFILA 25MG COMP. REV.",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702944,
+        "Descrição": "CITRATO DE SILDENAFILA 50MG COMP. REV.",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702947,
+        "Descrição": "ROSUVASTATINA CALCICA 10MG COMP. REV.",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702948,
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 45MG COMP.",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702959,
+        "Descrição": "CITRATO DE SILDENAFILA 100MG COMP. REV.",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702960,
+        "Descrição": "CLOR. MOXIFLOXACINO 400MG COMP. REV.",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702962,
+        "Descrição": "HEMIFUM. QUETIAPINA 300MG COMP. REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702963,
+        "Descrição": "FUM. DE QUETIAPINA 200MG COMP. REV. (C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701202,
+        "Descrição": "ACICLOVIR 400MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702009,
+        "Descrição": "IMUSSUPREX 50MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702972,
+        "Descrição": "DICLOFENACO SODICO 50MG COMP. REV.",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702981,
+        "Descrição": "CLOR. PAROXETINA (C1) 20MG COM REV",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702984,
+        "Descrição": "INDAPAMIDA 1,5 MG COM.REV.LIB PROL.",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702986,
+        "Descrição": "GLIMEPIRIDA 4MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702987,
+        "Descrição": "VALSARTANA 320 MG COMP. REV.",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702988,
+        "Descrição": "VALSARTANA + HIDROCLOR.320\/25MG COMP.REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702990,
+        "Descrição": "CLORIDRATO DE DONEPEZILA(C1) 5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702991,
+        "Descrição": "CLORIDRATO DE DONEPEZILA(C1)10MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702993,
+        "Descrição": "CLOR. DE MEMANTINA (C1) 10MG COM REV.",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702993,
+        "Descrição": "CLOR. DE MEMANTINA (C1) 10MG COM REV.",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702047,
+        "Descrição": "GENFIBROZILA 600MG COMP REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702050,
+        "Descrição": "MALEATO DEXCLORFENIRAMINA 2MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702072,
+        "Descrição": "DEXAMETASONA COMP 4MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702080,
+        "Descrição": "BEZAFIBRATO 200MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702080,
+        "Descrição": "BEZAFIBRATO 200MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704351,
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703006,
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703007,
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 15MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703011,
+        "Descrição": "ACECLOFENACO 100MG COM. REV.",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703012,
+        "Descrição": "RISEDRONATO SODICO 35MG COM. REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703013,
+        "Descrição": "BROMIDRATO CITALOPRAM(C1) 20MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703014,
+        "Descrição": "OXALATO DE ESCITALOPRAM 20MG(C1)COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703014,
+        "Descrição": "OXALATO DE ESCITALOPRAM 20MG(C1)COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703015,
+        "Descrição": "OXALATO DE ESCITALOPRAM 10MG(C1)COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703019,
+        "Descrição": "ACIDO TRANEXAMICO 250MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703022,
+        "Descrição": "TACROLIMO 1MG CAPSULAS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704411,
+        "Descrição": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703025,
+        "Descrição": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703029,
+        "Descrição": "VALSARTANA 80 MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703030,
+        "Descrição": "VALSARTANA 160 MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703038,
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703040,
+        "Descrição": "CLOR. NARATRIPTANA 2,5MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703042,
+        "Descrição": "VALSARTANA+HIDROCL.160\/25MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703043,
+        "Descrição": "VALSARTANA+HIDROCL.160\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703044,
+        "Descrição": "VALSARTANA+HIDROCL.80\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703062,
+        "Descrição": "DOMPERIDONA 10MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703064,
+        "Descrição": "FOSF. CALCIO 600MG+VIT D 400 UI COM REV",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703068,
+        "Descrição": "ROSUVASTATINA CALCICA 20MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703096,
+        "Descrição": "CLOR.VENLAFAXINA (C1) 75MG CAP GEL DU LP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703098,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703099,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 2,5MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703100,
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 1,25MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702486,
+        "Descrição": "CLOR.FEXO + CLOR.PSEUDO 60+120MG COM REV",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702503,
+        "Descrição": "MESALAZINA 800MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703131,
+        "Descrição": "VALSARTANA+HIDROCLOR 320\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703153,
+        "Descrição": "VALSARTANA+ANLODIPINO 320\/10MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703154,
+        "Descrição": "VALSARTANA+ANLODIPINO 320\/5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703156,
+        "Descrição": "VALSARTANA+ANLODIPINO 160\/5MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703160,
+        "Descrição": "CLOR. DULOXETINA (C1) 30MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703161,
+        "Descrição": "CLOR. DULOXETINA (C1) 60MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702934,
+        "Descrição": "MESALAZINA 500MG COMP. LIB. PROLONGADA",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702934,
+        "Descrição": "MESALAZINA 500MG COMP. LIB. PROLONGADA",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703002,
+        "Descrição": "CARVEDILOL 25MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703003,
+        "Descrição": "CARVEDILOL 12,5MG COMPRIMIDO ",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704414,
+        "Descrição": "CARVEDILOL 12,5MG COMPRIMIDO ",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703186,
+        "Descrição": "CITRATO DE SILDENAFILA 20MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703005,
+        "Descrição": "CARVEDILOL 3,125MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704412,
+        "Descrição": "CARVEDILOL 3,125MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703127,
+        "Descrição": "TELMISARTANA 80MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703192,
+        "Descrição": "ROSUVASTATINA CALCICA 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703192,
+        "Descrição": "ROSUVASTATINA CALCICA 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703204,
+        "Descrição": "ARIPIPRAZOL (C1) 10MG COM",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703220,
+        "Descrição": "OLMESARTANA+ANLODIPINO 20\/5MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703221,
+        "Descrição": "OLMESARTANA+ANLODIPINO 40\/5MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703222,
+        "Descrição": "OLMESARTANA+ANLODIPINO 40\/10MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703128,
+        "Descrição": "TELMISARTANA 40MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703171,
+        "Descrição": "EZETIMIBA 10MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703173,
+        "Descrição": "EZETIMIBA+SINVASTATINA 10\/20MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703174,
+        "Descrição": "EZETIMIBA+SINVASTATINA 10\/40MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703235,
+        "Descrição": "OXALATO DE ESCITALOPRAM 15MG (C1)COM REV",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703237,
+        "Descrição": "TADALAFILA 20 MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703369,
+        "Descrição": "PREGABALINA (C1) 75MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703369,
+        "Descrição": "PREGABALINA (C1) 75MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703370,
+        "Descrição": "PREGABALINA (C1) 150MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703375,
+        "Descrição": "LIMECICLINA 150 MG CAP DURA",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703376,
+        "Descrição": "LIMECICLINA 300 MG CAP DURA",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703405,
+        "Descrição": "CLORIDRATO METILFENIDATO (A3) 10MG COM",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703410,
+        "Descrição": "DEFERASIROX 500MG COM DISP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703435,
+        "Descrição": "PARACETAMOL + CODEINA(A2) 500+30MG COM",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703515,
+        "Descrição": "NAPROXENO SODICO 550 MG COM REV",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703223,
+        "Descrição": "OLMESARTANA MEDOXOMILA 20 MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703224,
+        "Descrição": "OLMESARTANA MEDOXOMILA 40 MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703533,
+        "Descrição": "BILASTINA 20MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703533,
+        "Descrição": "BILASTINA 20MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703536,
+        "Descrição": "COLAGENO UCII 40MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703555,
+        "Descrição": "DIOSMINA 450MG+HESPERIDINA 50MG COM REV   ",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703556,
+        "Descrição": "DIOSMINA 900MG+HESPERIDINA 100MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703562,
+        "Descrição": "ETODOLACO 400 MG COM VER",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703581,
+        "Descrição": "COLECALCIFEROL 50.000UI COM VER",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703583,
+        "Descrição": "COLECALCIFEROL 1.000UI COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703597,
+        "Descrição": "DICLOR. DE LEVOCETIRIZINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703606,
+        "Descrição": "BESILATO DE LEVANLODIPINO 2,5MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703226,
+        "Descrição": "OLMESARTANA+HCTZ 20\/12,5 MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703227,
+        "Descrição": "OLMESARTANA+HCTZ 40\/12,5 MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703228,
+        "Descrição": "OLMESARTANA+HCTZ 40\/25 MG COM REV",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703228,
+        "Descrição": "OLMESARTANA+HCTZ 40\/25 MG COM REV",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704302,
+        "Descrição": "LUT+ZEA+A+B2+C+E+CU+SE+ZN COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703617,
+        "Descrição": "LUTEIN10MG+ZEAXAN+VIT+MIN COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703625,
+        "Descrição": "SUCCINATO DE SOLIFENACINA 10MG COM REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703626,
+        "Descrição": "SUCCINATO DE SOLIFENACINA 5MG COM VER",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703528,
+        "Descrição": "CILOSTAZOL 50MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703528,
+        "Descrição": "CILOSTAZOL 50MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703648,
+        "Descrição": "LINAGLIPTINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703652,
+        "Descrição": "CLOR. TRAZODONA (C1) 100MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703653,
+        "Descrição": "CLOR. TRAZODONA (C1) 50MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703529,
+        "Descrição": "CILOSTAZOL 100MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703629,
+        "Descrição": "ETORICOXIBE (C1) 90MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703656,
+        "Descrição": "MIRTAZAPINA (C1) 15 MG COM ORODISP",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703678,
+        "Descrição": "DIPIRONA SODICA 1G COM",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703682,
+        "Descrição": "COLAGENO 50MG +VIT.+MIN. COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703657,
+        "Descrição": "MIRTAZAPINA (C1) 30 MG COM ORODISP",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703683,
+        "Descrição": "ACIDO URSODESOXICOLICO 300MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703690,
+        "Descrição": "LACTASE 10.000FCC ALU COM MAST(ALIM)",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703702,
+        "Descrição": "COL.40MG+VITD5MCG+MG130MG CAP DURA(ALIM)",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703718,
+        "Descrição": "CLOR ONDANS DI-HIDRATADO 4MG COM ORODISP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703719,
+        "Descrição": "CLOR ONDANS DI-HIDRATADO 8MG COM ORODISP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703684,
+        "Descrição": "ACIDO URSODESOXICOLICO 150MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703766,
+        "Descrição": "LINA+CLOR.METFORMINA 2,5\/850 MG COM REV   ",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703808,
+        "Descrição": "SI+B12,C,E,B9,H+FE,MG,ZN COM REV(ALIM)",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703830,
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM SL",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703839,
+        "Descrição": "CA+MG+VITD+VITK2 COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703857,
+        "Descrição": "CL. TRAMADOL (A2)100MG COM REV LIB PROL",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703909,
+        "Descrição": "COL.40MG+AC.HIALU157,7MG CAP DURA (ALIM)",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704421,
+        "Descrição": "FERRO+AC.FOLICO+VIT D3 COM REV (ALIM)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703988,
+        "Descrição": "POLIVIT AZ COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703989,
+        "Descrição": "VIT+MIN+B9 COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703990,
+        "Descrição": "POLIVIT HAIR CAP DURA (ALIM)",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703998,
+        "Descrição": "VALERI+PASSIF+CRATAE+ 40+50+30MG COM REV",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704066,
+        "Descrição": "BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704074,
+        "Descrição": "CLORIDRATO DE NEBIVOLOL 5MG COM",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704076,
+        "Descrição": "COL+CA+MG+VITD+VITK2 COM REV (ALIM)",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704079,
+        "Descrição": "COL CTII 40MG + UCII 40MG CAPS (ALIM)",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704088,
+        "Descrição": "COL 40MG+CURC 400MG CAP DURA (ALIM)",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704089,
+        "Descrição": "COLCHICINA 0,5 MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704096,
+        "Descrição": "TARTARATO METOPROLOL 100 MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703767,
+        "Descrição": "LINA+CLOR.METFORMINA 2,5\/1000MG COM REV   ",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704138,
+        "Descrição": "MELATONINA 0,21MG COM ORODISP (ALIM)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704153,
+        "Descrição": "COMPLEXO B COMP REV C\/20-E",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704154,
+        "Descrição": "COMPLEXO B COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704163,
+        "Descrição": "TROMETAMOL CETOROL. 10MG COM SUBL",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704224,
+        "Descrição": "CLOR. NARATRIPTANA 2,5MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 750005,
+        "Descrição": "BISGLICINATO FERROSO 500MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 750012,
+        "Descrição": "NIMESULIDA 100MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 750063,
+        "Descrição": "FANCICLOVIR 125MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704120,
+        "Descrição": "MULTIGRIP 400+4+4MG CAP*",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 750065,
+        "Descrição": "FANCICLOVIR 500MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 750066,
+        "Descrição": "AZITROMICINA 1000MG COMP REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 760007,
+        "Descrição": "DINITRATO ISOSSORBIDA SL 5MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 760008,
+        "Descrição": "CLOR.PROPRANOLOL 10MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 760009,
+        "Descrição": "CLOR.PROPRANOLOL 40MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 760010,
+        "Descrição": "CLOR.PROPRANOLOL 80MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 760012,
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.40\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 760013,
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.80\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700013,
+        "Descrição": "ÁCIDO ACETIL SALICÍLICO 500MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700024,
+        "Descrição": "COMPLEXO B COMP REV C\/20-E",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700039,
+        "Descrição": "COMPLEXO B COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700071,
+        "Descrição": "  GELMAX COM MAST (SABOR LIMAO)",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700393,
+        "Descrição": "CLOR.DOXICICLINA 100MG COMP REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700686,
+        "Descrição": "  LANSOPRAZOL 15MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 700688,
+        "Descrição": "  CLOR.TICLOPIDINA COMP REV.250MG",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700975,
+        "Descrição": "LISINOPRIL 20MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700976,
+        "Descrição": "CAPTOPRIL 12,5MG COMP   ",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701012,
+        "Descrição": "GELMAX COM MAST (SABOR PAPAYA-CASSIS)",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701057,
+        "Descrição": "CLOR.RANITIDINA 150MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 701211,
+        "Descrição": "NIMODIPINO 30MG COMP REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701248,
+        "Descrição": "  CLOR.METFORMINA COMP REV 500MG",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701249,
+        "Descrição": "  CLOR.METFORMINA COMP REV 850MG",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702028,
+        "Descrição": "  CLOR.METFORMINA COMP REV 1G",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702034,
+        "Descrição": "NORFLOXACINO 400MG COMP REV-LG   ",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702046,
+        "Descrição": "GENFIBROZILA 900MGCOMP REV-LG",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702499,
+        "Descrição": "  TENADREN 80MG\/12,5MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702504,
+        "Descrição": "MESALAZINA 400MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702605,
+        "Descrição": "  CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702627,
+        "Descrição": "HIDROCLOROTIAZIDA 50MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702751,
+        "Descrição": "  BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702821,
+        "Descrição": "CLOR. BUPROPIONA (C1) 150MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704485,
+        "Descrição": "CLOR. BUPROPIONA (C1) 150MG COM REV",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702822,
+        "Descrição": "  BROMETO DE PINAVERIO 100MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702879,
+        "Descrição": "   CLOR.VALACICLOVIR 500MG COMP REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702932,
+        "Descrição": " OLANZAPINA (C1) 2,5MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703103,
+        "Descrição": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETARD",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704408,
+        "Descrição": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETARD",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703104,
+        "Descrição": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETARD",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704409,
+        "Descrição": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETARD",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703107,
+        "Descrição": "   DICL. DE PRAMIPEXOL (C1) 1,0MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703130,
+        "Descrição": "REPAGLINIDA 2MG COMPRIMIDO   ",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703150,
+        "Descrição": "VALERIANA+PASSIFLORA+CRATAEGUS COMP   ",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703172,
+        "Descrição": "   EZETIMIBA+SINVASTATINA 10\/10MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703172,
+        "Descrição": "   EZETIMIBA+SINVASTATINA 10\/10MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703205,
+        "Descrição": "ARIPIPRAZOL (C1) 15MG COM",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703421,
+        "Descrição": "  CLONIXINATO DE LISINA 125 MG COM VER",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703428,
+        "Descrição": "  SUPLEVIT CPR REVESTIDO (ALIM)",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703429,
+        "Descrição": "   VYTINAL CPR REVESTIDO (ALIM)",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704284,
+        "Descrição": "CL.DE LISINA+CL.DE CICLO.125+5MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703452,
+        "Descrição": "DORICAL CALIM",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703454,
+        "Descrição": "  ALCIO+VIT.D+VIT.B12 COM REV (ALIM)",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703571,
+        "Descrição": "NITAZOXANIDA 500MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703582,
+        "Descrição": "COLECALCIFEROL 7.000UI COM VER",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703864,
+        "Descrição": "BROM. DE VORTIOXETINA (C1) 10MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703863,
+        "Descrição": "BROM. DE VORTIOXETINA (C1) 5 MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704095,
+        "Descrição": "IBUPROFENO 600 MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704135,
+        "Descrição": "IBUPROFENO 300 MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704000,
+        "Descrição": "APIXABANA 2,5 MG COM VER",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703806,
+        "Descrição": "LEVETIRACETAM (C1) 750 MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704069,
+        "Descrição": "PITAVASTATIN (GM2) 2 MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704070,
+        "Descrição": "PITAVASTATINA CALCICA 4MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704001,
+        "Descrição": "APIXABANA 5,0 MG COM VER",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703805,
+        "Descrição": "LEVETIRACETAM (ES3) 250 MG X 30",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704065,
+        "Descrição": "LEVETIRACETAM (GM2) 500 MG X 30",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 700904,
+        "Descrição": "CLOR.CIPROFLOXACINO 250MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701058,
+        "Descrição": "CLOR.RANITIDINA 300MG COMP REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702838,
+        "Descrição": "CARB.CALCIO+COLECALC. (VIT.D) COMP.REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 702898,
+        "Descrição": "IBUPROFENO 400MG COMP.REV.",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703431,
+        "Descrição": "CL.DE LISINA+CL.DE CICLO.125+5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704126,
+        "Descrição": "RIVAROXABANA 15MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704127,
+        "Descrição": "RIVAROXABANA 20MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 704125,
+        "Descrição": "RIVAROXABANA 10MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 701238,
+        "Descrição": "ZAARPRESS 25MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 702979,
+        "Descrição": "SINVASTATINA 80MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703008,
+        "Descrição": "HEMITART. DE RIVASTIGMINA (C1) 4,5MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703009,
+        "Descrição": "HEMITART. DE RIVASTIGMINA (C1) 3,0MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703010,
+        "Descrição": "HEMITART. DE RIVASTIGMINA (C1) 1,5MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703075,
+        "Descrição": "RILUZOL 50MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703078,
+        "Descrição": "CITRATO DE SILDENAFILA 50MG COMP. REV.S",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703194,
+        "Descrição": "LOSARTANA+INDAPAMIDA 50\/1,5MG CR MULT LP",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703195,
+        "Descrição": "LOSARTANA+INDAPAMIDA 100\/1,5MG CR MUL LP",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703446,
+        "Descrição": "VIT.C+ ZINCO CRANBERRY COMP MAST 1200MG",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703447,
+        "Descrição": "SULFAMETOXAZOL+TRIMETOP 800\/160MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703712,
+        "Descrição": "CLORIDRATO DE SAXAGLIPTINA 2,5MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 703713,
+        "Descrição": "CLORIDRATO DE SAXAGLIPTINA 5,0MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704380,
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704424,
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.40\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704425,
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.80\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704003,
+        "Descrição": "FOSFATO DE CODEINA (A2) 30MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700024I",
+        "Descrição": "COMPLEXO B COMP REV C\/20-E",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700042I",
+        "Descrição": "DEXAMETASONA+FUM.DE CLEMASTINA COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700056I",
+        "Descrição": "PIROXICAM 20MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700071I",
+        "Descrição": "GELMAX COM MAST (SABOR LIMAO)",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700161I",
+        "Descrição": "CLORTALIDONA 50MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700228I",
+        "Descrição": "SIMETICONA COMPRIMIDOS 40MG",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700236I",
+        "Descrição": "METILDOPA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700290I",
+        "Descrição": "ALBENDAZOL 400MG COMPRIMIDO MASTIGAVEL",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700325I",
+        "Descrição": "ACICLOVIR 200MG COM",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700360I",
+        "Descrição": "FLUCONAZOL 150MG CAP",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700411I",
+        "Descrição": "BESILATO DE ANLODIPINO 5MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700412I",
+        "Descrição": "BESILATO DE ANLODIPINO 10MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700442I",
+        "Descrição": "CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700574I",
+        "Descrição": "CLOR. FLUOXETINA (C1) 20MG COM REV**",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700590I",
+        "Descrição": "CLORIDRATO FLUOXETINA(C1) 10MG CAP**",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700663I",
+        "Descrição": "CLARITROMICINA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700672I",
+        "Descrição": "METRONIDAZOL 250MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700673I",
+        "Descrição": "METRONIDAZOL 400MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700685I",
+        "Descrição": "LANSOPRAZOL 30MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700686I",
+        "Descrição": "LANSOPRAZOL 15MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700688I",
+        "Descrição": "CLOR.TICLOPIDINA COMP REV.250MG",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700689I",
+        "Descrição": "FINASTERIDA 5MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700709I",
+        "Descrição": "SUCRALFATO 1G COMP-S",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700723I",
+        "Descrição": "CLOR.SERTRALINA (C1) 50MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700724I",
+        "Descrição": "MALEATO ENALAPRIL 5MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700725I",
+        "Descrição": "MALEATO ENALAPRIL 10MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700726I",
+        "Descrição": "MALEATO ENALAPRIL 20MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700743I",
+        "Descrição": "PREDNISONA 20MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700749I",
+        "Descrição": "PREDNISONA 5MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700757I",
+        "Descrição": "FLUNITRAZEPAM (B1) 2MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700810I",
+        "Descrição": "CARBAMAZEPINA (C1)400MG COMP**",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700811I",
+        "Descrição": "CARBAMAZEPINA (C1)200MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700825I",
+        "Descrição": "SECNIDAZOL 1000MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700856I",
+        "Descrição": "TROMETAMOL CETOROL. SL 10MG COMP -S",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700905I",
+        "Descrição": "CLOR.CIPROFLOXACINO 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700907I",
+        "Descrição": "LORAZEPAM (B1) 2LG",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700935I",
+        "Descrição": "DICLOFENACO POTASSICO 50MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700948I",
+        "Descrição": "CAPTOPRIL 50MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700951I",
+        "Descrição": "OMEPRAZOL 20MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700956I",
+        "Descrição": "DIAZEPAM (B1) 10MGCOMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700957I",
+        "Descrição": "DIAZEPAM (B1) 5MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700971I",
+        "Descrição": "CLOR.AMILORIDA 5MG+HIDROCLOROT.50MG",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700972I",
+        "Descrição": "CLOR.AMILORIDA 2.5MG+HIDROCLOROT.25MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700975I",
+        "Descrição": "LISINOPRIL 20MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700976I",
+        "Descrição": "CAPTOPRIL 12,5MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700977I",
+        "Descrição": "CAPTOPRIL 25MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700981I",
+        "Descrição": "METILDOPA 250MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700984I",
+        "Descrição": "CLOR.TERBINAFINA 250MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "700985I",
+        "Descrição": "ATENOLOL+CLORTALIDONA 100MG\/25MG",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700997I",
+        "Descrição": "ATENOLOL+CLORTALIDONA 50\/12,5MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700999I",
+        "Descrição": "GLIBENCLAMIDA 5MG COM",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701012I",
+        "Descrição": "GELMAX COM MAST (SABOR PAPAYA-CASSIS)",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701042I",
+        "Descrição": "ATENOLOL 100MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701045I",
+        "Descrição": "CETOPROFENO CAPSULAS 50MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701094I",
+        "Descrição": "FLUNITRAZEPAM (B1) 1MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701095I",
+        "Descrição": "CETOCONAZOL 200MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701136I",
+        "Descrição": "ATENOLOL COMP 50MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701137I",
+        "Descrição": "ATENOLOL COMP 25MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701146I",
+        "Descrição": "CLOR.CLOMIPRAMINA (C1) 25MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701164I",
+        "Descrição": "PANTOPRAZOL 40MG COM REV LIB RETARD",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701165I",
+        "Descrição": "PANTOPRAZOL 20MG COM REV LIB RETARD",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701166I",
+        "Descrição": "ALENDRONATO DE SODIO 70MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701168I",
+        "Descrição": "CLORTALIDONA 12,5MG COMP",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701169I",
+        "Descrição": "CLORTALIDONA 25MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701171I",
+        "Descrição": "CLOR.SERTRALINA (C1) 100MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701201I",
+        "Descrição": "BROMAZEPAM (B1) 3MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701202I",
+        "Descrição": "ACICLOVIR 400MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701235I",
+        "Descrição": "ESPIRONOLACTONA COMP 100MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701236I",
+        "Descrição": "LOSARTANA POTASSICA 100MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "701247I",
+        "Descrição": "PENTOXIFILINA 400MG COM REV LIB PROL",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701248I",
+        "Descrição": "CLOR.METFORMINA COMP REV 500MG",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "701249I",
+        "Descrição": "CLOR.METFORMINA COMP REV 850MG",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702002I",
+        "Descrição": "OMEPRAZOL 40MG CAP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702005I",
+        "Descrição": "FINASTERIDA 1MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702006I",
+        "Descrição": "CLOR.DILTIAZEM COMP 30MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702009I",
+        "Descrição": "IMUSSUPREX 50MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702012I",
+        "Descrição": "BROMAZEPAM (B1) 6MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702013I",
+        "Descrição": "CLOR.VERAPAMIL 80MG COMP REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702017I",
+        "Descrição": "MALEATO DEXCLORFEN.+BETAMETASONA COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702027I",
+        "Descrição": "ESPIRONOLACTONA COMP 25MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702028I",
+        "Descrição": "CLOR.METFORMINA COMP REV 1G",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702033I",
+        "Descrição": "DEFLAZACORTE 30MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702034I",
+        "Descrição": "NORFLOXACINO 400MG COMP REV-LG",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702047I",
+        "Descrição": "GENFIBROZILA 600MG COMP REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702050I",
+        "Descrição": "MALEATO DEXCLORFENIRAMINA 2MG COMP",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702056I",
+        "Descrição": "MALEATO ENALAP.+HIDROC.20\/12,5MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702072I",
+        "Descrição": "DEXAMETASONA COMP 4MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702073I",
+        "Descrição": "MELOXICAM COMP 15MG",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702074I",
+        "Descrição": "ALPRAZOLAM (B1) 0,25MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702075I",
+        "Descrição": "ALPRAZOLAM (B1) 0,50MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702076I",
+        "Descrição": "ALPRAZOLAM (B1) 1MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702077I",
+        "Descrição": "ALPRAZOLAM (B1) 2MG COMP",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702079I",
+        "Descrição": "DEFLAZACORTE 6MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702080I",
+        "Descrição": "BEZAFIBRATO 200MG COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702084I",
+        "Descrição": "SULFATO FERROSO 109MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702109I",
+        "Descrição": "ESPIRONOLACTONA COMP 50MG",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702112I",
+        "Descrição": "MELOXICAM COMP 7,5MG",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702113I",
+        "Descrição": "DICLOFENACO COLESTIRAMINA CAPS 70MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702132I",
+        "Descrição": "CARI+PARA+CAF+DICL.S.125+300+30+50MG COM",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702327I",
+        "Descrição": "CLOR.TRAMADOL (A2)CAPS 50MG",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702345I",
+        "Descrição": "DEFLAZACORTE 7,5MGCOMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702360I",
+        "Descrição": "GLIMEPIRIDA 2MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702361I",
+        "Descrição": "GLIMEPIRIDA 1MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702363I",
+        "Descrição": "PARACETAMOL COMP REV 750MG  (CD)",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702369I",
+        "Descrição": "ADIF.+DIP.+PROMET.10,0+500,0+5,0 MG\/COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702370I",
+        "Descrição": "CAFEINA+CIT ORFENADRINA+DIP.COMP(CD)",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702377I",
+        "Descrição": "ACIDO ACETIL SALICILICO 100MG COMP",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702385I",
+        "Descrição": "ACARBOSE 100MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702386I",
+        "Descrição": "ACARBOSE 50MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702390I",
+        "Descrição": "LOSARTAN POT.+HIDROCLOR.100\/25MG C.R",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702391I",
+        "Descrição": "LOSARTAN POT.+HIDROCLO.50\/12,5MG C.R",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702392I",
+        "Descrição": "DOXAZOSINA MESILATO 2MG-COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702408I",
+        "Descrição": "DIP+MES DIIDROERG+CAF 350+1+100MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702468I",
+        "Descrição": "AAS+CARB.MAGNE+GLIC ALUM C.REV 100MG CD",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702480I",
+        "Descrição": "NITRAZEPAM (B1) 5 MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702484I",
+        "Descrição": "CLORIDRATO FEXOFENADINA 180MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702485I",
+        "Descrição": "CLORIDRATO FEXOFENADINA 120MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702486I",
+        "Descrição": "CLOR.FEXO + CLOR.PSEUDO 60+120MG COM REV",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702493I",
+        "Descrição": "LOSARTANA POTASSICA 50MG COM REV",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702498I",
+        "Descrição": "AAS+CARB.MAGNE.+GLIC.ALUM C.REV 200MG",
+        "Família Produto SA": "KIL.500 TT",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702499I",
+        "Descrição": "TENADREN 80MG\/12,5MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702500I",
+        "Descrição": "TENADREN 40MG\/12,5MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702503I",
+        "Descrição": "MESALAZINA 800MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702532I",
+        "Descrição": "LEVOFLOXACINO 500MG COMP REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702534I",
+        "Descrição": "BROMOPRIDA 10MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702535I",
+        "Descrição": "GABAPENTINA (C1) 400MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702536I",
+        "Descrição": "HIDROCLOROTIAZIDA 25MG COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702539I",
+        "Descrição": "TOPIRAMATO 100MG (C1) COMP REV**",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702540I",
+        "Descrição": "TOPIRAMATO 50MG (C1) COMP REV**",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702541I",
+        "Descrição": "TOPIRAMATO 25MG (C1) COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702543I",
+        "Descrição": "MICOFENOLATO DE MOFETILA 500MG C.REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702563I",
+        "Descrição": "BISGLICINATO FERROSO 300 MG COM REV (CD)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702564I",
+        "Descrição": "BISGLICINATO FERROSO 150 MG COM REV (CD)",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702565I",
+        "Descrição": "BISGLIC FERROSO+ACFOLICO 150+5MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702577I",
+        "Descrição": "IVERMECTINA 6MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702621I",
+        "Descrição": "DINITRATO ISOSSORBIDA 10MG COMP (CD)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702626I",
+        "Descrição": "PARACETAMOL 500MG COMP.REVESTIDO",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702627I",
+        "Descrição": "HIDROCLOROTIAZIDA 50MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702639I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702661I",
+        "Descrição": "CLOR.SIBUTRAMINA (B2) 15MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702667I",
+        "Descrição": "ACIDO MEFENAMICO 500MG COMP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702668I",
+        "Descrição": "CLOR.SIBUTRAMINA (B2) 10MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702726I",
+        "Descrição": "ACIDO FOLICO COMP 5MG",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702751I",
+        "Descrição": "BISS DE CLOPIDOGREL 75MG CMERCK",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702755I",
+        "Descrição": "PARACETAMOL+CLOR.PSEUDO 500+30MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702788I",
+        "Descrição": "PARACETAMOL+CAFEINA COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702789I",
+        "Descrição": "CLONAZEPAM (B1) 2MG COMPRIMIDOS",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702822I",
+        "Descrição": "BROMETO DE PINAVERIO 100MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702849I",
+        "Descrição": "CLOR.AMITRIPTILINA(C1) 75MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702850I",
+        "Descrição": "CLOR.AMITRIPTILINA(C1) 25MG COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702892I",
+        "Descrição": "CLOR.VENLAFAXINA(C1)150MG CAP.GEL.DU. LP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702896I",
+        "Descrição": "ATORVASTATINA CALCICA 80MG COMP.REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702903I",
+        "Descrição": "FENOFIBRATO 200 MG CAPS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702913I",
+        "Descrição": "ATORVASTATINA CALCICA 10MG COMP.REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702914I",
+        "Descrição": "ATORVASTATINA CALCICA 20MG COMP.REV.",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702915I",
+        "Descrição": "ATORVASTATINA CALCICA 40MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702917I",
+        "Descrição": "CLOR. DE LERCANIDIPINO 10MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702924I",
+        "Descrição": "CLOR. DE CICLOBENZAPRINA 5,0MG COMP.REV.",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702927I",
+        "Descrição": "PREDNISOLONA 20 MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702928I",
+        "Descrição": "DICLORIDRATO DE HIDROXIZINA 25MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702929I",
+        "Descrição": "CLOR.DE CICLOBENZAPRINA 10MG COMP.REV.",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702930I",
+        "Descrição": "OLANZAPINA (C1) 10MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702931I",
+        "Descrição": "OLANZAPINA (C1) 5MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702934I",
+        "Descrição": "MESALAZINA 500MG COMP. LIB. PROLONGADA",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702937I",
+        "Descrição": "SINVASTATINA 10MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702938I",
+        "Descrição": "SINVASTATINA 20MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702939I",
+        "Descrição": "SINVASTATINA 40MG COMPRIMIDOS REVESTIDOS",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702943I",
+        "Descrição": "CITRATO DE SILDENAFILA 25MG COMP. REV.",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702944I",
+        "Descrição": "CITRATO DE SILDENAFILA 50MG COMP. REV.",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702947I",
+        "Descrição": "ROSUVASTATINA CALCICA 10MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702959I",
+        "Descrição": "CITRATO DE SILDENAFILA 100MG COMP. REV.",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702960I",
+        "Descrição": "CLOR. MOXIFLOXACINO 400MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702962I",
+        "Descrição": "HEMIFUM. QUETIAPINA 300MG COMP. REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702963I",
+        "Descrição": "HEMIFUM. QUETIAPINA 200MG COMP. REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702964I",
+        "Descrição": "HEMIFUM. QUETIAPINA 100MG COMP.REV.(C1)",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702965I",
+        "Descrição": "HEMIFUM. QUETIAPINA 25MG COM REV(C1)",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702972I",
+        "Descrição": "DICLOFENACO SODICO 50MG COMP. REV.",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702981I",
+        "Descrição": "CLOR. PAROXETINA (C1) 20MG COM REV",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702984I",
+        "Descrição": "INDAPAMIDA 1,5 MG COM.REV.LIB PROL.",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702986I",
+        "Descrição": "GLIMEPIRIDA 4MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702987I",
+        "Descrição": "VALSARTANA 320 MG COMP. REV.",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702988I",
+        "Descrição": "VALSARTANA + HIDROCLOR.320\/25MG COMP.REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702990I",
+        "Descrição": "CLORIDRATO DE DONEPEZILA(C1) 5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702991I",
+        "Descrição": "CLORIDRATO DE DONEPEZILA(C1)10MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702993I",
+        "Descrição": "CLOR. DE MEMANTINA (C1) 10MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703002I",
+        "Descrição": "CARVEDILOL 25MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703003I",
+        "Descrição": "CARVEDILOL 12,5MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703004I",
+        "Descrição": "CARVEDILOL 6,25MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703005I",
+        "Descrição": "CARVEDILOL 3,125MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703007I",
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 15MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703011I",
+        "Descrição": "ACECLOFENACO 100MG COM. REV.",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704462I",
+        "Descrição": "RISEDRONATO SODICO 35MG COM. REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703013I",
+        "Descrição": "BROMIDRATO CITALOPRAM(C1) 20MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703014I",
+        "Descrição": "OXALATO DE ESCITALOPRAM 20MG(C1)COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703015I",
+        "Descrição": "OXALATO DE ESCITALOPRAM 10MG(C1)COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703019I",
+        "Descrição": "ACIDO TRANEXAMICO 250MG COMPRIMIDOS",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703025I",
+        "Descrição": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703029I",
+        "Descrição": "VALSARTANA 80 MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703030I",
+        "Descrição": "VALSARTANA 160 MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703042I",
+        "Descrição": "VALSARTANA+HIDROCL.160\/25MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703043I",
+        "Descrição": "VALSARTANA+HIDROCL.160\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703044I",
+        "Descrição": "VALSARTANA+HIDROCL.80\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703062I",
+        "Descrição": "DOMPERIDONA 10MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703068I",
+        "Descrição": "ROSUVASTATINA CALCICA 20MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703091I",
+        "Descrição": "CLORIDRATO ZIPRASIDONA (C1) 40MG CAP",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703096I",
+        "Descrição": "CLOR.VENLAFAXINA (C1) 75MG CAP GEL DU LP",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703098I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703099I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 2,5MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703100I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL1,25MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703107I",
+        "Descrição": "DICL. DE PRAMIPEXOL (C1) 1,0MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703127I",
+        "Descrição": "TELMISARTANA 80MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703128I",
+        "Descrição": "TELMISARTANA 40MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703131I",
+        "Descrição": "VALSARTANA+HIDROCLOR 320\/12,5MG COM REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703153I",
+        "Descrição": "VALSARTANA+ANLODIPINO 320\/10MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703154I",
+        "Descrição": "VALSARTANA+ANLODIPINO 320\/5MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703156I",
+        "Descrição": "VALSARTANA+ANLODIPINO 160\/5MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703160I",
+        "Descrição": "CLOR.DULOXETINA(C1)30MG CAPDURALIBRETARD",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703161I",
+        "Descrição": "CLOR.DULOXETINA(C1)60MG CAPDURALIBRETARD",
+        "Família Produto SA": "PAM 1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703171I",
+        "Descrição": "EZETIMIBA 10MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703172I",
+        "Descrição": "EZETIMIBA+SINVASTATINA 10\/10MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703173I",
+        "Descrição": "EZETIMIBA+SINVASTATINA 10\/20MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703186I",
+        "Descrição": "CITRATO DE SILDENAFILA 20MG COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703190I",
+        "Descrição": "MICOFENOLATO SODICO 360MG C REV LIB RET",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703191I",
+        "Descrição": "ROSUVASTATINA CALCICA 40MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703192I",
+        "Descrição": "ROSUVASTATINA CALCICA 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703204I",
+        "Descrição": "ARIPIPRAZOL (C1) 10MG COM",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703205I",
+        "Descrição": "ARIPIPRAZOL (C1) 15MG COM",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703220I",
+        "Descrição": "OLMESARTANA+ANLODIPINO 20\/5MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703221I",
+        "Descrição": "OLMESARTANA+ANLODIPINO 40\/5MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": 703221,
+        "Descrição": "OLMESARTANA+ANLODIPINO 40\/5MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703222I",
+        "Descrição": "OLMESARTANA+ANLODIPINO 40\/10MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703223I",
+        "Descrição": "OLMESARTANA MEDOXOMILA 20 MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703224I",
+        "Descrição": "OLMESARTANA MEDOXOMILA 40 MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703226I",
+        "Descrição": "OLMESARTANA+HCTZ 20\/12,5 MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703227I",
+        "Descrição": "OLMESARTANA+HCTZ 40\/12,5 MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703228I",
+        "Descrição": "OLMESARTANA+HCTZ 40\/25 MG COM REV",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703235I",
+        "Descrição": "OXALATO DE ESCITALOPRAM 15MG (C1)COM REV",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703236I",
+        "Descrição": "TADALAFILA 5 MG COM REV",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703237I",
+        "Descrição": "TADALAFILA 20 MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703260I",
+        "Descrição": "VILDAGLIPTINA 50 MG COM",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703369I",
+        "Descrição": "PREGABALINA (C1) 75MG CAPSULAS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703370I",
+        "Descrição": "PREGABALINA (C1) 150MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703375I",
+        "Descrição": "LIMECICLINA 150 MG CAP DURA",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703376I",
+        "Descrição": "LIMECICLINA 300 MG CAP DURA",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703380I",
+        "Descrição": "LEVOFLOXACINO 750 MG COM REV",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703405I",
+        "Descrição": "CLORIDRATO METILFENIDATO (A3) 10MG COM",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703410I",
+        "Descrição": "DEFERASIROX 500MG COM SUS",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703435I",
+        "Descrição": "PARACETAMOL + CODEINA(A2) 500+30MG COM",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703515I",
+        "Descrição": "NAPROXENO SODICO 550 MG COM REV",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703528I",
+        "Descrição": "CILOSTAZOL 50MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703529I",
+        "Descrição": "CILOSTAZOL 100MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703533I",
+        "Descrição": "BILASTINA 20MG COM",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703555I",
+        "Descrição": "DIOSMINA 450MG+HESPERIDINA 50MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703556I",
+        "Descrição": "DIOSMINA 900MG+HESPERIDINA 100MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703562I",
+        "Descrição": "ETODOLACO 400 MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703581I",
+        "Descrição": "COLECALCIFEROL 50.000UI COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703582I",
+        "Descrição": "COLECALCIFEROL 7.000UI COM REV",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703597I",
+        "Descrição": "DICLOR. DE LEVOCETIRIZINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703606I",
+        "Descrição": "BESILATO DE LEVANLODIPINO 2,5MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703607I",
+        "Descrição": "RIVAROXABANA 10 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703608I",
+        "Descrição": "RIVAROXABANA 15 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703609I",
+        "Descrição": "RIVAROXABANA 20 MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703625I",
+        "Descrição": "SUCCINATO DE SOLIFENACINA 10MG COM REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703626I",
+        "Descrição": "SUCCINATO DE SOLIFENACINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703628I",
+        "Descrição": "ETORICOXIBE (C1) 60MG COM REV",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703629I",
+        "Descrição": "ETORICOXIBE (C1) 90MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703648I",
+        "Descrição": "LINAGLIPTINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703652I",
+        "Descrição": "CLOR. TRAZODONA (C1) 100MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703653I",
+        "Descrição": "CLOR. TRAZODONA (C1) 50MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703655I",
+        "Descrição": "CLORIDRATO DE CINACALCETE 30 MG COM REV",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703656I",
+        "Descrição": "MIRTAZAPINA (C1) 15 MG COM ORODISP",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703657I",
+        "Descrição": "MIRTAZAPINA (C1) 30 MG COM ORODISP",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703658I",
+        "Descrição": "MIRTAZAPINA (C1) 45 MG COM ORODISP",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703676I",
+        "Descrição": "SULF. HIDROXICLOROQUINA 400MG COM REV",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703678I",
+        "Descrição": "DIPIRONA SODICA 1G COM",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703683I",
+        "Descrição": "ACIDO URSODESOXICOLICO 300MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703684I",
+        "Descrição": "ACIDO URSODESOXICOLICO 150MG COMPRIMIDO",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703718I",
+        "Descrição": "CLOR ONDANS DI-HIDRATADO 4MG COM ORODISP",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703719I",
+        "Descrição": "CLOR ONDANS DI-HIDRATADO 8MG COM ORODISP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703766I",
+        "Descrição": "LINA+CLOR.METFORMINA 2,5\/850 MG COM REV",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703767I",
+        "Descrição": "LINA+CLOR.METFORMINA 2,5\/1000MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703772I",
+        "Descrição": "HEMIT. ZOLPIDEM (B1) 6,25MG C R LIB PROL",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703805I",
+        "Descrição": "LEVETIRACETAM (C1) 250 MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703806I",
+        "Descrição": "LEVETIRACETAM (C1) 750 MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703830I",
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM SL",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703857I",
+        "Descrição": "CL. TRAMADOL (A2)100MG COM REV LIB PROL",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703863I",
+        "Descrição": "BROM. DE VORTIOXETINA (C1) 5MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703864I",
+        "Descrição": "BROM. DE VORTIOXETINA (C1) 10MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703998I",
+        "Descrição": "VALERI+PASSIF+CRATAE+ 40+50+30MG COM REV",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704000I",
+        "Descrição": "APIXABANA 2,5MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704001I",
+        "Descrição": "APIXABANA 5,0MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704003I",
+        "Descrição": "FOSFATO DE CODEINA (A2) 30MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704064I",
+        "Descrição": "LEVETIRACETAM (C1) 1000MG COM REV",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704065I",
+        "Descrição": "LEVETIRACETAM (C1) 500MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704066I",
+        "Descrição": "BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704068I",
+        "Descrição": "ETODOLACO 500 MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704069I",
+        "Descrição": "PITAVASTATINA CALCICA 2MG COM REV",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704070I",
+        "Descrição": "PITAVASTATINA CALCICA 4MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704074I",
+        "Descrição": "CLORIDRATO DE NEBIVOLOL 5MG COM",
+        "Família Produto SA": "COP LEG.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704089I",
+        "Descrição": "COLCHICINA 0,5 MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704095I",
+        "Descrição": "IBUPROFENO 600 MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704096I",
+        "Descrição": "TARTARATO METOPROLOL 100 MG COM REV",
+        "Família Produto SA": "COP LEG.9",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704120I",
+        "Descrição": "MULTIGRIP 400+4+4MG CAP*",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704125I",
+        "Descrição": "RIVAROXABANA 10 MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704126I",
+        "Descrição": "RIVAROXABANA 15 MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704127I",
+        "Descrição": "RIVAROXABANA 20 MG COM REV (E)",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704149I",
+        "Descrição": "HEMIT. ZOLPIDEM (B1) 8,36MG C R LIB PROL",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704153I",
+        "Descrição": "COMPLEXO B COMP REV C\/20-E",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704154I",
+        "Descrição": "COMPLEXO B COMP REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704163I",
+        "Descrição": "TROMETAMOL CETOROL. 10MG COM SUBL",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704224I",
+        "Descrição": "CLOR. NARATRIPTANA 2,5MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704252I",
+        "Descrição": "DESLORATADINA 5MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704284I",
+        "Descrição": "CL.DE LISINA+CL.DE CICLO.125+5MGCOM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704303I",
+        "Descrição": "SUC DESVENLAFAXINA(C1)50MG C R L P",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704304I",
+        "Descrição": "SUC DESVENLAFAXINA(C1)100MG C R L P",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704317I",
+        "Descrição": "DIPIRONA 500MG COM",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704351I",
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704380I",
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704389I",
+        "Descrição": "LORATADINA 10MG COMPRIMIDO",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704408I",
+        "Descrição": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETAR",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704409I",
+        "Descrição": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETAR",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704411I",
+        "Descrição": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704412I",
+        "Descrição": "CARVEDILOL 3,125 MG COM",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704413I",
+        "Descrição": "CARVEDILOL 6,25 MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704414I",
+        "Descrição": "CARVEDILOL 12,5 MG COM",
+        "Família Produto SA": "COP FET.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704424I",
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.40\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704425I",
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.80\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704451I",
+        "Descrição": "CL.CLOMIPRAMINA(C1)75MG COM REV LIB PROL",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704456I",
+        "Descrição": "CLOR.SERTRALINA (C1) 50MG COM REV",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704457I",
+        "Descrição": "CLOR.SERTRALINA (C1) 100MG COM REV",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704485I",
+        "Descrição": "CLOR. BUPROPIONA (C1) 150MG COM REV",
+        "Família Produto SA": "COP FET.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704524I",
+        "Descrição": "PENTOXIFILINA 400MG COM REV LIB PROL",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704527I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704528I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 2,5MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704529I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL1,25MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704530I",
+        "Descrição": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "750005I",
+        "Descrição": "BISGLICINATO FERROSO 500MG COM REV",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "750012I",
+        "Descrição": "NIMESULIDA 100MG COMP",
+        "Família Produto SA": "COP FET.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "750063I",
+        "Descrição": "FANCICLOVIR 125MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "750064I",
+        "Descrição": "AZITROMICINA 500MG COMP REV",
+        "Família Produto SA": "COP LEG.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "750065I",
+        "Descrição": "FANCICLOVIR 500MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "750066I",
+        "Descrição": "AZITROMICINA 1000MG COM REV",
+        "Família Produto SA": "COP LEG.12",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "760007I",
+        "Descrição": "DINITRATO ISOSSORBIDA SL 5MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "760008I",
+        "Descrição": "CLOR.PROPRANOLOL 10MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "760009I",
+        "Descrição": "CLOR.PROPRANOLOL 40MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "760010I",
+        "Descrição": "CLOR.PROPRANOLOL 80MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700996I",
+        "Descrição": "LORATADINA 10MG COMP",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700039I",
+        "Descrição": "COMPLEXO B COMP REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "700974I",
+        "Descrição": "LISINOPRIL 10MG COMP",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702396I",
+        "Descrição": "DIPIRONA 500MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702504I",
+        "Descrição": "MESALAZINA 400MG COMP REV",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702554I",
+        "Descrição": "GABAPENTINA (C1) 300MG CAPS",
+        "Família Produto SA": "PAM 2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702863I",
+        "Descrição": "ORLISTATE 120MG CAPSULAS",
+        "Família Produto SA": "MG2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "702899I",
+        "Descrição": "DESLORATADINA 5MG COMP. REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "702948I",
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 45MG COMP.",
+        "Família Produto SA": "COP LEG.11",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703006I",
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703038I",
+        "Descrição": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+        "Família Produto SA": "COP FET.4",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703040I",
+        "Descrição": "CLOR. NARATRIPTANA 2,5MG COM REV",
+        "Família Produto SA": "COP LEG.7",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703064I",
+        "Descrição": "FOSF. CALCIO 600MG+VIT D 400 UI COM REV",
+        "Família Produto SA": "KIL.T400",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703162I",
+        "Descrição": "TELMISARTANA + HCT 80MG + 25MG COM",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703163I",
+        "Descrição": "TELMISARTANA + HCT 40MG + 12,5MG COM",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703167I",
+        "Descrição": "CLORIDRATO ZIPRASIDONA (C1) 80MG CAP",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703174I",
+        "Descrição": "EZETIMIBA+SINVASTATINA 10\/40MG COM",
+        "Família Produto SA": "COP FET.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703421I",
+        "Descrição": "CLONIXINATO DE LISINA 125 MG COM REV",
+        "Família Produto SA": "COP LEG.10",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "703571I",
+        "Descrição": "NITAZOXANIDA 500MG COM REV",
+        "Família Produto SA": "COP LEG.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703583I",
+        "Descrição": "COLECALCIFEROL 1.000UI COM REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704135I",
+        "Descrição": "IBUPROFENO 300 MG COM REV",
+        "Família Produto SA": "COP LEG.2",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "760012I",
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.40\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "760013I",
+        "Descrição": "CLOR.PROPRANOLOL+HIDROC.80\/25MG COMP",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704352I",
+        "Descrição": "CLORIDRATO DE PIOGLITAZONA 45MG COM",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704583I",
+        "Descrição": "DICLOR DE TRIMETAZIDINA 35MG CR LIB PROL",
+        "Família Produto SA": "COP FET.1",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "704215I",
+        "Descrição": "DAPAGLIFLOZINA AMORFA 10MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704215IX",
+        "Descrição": "DAPAGLIFLOZINA AMORFA 10MG COM REV",
+        "Família Produto SA": "COP FET.6",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704609I",
+        "Descrição": "PARACETAMOL 500MG COMP.REVESTIDO",
+        "Família Produto SA": "COP LEG.8",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704610I",
+        "Descrição": "PARACETAMOL+CAFEINA COMP REV",
+        "Família Produto SA": "COP LEG.5",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704608I",
+        "Descrição": "PARACETAMOL COMP REV 750MG (CD)",
+        "Família Produto SA": "COP LEG.14",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": 704367,
+        "Descrição": "LACTASE 10.000FCC ALU COM LIB PROL(ALIM)",
+        "Família Produto SA": "COP LEG.3",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
+    },
+    {
+        "Código Produto SA ": "704265I",
+        "Descrição": "MAL BRONF + CL FENIL 12+15MG CR LIB PROL",
+        "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    }
+]

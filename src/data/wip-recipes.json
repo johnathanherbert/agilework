@@ -1,8 +1,2528 @@
 [
   {
+    "codigo": "700236",
+    "produto": "METILDOPA 500MG COMP REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704304",
+    "produto": "SUC. DESVENLAFAXINA (C1) 100MG C R L P",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704303",
+    "produto": "SUC DESVENLAFAXINA (C1) 50MG C R L P",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700042",
+    "produto": "DEXAMETASONA+FUM.DE CLEMASTINA COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700056",
+    "produto": "PIROXICAM 20MG CAPS",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703191",
+    "produto": "ROSUVASTATINA CALCICA 40 MG",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703906I",
+    "produto": "EMPAGLIFLOZINA 10MG COM REV",
+    "familia": "COP FET.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703907I",
+    "produto": "EMPAGLIFLOZINA 25MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704366",
+    "produto": "PEA + COL UC II + VIT D3 COM REV (ALIM)",
+    "familia": "COP LEG.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703765I",
+    "produto": "LINA+CLOR.METFORMINA 2,5/500MG COM REV",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703105I",
+    "produto": "LEFLUNOMIDA (C1) 20 MG COMPRIMIDO REVESTIDO",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700161",
+    "produto": "CLORTALIDONA 50MG COMP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700228",
+    "produto": "SIMETICONA COMPRIMIDOS 40MG",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700981",
+    "produto": "METILDOPA 250MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700810",
+    "produto": "CARBAMAZEPINA (C1)400MG COMP**",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700360",
+    "produto": "FLUCONAZOL 150MG CAP",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700411",
+    "produto": "BESILATO DE ANLODIPINO 5MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704068",
+    "produto": "ETODOLACO 500 MG",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700412",
+    "produto": "BESILATO DE ANLODIPINO 10MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700442",
+    "produto": "CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700465",
+    "produto": "ITRACONAZOL 100 MG CAPSULA DURA",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700465I",
+    "produto": "ITRACONAZOL 100 MG CAPSULA DURA",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700574",
+    "produto": "CLOR. FLUOXETINA (C1) 20MG COM REV**",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704527",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704528",
+    "produto": "HEMIFUMARATO DE BISOPROLOL2,5 5MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700590",
+    "produto": "CLORIDRATO FLUOXETINA(C1) 10MG CAP**",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700811",
+    "produto": "CARBAMAZEPINA (C1)200MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701146",
+    "produto": "CLOR.CLOMIPRAMINA (C1) 25MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702005",
+    "produto": "FINASTERIDA 1MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700685",
+    "produto": "LANSOPRAZOL 30MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702074",
+    "produto": "ALPRAZOLAM (B1) 0,25MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700709",
+    "produto": "SUCRALFATO 1G COMPS",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700723",
+    "produto": "CLOR.SERTRALINA (C1) 50MG COMP REV",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700724",
+    "produto": "MALEATO ENALAPRIL 5MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700725",
+    "produto": "MALEATO ENALAPRIL 10MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700726",
+    "produto": "MALEATO ENALAPRIL 20MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700743",
+    "produto": "PREDNISONA 20MG COMP",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702075",
+    "produto": "ALPRAZOLAM (B1) 0,50MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700757",
+    "produto": "FLUNITRAZEPAM (B1) 2MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702076",
+    "produto": "ALPRAZOLAM (B1) 1MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702077",
+    "produto": "ALPRAZOLAM (B1) 2MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700825",
+    "produto": "SECNIDAZOL 1000MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700856",
+    "produto": "TROMETAMOL CETOROL. SL 10MG COMP S",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700905",
+    "produto": "CLOR.CIPROFLOXACINO 500MG COMP REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700907",
+    "produto": "LORAZEPAM (B1) 2MGCOMP  LG",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700935",
+    "produto": "DICLOFENACO POTASSICO 50MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700948",
+    "produto": "CAPTOPRIL 50MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700951",
+    "produto": "OMEPRAZOL 20MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700956",
+    "produto": "DIAZEPAM (B1) 10MGCOMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700957",
+    "produto": "DIAZEPAM (B1) 5MG COMP",
+    "familia": "COP FET.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702484",
+    "produto": "CLORIDRATO FEXOFENADINA 180MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700972",
+    "produto": "CLOR.AMILORIDA 2.5MG+HIDROCLOROT.25MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700974",
+    "produto": "LISINOPRIL 10MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700973",
+    "produto": "LISINOPRIL 5MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700977",
+    "produto": "CAPTOPRIL 25MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702485",
+    "produto": "CLORIDRATO FEXOFENADINA 120MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702964",
+    "produto": "HEMIFUM. QUETIAPINA 100MG COMP.REV.(C1)",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700985",
+    "produto": "ATENOLOL+CLORTALIDONA 100MG/25MG",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700996",
+    "produto": "LORATADINA 10MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704389",
+    "produto": "LORATADINA 10MG COMPRIMIDO",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700997",
+    "produto": "ATENOLOL+CLORTALIDONA 50/12,5MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700999",
+    "produto": "GLIBENCLAMIDA 5MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701042",
+    "produto": "ATENOLOL 100MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701045",
+    "produto": "CETOPROFENO CAPSULAS 50MG",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701094",
+    "produto": "FLUNITRAZEPAM (B1) 1MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702965",
+    "produto": "HEMIFUM. QUETIAPINA 25MG COMP. REV.(C1)",
+    "familia": "COP FET.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701135",
+    "produto": "CLOR.DILTIAZEM COMP 60MG",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701136",
+    "produto": "ATENOLOL COMP 50MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701137",
+    "produto": "ATENOLOL COMP 25MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703004",
+    "produto": "CARVEDILOL 6,25MG COMPRIMIDO",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704413",
+    "produto": "CARVEDILOL 6,25MG COMPRIMIDO",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701164",
+    "produto": "PANTOPRAZOL COMP REV 40MG",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701165",
+    "produto": "PANTOPRAZOL COMP REV 20MG",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701166",
+    "produto": "ALENDRONATO DE SODIO 70MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701168",
+    "produto": "CLORTALIDONA 12,5MG COMP",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701169",
+    "produto": "CLORTALIDONA 25MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701171",
+    "produto": "CLOR.SERTRALINA (C1) 100MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704457",
+    "produto": "CLOR.SERTRALINA (C1) 100MG COMP REV",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701201",
+    "produto": "BROMAZEPAM (B1) 3MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703190",
+    "produto": "MICOFENOLATO SODICO 360MG C REV LIB RET",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701235",
+    "produto": "ESPIRONOLACTONA COMP 100MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701236",
+    "produto": "LOSARTANA POTASSICA 100MG COMP REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701247",
+    "produto": "PENTOXIFILINA 400MG COMP REV",
+    "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702002",
+    "produto": "OMEPRAZOL 40MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703607",
+    "produto": "RIVAROXABANA 10 MG COM REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702006",
+    "produto": "CLOR.DILTIAZEM COMP 30MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703608",
+    "produto": "RIVAROXABANA 15 MG COM REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702012",
+    "produto": "BROMAZEPAM (B1) 6MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702013",
+    "produto": "CLOR.VERAPAMIL 80MG COMP REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702017",
+    "produto": "MALEATO DEXCLORFEN.+BETAMETASONA COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702408",
+    "produto": "7DIP+MES DIIDROERG+CAF 350+1+100MG COM",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702027",
+    "produto": "ESPIRONOLACTONA COMP 25MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702033",
+    "produto": "DEFLAZACORTE 30MG COMP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703609",
+    "produto": "RIVAROXABANA 20 MG COM REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703676",
+    "produto": "SULF. HIDROXICLOROQUINA 400MG COM VER",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702056",
+    "produto": "MALEATO ENALAP.+HIDROC.20/12,5MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750064",
+    "produto": "AZITROMICINA 500MG COMP REV",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702073",
+    "produto": "MELOXICAM COMP 15MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700325",
+    "produto": "ACICLOVIR 200MG COM",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700290",
+    "produto": "ALBENDAZOL 400MG COMPRIMIDO MASTIGAVEL",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700663",
+    "produto": "CLARITROMICINA 500MG COMP REV",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700672",
+    "produto": "METRONIDAZOL 250MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702079",
+    "produto": "DEFLAZACORTE 6MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700673",
+    "produto": "METRONIDAZOL 400MG COMP VER",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702084",
+    "produto": "SULFATO FERROSO 109MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702109",
+    "produto": "ESPIRONOLACTONA COMP 50MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702112",
+    "produto": "MELOXICAM COMP 7,5MG",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702113",
+    "produto": "DICLOFENACO COLESTIRAMINA CAPS 70MG",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702132",
+    "produto": "CARISO/PARACET./CAFEINA/DICLOF.SODIO",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702327",
+    "produto": "CLOR.TRAMADOL (A2)CAPS 50MG",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702345",
+    "produto": "DEFLAZACORTE 7,5MGCOMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702360",
+    "produto": "GLIMEPIRIDA 2MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702361",
+    "produto": "GLIMEPIRIDA 1MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702363",
+    "produto": "PARACETAMOL COMP REV 750MG (CD)",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702369",
+    "produto": "ADIF.+DIP.+PROMET.10,0+500,0+5,0 MG/COM",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702370",
+    "produto": "CAFEINA+CIT ORFENADRINA+DIP.COMP(CD)",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702377",
+    "produto": "ACIDO ACETIL SALICILICO 100MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702385",
+    "produto": "ACARBOSE 100MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702386",
+    "produto": "ACARBOSE 50MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702390",
+    "produto": "LOSARTAN POT.+HIDROCLOR.100/25MG C.R",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702391",
+    "produto": "LOSARTAN POT.+HIDROCLO.50/12,5MG C.R",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702392",
+    "produto": "DOXAZOSINA MESILATO 2MGCOMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704317",
+    "produto": "DIPIRONA COMP (CD)",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702468",
+    "produto": "AAS+CARB.MAGNE+GLIC ALUM C.REV 100MG CD",
+    "familia": "KIL.500 TT",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702480",
+    "produto": "NITRAZEPAM (B1) 5 MG COMPRIMIDO",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700689",
+    "produto": "FINASTERIDA 5MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700749",
+    "produto": "PREDNISONA 5MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700971",
+    "produto": "CLOR.AMILORIDA 5MG+HIDROCLOROT.50MG",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702493",
+    "produto": "LOSARTANA POTASSICA 50MG COMP REV",
+    "familia": "COP FET.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702498",
+    "produto": "AAS+CARB.MAGNE.+GLIC.ALUM C.REV 200MG",
+    "familia": "KIL.500 TT",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702500",
+    "produto": "TENADREN 40MG/12,5MG COMP",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700984",
+    "produto": "CLOR.TERBINAFINA 250MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702532",
+    "produto": "LEVOFLOXACINO 500MG COMP REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702534",
+    "produto": "BROMOPRIDA 10MG CAPS",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702535",
+    "produto": "GABAPENTINA (C1) 400MG CAPS",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702536",
+    "produto": "HIDROCLOROTIAZIDA 25MG COM",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702539",
+    "produto": "TOPIRAMATO 100MG (C1) COMP REV**",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702540",
+    "produto": "TOPIRAMATO 50MG (C1) COMP REV**",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702541",
+    "produto": "TOPIRAMATO 25MG (C1) COMP REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702543",
+    "produto": "MICOFENOLATO DE MOFETILA 500MG C.REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702554",
+    "produto": "GABAPENTINA (C1) 300MG CAPS",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702563",
+    "produto": "BISGLICINATO FERROSO 300MG COMP REV (CD)",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702564",
+    "produto": "BISGLICINATO FERRROSO 150MG COMP REV (CD)",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702565",
+    "produto": "NEUTROFER FOLICO 150MG COMP REV (CD)",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702577",
+    "produto": "IVERMECTINA 6MG COMPRIMIDO",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702621",
+    "produto": "DINITRATO ISOSSORBIDA 10MG COMP (CD)",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702626",
+    "produto": "PARACETAMOL 500MG COMP.REVESTIDO",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702639",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702661",
+    "produto": "CLOR.SIBUTRAMINA (B2) 15MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702667",
+    "produto": "ACIDO MEFENAMICO 500MG COMP",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702668",
+    "produto": "CLOR.SIBUTRAMINA (B2) 10MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702726",
+    "produto": "ACIDO FOLICO COMP 5MG",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702755",
+    "produto": "PARACETAMOL+CLOR.DE PSEUDOEF.COMP REV",
+    "familia": "COP LEG.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702788",
+    "produto": "PARACETAMOL+CAFEINA COMP REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702789",
+    "produto": "CLONAZEPAM (B1) 2MG COMPRIMIDOS",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702849",
+    "produto": "CLOR.AMITRIPTILINA(C1) 75MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702850",
+    "produto": "CLOR.AMITRIPTILINA(C1) 25MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704307",
+    "produto": "ORLISTATE 120MG CAPSULAS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704307I",
+    "produto": "ORLISTATE 120MG CAPSULAS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702863",
+    "produto": "ORLISTATE 120MG CAPSULAS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702892",
+    "produto": "CLOR.VENLAFAXINA(C1)150MG CAP.GEL.DU. LP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704252",
+    "produto": "DESLORATADINA 5MG COMP. REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702896",
+    "produto": "ATORVASTATINA CALCICA 80MG COMP.REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702899",
+    "produto": "DESLORATADINA 5MG COMP. REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702903",
+    "produto": "FENOFIBRATO 200 MG CAPS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702913",
+    "produto": "ATORVASTATINA CALCICA 10MG COMP.REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702914",
+    "produto": "ATORVASTATINA CALCICA 20MG COMP.REV.",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702915",
+    "produto": "ATORVASTATINA CALCICA 40MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702917",
+    "produto": "CLOR. DE LERCANIDIPINO 10MG COMP. REV.",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702924",
+    "produto": "CLOR. DE CICLOBENZAPRINA 5,0MG COMP.REV.",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702927",
+    "produto": "PREDNISOLONA 20 MG COMPRIMIDO",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702928",
+    "produto": "DICLORIDRATO DE HIDROXIZINA 25MG COM",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702929",
+    "produto": "CLOR.DE CICLOBENZAPRINA 10MG COMP.REV.",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702930",
+    "produto": "OLANZAPINA (C1) 10MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702931",
+    "produto": "OLANZAPINA (C1) 5MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701095",
+    "produto": "CETOCONAZOL 200MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702937",
+    "produto": "SINVASTATINA 10MG COMPRIMIDOS REVESTIDOS",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702938",
+    "produto": "SINVASTATINA 20MG COMPRIMIDOS REVESTIDOS",
+    "familia": "COP LEG.9",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702939",
+    "produto": "SINVASTATINA 40MG COMPRIMIDOS REVESTIDOS",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702943",
+    "produto": "CITRATO DE SILDENAFILA 25MG COMP. REV.",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702944",
+    "produto": "CITRATO DE SILDENAFILA 50MG COMP. REV.",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702947",
+    "produto": "ROSUVASTATINA CALCICA 10MG COMP. REV.",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702948",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 45MG COMP.",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702959",
+    "produto": "CITRATO DE SILDENAFILA 100MG COMP. REV.",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702960",
+    "produto": "CLOR. MOXIFLOXACINO 400MG COMP. REV.",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702962",
+    "produto": "HEMIFUM. QUETIAPINA 300MG COMP. REV.(C1)",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702963",
+    "produto": "FUM. DE QUETIAPINA 200MG COMP. REV. (C1)",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701202",
+    "produto": "ACICLOVIR 400MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702009",
+    "produto": "IMUSSUPREX 50MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702972",
+    "produto": "DICLOFENACO SODICO 50MG COMP. REV.",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702981",
+    "produto": "CLOR. PAROXETINA (C1) 20MG COM REV",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702984",
+    "produto": "INDAPAMIDA 1,5 MG COM.REV.LIB PROL.",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702986",
+    "produto": "GLIMEPIRIDA 4MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702987",
+    "produto": "VALSARTANA 320 MG COMP. REV.",
+    "familia": "COP LEG.14",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702988",
+    "produto": "VALSARTANA + HIDROCLOR.320/25MG COMP.REV",
+    "familia": "COP LEG.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702990",
+    "produto": "CLORIDRATO DE DONEPEZILA(C1) 5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702991",
+    "produto": "CLORIDRATO DE DONEPEZILA(C1)10MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702993",
+    "produto": "CLOR. DE MEMANTINA (C1) 10MG COM REV.",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702047",
+    "produto": "GENFIBROZILA 600MG COMP REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702050",
+    "produto": "MALEATO DEXCLORFENIRAMINA 2MG COMP",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702072",
+    "produto": "DEXAMETASONA COMP 4MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702080",
+    "produto": "BEZAFIBRATO 200MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704351",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703006",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703007",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 15MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703011",
+    "produto": "ACECLOFENACO 100MG COM. REV.",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703012",
+    "produto": "RISEDRONATO SODICO 35MG COM. REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703013",
+    "produto": "BROMIDRATO CITALOPRAM(C1) 20MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703014",
+    "produto": "OXALATO DE ESCITALOPRAM 20MG(C1)COM REV",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703015",
+    "produto": "OXALATO DE ESCITALOPRAM 10MG(C1)COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703019",
+    "produto": "ACIDO TRANEXAMICO 250MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703022",
+    "produto": "TACROLIMO 1MG CAPSULAS",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704411",
+    "produto": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703025",
+    "produto": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703029",
+    "produto": "VALSARTANA 80 MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703030",
+    "produto": "VALSARTANA 160 MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703038",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703040",
+    "produto": "CLOR. NARATRIPTANA 2,5MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703042",
+    "produto": "VALSARTANA+HIDROCL.160/25MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703043",
+    "produto": "VALSARTANA+HIDROCL.160/12,5MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703044",
+    "produto": "VALSARTANA+HIDROCL.80/12,5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703062",
+    "produto": "DOMPERIDONA 10MG COMPRIMIDO",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703064",
+    "produto": "FOSF. CALCIO 600MG+VIT D 400 UI COM REV",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703068",
+    "produto": "ROSUVASTATINA CALCICA 20MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703096",
+    "produto": "CLOR.VENLAFAXINA (C1) 75MG CAP GEL DU LP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703098",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703099",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 2,5MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703100",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 1,25MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702486",
+    "produto": "CLOR.FEXO + CLOR.PSEUDO 60+120MG COM REV",
+    "familia": "KIL.500 TT",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702503",
+    "produto": "MESALAZINA 800MG COMP REV",
+    "familia": "COP LEG.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703131",
+    "produto": "VALSARTANA+HIDROCLOR 320/12,5MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703153",
+    "produto": "VALSARTANA+ANLODIPINO 320/10MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703154",
+    "produto": "VALSARTANA+ANLODIPINO 320/5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703156",
+    "produto": "VALSARTANA+ANLODIPINO 160/5MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703160",
+    "produto": "CLOR. DULOXETINA (C1) 30MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703161",
+    "produto": "CLOR. DULOXETINA (C1) 60MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702934",
+    "produto": "MESALAZINA 500MG COMP. LIB. PROLONGADA",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703002",
+    "produto": "CARVEDILOL 25MG COMPRIMIDO",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703003",
+    "produto": "CARVEDILOL 12,5MG COMPRIMIDO",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704414",
+    "produto": "CARVEDILOL 12,5MG COMPRIMIDO",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703186",
+    "produto": "CITRATO DE SILDENAFILA 20MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703005",
+    "produto": "CARVEDILOL 3,125MG COMPRIMIDO",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704412",
+    "produto": "CARVEDILOL 3,125MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703127",
+    "produto": "TELMISARTANA 80MG COMPRIMIDO",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703192",
+    "produto": "ROSUVASTATINA CALCICA 5MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703204",
+    "produto": "ARIPIPRAZOL (C1) 10MG COM",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703220",
+    "produto": "OLMESARTANA+ANLODIPINO 20/5MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703221",
+    "produto": "OLMESARTANA+ANLODIPINO 40/5MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703222",
+    "produto": "OLMESARTANA+ANLODIPINO 40/10MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703128",
+    "produto": "TELMISARTANA 40MG COMPRIMIDO",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703171",
+    "produto": "EZETIMIBA 10MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703173",
+    "produto": "EZETIMIBA+SINVASTATINA 10/20MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703174",
+    "produto": "EZETIMIBA+SINVASTATINA 10/40MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703235",
+    "produto": "OXALATO DE ESCITALOPRAM 15MG (C1)COM REV",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703237",
+    "produto": "TADALAFILA 20 MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703369",
+    "produto": "PREGABALINA (C1) 75MG CAPSULAS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703370",
+    "produto": "PREGABALINA (C1) 150MG CAPSULAS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703375",
+    "produto": "LIMECICLINA 150 MG CAP DURA",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703376",
+    "produto": "LIMECICLINA 300 MG CAP DURA",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703405",
+    "produto": "CLORIDRATO METILFENIDATO (A3) 10MG COM",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703410",
+    "produto": "DEFERASIROX 500MG COM DISP",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703435",
+    "produto": "PARACETAMOL + CODEINA(A2) 500+30MG COM",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703515",
+    "produto": "NAPROXENO SODICO 550 MG COM REV",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703223",
+    "produto": "OLMESARTANA MEDOXOMILA 20 MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703224",
+    "produto": "OLMESARTANA MEDOXOMILA 40 MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703533",
+    "produto": "BILASTINA 20MG COM",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703536",
+    "produto": "COLAGENO UCII 40MG CAPS",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703555",
+    "produto": "DIOSMINA 450MG+HESPERIDINA 50MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703556",
+    "produto": "DIOSMINA 900MG+HESPERIDINA 100MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703562",
+    "produto": "ETODOLACO 400 MG COM VER",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703581",
+    "produto": "COLECALCIFEROL 50.000UI COM VER",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703583",
+    "produto": "COLECALCIFEROL 1.000UI COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703597",
+    "produto": "DICLOR. DE LEVOCETIRIZINA 5MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703606",
+    "produto": "BESILATO DE LEVANLODIPINO 2,5MG COM",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703226",
+    "produto": "OLMESARTANA+HCTZ 20/12,5 MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703227",
+    "produto": "OLMESARTANA+HCTZ 40/12,5 MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703228",
+    "produto": "OLMESARTANA+HCTZ 40/25 MG COM REV",
+    "familia": "COP LEG.14",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704302",
+    "produto": "LUT+ZEA+A+B2+C+E+CU+SE+ZN COM REV (ALIM)",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703617",
+    "produto": "LUTEIN10MG+ZEAXAN+VIT+MIN COM REV (ALIM)",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703625",
+    "produto": "SUCCINATO DE SOLIFENACINA 10MG COM REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703626",
+    "produto": "SUCCINATO DE SOLIFENACINA 5MG COM VER",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703528",
+    "produto": "CILOSTAZOL 50MG COM",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703648",
+    "produto": "LINAGLIPTINA 5MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703652",
+    "produto": "CLOR. TRAZODONA (C1) 100MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703653",
+    "produto": "CLOR. TRAZODONA (C1) 50MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703529",
+    "produto": "CILOSTAZOL 100MG COM",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703629",
+    "produto": "ETORICOXIBE (C1) 90MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703656",
+    "produto": "MIRTAZAPINA (C1) 15 MG COM ORODISP",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703678",
+    "produto": "DIPIRONA SODICA 1G COM",
+    "familia": "COP LEG.8",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703682",
+    "produto": "COLAGENO 50MG +VIT.+MIN. COM REV (ALIM)",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703657",
+    "produto": "MIRTAZAPINA (C1) 30 MG COM ORODISP",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703683",
+    "produto": "ACIDO URSODESOXICOLICO 300MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703690",
+    "produto": "LACTASE 10.000FCC ALU COM MAST(ALIM)",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703702",
+    "produto": "COL.40MG+VITD5MCG+MG130MG CAP DURA(ALIM)",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703718",
+    "produto": "CLOR ONDANS DI-HIDRATADO 4MG COM ORODISP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703719",
+    "produto": "CLOR ONDANS DI-HIDRATADO 8MG COM ORODISP",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703684",
+    "produto": "ACIDO URSODESOXICOLICO 150MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703766",
+    "produto": "LINA+CLOR.METFORMINA 2,5/850 MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703808",
+    "produto": "SI+B12,C,E,B9,H+FE,MG,ZN COM REV(ALIM)",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703830",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM SL",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703839",
+    "produto": "CA+MG+VITD+VITK2 COM REV (ALIM)",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703857",
+    "produto": "CL. TRAMADOL (A2)100MG COM REV LIB PROL",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703909",
+    "produto": "COL.40MG+AC.HIALU157,7MG CAP DURA (ALIM)",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704421",
+    "produto": "FERRO+AC.FOLICO+VIT D3 COM REV (ALIM)",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703988",
+    "produto": "POLIVIT AZ COM REV (ALIM)",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703989",
+    "produto": "VIT+MIN+B9 COM REV (ALIM)",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703990",
+    "produto": "POLIVIT HAIR CAP DURA (ALIM)",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703998",
+    "produto": "VALERI+PASSIF+CRATAE+ 40+50+30MG COM REV",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704066",
+    "produto": "BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704074",
+    "produto": "CLORIDRATO DE NEBIVOLOL 5MG COM",
+    "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704076",
+    "produto": "COL+CA+MG+VITD+VITK2 COM REV (ALIM)",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704079",
+    "produto": "COL CTII 40MG + UCII 40MG CAPS (ALIM)",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704088",
+    "produto": "COL 40MG+CURC 400MG CAP DURA (ALIM)",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704089",
+    "produto": "COLCHICINA 0,5 MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704096",
+    "produto": "TARTARATO METOPROLOL 100 MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703767",
+    "produto": "LINA+CLOR.METFORMINA 2,5/1000MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704138",
+    "produto": "MELATONINA 0,21MG COM ORODISP (ALIM)",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704153",
+    "produto": "COMPLEXO B COMP REV C/20-E",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704154",
+    "produto": "COMPLEXO B COMP REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704163",
+    "produto": "TROMETAMOL CETOROL. 10MG COM SUBL",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704224",
+    "produto": "CLOR. NARATRIPTANA 2,5MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "750005",
+    "produto": "BISGLICINATO FERROSO 500MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "750012",
+    "produto": "NIMESULIDA 100MG COMP",
+    "familia": "COP FET.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750063",
+    "produto": "FANCICLOVIR 125MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704120",
+    "produto": "MULTIGRIP 400+4+4MG CAP*",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750065",
+    "produto": "FANCICLOVIR 500MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750066",
+    "produto": "AZITROMICINA 1000MG COMP REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "760007",
+    "produto": "DINITRATO ISOSSORBIDA SL 5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760008",
+    "produto": "CLOR.PROPRANOLOL 10MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760009",
+    "produto": "CLOR.PROPRANOLOL 40MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760010",
+    "produto": "CLOR.PROPRANOLOL 80MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760012",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.40/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760013",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.80/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700013",
+    "produto": "ÁCIDO ACETIL SALICÍLICO 500MG COMPRIMIDO",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700024",
+    "produto": "COMPLEXO B COMP REV C/20-E",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700039",
+    "produto": "COMPLEXO B COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700071",
+    "produto": "GELMAX COM MAST (SABOR LIMAO)",
+    "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700393",
+    "produto": "CLOR.DOXICICLINA 100MG COMP REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700686",
+    "produto": "LANSOPRAZOL 15MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700688",
+    "produto": "CLOR.TICLOPIDINA COMP REV.250MG",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700975",
+    "produto": "LISINOPRIL 20MG COMP",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700976",
+    "produto": "CAPTOPRIL 12,5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701012",
+    "produto": "GELMAX COM MAST (SABOR PAPAYA-CASSIS)",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701057",
+    "produto": "CLOR.RANITIDINA 150MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701211",
+    "produto": "NIMODIPINO 30MG COMP REV",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701248",
+    "produto": "CLOR.METFORMINA COMP REV 500MG",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701249",
+    "produto": "CLOR.METFORMINA COMP REV 850MG",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702028",
+    "produto": "CLOR.METFORMINA COMP REV 1G",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702034",
+    "produto": "NORFLOXACINO 400MG COMP REV-LG",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702046",
+    "produto": "GENFIBROZILA 900MGCOMP REV-LG",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702499",
+    "produto": "TENADREN 80MG/12,5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702504",
+    "produto": "MESALAZINA 400MG COMP REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702605",
+    "produto": "CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702627",
+    "produto": "HIDROCLOROTIAZIDA 50MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702751",
+    "produto": "BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702821",
+    "produto": "CLOR. BUPROPIONA (C1) 150MG COM REV",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704485",
+    "produto": "CLOR. BUPROPIONA (C1) 150MG COM REV",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702822",
+    "produto": "BROMETO DE PINAVERIO 100MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702879",
+    "produto": "CLOR.VALACICLOVIR 500MG COMP REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702932",
+    "produto": "OLANZAPINA (C1) 2,5MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703103",
+    "produto": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETARD",
+    "familia": "COP FET.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704408",
+    "produto": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETARD",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703104",
+    "produto": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETARD",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704409",
+    "produto": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETARD",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703107",
+    "produto": "DICL. DE PRAMIPEXOL (C1) 1,0MG COM",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703130",
+    "produto": "REPAGLINIDA 2MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703150",
+    "produto": "VALERIANA+PASSIFLORA+CRATAEGUS COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703172",
+    "produto": "EZETIMIBA+SINVASTATINA 10/10MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703205",
+    "produto": "ARIPIPRAZOL (C1) 15MG COM",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703421",
+    "produto": "CLONIXINATO DE LISINA 125 MG COM VER",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703428",
+    "produto": "SUPLEVIT CPR REVESTIDO (ALIM)",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703429",
+    "produto": "VYTINAL CPR REVESTIDO (ALIM)",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704284",
+    "produto": "CL.DE LISINA+CL.DE CICLO.125+5MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703452",
+    "produto": "DORICAL CALIM",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703454",
+    "produto": "ALCIO+VIT.D+VIT.B12 COM REV (ALIM)",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703571",
+    "produto": "NITAZOXANIDA 500MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703582",
+    "produto": "COLECALCIFEROL 7.000UI COM VER",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703864",
+    "produto": "BROM. DE VORTIOXETINA (C1) 10MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703863",
+    "produto": "BROM. DE VORTIOXETINA (C1) 5 MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704095",
+    "produto": "IBUPROFENO 600 MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704135",
+    "produto": "IBUPROFENO 300 MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704000",
+    "produto": "APIXABANA 2,5 MG COM VER",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703806",
+    "produto": "LEVETIRACETAM (C1) 750 MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704069",
+    "produto": "PITAVASTATIN (GM2) 2 MG",
+    "familia": "COP FET.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704070",
+    "produto": "PITAVASTATINA CALCICA 4MG COM REV",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704001",
+    "produto": "APIXABANA 5,0 MG COM VER",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703805",
+    "produto": "LEVETIRACETAM (ES3) 250 MG X 30",
+    "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704065",
+    "produto": "LEVETIRACETAM (GM2) 500 MG X 30",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700904",
+    "produto": "CLOR.CIPROFLOXACINO 250MG COMP REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701058",
+    "produto": "CLOR.RANITIDINA 300MG COMP REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702838",
+    "produto": "CARB.CALCIO+COLECALC. (VIT.D) COMP.REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702898",
+    "produto": "IBUPROFENO 400MG COMP.REV.",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703431",
+    "produto": "CL.DE LISINA+CL.DE CICLO.125+5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704126",
+    "produto": "RIVAROXABANA 15MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704127",
+    "produto": "RIVAROXABANA 20MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704125",
+    "produto": "RIVAROXABANA 10MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701238",
+    "produto": "ZAARPRESS 25MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702979",
+    "produto": "SINVASTATINA 80MG COMPRIMIDOS REVESTIDOS",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703008",
+    "produto": "HEMITART. DE RIVASTIGMINA (C1) 4,5MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703009",
+    "produto": "HEMITART. DE RIVASTIGMINA (C1) 3,0MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703010",
+    "produto": "HEMITART. DE RIVASTIGMINA (C1) 1,5MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703075",
+    "produto": "RILUZOL 50MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703078",
+    "produto": "CITRATO DE SILDENAFILA 50MG COMP. REV.S",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703194",
+    "produto": "LOSARTANA+INDAPAMIDA 50/1,5MG CR MULT LP",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703195",
+    "produto": "LOSARTANA+INDAPAMIDA 100/1,5MG CR MUL LP",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703446",
+    "produto": "VIT.C+ ZINCO CRANBERRY COMP MAST 1200MG",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703447",
+    "produto": "SULFAMETOXAZOL+TRIMETOP 800/160MG COM",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703712",
+    "produto": "CLORIDRATO DE SAXAGLIPTINA 2,5MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703713",
+    "produto": "CLORIDRATO DE SAXAGLIPTINA 5,0MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704380",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704424",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.40/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704425",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.80/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704003",
+    "produto": "FOSFATO DE CODEINA (A2) 30MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700024I",
+    "produto": "COMPLEXO B COMP REV C/20-E",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700042I",
+    "produto": "DEXAMETASONA+FUM.DE CLEMASTINA COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700056I",
+    "produto": "PIROXICAM 20MG CAPS",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
     "codigo": "700071I",
     "produto": "GELMAX COM MAST (SABOR LIMAO)",
     "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700161I",
+    "produto": "CLORTALIDONA 50MG COMP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700228I",
+    "produto": "SIMETICONA COMPRIMIDOS 40MG",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700236I",
+    "produto": "METILDOPA 500MG COMP REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700290I",
+    "produto": "ALBENDAZOL 400MG COMPRIMIDO MASTIGAVEL",
+    "familia": "COP LEG.4",
     "via": "UMIDA"
   },
   {
@@ -10,6 +2530,30 @@
     "produto": "ACICLOVIR 200MG COM",
     "familia": "COP LEG.7",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "700360I",
+    "produto": "FLUCONAZOL 150MG CAP",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700411I",
+    "produto": "BESILATO DE ANLODIPINO 5MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700412I",
+    "produto": "BESILATO DE ANLODIPINO 10MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700442I",
+    "produto": "CLORIDRATO FLUOXETINA(C1) 20MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
   },
   {
     "codigo": "700574I",
@@ -24,9 +2568,87 @@
     "via": "SECA"
   },
   {
+    "codigo": "700663I",
+    "produto": "CLARITROMICINA 500MG COMP REV",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700672I",
+    "produto": "METRONIDAZOL 250MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700673I",
+    "produto": "METRONIDAZOL 400MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700685I",
+    "produto": "LANSOPRAZOL 30MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700686I",
+    "produto": "LANSOPRAZOL 15MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700688I",
+    "produto": "CLOR.TICLOPIDINA COMP REV.250MG",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "700689I",
     "produto": "FINASTERIDA 5MG COMP REV",
     "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700709I",
+    "produto": "SUCRALFATO 1G COMP-S",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700723I",
+    "produto": "CLOR.SERTRALINA (C1) 50MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700724I",
+    "produto": "MALEATO ENALAPRIL 5MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700725I",
+    "produto": "MALEATO ENALAPRIL 10MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700726I",
+    "produto": "MALEATO ENALAPRIL 20MG COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700743I",
+    "produto": "PREDNISONA 20MG COMP",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700749I",
+    "produto": "PREDNISONA 5MG COMP",
+    "familia": "COP LEG.11",
     "via": "UMIDA"
   },
   {
@@ -42,16 +2664,94 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "700811I",
+    "produto": "CARBAMAZEPINA (C1)200MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700825I",
+    "produto": "SECNIDAZOL 1000MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700856I",
+    "produto": "TROMETAMOL CETOROL. SL 10MG COMP -S",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
     "codigo": "700905I",
     "produto": "CLOR.CIPROFLOXACINO 500MG COMP REV",
     "familia": "COP LEG.2",
     "via": "UMIDA"
   },
   {
+    "codigo": "700907I",
+    "produto": "LORAZEPAM (B1) 2LG",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700935I",
+    "produto": "DICLOFENACO POTASSICO 50MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700948I",
+    "produto": "CAPTOPRIL 50MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700951I",
+    "produto": "OMEPRAZOL 20MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700956I",
+    "produto": "DIAZEPAM (B1) 10MGCOMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700957I",
+    "produto": "DIAZEPAM (B1) 5MG COMP",
+    "familia": "COP FET.7",
+    "via": "SECA"
+  },
+  {
     "codigo": "700971I",
     "produto": "CLOR.AMILORIDA 5MG+HIDROCLOROT.50MG",
     "familia": "COP LEG.11",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "700972I",
+    "produto": "CLOR.AMILORIDA 2.5MG+HIDROCLOROT.25MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700975I",
+    "produto": "LISINOPRIL 20MG COMP",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "700976I",
+    "produto": "CAPTOPRIL 12,5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700977I",
+    "produto": "CAPTOPRIL 25MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
   },
   {
     "codigo": "700981I",
@@ -66,6 +2766,18 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "700985I",
+    "produto": "ATENOLOL+CLORTALIDONA 100MG/25MG",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700997I",
+    "produto": "ATENOLOL+CLORTALIDONA 50/12,5MG COMP",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
     "codigo": "700999I",
     "produto": "GLIBENCLAMIDA 5MG COM",
     "familia": "COP FET.4",
@@ -78,21 +2790,87 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "701042I",
+    "produto": "ATENOLOL 100MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
     "codigo": "701045I",
     "produto": "CETOPROFENO CAPSULAS 50MG",
     "familia": "PAM 2",
     "via": "SECA"
   },
   {
+    "codigo": "701094I",
+    "produto": "FLUNITRAZEPAM (B1) 1MG COM REV",
+    "familia": "COP LEG.9",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701095I",
+    "produto": "CETOCONAZOL 200MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701136I",
+    "produto": "ATENOLOL COMP 50MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701137I",
+    "produto": "ATENOLOL COMP 25MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701146I",
+    "produto": "CLOR.CLOMIPRAMINA (C1) 25MG COMP REV",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "701164I",
     "produto": "PANTOPRAZOL 40MG COM REV LIB RETARD",
-    "familia": "COP FET.3",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701165I",
+    "produto": "PANTOPRAZOL 20MG COM REV LIB RETARD",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701166I",
+    "produto": "ALENDRONATO DE SODIO 70MG COMP",
+    "familia": "COP FET.4",
     "via": "SECA"
   },
   {
     "codigo": "701168I",
     "produto": "CLORTALIDONA 12,5MG COMP",
     "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701169I",
+    "produto": "CLORTALIDONA 25MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701171I",
+    "produto": "CLOR.SERTRALINA (C1) 100MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701201I",
+    "produto": "BROMAZEPAM (B1) 3MG COMP",
+    "familia": "COP FET.2",
     "via": "SECA"
   },
   {
@@ -105,6 +2883,42 @@
     "codigo": "701235I",
     "produto": "ESPIRONOLACTONA COMP 100MG",
     "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701236I",
+    "produto": "LOSARTANA POTASSICA 100MG COMP REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "701247I",
+    "produto": "PENTOXIFILINA 400MG COM REV LIB PROL",
+    "familia": "COP LEG.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701248I",
+    "produto": "CLOR.METFORMINA COMP REV 500MG",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "701249I",
+    "produto": "CLOR.METFORMINA COMP REV 850MG",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702002I",
+    "produto": "OMEPRAZOL 40MG CAP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702005I",
+    "produto": "FINASTERIDA 1MG COM REV",
+    "familia": "COP LEG.13",
     "via": "UMIDA"
   },
   {
@@ -126,6 +2940,12 @@
     "via": "SECA"
   },
   {
+    "codigo": "702013I",
+    "produto": "CLOR.VERAPAMIL 80MG COMP REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
     "codigo": "702017I",
     "produto": "MALEATO DEXCLORFEN.+BETAMETASONA COMP",
     "familia": "COP LEG.11",
@@ -138,14 +2958,62 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "702028I",
+    "produto": "CLOR.METFORMINA COMP REV 1G",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702033I",
+    "produto": "DEFLAZACORTE 30MG COMP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702034I",
+    "produto": "NORFLOXACINO 400MG COMP REV-LG",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702047I",
+    "produto": "GENFIBROZILA 600MG COMP REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "702050I",
     "produto": "MALEATO DEXCLORFENIRAMINA 2MG COMP",
     "familia": "COP FET.2",
     "via": "UMIDA"
   },
   {
+    "codigo": "702056I",
+    "produto": "MALEATO ENALAP.+HIDROC.20/12,5MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702072I",
+    "produto": "DEXAMETASONA COMP 4MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702073I",
+    "produto": "MELOXICAM COMP 15MG",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
     "codigo": "702074I",
     "produto": "ALPRAZOLAM (B1) 0,25MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702075I",
+    "produto": "ALPRAZOLAM (B1) 0,50MG COMP",
     "familia": "COP FET.7",
     "via": "UMIDA"
   },
@@ -156,15 +3024,45 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "702077I",
+    "produto": "ALPRAZOLAM (B1) 2MG COMP",
+    "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702079I",
+    "produto": "DEFLAZACORTE 6MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
     "codigo": "702080I",
     "produto": "BEZAFIBRATO 200MG COMP REV",
     "familia": "COP FET.4",
     "via": "UMIDA"
   },
   {
+    "codigo": "702084I",
+    "produto": "SULFATO FERROSO 109MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702109I",
+    "produto": "ESPIRONOLACTONA COMP 50MG",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "702112I",
     "produto": "MELOXICAM COMP 7,5MG",
     "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702113I",
+    "produto": "DICLOFENACO COLESTIRAMINA CAPS 70MG",
+    "familia": "PAM 2",
     "via": "SECA"
   },
   {
@@ -180,9 +3078,93 @@
     "via": "SECA"
   },
   {
+    "codigo": "702345I",
+    "produto": "DEFLAZACORTE 7,5MGCOMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702360I",
+    "produto": "GLIMEPIRIDA 2MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702361I",
+    "produto": "GLIMEPIRIDA 1MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702363I",
+    "produto": "PARACETAMOL COMP REV 750MG  (CD)",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702369I",
+    "produto": "ADIF.+DIP.+PROMET.10,0+500,0+5,0 MG/COM",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702370I",
+    "produto": "CAFEINA+CIT ORFENADRINA+DIP.COMP(CD)",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702377I",
+    "produto": "ACIDO ACETIL SALICILICO 100MG COMP",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702385I",
+    "produto": "ACARBOSE 100MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702386I",
+    "produto": "ACARBOSE 50MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702390I",
+    "produto": "LOSARTAN POT.+HIDROCLOR.100/25MG C.R",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702391I",
+    "produto": "LOSARTAN POT.+HIDROCLO.50/12,5MG C.R",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702392I",
+    "produto": "DOXAZOSINA MESILATO 2MG-COMP",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702408I",
+    "produto": "DIP+MES DIIDROERG+CAF 350+1+100MG COM",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
     "codigo": "702468I",
     "produto": "AAS+CARB.MAGNE+GLIC ALUM C.REV 100MG CD",
     "familia": "KIL.500 TT",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702480I",
+    "produto": "NITRAZEPAM (B1) 5 MG COMPRIMIDO",
+    "familia": "COP FET.1",
     "via": "SECA"
   },
   {
@@ -196,6 +3178,36 @@
     "produto": "CLORIDRATO FEXOFENADINA 120MG COM REV",
     "familia": "COP LEG.7",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "702486I",
+    "produto": "CLOR.FEXO + CLOR.PSEUDO 60+120MG COM REV",
+    "familia": "KIL.500 TT",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702493I",
+    "produto": "LOSARTANA POTASSICA 50MG COM REV",
+    "familia": "COP FET.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702498I",
+    "produto": "AAS+CARB.MAGNE.+GLIC.ALUM C.REV 200MG",
+    "familia": "KIL.500 TT",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702499I",
+    "produto": "TENADREN 80MG/12,5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702500I",
+    "produto": "TENADREN 40MG/12,5MG COMP",
+    "familia": "COP LEG.11",
+    "via": "SECA"
   },
   {
     "codigo": "702503I",
@@ -216,6 +3228,18 @@
     "via": "SECA"
   },
   {
+    "codigo": "702535I",
+    "produto": "GABAPENTINA (C1) 400MG CAPS",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702536I",
+    "produto": "HIDROCLOROTIAZIDA 25MG COM",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
     "codigo": "702539I",
     "produto": "TOPIRAMATO 100MG (C1) COMP REV**",
     "familia": "COP FET.5",
@@ -228,15 +3252,15 @@
     "via": "SECA"
   },
   {
+    "codigo": "702541I",
+    "produto": "TOPIRAMATO 25MG (C1) COMP REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
     "codigo": "702543I",
     "produto": "MICOFENOLATO DE MOFETILA 500MG C.REV",
     "familia": "COP LEG.12",
-    "via": "UMIDA"
-  },
-  {
-    "codigo": "702554",
-    "produto": "GABAPENTINA (C1) 300MG CAPS",
-    "familia": "PAM 2",
     "via": "UMIDA"
   },
   {
@@ -246,9 +3270,51 @@
     "via": "SECA"
   },
   {
+    "codigo": "702564I",
+    "produto": "BISGLICINATO FERROSO 150 MG COM REV (CD)",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
     "codigo": "702565I",
     "produto": "BISGLIC FERROSO+ACFOLICO 150+5MG COM REV",
     "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702577I",
+    "produto": "IVERMECTINA 6MG COMPRIMIDO",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702621I",
+    "produto": "DINITRATO ISOSSORBIDA 10MG COMP (CD)",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702626I",
+    "produto": "PARACETAMOL 500MG COMP.REVESTIDO",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702627I",
+    "produto": "HIDROCLOROTIAZIDA 50MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702639I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702661I",
+    "produto": "CLOR.SIBUTRAMINA (B2) 15MG CAPS",
+    "familia": "MG2",
     "via": "SECA"
   },
   {
@@ -258,9 +3324,57 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "702668I",
+    "produto": "CLOR.SIBUTRAMINA (B2) 10MG CAPS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702726I",
+    "produto": "ACIDO FOLICO COMP 5MG",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702751I",
+    "produto": "BISS DE CLOPIDOGREL 75MG CMERCK",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
     "codigo": "702755I",
     "produto": "PARACETAMOL+CLOR.PSEUDO 500+30MG COM REV",
     "familia": "COP LEG.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702788I",
+    "produto": "PARACETAMOL+CAFEINA COMP REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702789I",
+    "produto": "CLONAZEPAM (B1) 2MG COMPRIMIDOS",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702822I",
+    "produto": "BROMETO DE PINAVERIO 100MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702849I",
+    "produto": "CLOR.AMITRIPTILINA(C1) 75MG COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702850I",
+    "produto": "CLOR.AMITRIPTILINA(C1) 25MG COMP REV",
+    "familia": "COP FET.6",
     "via": "SECA"
   },
   {
@@ -270,8 +3384,44 @@
     "via": "SECA"
   },
   {
-    "codigo": "702915",
+    "codigo": "702896I",
+    "produto": "ATORVASTATINA CALCICA 80MG COMP.REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702903I",
+    "produto": "FENOFIBRATO 200 MG CAPS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702913I",
+    "produto": "ATORVASTATINA CALCICA 10MG COMP.REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702914I",
+    "produto": "ATORVASTATINA CALCICA 20MG COMP.REV.",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702915I",
     "produto": "ATORVASTATINA CALCICA 40MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702917I",
+    "produto": "CLOR. DE LERCANIDIPINO 10MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702924I",
+    "produto": "CLOR. DE CICLOBENZAPRINA 5,0MG COMP.REV.",
     "familia": "COP LEG.10",
     "via": "SECA"
   },
@@ -288,10 +3438,34 @@
     "via": "SECA"
   },
   {
+    "codigo": "702929I",
+    "produto": "CLOR.DE CICLOBENZAPRINA 10MG COMP.REV.",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702930I",
+    "produto": "OLANZAPINA (C1) 10MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702931I",
+    "produto": "OLANZAPINA (C1) 5MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "702934I",
     "produto": "MESALAZINA 500MG COMP. LIB. PROLONGADA",
     "familia": "COP LEG.11",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "702937I",
+    "produto": "SINVASTATINA 10MG COMPRIMIDOS REVESTIDOS",
+    "familia": "COP LEG.1",
+    "via": "SECA"
   },
   {
     "codigo": "702938I",
@@ -306,6 +3480,48 @@
     "via": "SECA"
   },
   {
+    "codigo": "702943I",
+    "produto": "CITRATO DE SILDENAFILA 25MG COMP. REV.",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702944I",
+    "produto": "CITRATO DE SILDENAFILA 50MG COMP. REV.",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702947I",
+    "produto": "ROSUVASTATINA CALCICA 10MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702959I",
+    "produto": "CITRATO DE SILDENAFILA 100MG COMP. REV.",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702960I",
+    "produto": "CLOR. MOXIFLOXACINO 400MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702962I",
+    "produto": "HEMIFUM. QUETIAPINA 300MG COMP. REV.(C1)",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702963I",
+    "produto": "HEMIFUM. QUETIAPINA 200MG COMP. REV.(C1)",
+    "familia": "COP LEG.5",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "702964I",
     "produto": "HEMIFUM. QUETIAPINA 100MG COMP.REV.(C1)",
     "familia": "COP LEG.5",
@@ -315,6 +3531,30 @@
     "codigo": "702965I",
     "produto": "HEMIFUM. QUETIAPINA 25MG COM REV(C1)",
     "familia": "COP FET.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702972I",
+    "produto": "DICLOFENACO SODICO 50MG COMP. REV.",
+    "familia": "COP LEG.11",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702981I",
+    "produto": "CLOR. PAROXETINA (C1) 20MG COM REV",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702984I",
+    "produto": "INDAPAMIDA 1,5 MG COM.REV.LIB PROL.",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702986I",
+    "produto": "GLIMEPIRIDA 4MG COMPRIMIDOS",
+    "familia": "COP LEG.11",
     "via": "UMIDA"
   },
   {
@@ -330,6 +3570,18 @@
     "via": "SECA"
   },
   {
+    "codigo": "702990I",
+    "produto": "CLORIDRATO DE DONEPEZILA(C1) 5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702991I",
+    "produto": "CLORIDRATO DE DONEPEZILA(C1)10MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "SECA"
+  },
+  {
     "codigo": "702993I",
     "produto": "CLOR. DE MEMANTINA (C1) 10MG COM REV",
     "familia": "COP FET.5",
@@ -339,6 +3591,24 @@
     "codigo": "703002I",
     "produto": "CARVEDILOL 25MG COMPRIMIDO",
     "familia": "COP FET.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703003I",
+    "produto": "CARVEDILOL 12,5MG COMPRIMIDO",
+    "familia": "COP FET.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703004I",
+    "produto": "CARVEDILOL 6,25MG COMPRIMIDO",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703005I",
+    "produto": "CARVEDILOL 3,125MG COMPRIMIDO",
+    "familia": "COP LEG.5",
     "via": "UMIDA"
   },
   {
@@ -352,6 +3622,18 @@
     "produto": "ACECLOFENACO 100MG COM. REV.",
     "familia": "COP FET.5",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "704462I",
+    "produto": "RISEDRONATO SODICO 35MG COM. REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703013I",
+    "produto": "BROMIDRATO CITALOPRAM(C1) 20MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "SECA"
   },
   {
     "codigo": "703014I",
@@ -372,9 +3654,45 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "703025I",
+    "produto": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703029I",
+    "produto": "VALSARTANA 80 MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703030I",
+    "produto": "VALSARTANA 160 MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703042I",
+    "produto": "VALSARTANA+HIDROCL.160/25MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
     "codigo": "703043I",
     "produto": "VALSARTANA+HIDROCL.160/12,5MG COM REV",
     "familia": "COP LEG.9",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703044I",
+    "produto": "VALSARTANA+HIDROCL.80/12,5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703062I",
+    "produto": "DOMPERIDONA 10MG COMPRIMIDO",
+    "familia": "COP FET.3",
     "via": "SECA"
   },
   {
@@ -384,8 +3702,38 @@
     "via": "SECA"
   },
   {
-    "codigo": "703105I",
-    "produto": "LEFLUNOMIDA (C1) 20MG COM REV",
+    "codigo": "703091I",
+    "produto": "CLORIDRATO ZIPRASIDONA (C1) 40MG CAP",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703096I",
+    "produto": "CLOR.VENLAFAXINA (C1) 75MG CAP GEL DU LP",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703098I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 5MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703099I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 2,5MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703100I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL1,25MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703107I",
+    "produto": "DICL. DE PRAMIPEXOL (C1) 1,0MG COM",
     "familia": "COP LEG.4",
     "via": "UMIDA"
   },
@@ -396,16 +3744,82 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "703128I",
+    "produto": "TELMISARTANA 40MG COMPRIMIDO",
+    "familia": "COP LEG.13",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703131I",
+    "produto": "VALSARTANA+HIDROCLOR 320/12,5MG COM REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703153I",
+    "produto": "VALSARTANA+ANLODIPINO 320/10MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703154I",
+    "produto": "VALSARTANA+ANLODIPINO 320/5MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703156I",
+    "produto": "VALSARTANA+ANLODIPINO 160/5MG COM REV",
+    "familia": "COP LEG.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703160I",
+    "produto": "CLOR.DULOXETINA(C1)30MG CAPDURALIBRETARD",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703161I",
+    "produto": "CLOR.DULOXETINA(C1)60MG CAPDURALIBRETARD",
+    "familia": "PAM 1",
+    "via": "SECA"
+  },
+  {
     "codigo": "703171I",
     "produto": "EZETIMIBA 10MG COM",
     "familia": "COP FET.2",
     "via": "UMIDA"
   },
   {
-    "codigo": "703190",
+    "codigo": "703172I",
+    "produto": "EZETIMIBA+SINVASTATINA 10/10MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703173I",
+    "produto": "EZETIMIBA+SINVASTATINA 10/20MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703186I",
+    "produto": "CITRATO DE SILDENAFILA 20MG COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703190I",
     "produto": "MICOFENOLATO SODICO 360MG C REV LIB RET",
     "familia": "COP LEG.12",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "703191I",
+    "produto": "ROSUVASTATINA CALCICA 40MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
   },
   {
     "codigo": "703192I",
@@ -420,9 +3834,33 @@
     "via": "SECA"
   },
   {
+    "codigo": "703205I",
+    "produto": "ARIPIPRAZOL (C1) 15MG COM",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703220I",
+    "produto": "OLMESARTANA+ANLODIPINO 20/5MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "703221I",
     "produto": "OLMESARTANA+ANLODIPINO 40/5MG COM REV",
     "familia": "COP LEG.9",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703222I",
+    "produto": "OLMESARTANA+ANLODIPINO 40/10MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703223I",
+    "produto": "OLMESARTANA MEDOXOMILA 20 MG COM REV",
+    "familia": "COP LEG.7",
     "via": "UMIDA"
   },
   {
@@ -450,8 +3888,44 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "703235I",
+    "produto": "OXALATO DE ESCITALOPRAM 15MG (C1)COM REV",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703236I",
+    "produto": "TADALAFILA 5 MG COM REV",
+    "familia": "COP FET.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703237I",
+    "produto": "TADALAFILA 20 MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703260I",
+    "produto": "VILDAGLIPTINA 50 MG COM",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
     "codigo": "703369I",
     "produto": "PREGABALINA (C1) 75MG CAPSULAS",
+    "familia": "PAM 2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703370I",
+    "produto": "PREGABALINA (C1) 150MG CAPSULAS",
+    "familia": "MG2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703375I",
+    "produto": "LIMECICLINA 150 MG CAP DURA",
     "familia": "PAM 2",
     "via": "SECA"
   },
@@ -462,10 +3936,28 @@
     "via": "SECA"
   },
   {
+    "codigo": "703380I",
+    "produto": "LEVOFLOXACINO 750 MG COM REV",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703405I",
+    "produto": "CLORIDRATO METILFENIDATO (A3) 10MG COM",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
     "codigo": "703410I",
     "produto": "DEFERASIROX 500MG COM SUS",
     "familia": "COP LEG.4",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "703435I",
+    "produto": "PARACETAMOL + CODEINA(A2) 500+30MG COM",
+    "familia": "COP LEG.3",
+    "via": "SECA"
   },
   {
     "codigo": "703515I",
@@ -478,6 +3970,60 @@
     "produto": "CILOSTAZOL 50MG COM",
     "familia": "COP LEG.4",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "703529I",
+    "produto": "CILOSTAZOL 100MG COM",
+    "familia": "COP LEG.4",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703533I",
+    "produto": "BILASTINA 20MG COM",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703555I",
+    "produto": "DIOSMINA 450MG+HESPERIDINA 50MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703556I",
+    "produto": "DIOSMINA 900MG+HESPERIDINA 100MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703562I",
+    "produto": "ETODOLACO 400 MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703581I",
+    "produto": "COLECALCIFEROL 50.000UI COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703582I",
+    "produto": "COLECALCIFEROL 7.000UI COM REV",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703597I",
+    "produto": "DICLOR. DE LEVOCETIRIZINA 5MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703606I",
+    "produto": "BESILATO DE LEVANLODIPINO 2,5MG COM",
+    "familia": "COP LEG.11",
+    "via": "SECA"
   },
   {
     "codigo": "703607I",
@@ -498,6 +4044,24 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "703625I",
+    "produto": "SUCCINATO DE SOLIFENACINA 10MG COM REV.",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703626I",
+    "produto": "SUCCINATO DE SOLIFENACINA 5MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703628I",
+    "produto": "ETORICOXIBE (C1) 60MG COM REV",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
     "codigo": "703629I",
     "produto": "ETORICOXIBE (C1) 90MG COM REV",
     "familia": "COP LEG.9",
@@ -506,7 +4070,25 @@
   {
     "codigo": "703648I",
     "produto": "LINAGLIPTINA 5MG COM REV",
-    "familia": "COP FET.7",
+    "familia": "COP LEG.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703652I",
+    "produto": "CLOR. TRAZODONA (C1) 100MG COM REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703653I",
+    "produto": "CLOR. TRAZODONA (C1) 50MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703655I",
+    "produto": "CLORIDRATO DE CINACALCETE 30 MG COM REV",
+    "familia": "",
     "via": "SECA"
   },
   {
@@ -522,10 +4104,46 @@
     "via": "UMIDA"
   },
   {
-    "codigo": "703765I",
-    "produto": "LINA+CLOR.METFORMINA 2,5/500 MG COM REV",
-    "familia": "COP LEG.4",
+    "codigo": "703658I",
+    "produto": "MIRTAZAPINA (C1) 45 MG COM ORODISP",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703676I",
+    "produto": "SULF. HIDROXICLOROQUINA 400MG COM REV",
+    "familia": "COP LEG.11",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "703678I",
+    "produto": "DIPIRONA SODICA 1G COM",
+    "familia": "COP LEG.8",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703683I",
+    "produto": "ACIDO URSODESOXICOLICO 300MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703684I",
+    "produto": "ACIDO URSODESOXICOLICO 150MG COMPRIMIDO",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703718I",
+    "produto": "CLOR ONDANS DI-HIDRATADO 4MG COM ORODISP",
+    "familia": "COP LEG.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703719I",
+    "produto": "CLOR ONDANS DI-HIDRATADO 8MG COM ORODISP",
+    "familia": "COP LEG.11",
+    "via": "SECA"
   },
   {
     "codigo": "703766I",
@@ -540,33 +4158,57 @@
     "via": "UMIDA"
   },
   {
-    "codigo": "703808",
-    "produto": "SI+B12,C,E,B9,H+FE,MG,ZN COM REV(ALIM)",
-    "familia": "COP LEG.4",
+    "codigo": "703772I",
+    "produto": "HEMIT. ZOLPIDEM (B1) 6,25MG C R LIB PROL",
+    "familia": "",
     "via": "SECA"
   },
   {
-    "codigo": "703906I",
-    "produto": "EMPAGLIFLOZINA 10MG COM REV",
-    "familia": "COP FET.6",
+    "codigo": "703805I",
+    "produto": "LEVETIRACETAM (C1) 250 MG COM REV",
+    "familia": "COP LEG.9",
     "via": "UMIDA"
   },
   {
-    "codigo": "703907I",
-    "produto": "EMPAGLIFLOZINA 25MG COM REV",
-    "familia": "COP LEG.2",
+    "codigo": "703806I",
+    "produto": "LEVETIRACETAM (C1) 750 MG COM REV",
+    "familia": "COP LEG.6",
     "via": "UMIDA"
   },
   {
-    "codigo": "703909",
-    "produto": "COL.40MG+AC.HIALU157,7MG CAP DURA (ALIM)",
-    "familia": "PAM 2",
+    "codigo": "703830I",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM SL",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703857I",
+    "produto": "CL. TRAMADOL (A2)100MG COM REV LIB PROL",
+    "familia": "COP LEG.13",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703863I",
+    "produto": "BROM. DE VORTIOXETINA (C1) 5MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703864I",
+    "produto": "BROM. DE VORTIOXETINA (C1) 10MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703998I",
+    "produto": "VALERI+PASSIF+CRATAE+ 40+50+30MG COM REV",
+    "familia": "COP FET.1",
     "via": "SECA"
   },
   {
     "codigo": "704000I",
     "produto": "APIXABANA 2,5MG COM REV",
-    "familia": "COP FET.6",
+    "familia": "COP LEG.2",
     "via": "SECA"
   },
   {
@@ -574,6 +4216,48 @@
     "produto": "APIXABANA 5,0MG COM REV",
     "familia": "COP FET.5",
     "via": "SECA"
+  },
+  {
+    "codigo": "704003I",
+    "produto": "FOSFATO DE CODEINA (A2) 30MG COM",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704064I",
+    "produto": "LEVETIRACETAM (C1) 1000MG COM REV",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704065I",
+    "produto": "LEVETIRACETAM (C1) 500MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704066I",
+    "produto": "BISSULFATO DE CLOPIDOGREL 75MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704068I",
+    "produto": "ETODOLACO 500 MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704069I",
+    "produto": "PITAVASTATINA CALCICA 2MG COM REV",
+    "familia": "COP FET.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704070I",
+    "produto": "PITAVASTATINA CALCICA 4MG COM REV",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
   },
   {
     "codigo": "704074I",
@@ -588,10 +4272,58 @@
     "via": "UMIDA"
   },
   {
+    "codigo": "704095I",
+    "produto": "IBUPROFENO 600 MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
     "codigo": "704096I",
     "produto": "TARTARATO METOPROLOL 100 MG COM REV",
     "familia": "COP LEG.9",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "704120I",
+    "produto": "MULTIGRIP 400+4+4MG CAP*",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704125I",
+    "produto": "RIVAROXABANA 10 MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704126I",
+    "produto": "RIVAROXABANA 15 MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704127I",
+    "produto": "RIVAROXABANA 20 MG COM REV (E)",
+    "familia": "COP FET.5",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704149I",
+    "produto": "HEMIT. ZOLPIDEM (B1) 8,36MG C R LIB PROL",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704153I",
+    "produto": "COMPLEXO B COMP REV C/20-E",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704154I",
+    "produto": "COMPLEXO B COMP REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
   },
   {
     "codigo": "704163I",
@@ -600,16 +4332,22 @@
     "via": "SECA"
   },
   {
+    "codigo": "704224I",
+    "produto": "CLOR. NARATRIPTANA 2,5MG COM REV",
+    "familia": "COP FET.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704252I",
+    "produto": "DESLORATADINA 5MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
     "codigo": "704284I",
     "produto": "CL.DE LISINA+CL.DE CICLO.125+5MGCOM REV",
     "familia": "COP LEG.12",
     "via": "UMIDA"
-  },
-  {
-    "codigo": "704302",
-    "produto": "LUT+ZEA+A+B2+C+E+CU+SE+ZN COM REV (ALIM)",
-    "familia": "COP LEG.8",
-    "via": "SECA"
   },
   {
     "codigo": "704303I",
@@ -624,10 +4362,10 @@
     "via": "UMIDA"
   },
   {
-    "codigo": "704307I",
-    "produto": "ORLISTATE 120MG CAP DURA",
-    "familia": "MG2",
-    "via": "UMIDA"
+    "codigo": "704317I",
+    "produto": "DIPIRONA 500MG COM",
+    "familia": "COP FET.3",
+    "via": "SECA"
   },
   {
     "codigo": "704351I",
@@ -636,10 +4374,16 @@
     "via": "UMIDA"
   },
   {
-    "codigo": "704408",
-    "produto": "ESOMEPRAZOL MAGNESICO 20MG CR LIB RETAR",
+    "codigo": "704380I",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
     "familia": "COP FET.5",
-    "via": "UMIDA"
+    "via": "SECA"
+  },
+  {
+    "codigo": "704389I",
+    "produto": "LORATADINA 10MG COMPRIMIDO",
+    "familia": "COP FET.3",
+    "via": "SECA"
   },
   {
     "codigo": "704408I",
@@ -652,6 +4396,12 @@
     "produto": "ESOMEPRAZOL MAGNESICO 40MG CR LIB RETAR",
     "familia": "COP FET.5",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "704411I",
+    "produto": "HEMIT. DE ZOLPIDEM (B1) 5MG COM SL",
+    "familia": "COP FET.4",
+    "via": "SECA"
   },
   {
     "codigo": "704412I",
@@ -672,9 +4422,15 @@
     "via": "UMIDA"
   },
   {
-    "codigo": "704421",
-    "produto": "FE+AC FOLICO+VIT D+VIT E COM REV (ALIM)",
-    "familia": "COP FET.5",
+    "codigo": "704424I",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.40/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704425I",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.80/25MG COMP",
+    "familia": "COP LEG.3",
     "via": "SECA"
   },
   {
@@ -684,9 +4440,15 @@
     "via": "SECA"
   },
   {
-    "codigo": "704462I",
-    "produto": "RISEDRONATO SODICO 35MG COM REV",
-    "familia": "",
+    "codigo": "704456I",
+    "produto": "CLOR.SERTRALINA (C1) 50MG COM REV",
+    "familia": "COP LEG.14",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704457I",
+    "produto": "CLOR.SERTRALINA (C1) 100MG COM REV",
+    "familia": "COP LEG.8",
     "via": "SECA"
   },
   {
@@ -694,6 +4456,12 @@
     "produto": "CLOR. BUPROPIONA (C1) 150MG COM REV",
     "familia": "COP FET.7",
     "via": "UMIDA"
+  },
+  {
+    "codigo": "704524I",
+    "produto": "PENTOXIFILINA 400MG COM REV LIB PROL",
+    "familia": "",
+    "via": "SECA"
   },
   {
     "codigo": "704527I",
@@ -708,33 +4476,33 @@
     "via": "SECA"
   },
   {
-    "codigo": "704583I",
-    "produto": "DICLOR DE TRIMETAZIDINA 35MG CR LIB PROL",
-    "familia": "COP FET.1",
-    "via": "UMIDA"
+    "codigo": "704529I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL1,25MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
   },
   {
-    "codigo": "704656I",
-    "produto": "ATORVASTATINA CALCICA 20MG COM REV",
-    "familia": "",
-    "via": "UMIDA"
-  },
-  {
-    "codigo": "704657I",
-    "produto": "ATORVASTATINA CALCICA 40MG COM REV",
-    "familia": "",
-    "via": "UMIDA"
+    "codigo": "704530I",
+    "produto": "HEMIFUMARATO DE BISOPROLOL 10MG COMP REV",
+    "familia": "COP LEG.13",
+    "via": "SECA"
   },
   {
     "codigo": "750005I",
     "produto": "BISGLICINATO FERROSO 500MG COM REV",
-    "familia": "COP LEG.2",
+    "familia": "COP LEG.13",
     "via": "SECA"
   },
   {
     "codigo": "750012I",
     "produto": "NIMESULIDA 100MG COMP",
     "familia": "COP FET.3",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750063I",
+    "produto": "FANCICLOVIR 125MG COM REV",
+    "familia": "COP LEG.2",
     "via": "UMIDA"
   },
   {
@@ -747,6 +4515,228 @@
     "codigo": "750065I",
     "produto": "FANCICLOVIR 500MG COM REV",
     "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "750066I",
+    "produto": "AZITROMICINA 1000MG COM REV",
+    "familia": "COP LEG.12",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "760007I",
+    "produto": "DINITRATO ISOSSORBIDA SL 5MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760008I",
+    "produto": "CLOR.PROPRANOLOL 10MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760009I",
+    "produto": "CLOR.PROPRANOLOL 40MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760010I",
+    "produto": "CLOR.PROPRANOLOL 80MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700996I",
+    "produto": "LORATADINA 10MG COMP",
+    "familia": "COP FET.1",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700039I",
+    "produto": "COMPLEXO B COMP REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "700974I",
+    "produto": "LISINOPRIL 10MG COMP",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702396I",
+    "produto": "DIPIRONA 500MG COM",
+    "familia": "COP FET.2",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702504I",
+    "produto": "MESALAZINA 400MG COMP REV",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702554I",
+    "produto": "GABAPENTINA (C1) 300MG CAPS",
+    "familia": "PAM 2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702863I",
+    "produto": "ORLISTATE 120MG CAPSULAS",
+    "familia": "MG2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "702899I",
+    "produto": "DESLORATADINA 5MG COMP. REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "702948I",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 45MG COMP.",
+    "familia": "COP LEG.11",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703006I",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 30MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703038I",
+    "produto": "HEMITARTARATO ZOLPIDEM (B1) 10MG COM REV",
+    "familia": "COP FET.4",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703040I",
+    "produto": "CLOR. NARATRIPTANA 2,5MG COM REV",
+    "familia": "COP LEG.7",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703064I",
+    "produto": "FOSF. CALCIO 600MG+VIT D 400 UI COM REV",
+    "familia": "KIL.T400",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703162I",
+    "produto": "TELMISARTANA + HCT 80MG + 25MG COM",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703163I",
+    "produto": "TELMISARTANA + HCT 40MG + 12,5MG COM",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703167I",
+    "produto": "CLORIDRATO ZIPRASIDONA (C1) 80MG CAP",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703174I",
+    "produto": "EZETIMIBA+SINVASTATINA 10/40MG COM",
+    "familia": "COP FET.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703421I",
+    "produto": "CLONIXINATO DE LISINA 125 MG COM REV",
+    "familia": "COP LEG.10",
+    "via": "SECA"
+  },
+  {
+    "codigo": "703571I",
+    "produto": "NITAZOXANIDA 500MG COM REV",
+    "familia": "COP LEG.6",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "703583I",
+    "produto": "COLECALCIFEROL 1.000UI COM REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704135I",
+    "produto": "IBUPROFENO 300 MG COM REV",
+    "familia": "COP LEG.2",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "760012I",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.40/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "760013I",
+    "produto": "CLOR.PROPRANOLOL+HIDROC.80/25MG COMP",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704352I",
+    "produto": "CLORIDRATO DE PIOGLITAZONA 45MG COM",
+    "familia": "",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704583I",
+    "produto": "DICLOR DE TRIMETAZIDINA 35MG CR LIB PROL",
+    "familia": "COP FET.1",
+    "via": "UMIDA"
+  },
+  {
+    "codigo": "704215I",
+    "produto": "DAPAGLIFLOZINA AMORFA 10MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704215IX",
+    "produto": "DAPAGLIFLOZINA AMORFA 10MG COM REV",
+    "familia": "COP FET.6",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704609I",
+    "produto": "PARACETAMOL 500MG COMP.REVESTIDO",
+    "familia": "COP LEG.8",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704610I",
+    "produto": "PARACETAMOL+CAFEINA COMP REV",
+    "familia": "COP LEG.5",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704608I",
+    "produto": "PARACETAMOL COMP REV 750MG (CD)",
+    "familia": "COP LEG.14",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704367",
+    "produto": "LACTASE 10.000FCC ALU COM LIB PROL(ALIM)",
+    "familia": "COP LEG.3",
+    "via": "SECA"
+  },
+  {
+    "codigo": "704265I",
+    "produto": "MAL BRONF + CL FENIL 12+15MG CR LIB PROL",
+    "familia": "",
     "via": "UMIDA"
   }
 ]

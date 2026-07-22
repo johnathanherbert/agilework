@@ -145,12 +145,12 @@ export function ProductionItemModal({
     setQtdCopiaAutomatica(1);
   }, [open, mode, item, defaultTurno, defaultVia, form]);
 
-  // Autocompleta via, família e produto a partir do código da receita/ordem (WIP)
+  // Autocompleta produto (e, para ordens, também via e família) a partir do código do material
   const handleCodigoReceitaBlur = (codigo: string) => {
     const recipe = findWipRecipeByCode(codigo);
     if (!recipe) {
       if (codigo.trim()) {
-        toast.error('Código não encontrado no WIP');
+        toast.error('Código não encontrado no cadastro de rotas');
       }
       return;
     }
@@ -162,7 +162,7 @@ export function ProductionItemModal({
         form.setValue('via', recipe.via, { shouldValidate: true });
       }
     }
-    toast.success('Dados preenchidos a partir do WIP');
+    toast.success('Produto preenchido automaticamente');
   };
 
   // Divide a ordem: cria uma nova ordem no turno de destino com a quantidade
@@ -305,35 +305,35 @@ export function ProductionItemModal({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 px-8 pb-8">
-            {tipo === 'ordem' && (
-              <FormField
-                control={form.control}
-                name="codigoReceita"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                      Código da Receita (WIP)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: 700071I"
-                        disabled={isSubmitting || isLocked}
-                        className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-11 font-medium"
-                        {...field}
-                        onBlur={(e) => {
-                          field.onBlur();
-                          handleCodigoReceitaBlur(e.target.value);
-                        }}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground">
-                      Preencha o código do material do WIP para autocompletar via, família e produto.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="codigoReceita"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                    Código do Material
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: 700071I ou 700236"
+                      disabled={isSubmitting || isLocked}
+                      className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-11 font-medium"
+                      {...field}
+                      onBlur={(e) => {
+                        field.onBlur();
+                        handleCodigoReceitaBlur(e.target.value);
+                      }}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {tipo === 'ordem'
+                      ? 'Preencha o código do material para autocompletar produto, família e via.'
+                      : 'Preencha o código do material para autocompletar o nome do produto.'}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -393,15 +393,14 @@ export function ProductionItemModal({
                     <FormLabel className="text-sm font-bold text-gray-700 dark:text-gray-300">Família / Máquina</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Preenchido automaticamente pelo código da receita"
-                        disabled
-                        readOnly
-                        className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-11 font-medium bg-muted/50 cursor-not-allowed"
+                        placeholder="Ex: COP LEG.2 (ou preencha o código acima)"
+                        disabled={isSubmitting || isLocked}
+                        className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-11 font-medium"
                         {...field}
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
-                      Bloqueado: preencha o código da receita acima para definir a família.
+                      Preenchido automaticamente pelo código, mas pode ser editado manualmente.
                     </p>
                     <FormMessage />
                   </FormItem>
