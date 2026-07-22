@@ -195,22 +195,22 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
         onDragStart={(e) => handleDragStart(e, item)}
         onClick={() => onItemClick(item)}
         className={cn(
-          'flex flex-col gap-1 p-2.5 rounded-lg border cursor-pointer transition-all duration-150 select-none',
+          'flex flex-col gap-0.5 px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-150 select-none',
           completo
             ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/60 hover:shadow-sm'
             : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
         )}
       >
-        <div className="flex items-start justify-between gap-2">
-          <span className="text-sm font-semibold text-slate-800 dark:text-foreground leading-snug line-clamp-2 flex-1" title={item.produto}>
+        <div className="flex items-center justify-between gap-1.5">
+          <span className="text-xs font-semibold text-slate-800 dark:text-foreground leading-tight line-clamp-1 flex-1" title={item.produto}>
             {item.produto}
           </span>
           <IndicadorRealProg real={item.real} prog={item.prog} />
         </div>
         {completo ? (
-          <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">✓ Concluído</span>
+          <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 leading-none mt-0.5">✓ Concluído</span>
         ) : faltam > 0 ? (
-          <span className="text-[11px] text-slate-400 dark:text-muted-foreground font-medium">
+          <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-medium leading-none mt-0.5">
             Faltam <span className="text-slate-700 dark:text-foreground font-bold">{faltam}</span>
           </span>
         ) : null}

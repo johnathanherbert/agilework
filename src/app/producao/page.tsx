@@ -220,7 +220,7 @@ export default function ProducaoPage() {
                 <div>
                   <h1 className="text-xl font-bold text-foreground leading-tight">Painel de Produção</h1>
                   <p className="text-xs text-muted-foreground font-medium">
-                    Programação de pesagem por turno · Via Úmida e Via Seca
+                    Programação de pesagem por turno.
                   </p>
                 </div>
               </div>
