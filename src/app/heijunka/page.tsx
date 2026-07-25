@@ -22,16 +22,16 @@ type TimeFilter = '7' | '15' | '30' | 'month';
 
 // ── Helper: calcula métricas derivadas por snapshot ──────────────────────────
 function enrichSnapshot(s: HeijunkaSnapshot) {
-  // manual = ordens puramente manuais (sem referência em PA/PD)
-  // Snapshots antigos (sem totalManual) usam totalOrdens como fallback.
-  const manual = s.totalManual ?? s.totalOrdens;
+  // Usa os novos campos de volume (ou faz fallback para os totais de cards caso seja um snapshot antigo)
+  const manualVol = s.volManual ?? s.totalManual ?? s.totalOrdens;
+  const paVol = s.volPA ?? s.totalPA;
+  const pdVol = s.volPD ?? s.totalPD;
+  const ordensComRefVol = s.volOrdensComRef ?? (s.totalOrdens - (s.totalManual ?? s.totalOrdens));
 
-  // PD/PA = todos os auto + todos os direta + ordens que TÊM referência em PA/PD
-  // ordensComRef = totalOrdens - manual
-  const ordensComRef = s.totalOrdens - manual;
-  const pdpaCount = s.totalPA + s.totalPD + ordensComRef;
+  const manual = manualVol;
+  const pdpaCount = paVol + pdVol + ordensComRefVol; // Total de volume PD/PA
 
-  // Total geral = manual + pdpa (invariante: manual + ordensComRef + PA + PD = totalOrdens + PA + PD)
+  // Total geral
   const totalAll = manual + pdpaCount;
   const pdpaPercent = totalAll > 0 ? Math.round((pdpaCount / totalAll) * 100) : 0;
 
@@ -39,6 +39,7 @@ function enrichSnapshot(s: HeijunkaSnapshot) {
   const dayLabel = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   const monthLabel = d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
   const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  
   return { ...s, manual, pdpaCount, totalAll, pdpaPercent, dayLabel, monthLabel, monthKey };
 }
 
@@ -52,17 +53,22 @@ function generateMockHistory(): HeijunkaSnapshot[] {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
 
-    const totalOrdens = Math.round(20 + Math.random() * 30);
-    const totalPA = Math.round(totalOrdens * (0.25 + Math.random() * 0.35));
-    const totalPD = Math.round(totalPA * (0.3 + Math.random() * 0.5));
-    // Simula que entre 30–70% das ordens têm referência em PA/PD (são ordensReferenciadas)
-    // totalManual = ordens sem referência = totalOrdens - ordensReferenciadas
-    const ordensComRef = Math.round(totalOrdens * (0.3 + Math.random() * 0.4));
-    const totalManual = totalOrdens - ordensComRef;
-    const metaDiaria = 900 + Math.round(Math.random() * 300);
+    const metaDiaria = 2500 + Math.round(Math.random() * 1000);
     const totalRealizado = Math.round(metaDiaria * (0.82 + Math.random() * 0.25));
+    
+    // Distribuição dos volumes
+    const volOrdensComRef = Math.round(totalRealizado * (0.1 + Math.random() * 0.15));
+    const volPA = Math.round(totalRealizado * (0.2 + Math.random() * 0.2));
+    const volPD = Math.round(totalRealizado * (0.15 + Math.random() * 0.15));
+    const volManual = totalRealizado - volOrdensComRef - volPA - volPD;
+
     const totalUmida = Math.round(totalRealizado * (0.55 + Math.random() * 0.1));
     const totalSeca = totalRealizado - totalUmida;
+
+    const totalOrdens = 120 + Math.round(Math.random() * 80); // Contagem figurativa
+    const totalPA = Math.round(totalOrdens * 0.25);
+    const totalPD = Math.round(totalOrdens * 0.25);
+    const totalManualCount = Math.round(totalOrdens * 0.5);
 
     const familiasMap: Record<string, number> = {};
     let remaining = totalRealizado;
@@ -78,11 +84,15 @@ function generateMockHistory(): HeijunkaSnapshot[] {
       date: dateStr,
       metaDiaria,
       totalOrdens,
-      totalManual,
+      totalManual: totalManualCount,
       totalUmida,
       totalSeca,
       totalPA,
       totalPD,
+      volManual,
+      volPA,
+      volPD,
+      volOrdensComRef,
       totalRealizado,
       totalProgramado: metaDiaria,
       turnos: {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { Eraser, Factory, Printer, Wifi, WifiOff, TrendingUp } from 'lucide-react';
+import { Eraser, Factory, Printer, Wifi, WifiOff, TrendingUp, FlaskConical } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 import ProtectedRoute from '@/components/auth/protected-route';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { useProductionRealtime } from '@/hooks/useProductionRealtime';
-import { moveProductionItem, mergeSplitProductionItem } from '@/lib/production-helpers';
+import { moveProductionItem, mergeSplitProductionItem, createProductionItem } from '@/lib/production-helpers';
 import { TurnoColumn } from '@/components/producao/turno-column';
 import { ProductionItemModal } from '@/components/producao/production-item-modal';
 import { ProductionDeleteDialog } from '@/components/producao/production-delete-dialog';
@@ -137,8 +137,10 @@ export default function ProducaoPage() {
   const [itemToDelete, setItemToDelete] = useState<ProductionItem | null>(null);
   const [turnoToClear, setTurnoToClear] = useState<ProductionTurno | 'all' | null>(null);
   const [showHeijunka, setShowHeijunka] = useState(false);
+  const [mocking, setMocking] = useState(false);
 
-  const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader';
+  const isAdmin = userData?.email === ADMIN_EMAIL;
+  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
 
   // Guarda de acesso: somente líderes e o admin global podem ver esta página
   useEffect(() => {
@@ -196,6 +198,58 @@ export default function ProducaoPage() {
       toast.error(error.message || 'Erro ao mover o item');
     }
   };
+
+  async function handleLoadMockData() {
+    if (!isAdmin) return;
+    setMocking(true);
+    const toastId = toast.loading('Carregando rotas e gerando ordens mockadas...');
+    try {
+      const res = await fetch('/rotas.json');
+      if (!res.ok) throw new Error('Falha ao carregar rotas.json');
+      const rotas = await res.json();
+      
+      const promises = [];
+      const turnos = [1, 2, 3] as ProductionTurno[];
+      
+      for (const turno of turnos) {
+        // Gera ~14 ordens por turno (total max 20 entre ordens e PA/PD)
+        for (let i = 0; i < 14; i++) {
+          const r = rotas[Math.floor(Math.random() * rotas.length)];
+          const prog = 100 + Math.floor(Math.random() * 400); // 100 a 500
+          promises.push(createProductionItem({
+            turno,
+            tipo: 'ordem',
+            via: r['VIA (ÚMIDA / SECA)'] === 'Via Úmida' ? 'UMIDA' : 'SECA',
+            familia: r['Família Produto SA'] || '',
+            produto: r['Descrição'],
+            prog,
+            real: Math.floor(prog * (0.5 + Math.random() * 0.6)) // 50% a 110% concluído
+          }));
+        }
+        
+        // Gera ~6 itens de pesagem (PA/PD) por turno usando as mesmas receitas
+        for (let i = 0; i < 6; i++) {
+          const r = rotas[Math.floor(Math.random() * rotas.length)];
+          const prog = 200 + Math.floor(Math.random() * 800);
+          promises.push(createProductionItem({
+            turno,
+            tipo: Math.random() > 0.5 ? 'auto' : 'direta',
+            produto: r['Descrição'],
+            prog,
+            real: Math.floor(prog * (0.4 + Math.random() * 0.7)) // 40% a 110%
+          }));
+        }
+      }
+      
+      await Promise.all(promises);
+      toast.success('Painel populado com ordens reais!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar dados mockados', { id: toastId });
+    } finally {
+      setMocking(false);
+    }
+  }
 
   if (authLoading || !userData || !isLeaderOrAdmin) {
     return (
@@ -274,6 +328,20 @@ export default function ProducaoPage() {
                   <TrendingUp className="h-3.5 w-3.5" />
                   Lançar Heijunka
                 </Button>
+
+                {isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleLoadMockData} 
+                      disabled={mocking || !connected}
+                      className="text-amber-600 border-amber-200 hover:bg-amber-50 h-8 text-[11px] px-2 shadow-sm"
+                      title="Gerar dados mockados com receitas reais"
+                    >
+                      <FlaskConical className="h-3.5 w-3.5 mr-1" />
+                      {mocking ? 'Gerando...' : 'Mock'}
+                    </Button>
+                )}
 
                 {/* <DropdownMenu>
                   <DropdownMenuTrigger asChild>

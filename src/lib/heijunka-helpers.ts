@@ -54,6 +54,12 @@ export const saveHeijunkaSnapshot = async (metaDiaria: number, items: Production
   // totalAll = totalManual + ordensReferenciadas + pa + pd
   //          = totalOrdens + totalPA + totalPD (mesmo total, apenas reclassificado)
 
+  // ── Volumes (Soma do real) ───────────────────────────────────────────────────
+  const volManual = ordensManual.reduce((acc, curr) => acc + curr.real, 0);
+  const volOrdensComRef = ordensReferenciadas.reduce((acc, curr) => acc + curr.real, 0);
+  const volPA = pa.reduce((acc, curr) => acc + curr.real, 0);
+  const volPD = pd.reduce((acc, curr) => acc + curr.real, 0);
+
   const familiasStats: Record<string, number> = {};
 
   items.forEach(item => {
@@ -87,6 +93,10 @@ export const saveHeijunkaSnapshot = async (metaDiaria: number, items: Production
     totalSeca: seca.length,
     totalPA: pa.length,
     totalPD: pd.length,
+    volManual,
+    volOrdensComRef,
+    volPA,
+    volPD,
     totalRealizado: items.reduce((acc, curr) => acc + curr.real, 0),
     totalProgramado: items.reduce((acc, curr) => acc + curr.prog, 0),
     turnos: turnosStats,

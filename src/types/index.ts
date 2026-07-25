@@ -144,6 +144,10 @@ export type HeijunkaSnapshot = {
   totalRealizado: number;
   totalProgramado: number;
   totalManual: number;        // ordens tipo='ordem' SEM correspondente em auto/direta
+  volManual?: number;         // Soma do real de ordens manuais
+  volPA?: number;             // Soma do real de PA
+  volPD?: number;             // Soma do real de PD
+  volOrdensComRef?: number;   // Soma do real de ordens referenciadas
   turnos: Record<string, HeijunkaTurnoStats>;
   familias: Record<string, number>;
   created_at: string;
