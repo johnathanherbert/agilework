@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { Eraser, Factory, Printer, Wifi, WifiOff } from 'lucide-react';
+import { Eraser, Factory, Printer, Wifi, WifiOff, TrendingUp } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { TurnoColumn } from '@/components/producao/turno-column';
 import { ProductionItemModal } from '@/components/producao/production-item-modal';
 import { ProductionDeleteDialog } from '@/components/producao/production-delete-dialog';
 import { ClearTurnoDialog } from '@/components/producao/clear-turno-dialog';
+import { HeijunkaDialog } from '@/components/producao/heijunka-dialog';
 import { ProductionItem, ProductionTipo, ProductionTurno, ProductionVia } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -135,6 +136,7 @@ export default function ProducaoPage() {
   });
   const [itemToDelete, setItemToDelete] = useState<ProductionItem | null>(null);
   const [turnoToClear, setTurnoToClear] = useState<ProductionTurno | 'all' | null>(null);
+  const [showHeijunka, setShowHeijunka] = useState(false);
 
   const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader';
 
@@ -261,7 +263,19 @@ export default function ProducaoPage() {
                   Imprimir
                 </Button>
 
-                <DropdownMenu>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="gap-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                  onClick={() => setShowHeijunka(true)}
+                  title="Fechar dia de produção e atualizar dashboard"
+                >
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Lançar Heijunka
+                </Button>
+
+                {/* <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
@@ -292,7 +306,7 @@ export default function ProducaoPage() {
                       Limpar Todos os Turnos
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu> */}
               </div>
             </div>
 
@@ -360,6 +374,12 @@ export default function ProducaoPage() {
         open={turnoToClear !== null} 
         onOpenChange={(open) => { if (!open) setTurnoToClear(null); }} 
         turnoToClear={turnoToClear}
+      />
+
+      <HeijunkaDialog
+        open={showHeijunka}
+        onOpenChange={setShowHeijunka}
+        items={items}
       />
     </ProtectedRoute>
   );

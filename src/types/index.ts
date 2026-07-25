@@ -120,3 +120,33 @@ export type ApiResponse<T> = {
   data?: T;
   error?: string;
 };
+
+// Heijunka Types
+export type HeijunkaTurnoStats = {
+  ordens: number;
+  umida: number;
+  seca: number;
+  pa: number;
+  pd: number;
+  realizado: number;
+  programado: number;
+};
+
+export type HeijunkaSnapshot = {
+  id: string;
+  date: string; // YYYY-MM-DD format for easier querying
+  metaDiaria: number;
+  totalOrdens: number;
+  totalUmida: number;
+  totalSeca: number;
+  totalPA: number;
+  totalPD: number;
+  totalRealizado: number;
+  totalProgramado: number;
+  totalManual: number;        // ordens tipo='ordem' SEM correspondente em auto/direta
+  turnos: Record<string, HeijunkaTurnoStats>;
+  familias: Record<string, number>;
+  created_at: string;
+  created_by?: string;
+  created_by_name?: string;
+};
