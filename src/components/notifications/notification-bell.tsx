@@ -66,7 +66,7 @@ export const NotificationBell = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 
-          className="w-[350px] p-0 border border-gray-200 dark:border-gray-700 shadow-lg"
+          className="w-[420px] p-0 border border-gray-200 dark:border-gray-700 shadow-lg"
         >
           <div className="p-3 font-medium border-b flex items-center justify-between bg-white dark:bg-gray-900">
             <h3 className="text-gray-900 dark:text-gray-100">Notificações</h3>
@@ -97,7 +97,7 @@ export const NotificationBell = () => {
             </div>
           </div>
           
-          <ScrollArea className="max-h-[400px] bg-white dark:bg-gray-900">
+          <ScrollArea className="max-h-[500px] bg-white dark:bg-gray-900">
             {notifications.length > 0 ? (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {notifications.map((notification) => (

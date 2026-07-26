@@ -286,11 +286,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           const payerName = itemData.updated_by_name || 'Um usuário';
           const statusText = itemData.status === 'Pago' ? 'pago' : 'pago parcialmente';
+          const itemDesc = itemData.description ? ` - ${itemData.description}` : '';
           console.log(`💰 Notificando item ${statusText} por:`, payerName);
           
           addNotification({
             title: `Item ${itemData.status}`,
-            message: `${payerName} marcou o item ${itemData.code} como ${statusText}`,
+            message: `${payerName} marcou: ${itemData.code}${itemDesc} como ${statusText}`,
             type: 'item_updated',
             entityId: itemId,
           });
@@ -336,11 +337,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (updatedAtTimestamp < listenerStartTime - 10000 || secondsSinceUpdate > 10) return;
 
         const editorName = itemData.updated_by_name || 'Um usuário';
-        const actionText = change.type === 'added' ? 'adicionou um item em' : 'atualizou';
+        const actionText = change.type === 'added' ? 'adicionou' : 'atualizou';
+        const itemName = itemData.produto || 'um item';
+        const viaText = itemData.via ? ` (${itemData.via})` : '';
 
         addNotification({
           title: 'Quadro de Produção',
-          message: `${editorName} ${actionText} o quadro de produção (Turno ${itemData.turno})`,
+          message: `${editorName} ${actionText}: ${itemName} no Turno ${itemData.turno}${viaText}`,
           type: 'production_updated',
           entityId: itemId,
         });
