@@ -1,7 +1,6 @@
 import { useNotifications, Notification } from '@/components/providers/notification-provider';
-import { Bell, CheckCheck, Trash2, Clock, CheckCircle, ExternalLink, Factory } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, Clock, CheckCircle, ExternalLink, Factory, FilePlus2, CircleDollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,6 +18,7 @@ export const NotificationBell = () => {
     unreadCount, 
     markAsRead, 
     markAllAsRead, 
+    removeNotification,
     clearNotifications, 
     notificationsEnabled 
   } = useNotifications();
@@ -47,6 +47,11 @@ export const NotificationBell = () => {
     
     setIsOpen(false);
   };
+
+  const handleRemoveNotification = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    removeNotification(id);
+  };
   return (
     <div className="relative">
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -66,9 +71,10 @@ export const NotificationBell = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 
-          className="w-[420px] p-0 border border-gray-200 dark:border-gray-700 shadow-lg"
+          className="w-[420px] p-0 border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col"
+          style={{ maxHeight: 'min(70vh, var(--radix-dropdown-menu-content-available-height, 480px))' }}
         >
-          <div className="p-3 font-medium border-b flex items-center justify-between bg-white dark:bg-gray-900">
+          <div className="p-3 font-medium border-b flex items-center justify-between bg-white dark:bg-gray-900 shrink-0">
             <h3 className="text-gray-900 dark:text-gray-100">Notificações</h3>
             
             <div className="flex items-center gap-1">
@@ -97,7 +103,7 @@ export const NotificationBell = () => {
             </div>
           </div>
           
-          <ScrollArea className="max-h-[500px] bg-white dark:bg-gray-900">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white dark:bg-gray-900">
             {notifications.length > 0 ? (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {notifications.map((notification) => (
@@ -114,11 +120,13 @@ export const NotificationBell = () => {
                         "mt-0.5 p-2 rounded-full flex-shrink-0",
                         notification.type === 'nt_created' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" :
                         notification.type === 'nt_updated' ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" :
+                        notification.type === 'item_paid' ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
                         notification.type === 'production_updated' ? "bg-accent/20 text-accent-foreground dark:bg-accent/20 dark:text-accent-foreground" :
                         "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       )}>
-                        {notification.type === 'nt_created' && <Bell className="h-4 w-4" />}
+                        {notification.type === 'nt_created' && <FilePlus2 className="h-4 w-4" />}
                         {notification.type === 'nt_updated' && <Clock className="h-4 w-4" />}
+                        {notification.type === 'item_paid' && <CircleDollarSign className="h-4 w-4" />}
                         {notification.type === 'production_updated' && <Factory className="h-4 w-4" />}
                         {notification.type === 'system' && <CheckCircle className="h-4 w-4" />}
                       </div>
@@ -131,9 +139,19 @@ export const NotificationBell = () => {
                           )}>
                             {notification.title}
                           </h4>
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
-                            {formatTime(notification.createdAt)}
-                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {formatTime(notification.createdAt)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleRemoveNotification(e, notification.id)}
+                              className="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                              aria-label="Remover notificação"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                         
                         <p className={cn(
@@ -167,7 +185,7 @@ export const NotificationBell = () => {
                   : "Notificações estão desativadas nas configurações"}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

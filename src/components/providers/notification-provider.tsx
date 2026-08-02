@@ -35,7 +35,7 @@ export type Notification = {
   message: string;
   createdAt: Date;
   read: boolean;
-  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'production_updated' | 'system';
+  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'item_paid' | 'production_updated' | 'system';
   entityId?: string; // ID da entidade relacionada (NT, item, etc.)
 };
 
@@ -55,6 +55,7 @@ type NotificationContextType = {
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  removeNotification: (id: string) => void;
   clearNotifications: () => void;
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -301,7 +302,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           addNotification({
             title: `Item ${itemData.status}`,
             message: `${payerName} marcou: ${itemData.code}${itemDesc} como ${statusText}`,
-            type: 'item_updated',
+            type: 'item_paid',
             entityId: itemId,
           });
           playNotificationSound('subtle'); // Som discreto para itens pagos
@@ -467,6 +468,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       prev.map(notif => ({ ...notif, read: true }))
     );
   };
+
+  // Remover uma notificação individual
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
   // Limpar todas as notificações
   const clearNotifications = () => {
     setNotifications([]);
@@ -516,6 +523,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     addNotification,
     markAsRead,
     markAllAsRead,
+    removeNotification,
     clearNotifications,
     notificationsEnabled,
     setNotificationsEnabled,
