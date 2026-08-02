@@ -91,6 +91,11 @@ export function TurnoColumn({
   const pdpaProg = pdpaItems.reduce((a, c) => a + c.prog, 0);
   const pdpaPct = pdpaProg > 0 ? Math.min(Math.round((pdpaReal / pdpaProg) * 100), 100) : 0;
 
+  // Distribui o espaço vertical entre o quadro de Ordens e o de PD/PA
+  // proporcionalmente à quantidade de itens de cada um, para aproveitar melhor a tela.
+  const ordensWeight = totalOrdens + 1;
+  const pdpaWeight = pdpaItems.length + 1;
+
   const handleDragStart = (e: React.DragEvent, item: ProductionItem) => {
     const payload: DragPayload = { itemId: item.id, tipo: item.tipo, via: item.via };
     e.dataTransfer.setData('application/json', JSON.stringify(payload));
@@ -144,14 +149,14 @@ export function TurnoColumn({
           onMouseLeave={() => setHoveredCard(null)}
           onClick={() => onItemClick(item)}
           className={cn(
-            'p-2.5 rounded-lg border cursor-pointer transition-all duration-150 select-none group flex flex-col gap-1 shadow-2xs hover:shadow-xs',
+            'p-2.5 rounded-md border border-l-4 cursor-pointer transition-colors duration-150 select-none group flex flex-col gap-1',
             item.locked
-              ? 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60 opacity-85'
+              ? 'bg-amber-50 dark:bg-amber-950/20 border-slate-200 dark:border-border/80 border-l-amber-500 opacity-90'
               : completo
-              ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-900/60'
+              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
               : emAndamento
-              ? 'bg-sky-50/40 dark:bg-sky-950/10 border-sky-300 dark:border-sky-900/50'
-              : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 hover:border-primary/40'
+              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-sky-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+              : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/40'
           )}
         >
           {/* Header do Card Expandido */}
@@ -240,12 +245,12 @@ export function TurnoColumn({
             : `${item.produto}${familia ? ` · ${familia}` : ''}${codigoSA ? ` · SA: ${codigoSA}` : ''}`
         }
         className={cn(
-          'flex items-center gap-1.5 px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-150 select-none group',
+          'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none group',
           item.locked
-            ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60 opacity-80 cursor-not-allowed'
+            ? 'bg-amber-50 dark:bg-amber-950/20 border-slate-200 dark:border-border/80 border-l-amber-500 opacity-80 cursor-not-allowed'
             : completo
-            ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60 hover:shadow-2xs'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-2xs active:cursor-grabbing shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30 active:cursor-grabbing'
         )}
       >
         <div className="flex items-center gap-0.5 shrink-0">
@@ -293,10 +298,10 @@ export function TurnoColumn({
         onDragStart={(e) => handleDragStart(e, item)}
         onClick={() => onItemClick(item)}
         className={cn(
-          'flex items-center gap-1.5 px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-150 select-none',
+          'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none',
           completo
-            ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60 hover:shadow-2xs'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-2xs shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30'
         )}
       >
         {completo && <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">✓</span>}
@@ -347,7 +352,7 @@ export function TurnoColumn({
     const totalP = list.reduce((a, c) => a + c.prog, 0);
 
     return (
-      <div className={cn('px-2.5 py-2', isAuto ? 'bg-violet-50/40 dark:bg-violet-950/10' : 'bg-amber-50/40 dark:bg-amber-950/10')}>
+      <div className={cn('px-2.5 py-2 h-full', isAuto ? 'bg-violet-50 dark:bg-violet-950/10' : 'bg-amber-50 dark:bg-amber-950/10')}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
             {isAuto
@@ -410,49 +415,49 @@ export function TurnoColumn({
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-card border border-slate-200 dark:border-border/80 rounded-2xl shadow-sm flex flex-col overflow-hidden h-full">
+    <div className="bg-white dark:bg-card border border-slate-300 dark:border-border rounded-lg shadow-sm flex flex-col overflow-hidden h-full">
 
       {/* ── Header Principal do Quadro (KPI do Turno com números ampliados) ── */}
-      <div className="bg-primary text-primary-foreground px-3.5 py-2.5 flex items-center justify-between shrink-0">
+      <div className="bg-primary text-primary-foreground px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-black/10">
         <div className="flex items-center gap-2">
           <span className="font-black text-base tracking-wide">{turnoLabels[turno]}</span>
           {totalOrdens > 0 && (
-            <Badge variant="outline" className="text-[10px] font-extrabold text-primary-foreground/90 border-primary-foreground/30 bg-white/10 px-2 py-0.5">
+            <span className="text-[10px] font-extrabold text-white bg-black/20 rounded px-2 py-0.5">
               {totalOrdens} {totalOrdens === 1 ? 'ordem' : 'ordens'}
-            </Badge>
+            </span>
           )}
         </div>
 
         {/* KPIs com fontes maiores e mais visíveis */}
         <div className="flex items-center gap-2">
           {totalOrdens > 0 ? (
-            <div className="flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-lg border border-white/20" title="KPI Ordens: Realizado vs Programado">
-              <span className="text-xs font-bold opacity-90">Ordens:</span>
-              <span className="text-sm font-black leading-none tabular-nums text-white">{totalReal}</span>
-              <span className="text-xs font-bold opacity-80 leading-none tabular-nums">/{totalProg}</span>
-              <Badge className="ml-1 text-[10px] font-black px-1.5 py-0 bg-white text-primary">
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-md" title="KPI Ordens: Realizado vs Programado">
+              <span className="text-xs font-bold text-primary/60">Ordens:</span>
+              <span className="text-sm font-black leading-none tabular-nums text-primary">{totalReal}</span>
+              <span className="text-xs font-bold text-primary/50 leading-none tabular-nums">/{totalProg}</span>
+              <span className="ml-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-primary text-white">
                 {totalPct}%
-              </Badge>
+              </span>
             </div>
           ) : (
             <span className="text-xs font-semibold opacity-70">Sem ordens</span>
           )}
 
-          <div className="flex items-center gap-1.5 bg-emerald-500/30 px-2.5 py-1 rounded-lg border border-emerald-400/30" title="KPI Pesagens PD/PA no turno">
-            <span className="text-xs font-bold text-emerald-200">PD/PA:</span>
+          <div className="flex items-center gap-1.5 bg-emerald-700 px-2.5 py-1 rounded-md" title="KPI Pesagens PD/PA no turno">
+            <span className="text-xs font-bold text-emerald-100">PD/PA:</span>
             <span className="text-sm font-black text-white leading-none tabular-nums">{pdpaReal}</span>
-            <span className="text-xs font-bold text-emerald-100/90 leading-none tabular-nums">/{pdpaProg}</span>
+            <span className="text-xs font-bold text-emerald-100 leading-none tabular-nums">/{pdpaProg}</span>
             {pdpaProg > 0 && (
-              <span className="text-[9.5px] font-black text-emerald-200 ml-0.5">({pdpaPct}%)</span>
+              <span className="text-[9.5px] font-black text-white bg-emerald-800 rounded px-1 ml-0.5">{pdpaPct}%</span>
             )}
           </div>
         </div>
       </div>
 
       {/* ── Subheader de Indicadores por Via (Números ampliados) ── */}
-      <div className="grid grid-cols-2 border-b border-slate-200 dark:border-border/80 bg-white dark:bg-card shrink-0">
+      <div className="grid grid-cols-2 border-b border-slate-300 dark:border-border shrink-0">
         {/* KPI Via Úmida */}
-        <div className="flex items-center justify-between px-3 py-2 border-r border-slate-200 dark:border-border/80">
+        <div className="flex items-center justify-between px-3 py-2 border-r border-slate-300 dark:border-border bg-sky-50 dark:bg-sky-950/20">
           <div className="flex items-center gap-1.5 min-w-0">
             <Droplets className="h-4 w-4 text-sky-500 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
@@ -480,7 +485,7 @@ export function TurnoColumn({
         </div>
 
         {/* KPI Via Seca */}
-        <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-amber-50 dark:bg-amber-950/20">
           <div className="flex items-center gap-1.5 min-w-0">
             <Wind className="h-4 w-4 text-amber-500 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
@@ -508,9 +513,12 @@ export function TurnoColumn({
         </div>
       </div>
 
-      {/* ── Zonas de Drop das Ordens (Scroll Interno) ── */}
-      <div className="grid grid-cols-2 flex-1 overflow-hidden min-h-0 bg-slate-50 dark:bg-muted/10">
-        <div className="border-r border-slate-200 dark:border-border/80 overflow-y-auto overscroll-contain">
+      {/* ── Zonas de Drop das Ordens (Scroll Interno, altura proporcional à quantidade) ── */}
+      <div
+        className="grid grid-cols-2 overflow-hidden min-h-0 bg-slate-100 dark:bg-muted/10"
+        style={{ flexGrow: ordensWeight, flexBasis: 0, minHeight: 90 }}
+      >
+        <div className="border-r border-slate-300 dark:border-border overflow-y-auto overscroll-contain">
           {viaDropZone('UMIDA', umida)}
         </div>
         <div className="overflow-y-auto overscroll-contain">
@@ -519,7 +527,7 @@ export function TurnoColumn({
       </div>
 
       {/* ── Rodapé KPI de Pesagem Direta & Automática com números ampliados ── */}
-      <div className="bg-emerald-50/80 dark:bg-emerald-950/20 px-3 py-1.5 border-t border-b border-emerald-200/80 dark:border-emerald-900/40 flex items-center justify-between shrink-0">
+      <div className="bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 border-t border-b border-emerald-200 dark:border-emerald-900/60 flex items-center justify-between shrink-0">
         <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
           <Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           Entregas PD/PA:
@@ -535,10 +543,13 @@ export function TurnoColumn({
         </div>
       </div>
 
-      {/* ── Pesagens Automática & Direta (Scroll Interno) ── */}
-      <div className="flex flex-col divide-y divide-slate-200 dark:divide-border/80 shrink-0 max-h-[260px] overflow-y-auto overscroll-contain">
-        {extraDropZone('auto', auto, 'Pesagem Automática')}
-        {extraDropZone('direta', direta, 'Pesagem Direta')}
+      {/* ── Pesagens Automática & Direta (lado a lado, altura proporcional à quantidade) ── */}
+      <div
+        className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-border/80 overflow-hidden min-h-0"
+        style={{ flexGrow: pdpaWeight, flexBasis: 0, minHeight: 70, maxHeight: 320 }}
+      >
+        <div className="overflow-y-auto overscroll-contain">{extraDropZone('auto', auto, 'Automática')}</div>
+        <div className="overflow-y-auto overscroll-contain">{extraDropZone('direta', direta, 'Direta')}</div>
       </div>
     </div>
   );

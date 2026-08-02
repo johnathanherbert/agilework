@@ -297,7 +297,7 @@ export default function ProducaoPage() {
         <Sidebar />
         <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 overflow-hidden">
           <Topbar />
-          <main className="flex-1 flex flex-col overflow-hidden px-6 pt-4 pb-3 gap-3">
+          <main className="flex-1 flex flex-col overflow-hidden px-5 pt-3 pb-2 gap-2">
             {/* ── Topbar Compacto e Limpo ── */}
             <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
@@ -314,13 +314,13 @@ export default function ProducaoPage() {
 
               {/* Indicadores Globais Limpos */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-full shadow-2xs">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-card border border-slate-300 dark:border-border rounded-md">
                   <span className="text-[11px] font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
                   <span className="text-sm font-black text-primary tabular-nums">{totaisGerais.real}</span>
                   <span className="text-xs text-slate-400 font-bold">/{totaisGerais.prog}</span>
                 </div>
 
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-full shadow-2xs">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-md">
                   <span className="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400 mr-0.5">PD/PA:</span>
                   <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{totaisPDPA.real}</span>
                   <span className="text-xs text-emerald-700/70 dark:text-emerald-400/70 font-bold">/{totaisPDPA.prog}</span>
@@ -356,7 +356,7 @@ export default function ProducaoPage() {
                   type="button"
                   variant="default"
                   size="sm"
-                  className="gap-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs h-8"
+                  className="gap-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground h-8"
                   onClick={() => setShowHeijunka(true)}
                   title="Fechar dia de produção e atualizar dashboard"
                 >
@@ -367,7 +367,7 @@ export default function ProducaoPage() {
             </div>
 
             {/* ── Barra Única de Controles de Exibição & Filtro ── */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5 bg-white dark:bg-card border border-slate-200 dark:border-border/80 p-2 rounded-xl shadow-2xs shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 bg-white dark:bg-card border border-slate-300 dark:border-border px-2.5 py-1.5 rounded-lg shrink-0">
               {/* Seletor de Visibilidade dos Turnos */}
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold uppercase text-slate-400 px-1">Ocultar/Exibir Turnos:</span>
@@ -473,13 +473,13 @@ export default function ProducaoPage() {
               </div>
 
               {loading ? (
-                <div className={cn('grid gap-4 flex-1 pb-2 print-grid', gridColumnsClass)}>
+                <div className={cn('grid gap-3 flex-1 pb-2 print-grid', gridColumnsClass)}>
                   {visibleTurnos.map((t) => (
-                    <div key={t} className="rounded-2xl bg-card border border-border/80 animate-pulse print-col" />
+                    <div key={t} className="rounded-lg bg-card border border-border animate-pulse print-col" />
                   ))}
                 </div>
               ) : (
-                <div className={cn('grid gap-4 flex-1 min-h-0 pb-2 print-grid', gridColumnsClass)}>
+                <div className={cn('grid gap-3 flex-1 min-h-0 pb-2 print-grid', gridColumnsClass)}>
                   {visibleTurnos.map((turno) => (
                     <div key={turno} className="print-col min-h-0 flex flex-col">
                       <TurnoColumn
