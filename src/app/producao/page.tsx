@@ -293,13 +293,13 @@ export default function ProducaoPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-slate-100 dark:bg-gray-900">
+      <div className="flex min-h-screen sm:h-screen bg-slate-100 dark:bg-gray-900">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 overflow-hidden">
+        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 overflow-y-auto sm:overflow-hidden">
           <Topbar />
-          <main className="flex-1 flex flex-col overflow-hidden px-5 pt-3 pb-2 gap-2">
+          <main className="flex-1 flex flex-col overflow-visible sm:overflow-hidden px-3 sm:px-5 pt-3 pb-3 sm:pb-2 gap-2">
             {/* ── Topbar Compacto e Limpo ── */}
-            <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shrink-0">
                   <Factory className="h-5 w-5 text-primary-foreground" />
@@ -313,7 +313,7 @@ export default function ProducaoPage() {
               </div>
 
               {/* Indicadores Globais Limpos */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-card border border-slate-300 dark:border-border rounded-md">
                   <span className="text-[11px] font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
                   <span className="text-sm font-black text-primary tabular-nums">{totaisGerais.real}</span>
@@ -367,15 +367,15 @@ export default function ProducaoPage() {
             </div>
 
             {/* ── Barra Única de Controles de Exibição & Filtro ── */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5 bg-white dark:bg-card border border-slate-300 dark:border-border px-2.5 py-1.5 rounded-lg shrink-0">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2.5 bg-white dark:bg-card border border-slate-300 dark:border-border px-2.5 py-1.5 rounded-lg shrink-0">
               {/* Seletor de Visibilidade dos Turnos */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase text-slate-400 px-1">Ocultar/Exibir Turnos:</span>
+              <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-2.5 px-2.5 sm:mx-0 sm:px-0">
+                <span className="text-[10px] font-bold uppercase text-slate-400 px-1 shrink-0 hidden sm:inline">Ocultar/Exibir Turnos:</span>
                 <button
                   type="button"
                   onClick={() => selectOnlyTurno('all')}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all',
+                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0',
                     visibleTurnos.length === 3
                       ? 'bg-primary text-primary-foreground'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -384,7 +384,7 @@ export default function ProducaoPage() {
                   Todos
                 </button>
 
-                <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" />
 
                 {([3, 1, 2] as ProductionTurno[]).map((t) => {
                   const isVisible = visibleTurnos.includes(t);
@@ -394,7 +394,7 @@ export default function ProducaoPage() {
                       type="button"
                       onClick={() => toggleTurnoVisibility(t)}
                       className={cn(
-                        'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border',
+                        'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border shrink-0',
                         isVisible
                           ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
                           : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
@@ -408,9 +408,9 @@ export default function ProducaoPage() {
               </div>
 
               {/* Filtros Rápido + Modo de Card */}
-              <div className="flex items-center gap-2 flex-wrap ml-auto">
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
                 {/* Busca por texto */}
-                <div className="relative w-44 sm:w-56">
+                <div className="relative w-full sm:w-56">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     value={searchQuery}
@@ -434,7 +434,7 @@ export default function ProducaoPage() {
                   value={selectedFamily}
                   onValueChange={(val) => setSelectedFamily(val)}
                 >
-                  <SelectTrigger className="h-7 text-xs w-36 bg-slate-50 dark:bg-muted/40 border-slate-200 dark:border-border/80">
+                  <SelectTrigger className="h-7 text-xs flex-1 sm:flex-none min-w-[110px] sm:w-36 bg-slate-50 dark:bg-muted/40 border-slate-200 dark:border-border/80">
                     <SelectValue placeholder="Todas as Famílias" />
                   </SelectTrigger>
                   <SelectContent>
@@ -451,7 +451,7 @@ export default function ProducaoPage() {
                 <button
                   type="button"
                   onClick={() => setCardDetailMode(cardDetailMode === 'expanded' ? 'compact' : 'expanded')}
-                  className="px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-border/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
+                  className="px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-border/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 shrink-0"
                   title="Alternar entre modo compacto e expandido dos cards"
                 >
                   {isExpandedView ? <Minimize2 className="h-3 w-3 text-primary" /> : <Maximize2 className="h-3 w-3 text-primary" />}
@@ -475,7 +475,7 @@ export default function ProducaoPage() {
               {loading ? (
                 <div className={cn('grid gap-3 flex-1 pb-2 print-grid', gridColumnsClass)}>
                   {visibleTurnos.map((t) => (
-                    <div key={t} className="rounded-lg bg-card border border-border animate-pulse print-col" />
+                    <div key={t} className="rounded-lg bg-card border border-border animate-pulse print-col min-h-[280px] sm:min-h-0" />
                   ))}
                 </div>
               ) : (

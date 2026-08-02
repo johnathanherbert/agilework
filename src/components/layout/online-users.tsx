@@ -18,11 +18,12 @@ import {
   updateDoc,
   doc as firestoreDoc
 } from 'firebase/firestore';
-import { Users, Circle, ArrowLeft, Send, MessageCircle } from 'lucide-react';
+import { Users, Circle, ArrowLeft, Send, MessageCircle, WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioNotification } from '@/hooks/useAudioNotification';
+import { toast } from 'react-hot-toast';
 import {
   Popover,
   PopoverContent,
@@ -61,6 +62,9 @@ export function OnlineUsers() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [networkOnline, setNetworkOnline] = useState(true);
+  const [messagesError, setMessagesError] = useState(false);
+  const [retryTick, setRetryTick] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageCountRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +238,31 @@ Para corrigir, vá ao Firebase Console:
     };
   }, [user]);
 
+  // Detecta perda/retomada de conexão com a internet, para dar feedback
+  // claro ao usuário em vez de falhar silenciosamente ao enviar mensagens.
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+
+    setNetworkOnline(navigator.onLine);
+
+    const handleOnline = () => {
+      setNetworkOnline(true);
+      toast.success('Conexão restabelecida.');
+    };
+    const handleOffline = () => {
+      setNetworkOnline(false);
+      toast.error('Você está offline. As mensagens não serão enviadas até a conexão voltar.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // Listen to unread message counts
   useEffect(() => {
     if (!user) return;
@@ -244,17 +273,23 @@ Para corrigir, vá ao Firebase Console:
       where('read', '==', false)
     );
 
-    const unsubscribe = onSnapshot(unreadQuery, (snapshot) => {
-      const counts: Record<string, number> = {};
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const senderId = data.senderId;
-        counts[senderId] = (counts[senderId] || 0) + 1;
-      });
+    const unsubscribe = onSnapshot(
+      unreadQuery,
+      (snapshot) => {
+        const counts: Record<string, number> = {};
 
-      setUnreadCounts(counts);
-    });
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const senderId = data.senderId;
+          counts[senderId] = (counts[senderId] || 0) + 1;
+        });
+
+        setUnreadCounts(counts);
+      },
+      (error) => {
+        console.error('Erro ao carregar contagem de mensagens não lidas:', error);
+      }
+    );
 
     return () => unsubscribe();
   }, [user]);
@@ -277,48 +312,57 @@ Para corrigir, vá ao Firebase Console:
       )
     );
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const msgs: ChatMessage[] = [];
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        msgs.push({
-          id: doc.id,
-          senderId: data.senderId,
-          senderName: data.senderName,
-          receiverId: data.receiverId,
-          receiverName: data.receiverName,
-          message: data.message,
-          timestamp: data.timestamp?.toDate() || new Date(),
-          read: data.read || false
+    const unsubscribe = onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        setMessagesError(false);
+        const msgs: ChatMessage[] = [];
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          msgs.push({
+            id: doc.id,
+            senderId: data.senderId,
+            senderName: data.senderName,
+            receiverId: data.receiverId,
+            receiverName: data.receiverName,
+            message: data.message,
+            timestamp: data.timestamp?.toDate() || new Date(),
+            read: data.read || false
+          });
         });
-      });
 
-      const sortedMessages = msgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-      
-      // Play sound for new incoming messages
-      if (lastMessageCountRef.current > 0 && sortedMessages.length > lastMessageCountRef.current) {
-        const lastMessage = sortedMessages[sortedMessages.length - 1];
-        if (lastMessage.senderId !== user.uid) {
-          playSound({ enabled: true, volume: 0.5, soundType: 'subtle' });
+        const sortedMessages = msgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        
+        // Play sound for new incoming messages
+        if (lastMessageCountRef.current > 0 && sortedMessages.length > lastMessageCountRef.current) {
+          const lastMessage = sortedMessages[sortedMessages.length - 1];
+          if (lastMessage.senderId !== user.uid) {
+            playSound({ enabled: true, volume: 0.5, soundType: 'subtle' });
+          }
         }
+        
+        lastMessageCountRef.current = sortedMessages.length;
+        setMessages(sortedMessages);
+
+        // Mark messages as read
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (!data.read && data.receiverId === user.uid) {
+            updateDoc(firestoreDoc(db, 'private_messages', doc.id), { read: true })
+              .catch(error => console.error('Error marking as read:', error));
+          }
+        });
+      },
+      (error) => {
+        console.error('Erro ao carregar mensagens:', error);
+        setMessagesError(true);
+        toast.error('Não foi possível carregar as mensagens.');
       }
-      
-      lastMessageCountRef.current = sortedMessages.length;
-      setMessages(sortedMessages);
-
-      // Mark messages as read
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.read && data.receiverId === user.uid) {
-          updateDoc(firestoreDoc(db, 'private_messages', doc.id), { read: true })
-            .catch(error => console.error('Error marking as read:', error));
-        }
-      });
-    });
+    );
 
     return () => unsubscribe();
-  }, [user, selectedUser, playSound]);
+  }, [user, selectedUser, playSound, retryTick]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -327,30 +371,62 @@ Para corrigir, vá ao Firebase Console:
 
   if (!user) return null;
 
+  const MAX_MESSAGE_LENGTH = 500;
+  const MAX_SEND_RETRIES = 2;
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Tenta enviar a mensagem com algumas repetições automáticas (com atraso
+  // crescente) antes de desistir, para absorver falhas transitórias de rede.
+  const sendMessageWithRetry = async (payload: Record<string, unknown>, attempt = 0): Promise<void> => {
+    try {
+      await addDoc(collection(db, 'private_messages'), payload);
+    } catch (error) {
+      if (attempt < MAX_SEND_RETRIES) {
+        await sleep(600 * (attempt + 1));
+        return sendMessageWithRetry(payload, attempt + 1);
+      }
+      throw error;
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newMessage.trim() || !user || !userData || !selectedUser) return;
+
+    const messageText = newMessage.trim();
+    if (!messageText || !user || !userData || !selectedUser || isSending) return;
+
+    if (messageText.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Mensagem muito longa (m\u00e1ximo de ${MAX_MESSAGE_LENGTH} caracteres).`);
+      return;
+    }
+
+    if (!networkOnline) {
+      toast.error('Sem conexão com a internet. A mensagem não foi enviada.');
+      return;
+    }
 
     setIsSending(true);
-    const messageText = newMessage.trim();
     setNewMessage('');
-    
-    try {
-      await addDoc(collection(db, 'private_messages'), {
-        senderId: user.uid,
-        senderName: userData.name || user.email?.split('@')[0] || 'Usuário',
-        receiverId: selectedUser.id,
-        receiverName: selectedUser.name,
-        message: messageText,
-        timestamp: serverTimestamp(),
-        createdAt: new Date(),
-        read: false
-      });
 
+    const payload = {
+      senderId: user.uid,
+      senderName: userData.name || user.email?.split('@')[0] || 'Usuário',
+      receiverId: selectedUser.id,
+      receiverName: selectedUser.name,
+      message: messageText,
+      timestamp: serverTimestamp(),
+      createdAt: new Date(),
+      read: false
+    };
+
+    try {
+      await sendMessageWithRetry(payload);
       playSound({ enabled: true, volume: 0.3, soundType: 'subtle' });
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error('Falha ao enviar a mensagem. Tente novamente.');
+      // Restaura o texto para que o usuário não perca o que digitou
       setNewMessage(messageText);
     } finally {
       setIsSending(false);
@@ -632,6 +708,28 @@ Para corrigir, vá ao Firebase Console:
         {/* Chat view */}
         {view === 'chat' && (
           <div className="flex flex-col h-[450px]">
+            {!networkOnline && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                <WifiOff className="w-3.5 h-3.5 shrink-0" />
+                Você está offline. As mensagens não serão enviadas até a conexão voltar.
+              </div>
+            )}
+            {networkOnline && messagesError && (
+              <div className="flex items-center justify-between gap-2 px-4 py-2 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-xs font-semibold">
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  Erro ao carregar mensagens.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setRetryTick((v) => v + 1)}
+                  className="flex items-center gap-1 underline hover:no-underline shrink-0"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Tentar novamente
+                </button>
+              </div>
+            )}
             <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-900">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
@@ -686,15 +784,15 @@ Para corrigir, vá ao Firebase Console:
                   ref={inputRef}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  disabled={isSending}
+                  placeholder={networkOnline ? 'Digite sua mensagem...' : 'Sem conexão...'}
+                  disabled={isSending || !networkOnline}
                   className="flex-1 rounded-xl border-2 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                   maxLength={500}
                   autoFocus
                 />
                 <Button
                   type="submit"
-                  disabled={!newMessage.trim() || isSending}
+                  disabled={!newMessage.trim() || isSending || !networkOnline}
                   className="rounded-xl px-4 bg-primary hover:bg-primary/90 text-white"
                 >
                   {isSending ? (

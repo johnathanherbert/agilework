@@ -415,7 +415,7 @@ export function TurnoColumn({
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-slate-300 dark:border-border rounded-lg shadow-sm flex flex-col overflow-hidden h-full">
+    <div className="bg-white dark:bg-card border border-slate-300 dark:border-border rounded-lg shadow-sm flex flex-col overflow-hidden h-auto sm:h-full">
 
       {/* ── Header Principal do Quadro (KPI do Turno com números ampliados) ── */}
       <div className="bg-primary text-primary-foreground px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-black/10">
@@ -455,9 +455,9 @@ export function TurnoColumn({
       </div>
 
       {/* ── Subheader de Indicadores por Via (Números ampliados) ── */}
-      <div className="grid grid-cols-2 border-b border-slate-300 dark:border-border shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-b border-slate-300 dark:border-border shrink-0">
         {/* KPI Via Úmida */}
-        <div className="flex items-center justify-between px-3 py-2 border-r border-slate-300 dark:border-border bg-sky-50 dark:bg-sky-950/20">
+        <div className="flex items-center justify-between px-3 py-2 border-b sm:border-b-0 sm:border-r border-slate-300 dark:border-border bg-sky-50 dark:bg-sky-950/20">
           <div className="flex items-center gap-1.5 min-w-0">
             <Droplets className="h-4 w-4 text-sky-500 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
@@ -515,10 +515,10 @@ export function TurnoColumn({
 
       {/* ── Zonas de Drop das Ordens (Scroll Interno, altura proporcional à quantidade) ── */}
       <div
-        className="grid grid-cols-2 overflow-hidden min-h-0 bg-slate-100 dark:bg-muted/10"
+        className="grid grid-cols-1 sm:grid-cols-2 overflow-hidden min-h-0 bg-slate-100 dark:bg-muted/10"
         style={{ flexGrow: ordensWeight, flexBasis: 0, minHeight: 90 }}
       >
-        <div className="border-r border-slate-300 dark:border-border overflow-y-auto overscroll-contain">
+        <div className="border-b sm:border-b-0 sm:border-r border-slate-300 dark:border-border overflow-y-auto overscroll-contain">
           {viaDropZone('UMIDA', umida)}
         </div>
         <div className="overflow-y-auto overscroll-contain">
@@ -545,11 +545,11 @@ export function TurnoColumn({
 
       {/* ── Pesagens Automática & Direta (lado a lado, altura proporcional à quantidade) ── */}
       <div
-        className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-border/80 overflow-hidden min-h-0"
+        className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-slate-200 dark:divide-border/80 overflow-hidden min-h-0"
         style={{ flexGrow: pdpaWeight, flexBasis: 0, minHeight: 70, maxHeight: 320 }}
       >
-        <div className="overflow-y-auto overscroll-contain">{extraDropZone('auto', auto, 'Automática')}</div>
-        <div className="overflow-y-auto overscroll-contain">{extraDropZone('direta', direta, 'Direta')}</div>
+        <div className="overflow-y-auto overscroll-contain max-h-[160px] sm:max-h-none">{extraDropZone('auto', auto, 'Automática')}</div>
+        <div className="overflow-y-auto overscroll-contain max-h-[160px] sm:max-h-none">{extraDropZone('direta', direta, 'Direta')}</div>
       </div>
     </div>
   );

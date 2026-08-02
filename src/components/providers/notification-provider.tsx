@@ -8,6 +8,15 @@ import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNo
 import { PRODUCTION_COLLECTION } from '@/lib/production-helpers';
 import toast from 'react-hot-toast';
 
+// Gera um ID único mesmo em ambientes sem crypto.randomUUID (contexto não
+// seguro / HTTP, navegadores antigos), que causava falha silenciosa das notificações.
+const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
+};
+
 // Helper function to get user display name
 const getUserDisplayName = (user: any): string => {
   if (user?.user_metadata?.name) {
@@ -361,7 +370,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {
-    const operationId = crypto.randomUUID();
+    const operationId = generateId();
     const operation: BatchOperation = {
       id: operationId,
       type,
@@ -435,7 +444,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     
     const newNotification: Notification = {
       ...notification,
-      id: crypto.randomUUID(),
+      id: generateId(),
       createdAt: new Date(),
       read: false,
     };
