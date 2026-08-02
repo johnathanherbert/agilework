@@ -14,6 +14,7 @@ import { Topbar } from '@/components/layout/topbar';
 import ProtectedRoute from '@/components/auth/protected-route';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { getHeijunkaHistory, clearHeijunkaHistory } from '@/lib/heijunka-helpers';
+import { HeijunkaDetailsModal } from '@/components/producao/heijunka-details-modal';
 import { HeijunkaSnapshot } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
@@ -22,18 +23,14 @@ type TimeFilter = '7' | '15' | '30' | 'month';
 
 // ── Helper: calcula métricas derivadas por snapshot ──────────────────────────
 function enrichSnapshot(s: HeijunkaSnapshot) {
-  // Usa os novos campos de volume (ou faz fallback para os totais de cards caso seja um snapshot antigo)
-  const manualVol = s.volManual ?? s.totalManual ?? s.totalOrdens;
-  const paVol = s.volPA ?? s.totalPA;
-  const pdVol = s.volPD ?? s.totalPD;
-  const ordensComRefVol = s.volOrdensComRef ?? (s.totalOrdens - (s.totalManual ?? s.totalOrdens));
+  const paVol = s.volPA ?? 0;
+  const pdVol = s.volPD ?? 0;
+  const pdpaCount = paVol + pdVol; // Volume total PD/PA
 
-  const manual = manualVol;
-  const pdpaCount = paVol + pdVol + ordensComRefVol; // Total de volume PD/PA
+  const totalAll = s.totalRealizado > 0 ? s.totalRealizado : (s.volManual ?? 0) + pdpaCount;
+  const manual = s.volManual ?? Math.max(0, totalAll - pdpaCount);
 
-  // Total geral
-  const totalAll = manual + pdpaCount;
-  const pdpaPercent = totalAll > 0 ? Math.round((pdpaCount / totalAll) * 100) : 0;
+  const pdpaPercent = totalAll > 0 ? Math.min(100, Math.round((pdpaCount / totalAll) * 100)) : 0;
 
   const d = new Date(s.date + 'T00:00:00');
   const dayLabel = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -56,19 +53,18 @@ function generateMockHistory(): HeijunkaSnapshot[] {
     const metaDiaria = 2500 + Math.round(Math.random() * 1000);
     const totalRealizado = Math.round(metaDiaria * (0.82 + Math.random() * 0.25));
     
-    // Distribuição dos volumes
-    const volOrdensComRef = Math.round(totalRealizado * (0.1 + Math.random() * 0.15));
-    const volPA = Math.round(totalRealizado * (0.2 + Math.random() * 0.2));
-    const volPD = Math.round(totalRealizado * (0.15 + Math.random() * 0.15));
-    const volManual = totalRealizado - volOrdensComRef - volPA - volPD;
+    // Distribuição dos volumes sem duplicação
+    const volPA = Math.round(totalRealizado * (0.25 + Math.random() * 0.2));
+    const volPD = Math.round(totalRealizado * (0.2 + Math.random() * 0.15));
+    const volPDPA = volPA + volPD;
+    const volManual = Math.max(0, totalRealizado - volPDPA);
 
     const totalUmida = Math.round(totalRealizado * (0.55 + Math.random() * 0.1));
     const totalSeca = totalRealizado - totalUmida;
 
-    const totalOrdens = 120 + Math.round(Math.random() * 80); // Contagem figurativa
+    const totalOrdens = 120 + Math.round(Math.random() * 80);
     const totalPA = Math.round(totalOrdens * 0.25);
     const totalPD = Math.round(totalOrdens * 0.25);
-    const totalManualCount = Math.round(totalOrdens * 0.5);
 
     const familiasMap: Record<string, number> = {};
     let remaining = totalRealizado;
@@ -84,7 +80,7 @@ function generateMockHistory(): HeijunkaSnapshot[] {
       date: dateStr,
       metaDiaria,
       totalOrdens,
-      totalManual: totalManualCount,
+      totalManual: totalOrdens,
       totalUmida,
       totalSeca,
       totalPA,
@@ -92,13 +88,13 @@ function generateMockHistory(): HeijunkaSnapshot[] {
       volManual,
       volPA,
       volPD,
-      volOrdensComRef,
+      volOrdensComRef: 0,
       totalRealizado,
       totalProgramado: metaDiaria,
       turnos: {
-        '1': { ordens: Math.round(totalOrdens / 3), umida: Math.round(totalUmida / 3), seca: Math.round(totalSeca / 3), pa: Math.round(totalPA / 3), pd: Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.3), programado: Math.round(metaDiaria / 3) },
-        '2': { ordens: Math.round(totalOrdens / 3), umida: Math.round(totalUmida / 3), seca: Math.round(totalSeca / 3), pa: Math.round(totalPA / 3), pd: Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.35), programado: Math.round(metaDiaria / 3) },
-        '3': { ordens: totalOrdens - 2 * Math.round(totalOrdens / 3), umida: totalUmida - 2 * Math.round(totalUmida / 3), seca: totalSeca - 2 * Math.round(totalSeca / 3), pa: totalPA - 2 * Math.round(totalPA / 3), pd: totalPD - 2 * Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.35), programado: metaDiaria - 2 * Math.round(metaDiaria / 3) },
+        '1': { ordens: Math.round(totalOrdens / 3), umida: Math.round(totalUmida / 3), seca: Math.round(totalSeca / 3), pa: Math.round(totalPA / 3), pd: Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.3), programado: Math.round(metaDiaria / 3), volPA: Math.round(volPA * 0.3), volPD: Math.round(volPD * 0.3), volManual: Math.round(volManual * 0.3) },
+        '2': { ordens: Math.round(totalOrdens / 3), umida: Math.round(totalUmida / 3), seca: Math.round(totalSeca / 3), pa: Math.round(totalPA / 3), pd: Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.35), programado: Math.round(metaDiaria / 3), volPA: Math.round(volPA * 0.35), volPD: Math.round(volPD * 0.35), volManual: Math.round(volManual * 0.35) },
+        '3': { ordens: totalOrdens - 2 * Math.round(totalOrdens / 3), umida: totalUmida - 2 * Math.round(totalUmida / 3), seca: totalSeca - 2 * Math.round(totalSeca / 3), pa: totalPA - 2 * Math.round(totalPA / 3), pd: totalPD - 2 * Math.round(totalPD / 3), realizado: Math.round(totalRealizado * 0.35), programado: metaDiaria - 2 * Math.round(metaDiaria / 3), volPA: volPA - Math.round(volPA * 0.3) - Math.round(volPA * 0.35), volPD: volPD - Math.round(volPD * 0.3) - Math.round(volPD * 0.35), volManual: volManual - Math.round(volManual * 0.3) - Math.round(volManual * 0.35) },
       },
       familias: familiasMap,
       created_at: date.toISOString(),
@@ -115,9 +111,9 @@ const DailyTooltip = ({ active, payload, label }: any) => {
     <div className="bg-white dark:bg-card border border-border rounded-lg shadow-xl p-3 min-w-[170px]">
       <p className="font-bold text-foreground mb-2 pb-1.5 border-b border-border/50 text-sm">{label}</p>
       <div className="space-y-1 text-xs">
-        <p className="text-slate-500">Total: <span className="font-bold text-slate-800 dark:text-slate-200">{d?.totalAll}</span></p>
-        <p className="text-[#4ade80]">Manual: <span className="font-bold">{d?.manual}</span></p>
-        <p className="text-[#16a34a]">PD/PA: <span className="font-bold">{d?.pdpaCount}</span></p>
+        <p className="text-slate-500">Volume Total: <span className="font-bold text-slate-800 dark:text-slate-200">{d?.totalAll}</span></p>
+        <p className="text-[#4ade80]">Vol. Manual: <span className="font-bold">{d?.manual}</span></p>
+        <p className="text-[#16a34a]">Vol. PD/PA: <span className="font-bold">{d?.pdpaCount}</span></p>
         <p className="text-[#f97316] font-semibold">% PD/PA: <span className="font-bold">{d?.pdpaPercent}%</span></p>
       </div>
     </div>
@@ -132,9 +128,9 @@ const MonthlyTooltip = ({ active, payload, label }: any) => {
     <div className="bg-white dark:bg-card border border-border rounded-lg shadow-xl p-3 min-w-[170px]">
       <p className="font-bold text-foreground mb-2 pb-1.5 border-b border-border/50 text-sm capitalize">{label}</p>
       <div className="space-y-1 text-xs">
-        <p className="text-[#0066B3]">Total: <span className="font-bold">{d?.total}</span></p>
-        <p className="text-[#fb923c]">Manual: <span className="font-bold">{d?.manual}</span></p>
-        <p className="text-[#16a34a]">PD/PA: <span className="font-bold">{d?.pdpa}</span></p>
+        <p className="text-[#0066B3]">Volume Total: <span className="font-bold">{d?.total}</span></p>
+        <p className="text-[#fb923c]">Vol. Manual: <span className="font-bold">{d?.manual}</span></p>
+        <p className="text-[#16a34a]">Vol. PD/PA: <span className="font-bold">{d?.pdpa}</span></p>
         <p className="text-[#f97316] font-semibold">% PD/PA: <span className="font-bold">{d?.percent}%</span></p>
       </div>
     </div>
@@ -150,6 +146,7 @@ export default function HeijunkaPage() {
   const [clearing, setClearing] = useState(false);
   const [useMock, setUseMock] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('30');
+  const [selectedSnapshot, setSelectedSnapshot] = useState<HeijunkaSnapshot | null>(null);
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
   const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
@@ -217,7 +214,7 @@ export default function HeijunkaPage() {
   // ── Enriquece snapshots ──────────────────────────────────────────────────────
   const enriched = filteredHistory.map(enrichSnapshot);
 
-  // ── KPIs ────────────────────────────────────────────────────────────────────
+  // ── KPI Cards ───────────────────────────────────────────────────────────────
   const sorted = [...enriched].sort((a, b) => b.pdpaPercent - a.pdpaPercent);
   const recordAtual = sorted[0] ?? null;
   const recordAnterior = sorted[1] ?? null;
@@ -231,6 +228,7 @@ export default function HeijunkaPage() {
     pdpaCount: s.pdpaCount,
     pdpaPercent: s.pdpaPercent,
     totalAll: s.totalAll,
+    rawSnapshot: s,
   }));
 
   // ── Dados para gráfico mensal ────────────────────────────────────────────────
@@ -249,11 +247,11 @@ export default function HeijunkaPage() {
   // ── Tabela de ranking ─────────────────────────────────────────────────────────
   const rankingRows = sorted.slice(0, 10);
 
-  // ── Dados por turno (manual / PA / PD) ───────────────────────────────────────
+  // ── Dados por turno (volume manual / PA / PD) ───────────────────────────
   const turnoChartData = ['1', '2', '3'].map(t => {
-    const manual = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.ordens || 0), 0);
-    const pa     = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.pa    || 0), 0);
-    const pd     = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.pd    || 0), 0);
+    const manual = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.volManual ?? s.turnos[t]?.ordens ?? 0), 0);
+    const pa     = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.volPA ?? s.turnos[t]?.pa ?? 0), 0);
+    const pd     = filteredHistory.reduce((acc, s) => acc + (s.turnos[t]?.volPD ?? s.turnos[t]?.pd ?? 0), 0);
     return { name: `T${t}`, manual, pa, pd };
   });
 
@@ -280,7 +278,7 @@ export default function HeijunkaPage() {
                       <h1 className="text-lg font-black text-foreground tracking-tight">% PD/PA na Pesagem</h1>
                       {useMock && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded-full">MOCK</span>}
                     </div>
-                    <p className="text-xs text-muted-foreground">Acompanhamento de eficiência das pesagens automáticas e diretas</p>
+                    <p className="text-xs text-muted-foreground">Clique no gráfico ou tabela para visualizar e editar os detalhes das entregas.</p>
                   </div>
                 </div>
               </div>
@@ -338,7 +336,11 @@ export default function HeijunkaPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
                   {/* Recorde Atual */}
-                  <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm">
+                  <div
+                    onClick={() => recordAtual && setSelectedSnapshot(recordAtual)}
+                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-emerald-400 cursor-pointer transition-all"
+                    title="Clique para ver detalhes do recorde atual"
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                         <Trophy className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -350,13 +352,17 @@ export default function HeijunkaPage() {
                     </p>
                     {recordAtual && (
                       <p className="text-[11px] text-slate-400 mt-2">
-                        {recordAtual.dayLabel} · {recordAtual.pdpaCount} ordens PD/PA
+                        {recordAtual.dayLabel} · {recordAtual.pdpaCount} vol. PD/PA
                       </p>
                     )}
                   </div>
 
                   {/* Recorde Anterior */}
-                  <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm">
+                  <div
+                    onClick={() => recordAnterior && setSelectedSnapshot(recordAnterior)}
+                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-sky-400 cursor-pointer transition-all"
+                    title="Clique para ver detalhes do recorde anterior"
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
                         <Medal className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
@@ -368,13 +374,17 @@ export default function HeijunkaPage() {
                     </p>
                     {recordAnterior && (
                       <p className="text-[11px] text-slate-400 mt-2">
-                        {recordAnterior.dayLabel} · {recordAnterior.pdpaCount} ordens PD/PA
+                        {recordAnterior.dayLabel} · {recordAnterior.pdpaCount} vol. PD/PA
                       </p>
                     )}
                   </div>
 
                   {/* Maior Volume PD/PA */}
-                  <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm">
+                  <div
+                    onClick={() => maiorPdPa && setSelectedSnapshot(maiorPdPa)}
+                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-violet-400 cursor-pointer transition-all"
+                    title="Clique para ver detalhes do maior volume PD/PA"
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                         <Zap className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
@@ -392,7 +402,11 @@ export default function HeijunkaPage() {
                   </div>
 
                   {/* Maior Volume Total de Ordens */}
-                  <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm">
+                  <div
+                    onClick={() => maiorTotal && setSelectedSnapshot(maiorTotal)}
+                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-amber-400 cursor-pointer transition-all"
+                    title="Clique para ver detalhes do maior volume total"
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                         <Layers className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -417,7 +431,12 @@ export default function HeijunkaPage() {
                   <div className="lg:col-span-4 bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-sm font-bold text-foreground">Pesagem Diária — Ordens Manuais e Automáticas</h3>
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                          Pesagem Diária — Ordens Manuais e Automáticas
+                          <span className="text-[10px] font-normal text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                            Clique na barra para ver detalhes
+                          </span>
+                        </h3>
                         <p className="text-xs text-muted-foreground capitalize mt-0.5">{currentMonthLabel}</p>
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -426,9 +445,19 @@ export default function HeijunkaPage() {
                         <span className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-[#f97316] rounded" /> % PD/PA</span>
                       </div>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[300px] w-full cursor-pointer">
                       <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={dailyChartData} margin={{ top: 20, right: 40, left: -20, bottom: 0 }} barGap={0}>
+                        <ComposedChart
+                          data={dailyChartData}
+                          margin={{ top: 20, right: 40, left: -20, bottom: 0 }}
+                          barGap={0}
+                          onClick={(e) => {
+                            if (e && e.activePayload && e.activePayload.length) {
+                              const raw = e.activePayload[0].payload.rawSnapshot;
+                              if (raw) setSelectedSnapshot(raw);
+                            }
+                          }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={8} interval={dailyChartData.length > 20 ? 2 : 0} />
                           <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
@@ -462,7 +491,7 @@ export default function HeijunkaPage() {
                           <RechartsTooltip
                             cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: 12 }}
-                            formatter={(v: number, name: string) => [v, name === 'manual' ? 'Manual' : name === 'pa' ? 'P. Automática' : 'P. Direta']}
+                            formatter={(v: number, name: string) => [v, name === 'manual' ? 'Vol. Manual' : name === 'pa' ? 'Vol. P. Automática' : 'Vol. P. Direta']}
                           />
                           <Bar dataKey="manual" name="manual" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]}
                             label={{ position: 'insideLeft', fontSize: 10, fill: '#fff', formatter: (v: number) => v > 0 ? v : '' }} />
@@ -514,9 +543,12 @@ export default function HeijunkaPage() {
 
                 {/* ── Tabela de Ranking ─────────────────────────────────────── */}
                 <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 dark:border-border/50 flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    <h3 className="text-sm font-bold text-foreground">Pódio de desempenho por % PD/PA</h3>
+                  <div className="px-5 py-4 border-b border-slate-100 dark:border-border/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-amber-500" />
+                      <h3 className="text-sm font-bold text-foreground">Pódio de desempenho por % PD/PA</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Clique na linha para ver/editar os detalhes</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -536,10 +568,15 @@ export default function HeijunkaPage() {
                           const mesLabel = d.toLocaleString('pt-BR', { month: 'long' });
                           const isTop = idx === 0;
                           return (
-                            <tr key={row.id} className={cn(
-                              "transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30",
-                              isTop && "bg-emerald-50 dark:bg-emerald-950/20"
-                            )}>
+                            <tr
+                              key={row.id}
+                              onClick={() => setSelectedSnapshot(row)}
+                              className={cn(
+                                "transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer",
+                                isTop && "bg-emerald-50 dark:bg-emerald-950/20"
+                              )}
+                              title="Clique para ver ou editar entregas deste dia"
+                            >
                               <td className="px-5 py-3">
                                 <span className={cn(
                                   "inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black",
@@ -578,6 +615,23 @@ export default function HeijunkaPage() {
           </main>
         </div>
       </div>
+
+      <HeijunkaDetailsModal
+        open={selectedSnapshot !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedSnapshot(null);
+        }}
+        snapshot={selectedSnapshot}
+        isAdmin={isAdmin}
+        onSuccess={(updated) => {
+          if (updated) {
+            setFullHistory((prev) =>
+              prev.map((item) => (item.id === updated.id ? updated : item))
+            );
+          }
+          loadData();
+        }}
+      />
     </ProtectedRoute>
   );
 }

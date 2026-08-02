@@ -1,12 +1,25 @@
 "use client";
 
 import { useState } from 'react';
-import { Plus, Lock, GitBranch, GripVertical, Zap, Hand, Droplets, Wind, ClipboardList } from 'lucide-react';
+import { 
+  Plus, 
+  Lock, 
+  GitBranch, 
+  GripVertical, 
+  Zap, 
+  Hand, 
+  Droplets, 
+  Wind, 
+  ClipboardList,
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ProductionItem, ProductionTipo, ProductionTurno, ProductionVia } from '@/types';
+import { findWipRecipeByProduct, findWipRecipeByCode } from '@/lib/wip-recipes';
 
 interface DragPayload {
   itemId: string;
@@ -20,6 +33,7 @@ interface TurnoColumnProps {
   onItemClick: (item: ProductionItem) => void;
   onCreateClick: (tipo: ProductionTipo, via?: ProductionVia) => void;
   onMove: (itemId: string, destination: { turno: ProductionTurno; via?: ProductionVia }) => void;
+  isExpandedView?: boolean;
 }
 
 const turnoLabels: Record<ProductionTurno, string> = {
@@ -28,13 +42,13 @@ const turnoLabels: Record<ProductionTurno, string> = {
   3: '3º Turno',
 };
 
-/** Badge realizado/programado por item */
+/** Badge de progresso por item (Real / Prog) com números ampliados */
 function IndicadorRealProg({ real, prog }: { real: number; prog: number }) {
   const completo = prog > 0 && real >= prog;
   return (
     <Badge
       variant={completo ? 'success' : 'destructive'}
-      className="text-[10px] font-bold px-1.5 py-0 whitespace-nowrap shrink-0 tabular-nums leading-tight"
+      className="text-xs font-black px-2 py-0.5 whitespace-nowrap shrink-0 tabular-nums leading-tight shadow-2xs"
       title={`Realizado ${real} de ${prog} programado`}
     >
       {real}/{prog}
@@ -42,7 +56,14 @@ function IndicadorRealProg({ real, prog }: { real: number; prog: number }) {
   );
 }
 
-export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }: TurnoColumnProps) {
+export function TurnoColumn({
+  turno,
+  items,
+  onItemClick,
+  onCreateClick,
+  onMove,
+  isExpandedView = false,
+}: TurnoColumnProps) {
   const [dragOverZone, setDragOverZone] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
@@ -54,11 +75,21 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
 
   const umidaReal = umida.reduce((a, c) => a + c.real, 0);
   const umidaProg = umida.reduce((a, c) => a + c.prog, 0);
+  const umidaPct = umidaProg > 0 ? Math.min(Math.round((umidaReal / umidaProg) * 100), 100) : 0;
+
   const secaReal = seca.reduce((a, c) => a + c.real, 0);
   const secaProg = seca.reduce((a, c) => a + c.prog, 0);
+  const secaPct = secaProg > 0 ? Math.min(Math.round((secaReal / secaProg) * 100), 100) : 0;
+
   const totalReal = umidaReal + secaReal;
   const totalProg = umidaProg + secaProg;
+  const totalPct = totalProg > 0 ? Math.min(Math.round((totalReal / totalProg) * 100), 100) : 0;
   const totalOrdens = ordens.length;
+
+  const pdpaItems = [...auto, ...direta];
+  const pdpaReal = pdpaItems.reduce((a, c) => a + c.real, 0);
+  const pdpaProg = pdpaItems.reduce((a, c) => a + c.prog, 0);
+  const pdpaPct = pdpaProg > 0 ? Math.min(Math.round((pdpaReal / pdpaProg) * 100), 100) : 0;
 
   const handleDragStart = (e: React.DragEvent, item: ProductionItem) => {
     const payload: DragPayload = { itemId: item.id, tipo: item.tipo, via: item.via };
@@ -89,11 +120,112 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
     }
   };
 
-  /** Card de Ordem — UMA LINHA: ícones | nome | badge */
+  /** Renderiza Card de Ordem */
   const renderOrdemCard = (item: ProductionItem) => {
     const completo = item.prog > 0 && item.real >= item.prog;
+    const emAndamento = item.real > 0 && item.real < item.prog;
     const isHovered = hoveredCard === item.id;
+    const pct = item.prog > 0 ? Math.min(Math.round((item.real / item.prog) * 100), 100) : 0;
 
+    const recipe = item.codigoReceita 
+      ? findWipRecipeByCode(item.codigoReceita) 
+      : findWipRecipeByProduct(item.produto);
+
+    const codigoSA = item.codigoReceita || recipe?.codigo;
+    const familia = item.familia || recipe?.familia;
+
+    if (isExpandedView) {
+      return (
+        <div
+          key={item.id}
+          draggable={!item.locked}
+          onDragStart={(e) => !item.locked && handleDragStart(e, item)}
+          onMouseEnter={() => setHoveredCard(item.id)}
+          onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => onItemClick(item)}
+          className={cn(
+            'p-2.5 rounded-lg border cursor-pointer transition-all duration-150 select-none group flex flex-col gap-1 shadow-2xs hover:shadow-xs',
+            item.locked
+              ? 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60 opacity-85'
+              : completo
+              ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-900/60'
+              : emAndamento
+              ? 'bg-sky-50/40 dark:bg-sky-950/10 border-sky-300 dark:border-sky-900/50'
+              : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 hover:border-primary/40'
+          )}
+        >
+          {/* Header do Card Expandido */}
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1 min-w-0">
+              {!item.locked && (
+                <GripVertical
+                  className={cn(
+                    'h-3.5 w-3.5 text-slate-300 transition-opacity shrink-0',
+                    isHovered ? 'opacity-100' : 'opacity-40'
+                  )}
+                />
+              )}
+              {item.locked && <Lock className="h-3.5 w-3.5 text-amber-600 shrink-0" />}
+              {item.splitParentId && <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />}
+
+              {familia && (
+                <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0 truncate max-w-[110px]">
+                  {familia}
+                </span>
+              )}
+
+              {codigoSA && (
+                <span className="text-[9.5px] font-mono font-extrabold text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                  #{codigoSA}
+                </span>
+              )}
+            </div>
+
+            <IndicadorRealProg real={item.real} prog={item.prog} />
+          </div>
+
+          {/* Nome do Produto */}
+          <span className="text-xs font-bold text-slate-800 dark:text-foreground leading-snug truncate">
+            {item.produto}
+          </span>
+
+          {/* Barra de Progresso + Status */}
+          <div className="space-y-0.5 pt-0.5">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>
+                {completo ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                    <CheckCircle2 className="h-3 w-3" /> Concluído
+                  </span>
+                ) : emAndamento ? (
+                  <span className="text-sky-600 dark:text-sky-400 font-bold flex items-center gap-0.5">
+                    <Clock className="h-3 w-3" /> Em andamento
+                  </span>
+                ) : (
+                  <span className="text-slate-400">Pendente</span>
+                )}
+              </span>
+              <span className="font-black text-xs tabular-nums">{pct}%</span>
+            </div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div
+                className={cn(
+                  'h-full transition-all duration-300 rounded-full',
+                  completo
+                    ? 'bg-emerald-500'
+                    : emAndamento
+                    ? 'bg-sky-500'
+                    : 'bg-slate-300 dark:bg-slate-700'
+                )}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Modo Compacto
     return (
       <div
         key={item.id}
@@ -105,20 +237,19 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
         title={
           item.locked
             ? 'Ordem dividida — bloqueada'
-            : `${item.produto}${item.familia ? ` · ${item.familia}` : ''} · clique para editar`
+            : `${item.produto}${familia ? ` · ${familia}` : ''}${codigoSA ? ` · SA: ${codigoSA}` : ''}`
         }
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-150 select-none group',
           item.locked
-            ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-900/60 opacity-80 cursor-not-allowed'
+            ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60 opacity-80 cursor-not-allowed'
             : completo
-            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/60 hover:shadow-sm'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-sm active:cursor-grabbing shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+            ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60 hover:shadow-2xs'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-2xs active:cursor-grabbing shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
         )}
       >
-        {/* Ícones de estado — espaço mínimo */}
         <div className="flex items-center gap-0.5 shrink-0">
-          {item.locked && <Lock className="h-2.5 w-2.5 text-yellow-600" />}
+          {item.locked && <Lock className="h-2.5 w-2.5 text-amber-600" />}
           {item.splitParentId && <GitBranch className="h-2.5 w-2.5 text-primary" />}
           {!item.locked && (
             <GripVertical
@@ -130,33 +261,29 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
           )}
         </div>
 
-        {/* Família (pill pequena) */}
-        {item.familia && (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-primary/10 text-primary shrink-0 leading-none max-w-[56px] truncate">
-            {item.familia}
+        {familia && (
+          <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0 leading-none max-w-[70px] truncate">
+            {familia}
           </span>
         )}
 
-        {/* Nome do produto — ocupa o máximo de espaço */}
         <span
-          className="text-[11px] font-semibold text-slate-800 dark:text-foreground truncate flex-1 leading-tight"
+          className="text-[11px] font-bold text-slate-800 dark:text-foreground truncate flex-1 leading-tight"
           title={item.produto}
         >
           {item.produto}
         </span>
 
-        {/* Status concluído inline */}
         {completo && (
-          <span className="text-[9px] font-bold text-green-600 dark:text-green-400 shrink-0">✓</span>
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">✓</span>
         )}
 
-        {/* Badge real/prog */}
         <IndicadorRealProg real={item.real} prog={item.prog} />
       </div>
     );
   };
 
-  /** Card PA/PD — uma linha compacta */
+  /** Card PA/PD */
   const renderExtraCard = (item: ProductionItem) => {
     const completo = item.prog > 0 && item.real >= item.prog;
     return (
@@ -166,14 +293,14 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
         onDragStart={(e) => handleDragStart(e, item)}
         onClick={() => onItemClick(item)}
         className={cn(
-          'flex items-center gap-1.5 px-2 py-1 rounded-md border cursor-pointer transition-all duration-150 select-none',
+          'flex items-center gap-1.5 px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-150 select-none',
           completo
-            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/60 hover:shadow-sm'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60 hover:shadow-2xs'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/70 hover:border-slate-300 dark:hover:border-primary/30 hover:shadow-2xs shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
         )}
       >
-        {completo && <span className="text-[9px] font-bold text-green-600 dark:text-green-400 shrink-0">✓</span>}
-        <span className="text-[11px] font-semibold text-slate-800 dark:text-foreground truncate flex-1 leading-tight" title={item.produto}>
+        {completo && <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">✓</span>}
+        <span className="text-[11px] font-bold text-slate-800 dark:text-foreground truncate flex-1 leading-tight" title={item.produto}>
           {item.produto}
         </span>
         <IndicadorRealProg real={item.real} prog={item.prog} />
@@ -201,7 +328,7 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
         )}
       >
         {list.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-1 py-4 text-slate-300 dark:text-muted-foreground/50 select-none">
+          <div className="flex flex-col items-center justify-center gap-1 py-5 text-slate-300 dark:text-muted-foreground/50 select-none">
             <ClipboardList className="h-4 w-4" />
             <span className="text-[10px] italic">Sem ordens</span>
           </div>
@@ -220,22 +347,21 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
     const totalP = list.reduce((a, c) => a + c.prog, 0);
 
     return (
-      <div className={cn('px-2 py-1.5', isAuto ? 'bg-violet-50/40 dark:bg-violet-950/10' : 'bg-amber-50/40 dark:bg-amber-950/10')}>
-        {/* Header compacto da seção */}
+      <div className={cn('px-2.5 py-2', isAuto ? 'bg-violet-50/40 dark:bg-violet-950/10' : 'bg-amber-50/40 dark:bg-amber-950/10')}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
             {isAuto
-              ? <Zap className="h-3 w-3 text-violet-500 shrink-0" />
-              : <Hand className="h-3 w-3 text-amber-500 shrink-0" />
+              ? <Zap className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+              : <Hand className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             }
             <span className={cn(
-              'text-[10px] uppercase tracking-wide font-bold shrink-0',
+              'text-[10.5px] uppercase tracking-wide font-extrabold shrink-0',
               isAuto ? 'text-violet-600 dark:text-violet-400' : 'text-amber-600 dark:text-amber-400'
             )}>
               {title}
             </span>
             {list.length > 0 && (
-              <span className="text-[9px] font-semibold text-slate-400 tabular-nums">
+              <span className="text-[10px] font-black text-slate-500 tabular-nums">
                 {totalR}/{totalP} · {list.length}
               </span>
             )}
@@ -253,18 +379,17 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
             onClick={() => onCreateClick(tipo)}
             title={`Adicionar em ${title}`}
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        {/* Drop zone */}
         <div
           onDragOver={(e) => e.preventDefault()}
           onDragEnter={() => setDragOverZone(zoneKey)}
           onDragLeave={() => setDragOverZone((z) => (z === zoneKey ? null : z))}
           onDrop={(e) => handleDrop(e, zoneKey, tipo, { turno })}
           className={cn(
-            'rounded-md border-2 border-dashed min-h-[40px] transition-colors duration-150 flex flex-col gap-1 p-1',
+            'rounded-md border-2 border-dashed min-h-[36px] transition-colors duration-150 flex flex-col gap-1 p-1',
             dragOverZone === zoneKey
               ? isAuto
                 ? 'border-violet-400 bg-violet-50/80 dark:bg-violet-900/20'
@@ -273,7 +398,7 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
           )}
         >
           {list.length === 0 ? (
-            <div className="flex items-center justify-center py-2 text-slate-300 dark:text-muted-foreground/40 select-none">
+            <div className="flex items-center justify-center py-1.5 text-slate-300 dark:text-muted-foreground/40 select-none">
               <span className="text-[10px] italic">Nenhum registro</span>
             </div>
           ) : (
@@ -285,45 +410,61 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl shadow-sm flex flex-col overflow-hidden h-full">
+    <div className="bg-slate-50 dark:bg-card border border-slate-200 dark:border-border/80 rounded-2xl shadow-sm flex flex-col overflow-hidden h-full">
 
-      {/* ── Header do turno ── */}
-      <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between shrink-0">
-        <span className="font-bold text-sm tracking-wide">{turnoLabels[turno]}</span>
+      {/* ── Header Principal do Quadro (KPI do Turno com números ampliados) ── */}
+      <div className="bg-primary text-primary-foreground px-3.5 py-2.5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="font-black text-base tracking-wide">{turnoLabels[turno]}</span>
+          {totalOrdens > 0 && (
+            <Badge variant="outline" className="text-[10px] font-extrabold text-primary-foreground/90 border-primary-foreground/30 bg-white/10 px-2 py-0.5">
+              {totalOrdens} {totalOrdens === 1 ? 'ordem' : 'ordens'}
+            </Badge>
+          )}
+        </div>
+
+        {/* KPIs com fontes maiores e mais visíveis */}
         <div className="flex items-center gap-2">
           {totalOrdens > 0 ? (
-            <>
-              <div className="flex items-baseline gap-0.5 tabular-nums">
-                <span className="text-base font-extrabold leading-none">{totalReal}</span>
-                <span className="text-[10px] font-medium opacity-70 leading-none">/{totalProg}</span>
-              </div>
-              <span className="opacity-30 text-xs">|</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-sm font-bold leading-none">{totalOrdens}</span>
-                <span className="text-[9px] font-medium opacity-70 leading-none">
-                  {totalOrdens === 1 ? 'prod.' : 'prod.'}
-                </span>
-              </div>
-            </>
+            <div className="flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-lg border border-white/20" title="KPI Ordens: Realizado vs Programado">
+              <span className="text-xs font-bold opacity-90">Ordens:</span>
+              <span className="text-sm font-black leading-none tabular-nums text-white">{totalReal}</span>
+              <span className="text-xs font-bold opacity-80 leading-none tabular-nums">/{totalProg}</span>
+              <Badge className="ml-1 text-[10px] font-black px-1.5 py-0 bg-white text-primary">
+                {totalPct}%
+              </Badge>
+            </div>
           ) : (
-            <span className="text-[10px] font-medium opacity-60">Sem ordens</span>
+            <span className="text-xs font-semibold opacity-70">Sem ordens</span>
           )}
+
+          <div className="flex items-center gap-1.5 bg-emerald-500/30 px-2.5 py-1 rounded-lg border border-emerald-400/30" title="KPI Pesagens PD/PA no turno">
+            <span className="text-xs font-bold text-emerald-200">PD/PA:</span>
+            <span className="text-sm font-black text-white leading-none tabular-nums">{pdpaReal}</span>
+            <span className="text-xs font-bold text-emerald-100/90 leading-none tabular-nums">/{pdpaProg}</span>
+            {pdpaProg > 0 && (
+              <span className="text-[9.5px] font-black text-emerald-200 ml-0.5">({pdpaPct}%)</span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── Subheader: Via Úmida | Via Seca ── */}
+      {/* ── Subheader de Indicadores por Via (Números ampliados) ── */}
       <div className="grid grid-cols-2 border-b border-slate-200 dark:border-border/80 bg-white dark:bg-card shrink-0">
-        {/* Via Úmida */}
-        <div className="flex items-center justify-between px-2 py-1.5 border-r border-slate-200 dark:border-border/80">
-          <div className="flex items-center gap-1 min-w-0">
-            <Droplets className="h-3 w-3 text-sky-500 shrink-0" />
-            <div className="flex items-baseline gap-1 min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400 leading-none shrink-0">
+        {/* KPI Via Úmida */}
+        <div className="flex items-center justify-between px-3 py-2 border-r border-slate-200 dark:border-border/80">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Droplets className="h-4 w-4 text-sky-500 shrink-0" />
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="text-[11px] font-black uppercase tracking-wide text-sky-600 dark:text-sky-400 leading-none shrink-0">
                 Úmida
               </span>
-              {umida.length > 0 && (
-                <span className="text-[9px] text-slate-400 tabular-nums leading-none">
-                  {umidaReal}/{umidaProg} · {umida.length}
+              <span className="text-xs font-black text-sky-700 dark:text-sky-300 tabular-nums">
+                {umidaReal}/{umidaProg}
+              </span>
+              {umidaProg > 0 && (
+                <span className="text-[10px] text-sky-600 dark:text-sky-400 font-extrabold tabular-nums">
+                  ({umidaPct}%)
                 </span>
               )}
             </div>
@@ -334,21 +475,24 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
             onClick={() => onCreateClick('ordem', 'UMIDA')}
             title="Adicionar ordem na via úmida"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        {/* Via Seca */}
-        <div className="flex items-center justify-between px-2 py-1.5">
-          <div className="flex items-center gap-1 min-w-0">
-            <Wind className="h-3 w-3 text-amber-500 shrink-0" />
-            <div className="flex items-baseline gap-1 min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 leading-none shrink-0">
+        {/* KPI Via Seca */}
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Wind className="h-4 w-4 text-amber-500 shrink-0" />
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="text-[11px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400 leading-none shrink-0">
                 Seca
               </span>
-              {seca.length > 0 && (
-                <span className="text-[9px] text-slate-400 tabular-nums leading-none">
-                  {secaReal}/{secaProg} · {seca.length}
+              <span className="text-xs font-black text-amber-700 dark:text-amber-300 tabular-nums">
+                {secaReal}/{secaProg}
+              </span>
+              {secaProg > 0 && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-extrabold tabular-nums">
+                  ({secaPct}%)
                 </span>
               )}
             </div>
@@ -359,12 +503,12 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
             onClick={() => onCreateClick('ordem', 'SECA')}
             title="Adicionar ordem na via seca"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* ── Zonas de drop das ordens (scroll interno) ── */}
+      {/* ── Zonas de Drop das Ordens (Scroll Interno) ── */}
       <div className="grid grid-cols-2 flex-1 overflow-hidden min-h-0 bg-slate-50 dark:bg-muted/10">
         <div className="border-r border-slate-200 dark:border-border/80 overflow-y-auto overscroll-contain">
           {viaDropZone('UMIDA', umida)}
@@ -374,26 +518,25 @@ export function TurnoColumn({ turno, items, onItemClick, onCreateClick, onMove }
         </div>
       </div>
 
-      {/* ── Totalizadores por via ── */}
-      <div className="grid grid-cols-2 border-t border-slate-200 dark:border-border/80 bg-white dark:bg-card shrink-0">
-        <div className="flex items-center justify-center gap-1.5 py-1.5 border-r border-slate-200 dark:border-border/80">
-          <Droplets className="h-3 w-3 text-sky-400 shrink-0" />
-          <div className="flex items-baseline gap-0.5 tabular-nums">
-            <span className="text-sm font-extrabold text-sky-600 dark:text-sky-400 leading-none">{umidaReal}</span>
-            <span className="text-[9px] text-slate-400 font-medium leading-none">/{umidaProg}</span>
-          </div>
-        </div>
-        <div className="flex items-center justify-center gap-1.5 py-1.5">
-          <Wind className="h-3 w-3 text-amber-400 shrink-0" />
-          <div className="flex items-baseline gap-0.5 tabular-nums">
-            <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400 leading-none">{secaReal}</span>
-            <span className="text-[9px] text-slate-400 font-medium leading-none">/{secaProg}</span>
-          </div>
+      {/* ── Rodapé KPI de Pesagem Direta & Automática com números ampliados ── */}
+      <div className="bg-emerald-50/80 dark:bg-emerald-950/20 px-3 py-1.5 border-t border-b border-emerald-200/80 dark:border-emerald-900/40 flex items-center justify-between shrink-0">
+        <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+          <Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          Entregas PD/PA:
+        </span>
+        <div className="flex items-center gap-1.5 tabular-nums">
+          <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">{pdpaReal}</span>
+          <span className="text-xs text-slate-500 font-bold">/{pdpaProg}</span>
+          {pdpaProg > 0 && (
+            <Badge variant="outline" className="text-[9.5px] px-1.5 py-0 font-black bg-white dark:bg-card border-emerald-300 text-emerald-700">
+              {pdpaPct}%
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* ── Pesagens (scroll interno) ── */}
-      <div className="flex flex-col divide-y divide-slate-200 dark:divide-border/80 shrink-0 max-h-[320px] overflow-y-auto overscroll-contain border-t border-slate-200 dark:border-border/80">
+      {/* ── Pesagens Automática & Direta (Scroll Interno) ── */}
+      <div className="flex flex-col divide-y divide-slate-200 dark:divide-border/80 shrink-0 max-h-[260px] overflow-y-auto overscroll-contain">
         {extraDropZone('auto', auto, 'Pesagem Automática')}
         {extraDropZone('direta', direta, 'Pesagem Direta')}
       </div>

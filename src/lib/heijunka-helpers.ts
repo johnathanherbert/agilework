@@ -9,6 +9,7 @@ import {
   writeBatch,
   deleteDoc,
   doc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getCurrentUserInfo } from './firestore-helpers';
@@ -30,35 +31,21 @@ export const saveHeijunkaSnapshot = async (metaDiaria: number, items: Production
   const umida = ordens.filter(i => i.via === 'UMIDA');
   const seca = ordens.filter(i => i.via === 'SECA');
 
-  const turnosStats: Record<string, HeijunkaTurnoStats> = {
-    '1': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0 },
-    '2': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0 },
-    '3': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0 }
-  };
-
-  // ── Classifica ordens entre Manual e Referenciada (PD/PA) ──────────────────
-  // Uma ordem é "referenciada" se existir um item auto ou direta no mesmo turno
-  // com o mesmo nome de produto (match case-insensitive).
-  const pdpaProductsByTurno: Record<string, Set<string>> = { '1': new Set(), '2': new Set(), '3': new Set() };
-  [...pa, ...pd].forEach(item => {
-    const t = item.turno.toString();
-    pdpaProductsByTurno[t]?.add(item.produto.toLowerCase().trim());
-  });
-
-  const ordensManual = ordens.filter(o => !pdpaProductsByTurno[o.turno.toString()]?.has(o.produto.toLowerCase().trim()));
-  const ordensReferenciadas = ordens.filter(o => pdpaProductsByTurno[o.turno.toString()]?.has(o.produto.toLowerCase().trim()));
-
-  // PD/PA total = todos auto + todos direta + ordens que têm correspondência em PA/PD
-  // Manual total = ordens SEM correspondência
-  const totalManual = ordensManual.length;
-  // totalAll = totalManual + ordensReferenciadas + pa + pd
-  //          = totalOrdens + totalPA + totalPD (mesmo total, apenas reclassificado)
-
-  // ── Volumes (Soma do real) ───────────────────────────────────────────────────
-  const volManual = ordensManual.reduce((acc, curr) => acc + curr.real, 0);
-  const volOrdensComRef = ordensReferenciadas.reduce((acc, curr) => acc + curr.real, 0);
+  // Volumes totais das pesagens automáticas e diretas
   const volPA = pa.reduce((acc, curr) => acc + curr.real, 0);
   const volPD = pd.reduce((acc, curr) => acc + curr.real, 0);
+  const volPDPA = volPA + volPD;
+
+  // Volume total realizado das ordens principais
+  const totalRealizadoOrdens = ordens.reduce((acc, curr) => acc + curr.real, 0);
+  const totalRealizado = Math.max(totalRealizadoOrdens, volPDPA);
+  const volManual = Math.max(0, totalRealizado - volPDPA);
+
+  const turnosStats: Record<string, HeijunkaTurnoStats> = {
+    '1': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0, volPA: 0, volPD: 0, volManual: 0 },
+    '2': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0, volPA: 0, volPD: 0, volManual: 0 },
+    '3': { ordens: 0, umida: 0, seca: 0, pa: 0, pd: 0, realizado: 0, programado: 0, volPA: 0, volPD: 0, volManual: 0 }
+  };
 
   const familiasStats: Record<string, number> = {};
 
@@ -76,36 +63,44 @@ export const saveHeijunkaSnapshot = async (metaDiaria: number, items: Production
       }
     } else if (item.tipo === 'auto') {
       turnosStats[t].pa += 1;
+      turnosStats[t].volPA = (turnosStats[t].volPA || 0) + item.real;
     } else if (item.tipo === 'direta') {
       turnosStats[t].pd += 1;
+      turnosStats[t].volPD = (turnosStats[t].volPD || 0) + item.real;
     }
 
     turnosStats[t].realizado += item.real;
     turnosStats[t].programado += item.prog;
   });
 
+  // Calcula volManual por turno sem duplicação
+  Object.keys(turnosStats).forEach(t => {
+    const realizadoTurno = turnosStats[t].realizado;
+    const pdpaTurno = (turnosStats[t].volPA || 0) + (turnosStats[t].volPD || 0);
+    turnosStats[t].volManual = Math.max(0, realizadoTurno - pdpaTurno);
+  });
+
   const data = {
     date,
     metaDiaria,
-    totalOrdens: ordens.length,       // total de itens tipo='ordem' (para compatibilidade)
-    totalManual: totalManual,          // ordens SEM referência em PA/PD (puramente manuais)
+    totalOrdens: ordens.length,
+    totalManual: ordens.length,
     totalUmida: umida.length,
     totalSeca: seca.length,
     totalPA: pa.length,
     totalPD: pd.length,
     volManual,
-    volOrdensComRef,
+    volOrdensComRef: 0,
     volPA,
     volPD,
-    totalRealizado: items.reduce((acc, curr) => acc + curr.real, 0),
-    totalProgramado: items.reduce((acc, curr) => acc + curr.prog, 0),
+    totalRealizado,
+    totalProgramado: ordens.reduce((acc, curr) => acc + curr.prog, 0) || metaDiaria,
     turnos: turnosStats,
     familias: familiasStats,
     created_at: now,
     created_by: userInfo?.uid || null,
     created_by_name: userInfo?.name || null,
   };
-
 
   const docRef = await addDoc(collection(db, HEIJUNKA_COLLECTION), data);
   console.log(`✅ Snapshot de Heijunka salvo: ${date}`);
@@ -114,6 +109,32 @@ export const saveHeijunkaSnapshot = async (metaDiaria: number, items: Production
   await clearProductionItems();
 
   return docRef.id;
+};
+
+export const updateHeijunkaSnapshot = async (
+  snapshotId: string,
+  updatedFields: Partial<HeijunkaSnapshot>
+): Promise<void> => {
+  const userInfo = await getCurrentUserInfo();
+  const now = Timestamp.now();
+  const snapshotRef = doc(db, HEIJUNKA_COLLECTION, snapshotId);
+
+  const sanitizedInput = Object.fromEntries(
+    Object.entries(updatedFields).filter(([, value]) => value !== undefined)
+  );
+
+  const updateData: any = {
+    ...sanitizedInput,
+    updated_at: now,
+  };
+
+  if (userInfo) {
+    updateData.updated_by = userInfo.uid;
+    updateData.updated_by_name = userInfo.name;
+  }
+
+  await updateDoc(snapshotRef, updateData);
+  console.log(`✅ Snapshot de Heijunka atualizado: ${snapshotId}`);
 };
 
 export const getHeijunkaHistory = async (daysLimit: number = 90): Promise<HeijunkaSnapshot[]> => {

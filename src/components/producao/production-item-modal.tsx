@@ -93,6 +93,8 @@ export function ProductionItemModal({
   const [qtdCopiaDireta, setQtdCopiaDireta] = useState(1);
   const [copyToAutomatica, setCopyToAutomatica] = useState(false);
   const [qtdCopiaAutomatica, setQtdCopiaAutomatica] = useState(1);
+  const [copyToOrdem, setCopyToOrdem] = useState(true);
+  const [qtdCopiaOrdem, setQtdCopiaOrdem] = useState(1);
 
   const isLocked = mode === 'edit' && !!item?.locked;
 
@@ -117,7 +119,7 @@ export function ProductionItemModal({
       form.reset({
         turno: String(item.turno),
         codigoReceita: '',
-        via: item.via || 'SECA',
+        via: item.via || defaultVia || 'SECA',
         familia: item.familia || '',
         produto: item.produto,
         prog: item.prog,
@@ -127,6 +129,8 @@ export function ProductionItemModal({
       setSplitQty(remaining > 0 ? remaining : 1);
       setSplitTurno(String(nextTurno(item.turno)));
       setShowSplit(false);
+      setCopyToOrdem(false);
+      setQtdCopiaOrdem(item.prog || 1);
     } else {
       form.reset({
         turno: String(defaultTurno),
@@ -138,6 +142,8 @@ export function ProductionItemModal({
         real: 0,
       });
       setShowSplit(false);
+      setCopyToOrdem(true);
+      setQtdCopiaOrdem(1);
     }
     setCopyToDireta(false);
     setQtdCopiaDireta(1);
@@ -145,7 +151,17 @@ export function ProductionItemModal({
     setQtdCopiaAutomatica(1);
   }, [open, mode, item, defaultTurno, defaultVia, form]);
 
-  // Autocompleta produto (e, para ordens, também via e família) a partir do código do material
+  // Mantém qtdCopiaOrdem sincronizada com prog se estiver no modo de criação e PD/PA
+  const watchProg = form.watch('prog');
+  useEffect(() => {
+    if (mode === 'create' && tipo !== 'ordem') {
+      if (watchProg && watchProg > 0) {
+        setQtdCopiaOrdem(watchProg);
+      }
+    }
+  }, [watchProg, mode, tipo]);
+
+  // Autocompleta produto, família e via a partir do código do material
   const handleCodigoReceitaBlur = (codigo: string) => {
     const recipe = findWipRecipeByCode(codigo);
     if (!recipe) {
@@ -156,11 +172,11 @@ export function ProductionItemModal({
     }
 
     form.setValue('produto', recipe.produto, { shouldValidate: true });
-    if (tipo === 'ordem') {
+    if (recipe.familia) {
       form.setValue('familia', recipe.familia, { shouldValidate: true });
-      if (recipe.via) {
-        form.setValue('via', recipe.via, { shouldValidate: true });
-      }
+    }
+    if (recipe.via) {
+      form.setValue('via', recipe.via, { shouldValidate: true });
     }
     toast.success('Produto preenchido automaticamente');
   };
@@ -209,6 +225,11 @@ export function ProductionItemModal({
         toast.error('Informe uma quantidade programada válida para a Pesagem Automática');
         return;
       }
+    } else {
+      if (copyToOrdem && qtdCopiaOrdem < 1) {
+        toast.error('Informe uma quantidade programada válida para a Ordem de Produção');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -221,6 +242,7 @@ export function ProductionItemModal({
           tipo,
           via: tipo === 'ordem' ? data.via : undefined,
           familia: tipo === 'ordem' ? (data.familia || undefined) : undefined,
+          codigoReceita: data.codigoReceita || undefined,
           produto: data.produto,
           prog: data.prog,
           real: data.real,
@@ -231,6 +253,7 @@ export function ProductionItemModal({
           turno,
           via: tipo === 'ordem' ? data.via : undefined,
           familia: tipo === 'ordem' ? (data.familia || undefined) : undefined,
+          codigoReceita: data.codigoReceita || undefined,
           produto: data.produto,
           prog: data.prog,
           real: data.real,
@@ -238,8 +261,8 @@ export function ProductionItemModal({
         toast.success('Item atualizado com sucesso!');
       }
 
-      // Copia a ordem também para Pesagem Direta e/ou Automática, como registros
-      // independentes de acompanhamento (a mesma ordem pode existir nos 3 quadros)
+      // Copia a ordem também para Pesagem Direta e/ou Automática (se for ordem),
+      // ou cria a ordem em cima (se for PD ou PA)
       if (tipo === 'ordem') {
         if (copyToDireta) {
           await createProductionItem({
@@ -261,6 +284,19 @@ export function ProductionItemModal({
         }
         if (copyToDireta || copyToAutomatica) {
           toast.success('Ordem copiada para os quadros selecionados!');
+        }
+      } else {
+        if (copyToOrdem) {
+          await createProductionItem({
+            turno,
+            tipo: 'ordem',
+            via: data.via || defaultVia || 'SECA',
+            familia: data.familia || undefined,
+            produto: data.produto,
+            prog: qtdCopiaOrdem,
+            real: 0,
+          });
+          toast.success('Ordem de Produção inserida no quadro principal (em cima)!');
         }
       }
 
@@ -526,6 +562,88 @@ export function ProductionItemModal({
                         placeholder="Qtd programada para Pesagem Automática"
                         className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-11 font-medium"
                       />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tipo !== 'ordem' && !isLocked && (
+              <div className="rounded-xl border-2 border-dashed border-border/80 p-4 space-y-3 bg-muted/20">
+                <p className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <Copy className="h-4 w-4 text-primary" />
+                  Inserir Ordem de Produção no quadro (em cima)
+                </p>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Também cria um registro de Ordem de Produção no quadro principal (via úmida ou seca) para acompanhamento.
+                </p>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="copyToOrdem"
+                    checked={copyToOrdem}
+                    onCheckedChange={(checked) => setCopyToOrdem(checked === true)}
+                    disabled={isSubmitting}
+                    className="mt-1"
+                  />
+                  <div className="flex-1 space-y-3">
+                    <label htmlFor="copyToOrdem" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
+                      Criar Ordem de Produção em cima
+                    </label>
+                    {copyToOrdem && (
+                      <div className="space-y-3 pt-2 border-t border-border/60">
+                        <div className="grid grid-cols-2 gap-3">
+                          <FormField
+                            control={form.control}
+                            name="via"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300">Via de Processo</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || 'SECA'} disabled={isSubmitting}>
+                                  <FormControl>
+                                    <SelectTrigger className="h-10 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="UMIDA">Úmida</SelectItem>
+                                    <SelectItem value="SECA">Seca</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Qtd Programada Ordem</label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={qtdCopiaOrdem}
+                              disabled={isSubmitting}
+                              onChange={(e) => setQtdCopiaOrdem(Number(e.target.value) || 0)}
+                              placeholder="Qtd programada"
+                              className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-10 font-medium text-xs"
+                            />
+                          </div>
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name="familia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-bold text-gray-700 dark:text-gray-300">Família / Máquina</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Ex: COP LEG.2"
+                                  disabled={isSubmitting}
+                                  className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-10 font-medium text-xs"
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     )}
                   </div>
                 </div>

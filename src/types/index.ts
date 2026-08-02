@@ -25,6 +25,7 @@ export type ProductionItem = {
   tipo: ProductionTipo;
   via?: ProductionVia; // Somente para tipo 'ordem'
   familia?: string; // Somente para tipo 'ordem'
+  codigoReceita?: string; // Código do material/receita no rotas.json (ex: 700236)
   produto: string;
   prog: number;
   real: number;
@@ -130,6 +131,9 @@ export type HeijunkaTurnoStats = {
   pd: number;
   realizado: number;
   programado: number;
+  volPA?: number;
+  volPD?: number;
+  volManual?: number;
 };
 
 export type HeijunkaSnapshot = {
