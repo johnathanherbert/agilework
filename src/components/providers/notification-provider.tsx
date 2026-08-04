@@ -28,11 +28,19 @@ const getUserDisplayName = (user: any): string => {
   return 'usuário';
 };
 
+// Segmento de mensagem com destaque de cor para informações distintas
+// (ex.: nome do usuário em azul, número da NT em roxo, status em verde/âmbar, etc.)
+export type NotificationMessagePart = {
+  text: string;
+  variant?: 'actor' | 'entity' | 'status-success' | 'status-warning' | 'accent' | 'muted';
+};
+
 // Definição do tipo de notificação
 export type Notification = {
   id: string;
   title: string;
   message: string;
+  parts?: NotificationMessagePart[]; // Versão colorida/estruturada da mensagem (opcional)
   createdAt: Date;
   read: boolean;
   type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'item_paid' | 'production_updated' | 'system';
@@ -222,6 +230,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           addNotification({
             title: 'Nova NT Criada',
             message: `${creatorName} criou a NT #${ntData.nt_number}`,
+            parts: [
+              { text: creatorName, variant: 'actor' },
+              { text: ' criou a NT ' },
+              { text: `#${ntData.nt_number}`, variant: 'entity' },
+            ],
             type: 'nt_created',
             entityId: ntId,
           });
@@ -245,6 +258,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           addNotification({
             title: 'NT Atualizada',
             message: `${editorName} editou a NT #${ntData.nt_number}`,
+            parts: [
+              { text: editorName, variant: 'actor' },
+              { text: ' editou a NT ' },
+              { text: `#${ntData.nt_number}`, variant: 'entity' },
+            ],
             type: 'nt_updated',
             entityId: ntId,
           });
@@ -302,6 +320,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           addNotification({
             title: `Item ${itemData.status}`,
             message: `${payerName} marcou: ${itemData.code}${itemDesc} como ${statusText}`,
+            parts: [
+              { text: payerName, variant: 'actor' },
+              { text: ' marcou: ' },
+              { text: `${itemData.code}${itemDesc}`, variant: 'entity' },
+              { text: ' como ' },
+              { text: statusText, variant: itemData.status === 'Pago' ? 'status-success' : 'status-warning' },
+            ],
             type: 'item_paid',
             entityId: itemId,
           });
@@ -354,6 +379,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         addNotification({
           title: 'Quadro de Produção',
           message: `${editorName} ${actionText}: ${itemName} no Turno ${itemData.turno}${viaText}`,
+          parts: [
+            { text: editorName, variant: 'actor' },
+            { text: ` ${actionText}: ` },
+            { text: itemName, variant: 'entity' },
+            { text: ' no Turno ' },
+            { text: String(itemData.turno), variant: 'accent' },
+            { text: viaText, variant: 'muted' },
+          ],
           type: 'production_updated',
           entityId: itemId,
         });

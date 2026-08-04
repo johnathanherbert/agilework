@@ -1,4 +1,4 @@
-import { useNotifications, Notification } from '@/components/providers/notification-provider';
+import { useNotifications, Notification, NotificationMessagePart } from '@/components/providers/notification-provider';
 import { Bell, CheckCheck, Trash2, Clock, CheckCircle, ExternalLink, Factory, FilePlus2, CircleDollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -52,6 +52,29 @@ export const NotificationBell = () => {
     e.stopPropagation();
     removeNotification(id);
   };
+
+  // Classes de destaque para cada tipo de informação distinta na mensagem
+  const partVariantClasses: Record<NonNullable<NotificationMessagePart['variant']>, string> = {
+    actor: 'font-semibold text-blue-600 dark:text-blue-400',
+    entity: 'font-semibold text-purple-600 dark:text-purple-400',
+    'status-success': 'font-semibold text-emerald-600 dark:text-emerald-400',
+    'status-warning': 'font-semibold text-amber-600 dark:text-amber-400',
+    accent: 'font-semibold text-orange-600 dark:text-orange-400',
+    muted: 'text-gray-400 dark:text-gray-500',
+  };
+
+  const renderMessage = (notification: Notification) => {
+    if (!notification.parts || notification.parts.length === 0) {
+      return notification.message;
+    }
+
+    return notification.parts.map((part, index) => (
+      <span key={index} className={part.variant ? partVariantClasses[part.variant] : undefined}>
+        {part.text}
+      </span>
+    ));
+  };
+
   return (
     <div className="relative">
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -158,7 +181,7 @@ export const NotificationBell = () => {
                           "text-xs mt-0.5",
                           !notification.read ? "text-gray-800 dark:text-gray-200" : "text-gray-600 dark:text-gray-400"
                         )}>
-                          {notification.message}
+                          {renderMessage(notification)}
                         </p>
                         
                         {notification.entityId && (
