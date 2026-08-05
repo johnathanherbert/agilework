@@ -200,35 +200,35 @@ export function KpiDashboardBar({
           </div>
         </div>
 
-        {/* KPI 3: Pesagem PD & PA */}
-        <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/30 p-3.5 flex flex-col justify-between shadow-2xs">
+        {/* KPI 3: Pesagem PD & PA (Paleta Heijunka) */}
+        <div className="rounded-xl border border-sky-200/80 dark:border-sky-800/60 bg-sky-50/60 dark:bg-sky-950/30 p-3.5 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
-              <Zap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center gap-1.5 text-sky-900 dark:text-sky-200">
+              <Zap className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               <span className="text-[11px] font-black uppercase tracking-wider">Entregas PD & PA</span>
             </div>
-            <Badge variant="outline" className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900">
-              {stats.pdpaPct}%
+            <Badge variant="outline" className="text-[10px] font-black text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60">
+              {stats.pdpaPct}% PD/PA
             </Badge>
           </div>
 
           <div className="mt-2 flex items-baseline justify-between">
             <div className="flex items-baseline gap-1 tabular-nums">
-              <span className="text-2xl font-black text-emerald-700 dark:text-emerald-300 leading-none">
+              <span className="text-2xl font-black text-sky-900 dark:text-sky-100 leading-none">
                 {stats.pdpaReal}
               </span>
-              <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70 font-bold">/ {stats.pdpaProg}</span>
+              <span className="text-xs text-sky-600/80 dark:text-sky-400/80 font-bold">/ {stats.pdpaProg}</span>
             </div>
-            <div className="text-[10px] text-emerald-800/80 dark:text-emerald-300/80 font-bold text-right">
+            <div className="text-[10px] text-sky-800/80 dark:text-sky-300/80 font-bold text-right">
               <div>Auto: {stats.autoCount}</div>
               <div>Direta: {stats.diretaCount}</div>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="w-full bg-emerald-200/60 dark:bg-emerald-900/50 rounded-full h-2 mt-2 overflow-hidden shadow-2xs">
+          {/* Progress Bar com Gradiente Heijunka */}
+          <div className="w-full bg-sky-200/60 dark:bg-sky-900/50 rounded-full h-2 mt-2 overflow-hidden shadow-2xs">
             <div
-              className="bg-emerald-600 dark:bg-emerald-400 h-full transition-all duration-500 rounded-full"
+              className="bg-gradient-to-r from-sky-400 via-blue-600 to-[#003760] h-full transition-all duration-500 rounded-full"
               style={{ width: `${stats.pdpaPct}%` }}
             />
           </div>

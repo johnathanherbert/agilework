@@ -452,31 +452,31 @@ function NTManagerContent() {
         }`}>
           <Topbar />
           <main className="flex-1 p-4 md:p-6 overflow-y-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-2xs mb-6">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-50 flex items-center">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center">
                   {filters.isCompletedView 
-                    ? "NTs Concluídas" 
+                    ? "Notas Técnicas Concluídas" 
                     : "Gerenciamento de NTs"}
-                  <span className="ml-2 text-xs font-normal bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                  <span className="ml-2.5 text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-full">
                     {filteredNts.length} {filteredNts.length === 1 ? 'NT' : 'NTs'}
                   </span>
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
                   {filters.isCompletedView
                     ? "Histórico de Notas Técnicas 100% concluídas"
                     : "Visualize e gerencie suas Notas Técnicas ativas"}
                 </p>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                <div className="relative flex-1 md:flex-none md:min-w-[240px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
+              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                <div className="relative flex-1 md:flex-none md:min-w-[260px]">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 text-slate-400 -translate-y-1/2" />
                   <Input
                     placeholder="Buscar NT, código ou material..."
                     value={filters.search}
                     onChange={handleSearch}
-                    className="pl-9"
+                    className="pl-9 h-9 text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 focus:bg-white dark:focus:bg-slate-900"
                   />
                 </div>
                 
@@ -484,16 +484,16 @@ function NTManagerContent() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => setShowFilters(!showFilters)} 
-                  className="relative flex items-center gap-2 border-gray-300 dark:border-gray-600"
+                  className="relative flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-3.5 w-3.5" />
                   Filtros
                   {Object.values(filters).some(v => 
                     (Array.isArray(v) && v.length > 0) || 
                     (typeof v === 'boolean' && v === true) || 
                     (v !== null && v !== '')
                   ) && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-600 border-2 border-white dark:border-gray-900"></span>
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-600 border-2 border-white dark:border-slate-900"></span>
                   )}
                 </Button>
                 
@@ -501,18 +501,18 @@ function NTManagerContent() {
                   variant="outline" 
                   size="sm" 
                   onClick={handleRefresh}
-                  className="flex items-center gap-2 border-gray-300 dark:border-gray-600"
+                  className="flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
                   Atualizar
                 </Button>
                 
                 <Button 
                   size="sm" 
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold border-0"
+                  className="flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
                 >
-                  <PlusCircle className="h-4 w-4" />
+                  <PlusCircle className="h-3.5 w-3.5" />
                   <span>Nova NT</span>
                 </Button>
               </div>

@@ -52,10 +52,10 @@ function IndicadorRealProg({ real, prog }: { real: number; prog: number }) {
       variant="outline"
       className={cn(
         badgeBase,
-        'whitespace-nowrap shrink-0 tabular-nums font-black shadow-2xs',
+        'whitespace-nowrap shrink-0 tabular-nums font-black shadow-2xs transition-colors',
         completo
-          ? 'border-blue-700 bg-blue-700 text-white dark:border-blue-600 dark:bg-blue-600'
-          : 'border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+          ? 'border-[#003760] bg-[#003760] text-white dark:border-blue-500 dark:bg-blue-600'
+          : 'border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
       )}
       title={`Realizado ${real} de ${prog} programado`}
     >

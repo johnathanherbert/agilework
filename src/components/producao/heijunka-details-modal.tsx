@@ -34,6 +34,7 @@ export function HeijunkaDetailsModal({
   onDeleteDay,
 }: HeijunkaDetailsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState<string>('');
   const [metaDiaria, setMetaDiaria] = useState<number>(0);
   const [totalRealizado, setTotalRealizado] = useState<number>(0);
   const [volPA, setVolPA] = useState<number>(0);
@@ -54,6 +55,7 @@ export function HeijunkaDetailsModal({
     const tot = snapshot.totalRealizado > 0 ? snapshot.totalRealizado : (snapshot.volManual ?? 0) + pa + pd;
     const man = snapshot.volManual ?? Math.max(0, tot - (pa + pd));
 
+    setDate(snapshot.date || '');
     setMetaDiaria(snapshot.metaDiaria || 0);
     setTotalRealizado(tot);
     setVolPA(pa);
@@ -69,8 +71,8 @@ export function HeijunkaDetailsModal({
 
   if (!snapshot) return null;
 
-  const dateFormatted = snapshot.date
-    ? new Date(snapshot.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+  const dateFormatted = date
+    ? new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
@@ -85,7 +87,6 @@ export function HeijunkaDetailsModal({
     setTurnos((prev) => {
       const current = { ...(prev[tKey] || {}) };
       current[field] = val;
-      // Recalcula volManual se volPA ou volPD mudou
       if (field === 'volPA' || field === 'volPD' || field === 'realizado') {
         const p = current.volPA || 0;
         const d = current.volPD || 0;
@@ -110,6 +111,7 @@ export function HeijunkaDetailsModal({
       const computedManual = Math.max(0, totalRealizado - (volPA + volPD));
 
       const updatedSnapshotData: Partial<HeijunkaSnapshot> = {
+        date,
         metaDiaria,
         totalRealizado,
         volPA,
@@ -123,7 +125,7 @@ export function HeijunkaDetailsModal({
         await updateHeijunkaSnapshot(snapshot.id, updatedSnapshotData);
       }
 
-      toast.success('Entregas do dia atualizadas com sucesso!');
+      toast.success('Entregas e data do dia atualizadas com sucesso!');
       onOpenChange(false);
       onSuccess?.({
         ...snapshot,
@@ -148,12 +150,25 @@ export function HeijunkaDetailsModal({
                 <Calendar className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold text-foreground capitalize">
-                  Entregas do Dia · {dateFormatted}
+                <DialogTitle className="text-lg font-bold text-foreground capitalize flex items-center gap-2">
+                  Entregas do Dia · {dateFormatted || snapshot.date}
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Detalhamento de ordens e pesagens realizadas
-                </p>
+                
+                {isAdmin ? (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Alterar Data do Dia:</span>
+                    <Input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="h-8 w-44 font-mono font-extrabold text-xs border-primary/40 rounded-xl bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                    Detalhamento de ordens e pesagens realizadas
+                  </p>
+                )}
               </div>
             </div>
 

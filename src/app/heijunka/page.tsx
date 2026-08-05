@@ -7,7 +7,7 @@ import {
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
-  BarChart3, Trophy, Medal, Zap, Layers, Trash2, FlaskConical, Activity, TrendingUp, Star
+  BarChart3, Trophy, Medal, Zap, Layers, Trash2, FlaskConical, Activity, TrendingUp, Star, Calendar, Hand, Sparkles, Clock
 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
@@ -51,6 +51,142 @@ function enrichSnapshot(s: HeijunkaSnapshot) {
   
   return { ...s, manual, pdpaCount, totalAll, pdpaPercent, dayLabel, monthLabel, monthKey };
 }
+
+// ── Tooltip diário moderno ─────────────────────────────────────────────────────
+const DailyTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-white/95 dark:bg-slate-950/95 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-3.5 min-w-[210px] space-y-2.5 backdrop-blur-md">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-slate-100">
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span>{label}</span>
+        </div>
+        <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+          {d?.pdpaPercent}% PD/PA
+        </span>
+      </div>
+
+      <div className="space-y-1.5 text-xs font-semibold">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-slate-400" /> Total Realizado:
+          </span>
+          <span className="font-mono font-black text-slate-900 dark:text-slate-100 tabular-nums">
+            {d?.totalAll} OPs
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sky-600 dark:text-sky-400 flex items-center gap-1">
+            <Hand className="w-3.5 h-3.5" /> Vol. Manual:
+          </span>
+          <span className="font-mono font-black text-sky-700 dark:text-sky-300 tabular-nums">
+            {d?.manual} OPs
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+            <Zap className="w-3.5 h-3.5" /> Vol. PD/PA:
+          </span>
+          <span className="font-mono font-black text-blue-700 dark:text-blue-300 tabular-nums">
+            {d?.pdpaCount} OPs
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 text-center flex items-center justify-center gap-1">
+        <Sparkles className="w-3 h-3 text-amber-500" />
+        <span>Clique para ver/editar detalhes</span>
+      </div>
+    </div>
+  );
+};
+
+// ── Tooltip mensal moderno ─────────────────────────────────────────────────────
+const MonthlyTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-white/95 dark:bg-slate-950/95 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-3.5 min-w-[210px] space-y-2.5 backdrop-blur-md">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-slate-100 capitalize">
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span>{label}</span>
+        </div>
+        <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+          {d?.percent}% PD/PA
+        </span>
+      </div>
+
+      <div className="space-y-1.5 text-xs font-semibold">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-slate-400" /> Total do Mês:
+          </span>
+          <span className="font-mono font-black text-slate-900 dark:text-slate-100 tabular-nums">
+            {d?.total} OPs
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sky-600 dark:text-sky-400 flex items-center gap-1">
+            <Hand className="w-3.5 h-3.5" /> Vol. Manual:
+          </span>
+          <span className="font-mono font-black text-sky-700 dark:text-sky-300 tabular-nums">
+            {d?.manual} OPs
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+            <Zap className="w-3.5 h-3.5" /> Vol. PD/PA:
+          </span>
+          <span className="font-mono font-black text-blue-700 dark:text-blue-300 tabular-nums">
+            {d?.pdpa} OPs
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Tooltip por turno moderno ─────────────────────────────────────────────────
+const TurnoTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  const totalTurno = (d?.manual || 0) + (d?.pa || 0) + (d?.pd || 0);
+
+  return (
+    <div className="bg-white/95 dark:bg-slate-950/95 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-3.5 min-w-[200px] space-y-2 backdrop-blur-md">
+      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+        <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+          Turno {d?.name?.replace('T', '')}º
+        </span>
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          Total: {totalTurno} OPs
+        </span>
+      </div>
+
+      <div className="space-y-1 text-xs font-semibold">
+        <div className="flex items-center justify-between text-sky-600 dark:text-sky-400">
+          <span>Manual:</span>
+          <span className="font-mono font-black tabular-nums">{d?.manual} OPs</span>
+        </div>
+        <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
+          <span>P. Automática:</span>
+          <span className="font-mono font-black tabular-nums">{d?.pa} OPs</span>
+        </div>
+        <div className="flex items-center justify-between text-[#003760] dark:text-blue-200">
+          <span>P. Direta:</span>
+          <span className="font-mono font-black tabular-nums">{d?.pd} OPs</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 function generateMockHistory(): HeijunkaSnapshot[] {
@@ -115,39 +251,7 @@ function generateMockHistory(): HeijunkaSnapshot[] {
   return history;
 }
 
-// ── Tooltip diário ─────────────────────────────────────────────────────────────
-const DailyTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  const d = payload[0]?.payload;
-  return (
-    <div className="bg-white dark:bg-card border border-border rounded-lg shadow-xl p-3 min-w-[170px]">
-      <p className="font-bold text-foreground mb-2 pb-1.5 border-b border-border/50 text-sm">{label}</p>
-      <div className="space-y-1 text-xs">
-        <p className="text-slate-500">Volume Total: <span className="font-bold text-slate-800 dark:text-slate-200">{d?.totalAll}</span></p>
-        <p className="text-[#4ade80]">Vol. Manual: <span className="font-bold">{d?.manual}</span></p>
-        <p className="text-[#16a34a]">Vol. PD/PA: <span className="font-bold">{d?.pdpaCount}</span></p>
-        <p className="text-[#f97316] font-semibold">% PD/PA: <span className="font-bold">{d?.pdpaPercent}%</span></p>
-      </div>
-    </div>
-  );
-};
 
-// ── Tooltip mensal ─────────────────────────────────────────────────────────────
-const MonthlyTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  const d = payload[0]?.payload;
-  return (
-    <div className="bg-white dark:bg-card border border-border rounded-lg shadow-xl p-3 min-w-[170px]">
-      <p className="font-bold text-foreground mb-2 pb-1.5 border-b border-border/50 text-sm capitalize">{label}</p>
-      <div className="space-y-1 text-xs">
-        <p className="text-[#0066B3]">Volume Total: <span className="font-bold">{d?.total}</span></p>
-        <p className="text-[#fb923c]">Vol. Manual: <span className="font-bold">{d?.manual}</span></p>
-        <p className="text-[#16a34a]">Vol. PD/PA: <span className="font-bold">{d?.pdpa}</span></p>
-        <p className="text-[#f97316] font-semibold">% PD/PA: <span className="font-bold">{d?.percent}%</span></p>
-      </div>
-    </div>
-  );
-};
 
 export default function HeijunkaPage() {
   const { userData, loading: authLoading } = useFirebase();
@@ -310,30 +414,38 @@ export default function HeijunkaPage() {
           <Topbar />
           <main className="flex-1 overflow-y-auto px-5 pt-5 pb-10">
 
-            {/* ── Cabeçalho ──────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+            {/* ── Cabeçalho Moderno Glassmorphic ──────────────────────────────────────────────── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-2xs mb-5">
               <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow">
-                    <BarChart3 className="h-4 w-4 text-primary-foreground" />
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#003760] to-[#00477a] flex items-center justify-center shadow-md text-white border border-white/10 shrink-0">
+                    <BarChart3 className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h1 className="text-lg font-black text-foreground tracking-tight">% PD/PA na Pesagem</h1>
-                      {useMock && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded-full">MOCK</span>}
+                      <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">% PD/PA na Pesagem</h1>
+                      {useMock && (
+                        <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                          Dados Mock
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground">Clique no gráfico ou tabela para visualizar e editar os detalhes das entregas.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                      Clique no gráfico ou nas linhas da tabela para visualizar e gerenciar os detalhes das entregas.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 {/* Filtro de período */}
-                <div className="flex bg-white dark:bg-slate-800 border border-border rounded-lg p-0.5">
+                <div className="flex bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-1 shadow-2xs">
                   {(['7', '15', '30', 'month'] as TimeFilter[]).map(t => (
                     <button key={t} onClick={() => setTimeFilter(t)}
-                      className={cn("px-3 py-1.5 text-xs font-semibold rounded-md transition-colors",
-                        timeFilter === t ? "bg-primary text-primary-foreground shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      className={cn("px-3 py-1 text-xs font-bold rounded-lg transition-all",
+                        timeFilter === t 
+                          ? "bg-white dark:bg-slate-900 text-primary shadow-2xs" 
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                       )}>
                       {t === 'month' ? 'Mês Atual' : `${t} dias`}
                     </button>
@@ -342,19 +454,19 @@ export default function HeijunkaPage() {
 
                 {/* Utilitários */}
                 <button onClick={loadMockData}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
-                  title="Carregar dados mock">
-                  <FlaskConical className="h-3.5 w-3.5" /><span>Mock</span>
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl border border-slate-200 dark:border-slate-800 transition-all"
+                  title="Carregar dados mock de teste">
+                  <FlaskConical className="h-3.5 w-3.5 text-amber-500" /><span>Mock</span>
                 </button>
                 {useMock && (
                   <button onClick={loadData}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                    <Activity className="h-3.5 w-3.5" /><span>Dados reais</span>
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl transition-all">
+                    <Activity className="h-3.5 w-3.5 text-amber-600" /><span>Dados Reais</span>
                   </button>
                 )}
                 {isAdmin && !useMock && (
                   <button onClick={handleClearHistory} disabled={clearing}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all disabled:opacity-50"
                     title="[Admin] Zerar histórico">
                     <Trash2 className="h-3.5 w-3.5" /><span>{clearing ? 'Zerando...' : 'Zerar'}</span>
                   </button>
@@ -363,106 +475,121 @@ export default function HeijunkaPage() {
             </div>
 
             {loading ? (
-              <div className="h-40 flex items-center justify-center text-muted-foreground">Carregando...</div>
+              <div className="h-40 flex items-center justify-center text-muted-foreground font-mono text-xs">
+                Carregando histórico do Heijunka...
+              </div>
             ) : filteredHistory.length === 0 ? (
-              <div className="h-52 flex flex-col items-center justify-center gap-3 text-muted-foreground bg-white dark:bg-card border rounded-xl">
-                <Activity className="h-8 w-8 opacity-20" />
-                <p className="text-sm">Nenhum histórico encontrado para este período.</p>
+              <div className="h-52 flex flex-col items-center justify-center gap-3 text-muted-foreground bg-white dark:bg-card border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <Activity className="h-8 w-8 opacity-30 text-primary" />
+                <p className="text-sm font-semibold">Nenhum histórico encontrado para este período.</p>
                 <button onClick={loadMockData}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 rounded-lg transition-colors">
-                  <FlaskConical className="h-3.5 w-3.5" />Carregar dados de exemplo
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-amber-800 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 rounded-xl transition-all">
+                  <FlaskConical className="h-4 w-4 text-amber-600" />Carregar dados de exemplo
                 </button>
               </div>
             ) : (
               <div className="space-y-5">
 
-                {/* ── KPIs ──────────────────────────────────────────────────── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* ── KPIs Modernos ──────────────────────────────────────────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
 
-                  {/* Recorde Atual */}
+                  {/* Recorde Atual - Verde Emerald */}
                   <div
                     onClick={() => recordAtual && setSelectedSnapshot(recordAtual)}
-                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-emerald-400 cursor-pointer transition-all"
+                    className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-emerald-400/80 cursor-pointer transition-all backdrop-blur-md group"
                     title="Clique para ver detalhes do recorde atual"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <Trophy className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                          <Trophy className="h-4 w-4" />
+                        </div>
+                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Recorde Atual</span>
                       </div>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">Recorde Atual</span>
+                      <Star className="h-3.5 w-3.5 text-emerald-500 opacity-40 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <p className="text-4xl font-black text-emerald-600 dark:text-emerald-400 leading-none">
+                    <p className="text-4xl font-mono font-black text-emerald-600 dark:text-emerald-400 leading-none tabular-nums">
                       {recordAtual?.pdpaPercent ?? '--'}%
                     </p>
                     {recordAtual && (
-                      <p className="text-[11px] text-slate-400 mt-2">
-                        {recordAtual.dayLabel} · {recordAtual.pdpaCount} vol. PD/PA
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between">
+                        <span>{recordAtual.dayLabel}</span>
+                        <span className="font-mono text-emerald-700 dark:text-emerald-300">{recordAtual.pdpaCount} vol. PD/PA</span>
                       </p>
                     )}
                   </div>
 
-                  {/* Recorde Anterior */}
+                  {/* Recorde Anterior - Azul Azure */}
                   <div
                     onClick={() => recordAnterior && setSelectedSnapshot(recordAnterior)}
-                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-sky-400 cursor-pointer transition-all"
+                    className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-blue-400/80 cursor-pointer transition-all backdrop-blur-md group"
                     title="Clique para ver detalhes do recorde anterior"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
-                        <Medal className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0">
+                          <Medal className="h-4 w-4" />
+                        </div>
+                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Recorde Anterior</span>
                       </div>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">Recorde Anterior</span>
                     </div>
-                    <p className="text-4xl font-black text-sky-600 dark:text-sky-400 leading-none">
+                    <p className="text-4xl font-mono font-black text-blue-600 dark:text-blue-400 leading-none tabular-nums">
                       {recordAnterior?.pdpaPercent ?? '--'}%
                     </p>
                     {recordAnterior && (
-                      <p className="text-[11px] text-slate-400 mt-2">
-                        {recordAnterior.dayLabel} · {recordAnterior.pdpaCount} vol. PD/PA
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between">
+                        <span>{recordAnterior.dayLabel}</span>
+                        <span className="font-mono text-blue-700 dark:text-blue-300">{recordAnterior.pdpaCount} vol. PD/PA</span>
                       </p>
                     )}
                   </div>
 
-                  {/* Maior Volume PD/PA */}
+                  {/* Maior Volume PD/PA - Violeta */}
                   <div
                     onClick={() => maiorPdPa && setSelectedSnapshot(maiorPdPa)}
-                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-violet-400 cursor-pointer transition-all"
+                    className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-violet-400/80 cursor-pointer transition-all backdrop-blur-md group"
                     title="Clique para ver detalhes do maior volume PD/PA"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                        <Zap className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30 flex items-center justify-center shrink-0">
+                          <Zap className="h-4 w-4" />
+                        </div>
+                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Maior Vol. PD/PA</span>
                       </div>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">Maior Volume PD/PA</span>
                     </div>
-                    <p className="text-4xl font-black text-violet-600 dark:text-violet-400 leading-none">
+                    <p className="text-4xl font-mono font-black text-violet-600 dark:text-violet-400 leading-none tabular-nums">
                       {maiorPdPa?.pdpaCount ?? '--'}
                     </p>
                     {maiorPdPa && (
-                      <p className="text-[11px] text-slate-400 mt-2">
-                        {maiorPdPa.dayLabel} · referência de quantidade
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between">
+                        <span>{maiorPdPa.dayLabel}</span>
+                        <span className="text-slate-400">referência máxima</span>
                       </p>
                     )}
                   </div>
 
-                  {/* Maior Volume Total de Ordens */}
+                  {/* Maior Volume Total de Ordens - Amarelo Amber */}
                   <div
                     onClick={() => maiorTotal && setSelectedSnapshot(maiorTotal)}
-                    className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm hover:border-amber-400 cursor-pointer transition-all"
+                    className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-amber-400/80 cursor-pointer transition-all backdrop-blur-md group"
                     title="Clique para ver detalhes do maior volume total"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <Layers className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                          <Layers className="h-4 w-4" />
+                        </div>
+                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Maior Vol. Total</span>
                       </div>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">Maior Volume Total</span>
                     </div>
-                    <p className="text-4xl font-black text-amber-600 dark:text-amber-400 leading-none">
+                    <p className="text-4xl font-mono font-black text-amber-600 dark:text-amber-400 leading-none tabular-nums">
                       {maiorTotal?.totalAll ?? '--'}
                     </p>
                     {maiorTotal && (
-                      <p className="text-[11px] text-slate-400 mt-2">
-                        {maiorTotal.dayLabel} · referência de quantidade
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between">
+                        <span>{maiorTotal.dayLabel}</span>
+                        <span className="text-slate-400">referência total</span>
                       </p>
                     )}
                   </div>
@@ -472,21 +599,21 @@ export default function HeijunkaPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-9 gap-4">
 
                   {/* Gráfico Diário (4/9) */}
-                  <div className="lg:col-span-4 bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-5 shadow-sm">
+                  <div className="lg:col-span-4 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-2xs backdrop-blur-md">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                           Pesagem Diária — Ordens Manuais e Automáticas
-                          <span className="text-[10px] font-normal text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                            Clique na barra para ver detalhes
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                            Clique na barra para detalhes
                           </span>
                         </h3>
-                        <p className="text-xs text-muted-foreground capitalize mt-0.5">{currentMonthLabel}</p>
+                        <p className="text-xs text-slate-400 capitalize mt-0.5 font-medium">{currentMonthLabel}</p>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#4ade80]" /> Manual</span>
-                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#16a34a]" /> PD/PA</span>
-                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-[#f97316] rounded" /> % PD/PA</span>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 font-semibold">
+                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-sky-400" /> Manual</span>
+                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#0284c7]" /> PD/PA</span>
+                        <span className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-amber-500 rounded" /> % PD/PA</span>
                       </div>
                     </div>
                     <div className="h-[300px] w-full cursor-pointer">
@@ -505,15 +632,15 @@ export default function HeijunkaPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={8} interval={dailyChartData.length > 20 ? 2 : 0} />
                           <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                          <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#f97316' }} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                          <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#f59e0b' }} tickFormatter={v => `${v}%`} domain={[0, 100]} />
                           <RechartsTooltip content={<DailyTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                          <Bar yAxisId="left" dataKey="manual" name="Manual" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]} maxBarSize={30} />
-                          <Bar yAxisId="left" dataKey="pdpaCount" name="PD/PA" stackId="a" fill="#16a34a" radius={[3, 3, 0, 0]} maxBarSize={30}
-                            label={{ position: 'top', fontSize: 9, fill: '#16a34a', formatter: (v: number) => v > 0 ? v : '' }}
+                          <Bar yAxisId="left" dataKey="manual" name="Manual" stackId="a" fill="#38bdf8" radius={[0, 0, 0, 0]} maxBarSize={30} />
+                          <Bar yAxisId="left" dataKey="pdpaCount" name="PD/PA" stackId="a" fill="#0284c7" radius={[3, 3, 0, 0]} maxBarSize={30}
+                            label={{ position: 'top', fontSize: 9, fill: '#0284c7', formatter: (v: number) => v > 0 ? v : '' }}
                           />
-                          <Line yAxisId="right" type="monotone" dataKey="pdpaPercent" name="% PD/PA" stroke="#f97316" strokeWidth={2}
-                            dot={{ r: 2.5, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 4 }}
-                            label={{ position: 'top', fontSize: 9, fill: '#f97316', formatter: (v: number) => `${v}%` }}
+                          <Line yAxisId="right" type="monotone" dataKey="pdpaPercent" name="% PD/PA" stroke="#f59e0b" strokeWidth={2.5}
+                            dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5 }}
+                            label={{ position: 'top', fontSize: 9, fill: '#f59e0b', formatter: (v: number) => `${v}%` }}
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -521,10 +648,10 @@ export default function HeijunkaPage() {
                   </div>
 
                   {/* Mini-gráfico de Entrega por Turno (2/9) */}
-                  <div className="lg:col-span-2 bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-4 shadow-sm flex flex-col">
+                  <div className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex flex-col backdrop-blur-md">
                     <div className="mb-3">
-                      <h3 className="text-xs font-bold text-foreground">Entregas por Turno</h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">Manual · PA · PD</p>
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">Entregas por Turno</h3>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">Manual · PA · PD</p>
                     </div>
                     <div className="flex-1 min-h-0" style={{ height: '300px' }}>
                       <ResponsiveContainer width="100%" height="100%">
@@ -532,16 +659,12 @@ export default function HeijunkaPage() {
                           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                           <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
                           <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} width={24} />
-                          <RechartsTooltip
-                            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: 12 }}
-                            formatter={(v: number, name: string) => [v, name === 'manual' ? 'Vol. Manual' : name === 'pa' ? 'Vol. P. Automática' : 'Vol. P. Direta']}
-                          />
-                          <Bar dataKey="manual" name="manual" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]}
+                          <RechartsTooltip content={<TurnoTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                          <Bar dataKey="manual" name="manual" stackId="a" fill="#38bdf8" radius={[0, 0, 0, 0]}
                             label={{ position: 'insideLeft', fontSize: 10, fill: '#fff', formatter: (v: number) => v > 0 ? v : '' }} />
-                          <Bar dataKey="pa" name="pa" stackId="a" fill="#16a34a" radius={[0, 0, 0, 0]}
+                          <Bar dataKey="pa" name="pa" stackId="a" fill="#0284c7" radius={[0, 0, 0, 0]}
                             label={{ position: 'insideLeft', fontSize: 10, fill: '#fff', formatter: (v: number) => v > 0 ? v : '' }} />
-                          <Bar dataKey="pd" name="pd" stackId="a" fill="#0066B3" radius={[0, 4, 4, 0]}
+                          <Bar dataKey="pd" name="pd" stackId="a" fill="#003760" radius={[0, 4, 4, 0]}
                             label={{ position: 'right', fontSize: 10, fill: '#64748b', formatter: (v: number, _: any, idx: number) => {
                               const row = turnoChartData[idx];
                               const tot = row ? row.manual + row.pa + row.pd : 0;
@@ -551,18 +674,18 @@ export default function HeijunkaPage() {
                       </ResponsiveContainer>
                     </div>
                     {/* Legenda */}
-                    <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-slate-500">
-                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#4ade80]" />Manual</span>
-                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#16a34a]" />PA</span>
-                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#0066B3]" />PD</span>
+                    <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-slate-500 font-semibold">
+                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-sky-400" />Manual</span>
+                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#0284c7]" />PA</span>
+                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#003760]" />PD</span>
                     </div>
                   </div>
 
                   {/* Gráfico Mensal (3/9) */}
-                  <div className="lg:col-span-3 bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl p-5 shadow-sm">
+                  <div className="lg:col-span-3 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-2xs backdrop-blur-md">
                     <div className="mb-4">
-                      <h3 className="text-sm font-bold text-foreground">Ordens Manuais e Automáticas</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">Visão mensal acumulada</p>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Ordens Manuais e Automáticas</h3>
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">Visão mensal acumulada</p>
                     </div>
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -570,14 +693,14 @@ export default function HeijunkaPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={8} />
                           <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                          <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#f97316' }} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                          <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#f59e0b' }} tickFormatter={v => `${v}%`} domain={[0, 100]} />
                           <RechartsTooltip content={<MonthlyTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                          <Bar yAxisId="left" dataKey="total" name="Total" fill="#0066B3" radius={[3, 3, 0, 0]} maxBarSize={30} />
-                          <Bar yAxisId="left" dataKey="manual" name="Manual" fill="#fb923c" radius={[3, 3, 0, 0]} maxBarSize={30} />
-                          <Bar yAxisId="left" dataKey="pdpa" name="PD/PA" fill="#16a34a" radius={[3, 3, 0, 0]} maxBarSize={30} />
-                          <Line yAxisId="right" type="monotone" dataKey="percent" name="% PD/PA" stroke="#f97316" strokeWidth={2.5}
-                            dot={{ r: 3.5, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 5 }}
-                            label={{ position: 'top', fontSize: 10, fill: '#f97316', formatter: (v: number) => `${v}%` }}
+                          <Bar yAxisId="left" dataKey="total" name="Total" fill="#003760" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                          <Bar yAxisId="left" dataKey="manual" name="Manual" fill="#38bdf8" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                          <Bar yAxisId="left" dataKey="pdpa" name="PD/PA" fill="#0284c7" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                          <Line yAxisId="right" type="monotone" dataKey="percent" name="% PD/PA" stroke="#f59e0b" strokeWidth={2.5}
+                            dot={{ r: 3.5, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5 }}
+                            label={{ position: 'top', fontSize: 10, fill: '#f59e0b', formatter: (v: number) => `${v}%` }}
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -586,13 +709,13 @@ export default function HeijunkaPage() {
                 </div>
 
                 {/* ── Tabela de Ranking ─────────────────────────────────────── */}
-                <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 dark:border-border/50 flex items-center justify-between">
+                <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xs overflow-hidden backdrop-blur-md">
+                  <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-amber-500" />
-                      <h3 className="text-sm font-bold text-foreground">Pódio de desempenho por % PD/PA</h3>
+                      <Star className="h-4 w-4 text-amber-500 fill-amber-500/20" />
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Pódio de Desempenho por % PD/PA</h3>
                     </div>
-                    <span className="text-xs text-muted-foreground">Clique na linha para ver/editar os detalhes</span>
+                    <span className="text-xs font-semibold text-slate-400">Clique na linha para ver/editar os detalhes</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
