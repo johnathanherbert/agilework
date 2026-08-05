@@ -37,6 +37,7 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
   const [selectedTurno, setSelectedTurno] = useState<ProductionTurno>(defaultTurno);
   const [progQty, setProgQty] = useState<number>(1);
   const [addingCode, setAddingCode] = useState<string | null>(null);
+  const badgeBase = 'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-bold leading-none';
 
   // Lista de resultados filtrados de rotas.json
   const results = useMemo(() => {
@@ -85,7 +86,7 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
             className="gap-1.5 text-xs bg-slate-50 dark:bg-card border-primary/30 text-primary hover:bg-primary/10 shadow-xs"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            Pesquisar Rotas (SA)
+            Pesquisar Rotas
           </Button>
         )}
       </DialogTrigger>
@@ -177,14 +178,14 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
                       {recipe.familia && (
                         <Badge
                           variant="secondary"
-                          className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 shrink-0"
+                          className={cn(badgeBase, 'shrink-0 uppercase tracking-wide border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300')}
                         >
                           <Layers className="h-2.5 w-2.5 mr-1" />
                           {recipe.familia}
                         </Badge>
                       )}
 
-                      <span className="text-xs font-mono font-extrabold text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                      <span className={cn(badgeBase, 'shrink-0 font-mono font-extrabold border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-300')}>
                         #{recipe.codigo}
                       </span>
 
@@ -192,10 +193,11 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-[10px] font-bold px-1.5 py-0 shrink-0 flex items-center gap-1',
+                            badgeBase,
+                            'shrink-0',
                             isUmida
-                              ? 'text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30'
-                              : 'text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
+                              ? 'text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30'
+                              : 'text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30'
                           )}
                         >
                           {isUmida ? <Droplets className="h-2.5 w-2.5" /> : <Wind className="h-2.5 w-2.5" />}

@@ -156,6 +156,7 @@ export default function ProducaoPage() {
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
   const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
+  const topBadgeBase = 'flex items-center gap-1.5 px-3 py-1 rounded-md border h-8';
 
   useEffect(() => {
     if (!authLoading) {
@@ -314,24 +315,24 @@ export default function ProducaoPage() {
 
               {/* Indicadores Globais Limpos */}
               <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-card border border-slate-300 dark:border-border rounded-md">
+                <div className={cn(topBadgeBase, 'bg-white dark:bg-card border-blue-200 dark:border-blue-900/50')}>
                   <span className="text-[11px] font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
-                  <span className="text-sm font-black text-primary tabular-nums">{totaisGerais.real}</span>
+                  <span className="text-sm font-black text-blue-700 dark:text-blue-300 tabular-nums">{totaisGerais.real}</span>
                   <span className="text-xs text-slate-400 font-bold">/{totaisGerais.prog}</span>
                 </div>
 
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-md">
-                  <span className="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400 mr-0.5">PD/PA:</span>
-                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{totaisPDPA.real}</span>
-                  <span className="text-xs text-emerald-700/70 dark:text-emerald-400/70 font-bold">/{totaisPDPA.prog}</span>
+                <div className={cn(topBadgeBase, 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50')}>
+                  <span className="text-[11px] font-bold uppercase text-sky-700 dark:text-sky-300 mr-0.5">PD/PA:</span>
+                  <span className="text-sm font-black text-sky-700 dark:text-sky-300 tabular-nums">{totaisPDPA.real}</span>
+                  <span className="text-xs text-sky-700/70 dark:text-sky-300/70 font-bold">/{totaisPDPA.prog}</span>
                 </div>
 
                 <div
                   className={cn(
-                    'flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border',
+                    'flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-md border h-8',
                     connected
-                      ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/40'
-                      : 'text-muted-foreground bg-muted border-border'
+                      ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50'
+                      : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                   )}
                 >
                   {connected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
@@ -340,7 +341,7 @@ export default function ProducaoPage() {
 
                 <RotasQuickAdd defaultTurno={visibleTurnos[0] || 1} />
 
-                <Button
+                {/* <Button
                   type="button"
                   variant="ghost"
                   size="sm"
@@ -350,7 +351,7 @@ export default function ProducaoPage() {
                 >
                   <Printer className="h-3.5 w-3.5" />
                   Imprimir
-                </Button>
+                </Button> */}
 
                 <Button
                   type="button"
@@ -375,10 +376,10 @@ export default function ProducaoPage() {
                   type="button"
                   onClick={() => selectOnlyTurno('all')}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0',
+                    'px-2.5 py-1 rounded-md text-xs font-bold transition-all shrink-0 border',
                     visibleTurnos.length === 3
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-blue-700 text-white border-blue-700'
+                      : 'text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                   )}
                 >
                   Todos
@@ -394,13 +395,13 @@ export default function ProducaoPage() {
                       type="button"
                       onClick={() => toggleTurnoVisibility(t)}
                       className={cn(
-                        'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border shrink-0',
+                        'px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 border shrink-0',
                         isVisible
-                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
+                          ? 'bg-sky-700 dark:bg-sky-600 text-white border-sky-700 dark:border-sky-600'
                           : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
                       )}
                     >
-                      {isVisible ? <Eye className="h-3 w-3 text-sky-400 dark:text-sky-600" /> : <EyeOff className="h-3 w-3 text-slate-400" />}
+                      {isVisible ? <Eye className="h-3 w-3 text-blue-100" /> : <EyeOff className="h-3 w-3 text-slate-400" />}
                       {t}º Turno
                     </button>
                   );

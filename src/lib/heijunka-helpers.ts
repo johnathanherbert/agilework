@@ -18,12 +18,24 @@ import { clearProductionItems } from './production-helpers';
 
 export const HEIJUNKA_COLLECTION = 'heijunka_snapshots';
 
+// O 3º turno vai das 22h às 6h, cruzando a virada do dia.
+// Quando o Heijunka é fechado de madrugada (antes das 6h), ele ainda faz
+// parte do turno que começou no dia anterior, então a data de referência
+// deve retroceder um dia.
+const getHeijunkaReferenceDate = (): string => {
+  const now = new Date();
+  if (now.getHours() < 6) {
+    now.setDate(now.getDate() - 1);
+  }
+  return now.toISOString().split('T')[0];
+};
+
 export const saveHeijunkaSnapshot = async (metaDiaria: number, items: ProductionItem[]): Promise<string> => {
   const userInfo = await getCurrentUserInfo();
   const now = Timestamp.now();
   
   // Format date as YYYY-MM-DD for easier grouping
-  const date = new Date().toISOString().split('T')[0];
+  const date = getHeijunkaReferenceDate();
 
   const ordens = items.filter(i => i.tipo === 'ordem');
   const pa = items.filter(i => i.tipo === 'auto');

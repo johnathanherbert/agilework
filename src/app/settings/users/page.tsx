@@ -6,7 +6,7 @@ import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provid
 import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory } from "@/lib/firestore-helpers";
 import {
   Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, Edit, Save, X,
-  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2,
+  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,55 @@ interface UserItem {
   lastActive?: any;
 }
 
+const INACTIVE_DAYS_THRESHOLD = 15;
+
+function parseLastActiveDate(lastActive: any): Date | null {
+  if (!lastActive) return null;
+
+  if (typeof lastActive?.toDate === 'function') {
+    const dt = lastActive.toDate();
+    return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
+  }
+
+  if (typeof lastActive?.seconds === 'number') {
+    return new Date(lastActive.seconds * 1000);
+  }
+
+  if (typeof lastActive?._seconds === 'number') {
+    return new Date(lastActive._seconds * 1000);
+  }
+
+  if (typeof lastActive === 'string' || typeof lastActive === 'number') {
+    const dt = new Date(lastActive);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+
+  return null;
+}
+
+function getLastActiveInfo(lastActive: any) {
+  const date = parseLastActiveDate(lastActive);
+
+  if (!date) {
+    return {
+      hasData: false,
+      text: 'Sem registro de atividade',
+      inactiveDays: null as number | null,
+      isInactive: true,
+    };
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const inactiveDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+
+  return {
+    hasData: true,
+    text: date.toLocaleString('pt-BR'),
+    inactiveDays,
+    isInactive: inactiveDays >= INACTIVE_DAYS_THRESHOLD,
+  };
+}
+
 function StatCard({ icon, label, value, tone = 'primary' }: { icon: React.ReactNode; label: string; value: string | number; tone?: 'primary' | 'green' | 'amber' | 'accent' }) {
   const toneClasses: Record<string, string> = {
     primary: 'bg-primary/10 text-primary',
@@ -46,13 +95,13 @@ function StatCard({ icon, label, value, tone = 'primary' }: { icon: React.ReactN
   };
   return (
     <Card>
-      <CardContent className="p-5 flex items-center gap-4">
-        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", toneClasses[tone])}>
+      <CardContent className="p-3.5 flex items-center gap-3">
+        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", toneClasses[tone])}>
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold text-foreground truncate">{value}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold text-foreground truncate leading-tight">{value}</p>
         </div>
       </CardContent>
     </Card>
@@ -85,14 +134,77 @@ export default function AdminControlPanelPage() {
     items: false,
     users: false
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'revoked' | 'inactive'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'leader' | 'user'>('all');
+  const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
   const stats = useMemo(() => {
     const total = users.length;
     const ativos = users.filter((u) => u.isApproved || u.email === ADMIN_EMAIL).length;
     const pendentes = users.filter((u) => !u.isApproved && u.email !== ADMIN_EMAIL).length;
     const lideres = users.filter((u) => u.role === 'leader').length;
-    return { total, ativos, pendentes, lideres };
+    const inativos = users.filter((u) => getLastActiveInfo(u.lastActive).isInactive).length;
+    return { total, ativos, pendentes, lideres, inativos };
   }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return users
+      .filter((user) => {
+        const isAdmin = user.email === ADMIN_EMAIL;
+        const name = (user.name || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const role = (user.role || 'user').toLowerCase();
+        const approved = !!user.isApproved || isAdmin;
+
+        if (query && !name.includes(query) && !email.includes(query) && !role.includes(query)) {
+          return false;
+        }
+
+        if (statusFilter === 'active' && !approved) {
+          return false;
+        }
+
+        if (statusFilter === 'revoked' && approved) {
+          return false;
+        }
+
+        if (statusFilter === 'inactive' && !getLastActiveInfo(user.lastActive).isInactive) {
+          return false;
+        }
+
+        if (roleFilter === 'admin' && !isAdmin) {
+          return false;
+        }
+
+        if (roleFilter === 'leader' && (isAdmin || user.role !== 'leader')) {
+          return false;
+        }
+
+        if (roleFilter === 'user' && (isAdmin || user.role === 'leader')) {
+          return false;
+        }
+
+        if (showInactiveOnly && !getLastActiveInfo(user.lastActive).isInactive) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const aIsAdmin = a.email === ADMIN_EMAIL;
+        const bIsAdmin = b.email === ADMIN_EMAIL;
+
+        if (aIsAdmin && !bIsAdmin) return -1;
+        if (!aIsAdmin && bIsAdmin) return 1;
+
+        const aName = (a.name || a.email || '').toLowerCase();
+        const bName = (b.name || b.email || '').toLowerCase();
+        return aName.localeCompare(bName, 'pt-BR');
+      });
+  }, [users, searchQuery, statusFilter, roleFilter, showInactiveOnly]);
 
   // Protection: only admin can access
   useEffect(() => {
@@ -227,8 +339,8 @@ export default function AdminControlPanelPage() {
         <Sidebar />
         <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
           <Topbar />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="mb-6 flex items-center gap-3">
+          <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
+            <div className="mb-4 flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-md">
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
@@ -238,15 +350,15 @@ export default function AdminControlPanelPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
               <StatCard icon={<Users className="h-5 w-5" />} label="Total de Usuários" value={stats.total} tone="primary" />
               <StatCard icon={<UserCheck className="h-5 w-5" />} label="Ativos" value={stats.ativos} tone="green" />
               <StatCard icon={<ShieldAlert className="h-5 w-5" />} label="Pendentes" value={stats.pendentes} tone="amber" />
-              <StatCard icon={<Star className="h-5 w-5" />} label="Líderes" value={stats.lideres} tone="accent" />
+              <StatCard icon={<Star className="h-5 w-5" />} label="Inativos" value={stats.inativos} tone="accent" />
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'users' | 'maintenance')}>
-              <TabsList className="mb-6">
+              <TabsList className="mb-4 h-9">
                 <TabsTrigger value="users" className="gap-2">
                   <ShieldCheck className="w-4 h-4" />
                   Usuários
@@ -260,36 +372,118 @@ export default function AdminControlPanelPage() {
               <TabsContent value="users">
                 <Card>
                   <CardContent className="p-0">
-                    <div className="px-6 py-5 border-b border-border/80 flex justify-between items-center">
-                      <div>
-                        <h2 className="text-xl font-bold text-foreground">Gestão de Usuários</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Gerencie o cadastro e os acessos da equipe.
-                        </p>
+                    <div className="px-4 py-3.5 border-b border-border/80 bg-gradient-to-r from-slate-50 to-blue-50/60 dark:from-slate-900 dark:to-slate-800">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                          <h2 className="text-xl font-bold text-foreground">Gestão de Usuários</h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Gerencie cadastro, perfil e permissões com pesquisa rápida.
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs font-bold px-3 py-1.5 w-fit">
+                          Exibindo: {filteredUsers.length} de {users.length}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-xs font-bold px-3 py-1.5">
-                        Total: {users.length}
-                      </Badge>
+
+                      <div className="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-2.5">
+                        <div className="lg:col-span-6 relative">
+                          <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                          <Input
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Buscar por nome, e-mail ou função..."
+                            className="pl-9 h-9 bg-white/90 dark:bg-slate-900"
+                          />
+                        </div>
+
+                        <div className="lg:col-span-3">
+                          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'revoked' | 'inactive')}>
+                            <SelectTrigger className="h-9 bg-white/90 dark:bg-slate-900">
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todos status</SelectItem>
+                              <SelectItem value="active">Apenas ativos</SelectItem>
+                              <SelectItem value="revoked">Apenas revogados</SelectItem>
+                              <SelectItem value="inactive">Apenas inativos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="lg:col-span-3 flex items-center gap-2">
+                          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'all' | 'admin' | 'leader' | 'user')}>
+                            <SelectTrigger className="h-9 bg-white/90 dark:bg-slate-900">
+                              <SelectValue placeholder="Função" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas funções</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="leader">Líder</SelectItem>
+                              <SelectItem value="user">Usuário</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || showInactiveOnly) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="h-9 px-3"
+                              onClick={() => {
+                                setSearchQuery('');
+                                setStatusFilter('all');
+                                setRoleFilter('all');
+                                setShowInactiveOnly(false);
+                              }}
+                              title="Limpar filtros"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="lg:col-span-12 flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={showInactiveOnly ? 'default' : 'outline'}
+                            className="h-8 text-xs"
+                            onClick={() => setShowInactiveOnly((v) => !v)}
+                          >
+                            {showInactiveOnly ? 'Mostrando somente inativos' : 'Mostrar somente inativos'}
+                          </Button>
+                          <span className="text-[11px] text-muted-foreground font-medium">
+                            Critério: sem atividade há {INACTIVE_DAYS_THRESHOLD}+ dias.
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <ul className="divide-y divide-border/80">
-                      {users.length === 0 ? (
+                      {filteredUsers.length === 0 ? (
                         <li className="px-6 py-12 text-center text-muted-foreground font-medium">
-                          Nenhum usuário encontrado na base.
+                          Nenhum usuário encontrado com os filtros atuais.
                         </li>
                       ) : (
-                        users.map((user) => {
+                        filteredUsers.map((user) => {
                           const isAdmin = user.email === ADMIN_EMAIL;
                           const isApproved = user.isApproved;
                           const isEditing = editingUser?.uid === user.uid;
+                          const displayName = user.name || "Sem Nome Definido";
+                          const lastActiveInfo = getLastActiveInfo(user.lastActive);
+                          const initials = displayName
+                            .split(' ')
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((p) => p[0]?.toUpperCase())
+                            .join('') || 'U';
 
                           return (
-                            <li key={user.uid} className="px-6 py-5 hover:bg-muted/30 transition-colors">
+                            <li key={user.uid} className="px-4 py-3.5 hover:bg-muted/30 transition-colors">
                               <div className="flex flex-wrap items-center justify-between gap-4">
                                 {isEditing ? (
-                                  <div className="flex-1 min-w-0 p-4 bg-muted/40 rounded-xl space-y-4 border border-border/80">
+                                  <div className="flex-1 min-w-0 p-3 bg-muted/40 rounded-xl space-y-3 border border-border/80">
                                     <h3 className="text-sm font-bold text-foreground">Editando Perfil: {user.email}</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                       <div className="space-y-1.5">
                                         <label className="text-xs font-semibold text-muted-foreground uppercase">Nome de Exibição</label>
                                         <Input
@@ -300,7 +494,7 @@ export default function AdminControlPanelPage() {
                                         />
                                       </div>
                                       <div className="space-y-1.5 flex flex-col justify-end">
-                                        <label className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border/80 cursor-pointer">
+                                        <label className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border/80 cursor-pointer">
                                           <Checkbox
                                             checked={editForm.isApproved}
                                             onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isApproved: checked === true }))}
@@ -324,7 +518,7 @@ export default function AdminControlPanelPage() {
                                         </Select>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-3 pt-2">
+                                    <div className="flex items-center gap-2 pt-1">
                                       <Button onClick={handleEditSave} className="gap-1.5 bg-green-600 hover:bg-green-700 text-white">
                                         <Save className="w-4 h-4" /> Salvar Alterações
                                       </Button>
@@ -336,42 +530,72 @@ export default function AdminControlPanelPage() {
                                 ) : (
                                   <>
                                     <div className="flex-1 min-w-0 pr-4">
-                                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                        <p className="text-base font-bold text-foreground truncate">
-                                          {user.name || "Sem Nome Definido"}
-                                        </p>
-                                        {isAdmin && (
-                                          <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10 border border-primary/20">
-                                            <ShieldCheck className="h-3 w-3" />
-                                            Admin Global
-                                          </Badge>
-                                        )}
-                                        {!isAdmin && user.role === 'leader' && (
-                                          <Badge className="gap-1 bg-accent/10 text-accent hover:bg-accent/10 border border-accent/20">
-                                            <Star className="h-3 w-3" />
-                                            Líder
-                                          </Badge>
-                                        )}
-                                        {!isAdmin && isApproved && (
-                                          <Badge variant="success" className="gap-1">
-                                            Status: Ativo
-                                          </Badge>
-                                        )}
-                                        {!isAdmin && !isApproved && (
-                                          <Badge variant="destructive" className="gap-1">
-                                            <ShieldAlert className="h-3 w-3" />
-                                            Acesso Revogado
-                                          </Badge>
-                                        )}
+                                      <div className="flex items-start gap-3">
+                                        <div className="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-border flex items-center justify-center text-xs font-black text-slate-700 dark:text-slate-200 shrink-0">
+                                          {initials}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                            <p className="text-sm font-bold text-foreground truncate">
+                                              {displayName}
+                                            </p>
+                                            {!isAdmin && user.role !== 'leader' && (
+                                              <Badge variant="outline" className="text-[11px] font-bold">Usuário</Badge>
+                                            )}
+                                            {!isAdmin && user.role === 'leader' && (
+                                              <Badge className="gap-1 bg-accent/10 text-accent hover:bg-accent/10 border border-accent/20">
+                                                <Star className="h-3 w-3" />
+                                                Líder
+                                              </Badge>
+                                            )}
+                                            {isAdmin && (
+                                              <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10 border border-primary/20">
+                                                <ShieldCheck className="h-3 w-3" />
+                                                Admin Global
+                                              </Badge>
+                                            )}
+                                            {!isAdmin && !isApproved && (
+                                              <Badge variant="destructive" className="gap-1">
+                                                <ShieldAlert className="h-3 w-3" />
+                                                Acesso Revogado
+                                              </Badge>
+                                            )}
+                                            {!isAdmin && isApproved && !lastActiveInfo.isInactive && (
+                                              <Badge variant="success" className="gap-1">
+                                                Status: Ativo
+                                              </Badge>
+                                            )}
+                                            {!isAdmin && isApproved && lastActiveInfo.isInactive && (
+                                              <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:bg-amber-900/20">
+                                                Status: Inativo
+                                              </Badge>
+                                            )}
+                                          </div>
+
+                                          <p className="text-xs font-medium text-muted-foreground truncate">
+                                            {user.email}
+                                          </p>
+
+                                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                            <p className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wide">
+                                              Perfil: {isAdmin ? 'Admin' : user.role === 'leader' ? 'Líder' : 'Usuário'}
+                                            </p>
+                                            {user.created_at && (
+                                              <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide">
+                                                Ingressou em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                                              </p>
+                                            )}
+                                            <p className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wide">
+                                              Último online: {lastActiveInfo.text}
+                                            </p>
+                                            {lastActiveInfo.isInactive && (
+                                              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                                                Inativo {lastActiveInfo.inactiveDays !== null ? `há ${lastActiveInfo.inactiveDays} dias` : ''}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
-                                      <p className="text-sm font-medium text-muted-foreground truncate">
-                                        {user.email}
-                                      </p>
-                                      {user.created_at && (
-                                        <p className="text-[11px] font-semibold text-muted-foreground/70 mt-2 uppercase tracking-wide">
-                                          Ingressou em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                                        </p>
-                                      )}
                                     </div>
 
                                     <div className="flex items-center gap-2">

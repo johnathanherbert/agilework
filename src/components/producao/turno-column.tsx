@@ -42,13 +42,21 @@ const turnoLabels: Record<ProductionTurno, string> = {
   3: '3º Turno',
 };
 
+const badgeBase = 'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-bold leading-none';
+
 /** Badge de progresso por item (Real / Prog) com números ampliados */
 function IndicadorRealProg({ real, prog }: { real: number; prog: number }) {
   const completo = prog > 0 && real >= prog;
   return (
     <Badge
-      variant={completo ? 'success' : 'destructive'}
-      className="text-xs font-black px-2 py-0.5 whitespace-nowrap shrink-0 tabular-nums leading-tight shadow-2xs"
+      variant="outline"
+      className={cn(
+        badgeBase,
+        'whitespace-nowrap shrink-0 tabular-nums font-black shadow-2xs',
+        completo
+          ? 'border-blue-700 bg-blue-700 text-white dark:border-blue-600 dark:bg-blue-600'
+          : 'border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+      )}
       title={`Realizado ${real} de ${prog} programado`}
     >
       {real}/{prog}
@@ -151,9 +159,9 @@ export function TurnoColumn({
           className={cn(
             'p-2.5 rounded-md border border-l-4 cursor-pointer transition-colors duration-150 select-none group flex flex-col gap-1',
             item.locked
-              ? 'bg-amber-50 dark:bg-amber-950/20 border-slate-200 dark:border-border/80 border-l-amber-500 opacity-90'
+              ? 'bg-blue-50/80 dark:bg-blue-950/25 border-blue-200 dark:border-blue-900/50 border-l-blue-700 opacity-90'
               : completo
-              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
               : emAndamento
               ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-sky-500 hover:bg-slate-50 dark:hover:bg-muted/10'
               : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/40'
@@ -170,17 +178,17 @@ export function TurnoColumn({
                   )}
                 />
               )}
-              {item.locked && <Lock className="h-3.5 w-3.5 text-amber-600 shrink-0" />}
+              {item.locked && <Lock className="h-3.5 w-3.5 text-blue-700 shrink-0" />}
               {item.splitParentId && <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />}
 
               {familia && (
-                <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0 truncate max-w-[110px]">
+                <span className={cn(badgeBase, 'max-w-[130px] shrink-0 truncate uppercase tracking-wide border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300')}>
                   {familia}
                 </span>
               )}
 
               {codigoSA && (
-                <span className="text-[9.5px] font-mono font-extrabold text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                <span className={cn(badgeBase, 'shrink-0 font-mono font-extrabold border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-300')}>
                   #{codigoSA}
                 </span>
               )}
@@ -199,7 +207,7 @@ export function TurnoColumn({
             <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
               <span>
                 {completo ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                  <span className="text-blue-700 dark:text-blue-300 font-bold flex items-center gap-0.5">
                     <CheckCircle2 className="h-3 w-3" /> Concluído
                   </span>
                 ) : emAndamento ? (
@@ -217,7 +225,7 @@ export function TurnoColumn({
                 className={cn(
                   'h-full transition-all duration-300 rounded-full',
                   completo
-                    ? 'bg-emerald-500'
+                    ? 'bg-blue-700'
                     : emAndamento
                     ? 'bg-sky-500'
                     : 'bg-slate-300 dark:bg-slate-700'
@@ -247,14 +255,14 @@ export function TurnoColumn({
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none group',
           item.locked
-            ? 'bg-amber-50 dark:bg-amber-950/20 border-slate-200 dark:border-border/80 border-l-amber-500 opacity-80 cursor-not-allowed'
+            ? 'bg-blue-50/80 dark:bg-blue-950/25 border-blue-200 dark:border-blue-900/50 border-l-blue-700 opacity-80 cursor-not-allowed'
             : completo
-            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
             : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30 active:cursor-grabbing'
         )}
       >
         <div className="flex items-center gap-0.5 shrink-0">
-          {item.locked && <Lock className="h-2.5 w-2.5 text-amber-600" />}
+          {item.locked && <Lock className="h-2.5 w-2.5 text-blue-700" />}
           {item.splitParentId && <GitBranch className="h-2.5 w-2.5 text-primary" />}
           {!item.locked && (
             <GripVertical
@@ -267,7 +275,7 @@ export function TurnoColumn({
         </div>
 
         {familia && (
-          <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0 leading-none max-w-[70px] truncate">
+          <span className={cn(badgeBase, 'max-w-[90px] shrink-0 truncate uppercase tracking-wide border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300')}>
             {familia}
           </span>
         )}
@@ -279,9 +287,7 @@ export function TurnoColumn({
           {item.produto}
         </span>
 
-        {completo && (
-          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">✓</span>
-        )}
+        {completo && <span className="text-xs font-bold text-blue-700 dark:text-blue-300 shrink-0">✓</span>}
 
         <IndicadorRealProg real={item.real} prog={item.prog} />
       </div>
@@ -300,11 +306,11 @@ export function TurnoColumn({
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none',
           completo
-            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-emerald-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
             : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30'
         )}
       >
-        {completo && <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">✓</span>}
+        {completo && <span className="text-xs font-bold text-blue-700 dark:text-blue-300 shrink-0">✓</span>}
         <span className="text-[11px] font-bold text-slate-800 dark:text-foreground truncate flex-1 leading-tight" title={item.produto}>
           {item.produto}
         </span>
@@ -327,8 +333,8 @@ export function TurnoColumn({
           'p-1.5 flex flex-col gap-1 min-h-[80px] rounded-lg border-2 border-dashed transition-colors duration-150',
           dragOverZone === zoneKey
             ? isUmida
-              ? 'border-sky-400 bg-sky-50/60 dark:bg-sky-900/10'
-              : 'border-amber-400 bg-amber-50/60 dark:bg-amber-900/10'
+              ? 'border-blue-400 bg-blue-50/60 dark:bg-blue-900/10'
+              : 'border-sky-400 bg-sky-50/60 dark:bg-sky-900/10'
             : 'border-transparent'
         )}
       >
@@ -352,16 +358,16 @@ export function TurnoColumn({
     const totalP = list.reduce((a, c) => a + c.prog, 0);
 
     return (
-      <div className={cn('px-2.5 py-2 h-full', isAuto ? 'bg-violet-50 dark:bg-violet-950/10' : 'bg-amber-50 dark:bg-amber-950/10')}>
+      <div className={cn('px-2.5 py-2 h-full', isAuto ? 'bg-blue-50 dark:bg-blue-950/10' : 'bg-sky-50 dark:bg-sky-950/10')}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
             {isAuto
-              ? <Zap className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-              : <Hand className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              ? <Zap className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+              : <Hand className="h-3.5 w-3.5 text-sky-600 shrink-0" />
             }
             <span className={cn(
               'text-[10.5px] uppercase tracking-wide font-extrabold shrink-0',
-              isAuto ? 'text-violet-600 dark:text-violet-400' : 'text-amber-600 dark:text-amber-400'
+              isAuto ? 'text-blue-700 dark:text-blue-300' : 'text-sky-700 dark:text-sky-300'
             )}>
               {title}
             </span>
@@ -378,8 +384,8 @@ export function TurnoColumn({
             className={cn(
               'h-5 w-5 rounded-full shrink-0',
               isAuto
-                ? 'text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-900/30'
-                : 'text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                ? 'text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                : 'text-sky-700 hover:bg-sky-100 dark:hover:bg-sky-900/30'
             )}
             onClick={() => onCreateClick(tipo)}
             title={`Adicionar em ${title}`}
@@ -397,8 +403,8 @@ export function TurnoColumn({
             'rounded-md border-2 border-dashed min-h-[36px] transition-colors duration-150 flex flex-col gap-1 p-1',
             dragOverZone === zoneKey
               ? isAuto
-                ? 'border-violet-400 bg-violet-50/80 dark:bg-violet-900/20'
-                : 'border-amber-400 bg-amber-50/80 dark:bg-amber-900/20'
+                ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-900/20'
+                : 'border-sky-400 bg-sky-50/80 dark:bg-sky-900/20'
               : 'border-transparent'
           )}
         >
@@ -422,7 +428,7 @@ export function TurnoColumn({
         <div className="flex items-center gap-2">
           <span className="font-black text-base tracking-wide">{turnoLabels[turno]}</span>
           {totalOrdens > 0 && (
-            <span className="text-[10px] font-extrabold text-white bg-black/20 rounded px-2 py-0.5">
+            <span className={cn(badgeBase, 'bg-blue-900/55 border-blue-200/30 text-blue-50')}>
               {totalOrdens} {totalOrdens === 1 ? 'ordem' : 'ordens'}
             </span>
           )}
@@ -435,7 +441,7 @@ export function TurnoColumn({
               <span className="text-xs font-bold text-primary/60">Ordens:</span>
               <span className="text-sm font-black leading-none tabular-nums text-primary">{totalReal}</span>
               <span className="text-xs font-bold text-primary/50 leading-none tabular-nums">/{totalProg}</span>
-              <span className="ml-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-primary text-white">
+              <span className={cn(badgeBase, 'ml-1 border-blue-700 bg-blue-700 text-white')}>
                 {totalPct}%
               </span>
             </div>
@@ -443,12 +449,12 @@ export function TurnoColumn({
             <span className="text-xs font-semibold opacity-70">Sem ordens</span>
           )}
 
-          <div className="flex items-center gap-1.5 bg-emerald-700 px-2.5 py-1 rounded-md" title="KPI Pesagens PD/PA no turno">
-            <span className="text-xs font-bold text-emerald-100">PD/PA:</span>
+          <div className="flex items-center gap-1.5 bg-sky-700 px-2.5 py-1 rounded-md" title="KPI Pesagens PD/PA no turno">
+            <span className="text-xs font-bold text-sky-100">PD/PA:</span>
             <span className="text-sm font-black text-white leading-none tabular-nums">{pdpaReal}</span>
-            <span className="text-xs font-bold text-emerald-100 leading-none tabular-nums">/{pdpaProg}</span>
+            <span className="text-xs font-bold text-sky-100 leading-none tabular-nums">/{pdpaProg}</span>
             {pdpaProg > 0 && (
-              <span className="text-[9.5px] font-black text-white bg-emerald-800 rounded px-1 ml-0.5">{pdpaPct}%</span>
+              <span className={cn(badgeBase, 'ml-0.5 border-sky-900 bg-sky-900 text-sky-50')}>{pdpaPct}%</span>
             )}
           </div>
         </div>
@@ -457,18 +463,18 @@ export function TurnoColumn({
       {/* ── Subheader de Indicadores por Via (Números ampliados) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 border-b border-slate-300 dark:border-border shrink-0">
         {/* KPI Via Úmida */}
-        <div className="flex items-center justify-between px-3 py-2 border-b sm:border-b-0 sm:border-r border-slate-300 dark:border-border bg-sky-50 dark:bg-sky-950/20">
+        <div className="flex items-center justify-between px-3 py-2 border-b sm:border-b-0 sm:border-r border-slate-300 dark:border-border bg-blue-50 dark:bg-blue-950/20">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Droplets className="h-4 w-4 text-sky-500 shrink-0" />
+            <Droplets className="h-4 w-4 text-blue-600 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="text-[11px] font-black uppercase tracking-wide text-sky-600 dark:text-sky-400 leading-none shrink-0">
+              <span className="text-[11px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-300 leading-none shrink-0">
                 Úmida
               </span>
-              <span className="text-xs font-black text-sky-700 dark:text-sky-300 tabular-nums">
+              <span className="text-xs font-black text-blue-700 dark:text-blue-300 tabular-nums">
                 {umidaReal}/{umidaProg}
               </span>
               {umidaProg > 0 && (
-                <span className="text-[10px] text-sky-600 dark:text-sky-400 font-extrabold tabular-nums">
+                <span className="text-[10px] text-blue-700 dark:text-blue-300 font-extrabold tabular-nums">
                   ({umidaPct}%)
                 </span>
               )}
@@ -476,7 +482,7 @@ export function TurnoColumn({
           </div>
           <Button
             type="button" size="icon" variant="ghost"
-            className="h-5 w-5 rounded-full text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/30 shrink-0"
+            className="h-5 w-5 rounded-full text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 shrink-0"
             onClick={() => onCreateClick('ordem', 'UMIDA')}
             title="Adicionar ordem na via úmida"
           >
@@ -485,18 +491,18 @@ export function TurnoColumn({
         </div>
 
         {/* KPI Via Seca */}
-        <div className="flex items-center justify-between px-3 py-2 bg-amber-50 dark:bg-amber-950/20">
+        <div className="flex items-center justify-between px-3 py-2 bg-sky-50 dark:bg-sky-950/20">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Wind className="h-4 w-4 text-amber-500 shrink-0" />
+            <Wind className="h-4 w-4 text-sky-600 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="text-[11px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400 leading-none shrink-0">
+              <span className="text-[11px] font-black uppercase tracking-wide text-sky-700 dark:text-sky-300 leading-none shrink-0">
                 Seca
               </span>
-              <span className="text-xs font-black text-amber-700 dark:text-amber-300 tabular-nums">
+              <span className="text-xs font-black text-sky-700 dark:text-sky-300 tabular-nums">
                 {secaReal}/{secaProg}
               </span>
               {secaProg > 0 && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-extrabold tabular-nums">
+                <span className="text-[10px] text-sky-700 dark:text-sky-300 font-extrabold tabular-nums">
                   ({secaPct}%)
                 </span>
               )}
@@ -504,7 +510,7 @@ export function TurnoColumn({
           </div>
           <Button
             type="button" size="icon" variant="ghost"
-            className="h-5 w-5 rounded-full text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 shrink-0"
+            className="h-5 w-5 rounded-full text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/30 shrink-0"
             onClick={() => onCreateClick('ordem', 'SECA')}
             title="Adicionar ordem na via seca"
           >
@@ -527,16 +533,16 @@ export function TurnoColumn({
       </div>
 
       {/* ── Rodapé KPI de Pesagem Direta & Automática com números ampliados ── */}
-      <div className="bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 border-t border-b border-emerald-200 dark:border-emerald-900/60 flex items-center justify-between shrink-0">
-        <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-          <Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+      <div className="bg-sky-50 dark:bg-sky-950/30 px-3 py-1.5 border-t border-b border-sky-200 dark:border-sky-900/60 flex items-center justify-between shrink-0">
+        <span className="text-[11px] font-black text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+          <Zap className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
           Entregas PD/PA:
         </span>
         <div className="flex items-center gap-1.5 tabular-nums">
-          <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">{pdpaReal}</span>
+          <span className="text-sm font-black text-sky-700 dark:text-sky-300">{pdpaReal}</span>
           <span className="text-xs text-slate-500 font-bold">/{pdpaProg}</span>
           {pdpaProg > 0 && (
-            <Badge variant="outline" className="text-[9.5px] px-1.5 py-0 font-black bg-white dark:bg-card border-emerald-300 text-emerald-700">
+            <Badge variant="outline" className={cn(badgeBase, 'font-black bg-white dark:bg-card border-sky-300 text-sky-700 dark:border-sky-800 dark:text-sky-300')}>
               {pdpaPct}%
             </Badge>
           )}
