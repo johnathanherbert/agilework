@@ -189,7 +189,7 @@ export function TurnoColumn({
 
               {codigoSA && (
                 <span className={cn(badgeBase, 'shrink-0 font-mono font-extrabold border-slate-200 bg-slate-100/90 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400')}>
-                  #{codigoSA}
+                  {codigoSA}
                 </span>
               )}
             </div>

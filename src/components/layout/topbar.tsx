@@ -60,68 +60,96 @@ export const Topbar = () => {
           )}
         </Button>
 
-        {/* Menu do Usuário */}
+        {/* Menu do Usuário Moderno */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="relative rounded-xl overflow-hidden border-2 border-white/20 hover:border-white/40 hover:bg-white/15 transition-all duration-200 h-9 w-9 sm:h-10 sm:w-10 bg-white/10 shadow-xs active:scale-95"
+              className="relative rounded-2xl overflow-visible border-2 border-white/20 hover:border-white/50 hover:bg-white/15 transition-all duration-200 h-9 w-9 sm:h-10 sm:w-10 bg-white/10 shadow-2xs active:scale-95 group"
             >
-              <div className="relative w-full h-full flex items-center justify-center text-white font-black text-xs sm:text-sm">
+              <div className="relative w-full h-full rounded-xl flex items-center justify-center text-white font-mono font-black text-xs sm:text-sm">
                 {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#003760] shadow-2xs" />
             </Button>
           </DropdownMenuTrigger>
           
-          <DropdownMenuContent align="end" className="w-[280px] p-0 shadow-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-2xl overflow-hidden">
-            <div className="relative p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
-                  {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+          <DropdownMenuContent align="end" className="w-[290px] p-0 shadow-2xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 rounded-2xl overflow-hidden backdrop-blur-md">
+            {/* Header do Perfil em Estilo Card Corporativo */}
+            <div className="relative p-4 bg-gradient-to-br from-[#002e52] via-[#003760] to-[#002848] text-white overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="relative shrink-0">
+                  <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 text-white font-mono font-black text-base flex items-center justify-center shadow-md">
+                    {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#002e52]" />
                 </div>
+
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-slate-900 dark:text-white text-sm truncate leading-tight">
+                  <p className="font-bold text-white text-sm truncate leading-tight tracking-tight">
                     {userData?.name || user?.displayName || 'Usuário'}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <p className="text-[11px] text-slate-300/80 truncate mt-0.5 font-medium font-mono">
                     {user?.email}
                   </p>
                   
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 mt-1.5">
-                    <ShieldCheck className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                    {getUserRoleLabel()}
-                  </span>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white/15 text-white border border-white/20 tracking-wide uppercase">
+                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                      {getUserRoleLabel()}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-1.5 space-y-0.5">
+            {/* Itens do Menu */}
+            <div className="p-2 space-y-1">
               <DropdownMenuItem 
-                className="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition-all text-xs font-bold text-slate-700 dark:text-slate-200 group"
                 onClick={() => router.push('/dashboard')}
               >
-                <User size={15} className="text-slate-500" />
-                <span>Meu Perfil</span>
+                <div className="flex items-center gap-2.5">
+                  <User size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
+                  <span>Meu Perfil</span>
+                </div>
+                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">Geral</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem 
-                className="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition-all text-xs font-bold text-slate-700 dark:text-slate-200 group"
                 onClick={() => router.push('/settings')}
               >
-                <Settings size={15} className="text-slate-500" />
-                <span>Configurações</span>
+                <div className="flex items-center gap-2.5">
+                  <Settings size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
+                  <span>Configurações</span>
+                </div>
               </DropdownMenuItem>
 
-              <div className="h-px bg-slate-100 dark:bg-slate-800 my-1 mx-2" />
+              <div className="h-px bg-slate-100 dark:bg-slate-800/80 my-1 mx-2" />
 
               <DropdownMenuItem 
-                className="flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer transition-colors text-xs font-bold"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-all text-xs font-extrabold group"
                 onClick={handleSignOut}
               >
-                <LogOut size={15} />
-                <span>Sair da conta</span>
+                <div className="flex items-center gap-2.5">
+                  <LogOut size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                  <span>Sair da Conta</span>
+                </div>
+                <span className="text-[9px] font-mono uppercase font-bold text-rose-500 bg-rose-100 dark:bg-rose-950/60 px-1.5 py-0.5 rounded">Encerrar</span>
               </DropdownMenuItem>
+            </div>
+
+            {/* Rodapé de Status de Sessão */}
+            <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-semibold text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Sessão Ativa
+              </span>
+              
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
