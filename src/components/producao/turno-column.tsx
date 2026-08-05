@@ -159,12 +159,12 @@ export function TurnoColumn({
           className={cn(
             'p-2.5 rounded-md border border-l-4 cursor-pointer transition-colors duration-150 select-none group flex flex-col gap-1',
             item.locked
-              ? 'bg-blue-50/80 dark:bg-blue-950/25 border-blue-200 dark:border-blue-900/50 border-l-blue-700 opacity-90'
+              ? 'bg-slate-100/80 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 border-l-slate-500 opacity-90'
               : completo
-              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
+              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-800 dark:border-l-slate-400 hover:bg-slate-50 dark:hover:bg-muted/10'
               : emAndamento
-              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-sky-500 hover:bg-slate-50 dark:hover:bg-muted/10'
-              : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/40'
+              ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-amber-500 hover:bg-slate-50 dark:hover:bg-muted/10'
+              : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-slate-400'
           )}
         >
           {/* Header do Card Expandido */}
@@ -178,17 +178,17 @@ export function TurnoColumn({
                   )}
                 />
               )}
-              {item.locked && <Lock className="h-3.5 w-3.5 text-blue-700 shrink-0" />}
-              {item.splitParentId && <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />}
+              {item.locked && <Lock className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
+              {item.splitParentId && <GitBranch className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
 
               {familia && (
-                <span className={cn(badgeBase, 'max-w-[130px] shrink-0 truncate uppercase tracking-wide border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300')}>
+                <span className={cn(badgeBase, 'max-w-[130px] shrink-0 truncate uppercase tracking-wide border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
                   {familia}
                 </span>
               )}
 
               {codigoSA && (
-                <span className={cn(badgeBase, 'shrink-0 font-mono font-extrabold border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-300')}>
+                <span className={cn(badgeBase, 'shrink-0 font-mono font-extrabold border-slate-200 bg-slate-100/90 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400')}>
                   #{codigoSA}
                 </span>
               )}
@@ -207,12 +207,12 @@ export function TurnoColumn({
             <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
               <span>
                 {completo ? (
-                  <span className="text-blue-700 dark:text-blue-300 font-bold flex items-center gap-0.5">
-                    <CheckCircle2 className="h-3 w-3" /> Concluído
+                  <span className="text-slate-800 dark:text-slate-200 font-bold flex items-center gap-0.5">
+                    <CheckCircle2 className="h-3 w-3 text-slate-600 dark:text-slate-400" /> Concluído
                   </span>
                 ) : emAndamento ? (
-                  <span className="text-sky-600 dark:text-sky-400 font-bold flex items-center gap-0.5">
-                    <Clock className="h-3 w-3" /> Em andamento
+                  <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-0.5">
+                    <Clock className="h-3 w-3 text-amber-500" /> Em andamento
                   </span>
                 ) : (
                   <span className="text-slate-400">Pendente</span>
@@ -225,9 +225,9 @@ export function TurnoColumn({
                 className={cn(
                   'h-full transition-all duration-300 rounded-full',
                   completo
-                    ? 'bg-blue-700'
+                    ? 'bg-slate-700 dark:bg-slate-400'
                     : emAndamento
-                    ? 'bg-sky-500'
+                    ? 'bg-amber-500'
                     : 'bg-slate-300 dark:bg-slate-700'
                 )}
                 style={{ width: `${pct}%` }}
@@ -255,15 +255,15 @@ export function TurnoColumn({
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none group',
           item.locked
-            ? 'bg-blue-50/80 dark:bg-blue-950/25 border-blue-200 dark:border-blue-900/50 border-l-blue-700 opacity-80 cursor-not-allowed'
+            ? 'bg-slate-100/80 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 border-l-slate-500 opacity-80 cursor-not-allowed'
             : completo
-            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30 active:cursor-grabbing'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-700 dark:border-l-slate-400 hover:bg-slate-50 dark:hover:bg-muted/10'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-slate-400 active:cursor-grabbing'
         )}
       >
         <div className="flex items-center gap-0.5 shrink-0">
-          {item.locked && <Lock className="h-2.5 w-2.5 text-blue-700" />}
-          {item.splitParentId && <GitBranch className="h-2.5 w-2.5 text-primary" />}
+          {item.locked && <Lock className="h-2.5 w-2.5 text-slate-500" />}
+          {item.splitParentId && <GitBranch className="h-2.5 w-2.5 text-slate-500" />}
           {!item.locked && (
             <GripVertical
               className={cn(
@@ -275,7 +275,7 @@ export function TurnoColumn({
         </div>
 
         {familia && (
-          <span className={cn(badgeBase, 'max-w-[90px] shrink-0 truncate uppercase tracking-wide border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300')}>
+          <span className={cn(badgeBase, 'max-w-[90px] shrink-0 truncate uppercase tracking-wide border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
             {familia}
           </span>
         )}
@@ -287,7 +287,7 @@ export function TurnoColumn({
           {item.produto}
         </span>
 
-        {completo && <span className="text-xs font-bold text-blue-700 dark:text-blue-300 shrink-0">✓</span>}
+        {completo && <span className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">✓</span>}
 
         <IndicadorRealProg real={item.real} prog={item.prog} />
       </div>
@@ -306,11 +306,11 @@ export function TurnoColumn({
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none',
           completo
-            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-blue-700 hover:bg-slate-50 dark:hover:bg-muted/10'
-            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-primary/30'
+            ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-700 dark:border-l-slate-400 hover:bg-slate-50 dark:hover:bg-muted/10'
+            : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-slate-400'
         )}
       >
-        {completo && <span className="text-xs font-bold text-blue-700 dark:text-blue-300 shrink-0">✓</span>}
+        {completo && <span className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">✓</span>}
         <span className="text-[11px] font-bold text-slate-800 dark:text-foreground truncate flex-1 leading-tight" title={item.produto}>
           {item.produto}
         </span>

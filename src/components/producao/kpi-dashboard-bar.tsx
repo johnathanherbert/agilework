@@ -106,21 +106,21 @@ export function KpiDashboardBar({
     <div className="bg-white dark:bg-card border border-slate-200 dark:border-border/80 rounded-2xl p-3.5 shadow-sm space-y-3 shrink-0">
       {/* Cards de Métricas Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* KPI 1: Progresso Global de Ordens */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white p-3.5 shadow-md flex flex-col justify-between">
+        {/* KPI 1: Progresso Global de Ordens (Deep EMS Navy Discreto) */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#002e52] via-[#003760] to-[#00477a] text-white p-3.5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary-foreground">
-                <Factory className="h-4 w-4 text-sky-400" />
+              <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-white">
+                <Factory className="h-4 w-4 text-slate-200" />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider leading-none">
+                <p className="text-[11px] font-bold text-slate-200 uppercase tracking-wider leading-none">
                   Progresso Global
                 </p>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">Ordens de Produção</p>
+                <p className="text-xs text-slate-300/80 font-medium mt-0.5">Ordens de Produção</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs font-bold text-sky-400 border-sky-400/30 bg-sky-500/10">
+            <Badge variant="outline" className="text-xs font-bold text-white border-white/20 bg-white/10">
               {stats.ordensPct}%
             </Badge>
           </div>
@@ -128,23 +128,23 @@ export function KpiDashboardBar({
           <div className="mt-3 flex items-baseline justify-between">
             <div className="flex items-baseline gap-1.5 tabular-nums">
               <span className="text-2xl font-black text-white leading-none">{stats.ordensReal}</span>
-              <span className="text-xs text-slate-400 font-medium">/ {stats.ordensProg}</span>
+              <span className="text-xs text-slate-300 font-medium">/ {stats.ordensProg}</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-medium">
+            <span className="text-[10px] text-slate-300 font-medium">
               {stats.ordensTotal} {stats.ordensTotal === 1 ? 'ordem' : 'ordens'}
             </span>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-slate-700/60 rounded-full h-2 mt-2 overflow-hidden">
+          <div className="w-full bg-black/20 rounded-full h-2 mt-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-sky-400 to-blue-500 h-full transition-all duration-500 rounded-full"
+              className="bg-white/80 h-full transition-all duration-500 rounded-full"
               style={{ width: `${stats.ordensPct}%` }}
             />
           </div>
         </div>
 
-        {/* KPI 2: Balanço de Vias (Úmida vs Seca) */}
+        {/* KPI 2: Balanço de Vias (Úmida vs Seca - Muted Discreto) */}
         <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3.5 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
@@ -154,33 +154,33 @@ export function KpiDashboardBar({
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {/* Via Úmida - Azul EMS */}
-            <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl p-2">
-              <div className="flex items-center gap-1 text-blue-700 dark:text-blue-300 mb-1">
-                <Droplets className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+            {/* Via Úmida */}
+            <div className="bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2">
+              <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200 mb-1">
+                <Droplets className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
                 <span className="text-[10px] font-black uppercase tracking-wide">Úmida</span>
-                <span className="text-[9px] ml-auto font-black px-1 rounded bg-blue-200/60 dark:bg-blue-900/60">{stats.umidaPct}%</span>
+                <span className="text-[9px] ml-auto font-black px-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">{stats.umidaPct}%</span>
               </div>
               <div className="flex items-baseline gap-1 tabular-nums">
-                <span className="text-base font-black text-blue-800 dark:text-blue-200 leading-none">
+                <span className="text-base font-black text-slate-800 dark:text-slate-100 leading-none">
                   {stats.umidaReal}
                 </span>
-                <span className="text-[10px] text-blue-600/80 dark:text-blue-400/80 font-bold">/{stats.umidaProg}</span>
+                <span className="text-[10px] text-slate-500 font-bold">/{stats.umidaProg}</span>
               </div>
             </div>
 
-            {/* Via Seca - Ciano Turquesa */}
-            <div className="bg-cyan-50/80 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800/60 rounded-xl p-2">
-              <div className="flex items-center gap-1 text-cyan-700 dark:text-cyan-300 mb-1">
-                <Wind className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
+            {/* Via Seca */}
+            <div className="bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2">
+              <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200 mb-1">
+                <Wind className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
                 <span className="text-[10px] font-black uppercase tracking-wide">Seca</span>
-                <span className="text-[9px] ml-auto font-black px-1 rounded bg-cyan-200/60 dark:bg-cyan-900/60">{stats.secaPct}%</span>
+                <span className="text-[9px] ml-auto font-black px-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">{stats.secaPct}%</span>
               </div>
               <div className="flex items-baseline gap-1 tabular-nums">
-                <span className="text-base font-black text-cyan-800 dark:text-cyan-200 leading-none">
+                <span className="text-base font-black text-slate-800 dark:text-slate-100 leading-none">
                   {stats.secaReal}
                 </span>
-                <span className="text-[10px] text-cyan-600/80 dark:text-cyan-400/80 font-bold">/{stats.secaProg}</span>
+                <span className="text-[10px] text-slate-500 font-bold">/{stats.secaProg}</span>
               </div>
             </div>
           </div>
@@ -188,47 +188,47 @@ export function KpiDashboardBar({
           {/* Visual Ratio Bar */}
           <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2 flex overflow-hidden shadow-2xs">
             <div
-              className="bg-blue-600 h-full transition-all duration-500"
+              className="bg-slate-700 dark:bg-slate-400 h-full transition-all duration-500"
               style={{ width: `${stats.umidaProg + stats.secaProg > 0 ? (stats.umidaReal / (stats.umidaProg + stats.secaProg)) * 100 : 50}%` }}
-              title={`Via Úmida: ${stats.umidaReal}kg`}
+              title={`Via Úmida: ${stats.umidaReal} OPs`}
             />
             <div
-              className="bg-cyan-500 h-full transition-all duration-500"
+              className="bg-slate-400 dark:bg-slate-600 h-full transition-all duration-500"
               style={{ width: `${stats.umidaProg + stats.secaProg > 0 ? (stats.secaReal / (stats.umidaProg + stats.secaProg)) * 100 : 50}%` }}
-              title={`Via Seca: ${stats.secaReal}kg`}
+              title={`Via Seca: ${stats.secaReal} OPs`}
             />
           </div>
         </div>
 
-        {/* KPI 3: Pesagem PD & PA (Paleta Heijunka) */}
-        <div className="rounded-xl border border-sky-200/80 dark:border-sky-800/60 bg-sky-50/60 dark:bg-sky-950/30 p-3.5 flex flex-col justify-between shadow-2xs">
+        {/* KPI 3: Pesagem PD & PA (Muted Discreto) */}
+        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3.5 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-sky-900 dark:text-sky-200">
-              <Zap className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+              <Zap className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               <span className="text-[11px] font-black uppercase tracking-wider">Entregas PD & PA</span>
             </div>
-            <Badge variant="outline" className="text-[10px] font-black text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60">
+            <Badge variant="outline" className="text-[10px] font-black text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
               {stats.pdpaPct}% PD/PA
             </Badge>
           </div>
 
           <div className="mt-2 flex items-baseline justify-between">
             <div className="flex items-baseline gap-1 tabular-nums">
-              <span className="text-2xl font-black text-sky-900 dark:text-sky-100 leading-none">
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none">
                 {stats.pdpaReal}
               </span>
-              <span className="text-xs text-sky-600/80 dark:text-sky-400/80 font-bold">/ {stats.pdpaProg}</span>
+              <span className="text-xs text-slate-500 font-bold">/ {stats.pdpaProg}</span>
             </div>
-            <div className="text-[10px] text-sky-800/80 dark:text-sky-300/80 font-bold text-right">
+            <div className="text-[10px] text-slate-500 font-bold text-right">
               <div>Auto: {stats.autoCount}</div>
               <div>Direta: {stats.diretaCount}</div>
             </div>
           </div>
 
-          {/* Progress Bar com Gradiente Heijunka */}
-          <div className="w-full bg-sky-200/60 dark:bg-sky-900/50 rounded-full h-2 mt-2 overflow-hidden shadow-2xs">
+          {/* Progress Bar */}
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2 overflow-hidden shadow-2xs">
             <div
-              className="bg-gradient-to-r from-sky-400 via-blue-600 to-[#003760] h-full transition-all duration-500 rounded-full"
+              className="bg-slate-700 dark:bg-slate-400 h-full transition-all duration-500 rounded-full"
               style={{ width: `${stats.pdpaPct}%` }}
             />
           </div>
@@ -238,7 +238,7 @@ export function KpiDashboardBar({
         <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-3.5 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5 text-primary" /> Status das Ordens
+              <Sparkles className="h-3.5 w-3.5 text-slate-500" /> Status das Ordens
             </span>
             <span className="text-[10px] font-bold text-slate-400">Total: {stats.ordensTotal}</span>
           </div>
