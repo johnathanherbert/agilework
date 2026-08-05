@@ -5,18 +5,27 @@ import {
   query,
   orderBy,
   limit,
+  where,
   Timestamp,
   writeBatch,
   deleteDoc,
   doc,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { auth, db } from './firebase';
 import { getCurrentUserInfo } from './firestore-helpers';
 import { ProductionItem, HeijunkaSnapshot, HeijunkaTurnoStats } from '@/types';
 import { clearProductionItems } from './production-helpers';
 
 export const HEIJUNKA_COLLECTION = 'heijunka_snapshots';
+const HEIJUNKA_ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
+
+const ensureHeijunkaAdmin = (actionLabel: string) => {
+  const email = auth.currentUser?.email?.toLowerCase() || '';
+  if (email !== HEIJUNKA_ADMIN_EMAIL.toLowerCase()) {
+    throw new Error(`Apenas o administrador pode ${actionLabel}.`);
+  }
+};
 
 // O 3º turno vai das 22h às 6h, cruzando a virada do dia.
 // Quando o Heijunka é fechado de madrugada (antes das 6h), ele ainda faz
@@ -127,6 +136,8 @@ export const updateHeijunkaSnapshot = async (
   snapshotId: string,
   updatedFields: Partial<HeijunkaSnapshot>
 ): Promise<void> => {
+  ensureHeijunkaAdmin('editar entregas do Heijunka');
+
   const userInfo = await getCurrentUserInfo();
   const now = Timestamp.now();
   const snapshotRef = doc(db, HEIJUNKA_COLLECTION, snapshotId);
@@ -172,6 +183,8 @@ export const getHeijunkaHistory = async (daysLimit: number = 90): Promise<Heijun
 };
 
 export const clearHeijunkaHistory = async (): Promise<number> => {
+  ensureHeijunkaAdmin('zerar o histórico do Heijunka');
+
   const itemsRef = collection(db, HEIJUNKA_COLLECTION);
   const snapshot = await getDocs(itemsRef);
 
@@ -180,5 +193,27 @@ export const clearHeijunkaHistory = async (): Promise<number> => {
   await batch.commit();
 
   console.log(`✅ Histórico do Heijunka limpo: ${snapshot.size} item(ns) removido(s)`);
+  return snapshot.size;
+};
+
+export const deleteHeijunkaDay = async (date: string): Promise<number> => {
+  ensureHeijunkaAdmin('excluir um dia de produção do Heijunka');
+
+  const dayQuery = query(
+    collection(db, HEIJUNKA_COLLECTION),
+    where('date', '==', date)
+  );
+
+  const snapshot = await getDocs(dayQuery);
+
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  const batch = writeBatch(db);
+  snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+  await batch.commit();
+
+  console.log(`✅ Dia ${date} removido do Heijunka: ${snapshot.size} item(ns)`);
   return snapshot.size;
 };

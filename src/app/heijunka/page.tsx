@@ -14,10 +14,22 @@ import { Topbar } from '@/components/layout/topbar';
 import ProtectedRoute from '@/components/auth/protected-route';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { getHeijunkaHistory, clearHeijunkaHistory } from '@/lib/heijunka-helpers';
+import { deleteHeijunkaDay } from '@/lib/heijunka-helpers';
 import { HeijunkaDetailsModal } from '@/components/producao/heijunka-details-modal';
 import { HeijunkaSnapshot } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 
 type TimeFilter = '7' | '15' | '30' | 'month';
 
@@ -147,6 +159,9 @@ export default function HeijunkaPage() {
   const [useMock, setUseMock] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('30');
   const [selectedSnapshot, setSelectedSnapshot] = useState<HeijunkaSnapshot | null>(null);
+  const [dayToDelete, setDayToDelete] = useState<HeijunkaSnapshot | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingDay, setDeletingDay] = useState(false);
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
   const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
@@ -187,6 +202,35 @@ export default function HeijunkaPage() {
       toast.error(err.message || 'Erro ao zerar histórico');
     } finally {
       setClearing(false);
+    }
+  }
+
+  async function handleDeleteDay() {
+    if (!isAdmin || !dayToDelete || useMock) return;
+
+    if (deleteConfirmText.trim().toUpperCase() !== 'EXCLUIR') {
+      toast.error('Digite EXCLUIR para confirmar.');
+      return;
+    }
+
+    setDeletingDay(true);
+    try {
+      const removed = await deleteHeijunkaDay(dayToDelete.date);
+
+      if (removed === 0) {
+        toast('Nenhum registro encontrado para esta data.', { icon: 'ℹ️' });
+      } else {
+        toast.success(`Dia ${dayToDelete.date} removido com sucesso (${removed} registro(s)).`);
+      }
+
+      setDayToDelete(null);
+      setDeleteConfirmText('');
+      setSelectedSnapshot(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao remover o dia de produção');
+    } finally {
+      setDeletingDay(false);
     }
   }
 
@@ -623,6 +667,15 @@ export default function HeijunkaPage() {
         }}
         snapshot={selectedSnapshot}
         isAdmin={isAdmin}
+        onDeleteDay={
+          isAdmin
+            ? (snapshot) => {
+                setSelectedSnapshot(null);
+                setDayToDelete(snapshot);
+                setDeleteConfirmText('');
+              }
+            : undefined
+        }
         onSuccess={(updated) => {
           if (updated) {
             setFullHistory((prev) =>
@@ -632,6 +685,54 @@ export default function HeijunkaPage() {
           loadData();
         }}
       />
+
+      <AlertDialog
+        open={dayToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingDay) {
+            setDayToDelete(null);
+            setDeleteConfirmText('');
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-4 w-4" />
+              Excluir Dia Inteiro de Produção
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá todos os registros de Heijunka do dia{' '}
+              <span className="font-semibold text-foreground">{dayToDelete?.date}</span>.
+              Não é possível desfazer.
+              <br />
+              Digite <span className="font-mono font-bold">EXCLUIR</span> para confirmar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="EXCLUIR"
+            className="font-mono uppercase"
+            disabled={deletingDay}
+          />
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingDay}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteDay();
+              }}
+              disabled={deletingDay || deleteConfirmText.trim().toUpperCase() !== 'EXCLUIR'}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingDay ? 'Excluindo...' : 'Excluir Dia'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProtectedRoute>
   );
 }

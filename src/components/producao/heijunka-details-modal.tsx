@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Loader2, Calendar, Zap, Hand, Layers, Lock, ShieldCheck, Save, BarChart2 } from 'lucide-react';
+import { Loader2, Calendar, Zap, Hand, Layers, Lock, ShieldCheck, Save, BarChart2, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ interface HeijunkaDetailsModalProps {
   snapshot: HeijunkaSnapshot | null;
   isAdmin: boolean;
   onSuccess?: (updatedSnapshot?: HeijunkaSnapshot) => void;
+  onDeleteDay?: (snapshot: HeijunkaSnapshot) => void;
 }
 
 export function HeijunkaDetailsModal({
@@ -30,6 +31,7 @@ export function HeijunkaDetailsModal({
   snapshot,
   isAdmin,
   onSuccess,
+  onDeleteDay,
 }: HeijunkaDetailsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metaDiaria, setMetaDiaria] = useState<number>(0);
@@ -379,14 +381,29 @@ export function HeijunkaDetailsModal({
         </div>
 
         <DialogFooter className="p-4 bg-slate-50 dark:bg-card border-t border-border/80 shrink-0 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Fechar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Fechar
+            </Button>
+
+            {isAdmin && onDeleteDay && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => onDeleteDay(snapshot)}
+                disabled={isSubmitting}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir Dia
+              </Button>
+            )}
+          </div>
 
           {isAdmin && (
             <Button
