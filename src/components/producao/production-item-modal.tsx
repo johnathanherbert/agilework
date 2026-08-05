@@ -312,7 +312,7 @@ export function ProductionItemModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] border border-border/80 shadow-lg bg-card p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto border border-border/80 shadow-lg bg-card p-0">
         <DialogHeader className="relative p-8 pb-6 space-y-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-md">

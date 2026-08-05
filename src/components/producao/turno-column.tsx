@@ -491,18 +491,18 @@ export function TurnoColumn({
         </div>
 
         {/* KPI Via Seca */}
-        <div className="flex items-center justify-between px-3 py-2 bg-sky-50 dark:bg-sky-950/20">
+        <div className="flex items-center justify-between px-3 py-2 bg-cyan-50/80 dark:bg-cyan-950/30">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Wind className="h-4 w-4 text-sky-600 shrink-0" />
+            <Wind className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="text-[11px] font-black uppercase tracking-wide text-sky-700 dark:text-sky-300 leading-none shrink-0">
+              <span className="text-[11px] font-black uppercase tracking-wide text-cyan-800 dark:text-cyan-300 leading-none shrink-0">
                 Seca
               </span>
-              <span className="text-xs font-black text-sky-700 dark:text-sky-300 tabular-nums">
+              <span className="text-xs font-black text-cyan-800 dark:text-cyan-300 tabular-nums">
                 {secaReal}/{secaProg}
               </span>
               {secaProg > 0 && (
-                <span className="text-[10px] text-sky-700 dark:text-sky-300 font-extrabold tabular-nums">
+                <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-extrabold tabular-nums">
                   ({secaPct}%)
                 </span>
               )}
@@ -510,7 +510,7 @@ export function TurnoColumn({
           </div>
           <Button
             type="button" size="icon" variant="ghost"
-            className="h-5 w-5 rounded-full text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/30 shrink-0"
+            className="h-5 w-5 rounded-full text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 shrink-0"
             onClick={() => onCreateClick('ordem', 'SECA')}
             title="Adicionar ordem na via seca"
           >
