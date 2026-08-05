@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useFirebase } from '@/components/providers/firebase-provider';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { db } from '@/lib/firebase';
 import { 
   collection, 
@@ -16,7 +16,7 @@ import {
   and,
   addDoc,
   updateDoc,
-  orderBy,
+  deleteDoc,
   limit,
   doc as firestoreDoc
 } from 'firebase/firestore';
@@ -42,7 +42,10 @@ import {
   Factory,
   Package,
   Layers,
-  MessageSquare
+  MessageSquare,
+  AtSign,
+  Trash2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +77,7 @@ interface ChatMessage {
   message: string;
   timestamp: Date;
   read: boolean;
+  mentions?: string[];
 }
 
 interface ChatChannel {
@@ -136,10 +140,16 @@ export function OnlineUsers() {
   const [isSending, setIsSending] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [networkOnline, setNetworkOnline] = useState(true);
-  const [messagesError, setMessagesError] = useState(false);
-  const [retryTick, setRetryTick] = useState(0);
   const [soundMuted, setSoundMuted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Estado para exclusão de mensagem
+  const [messageToDelete, setMessageToDelete] = useState<{ id: string; text: string } | null>(null);
+
+  // Estados do sistema de menção com @
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [showMentions, setShowMentions] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageCountRef = useRef(0);
@@ -322,7 +332,7 @@ export function OnlineUsers() {
 
     if (activeChat.type === 'channel') {
       messagesQuery = query(
-        collection(db, 'channel_messages'),
+        collection(db, 'chat_messages'),
         where('channelId', '==', activeChat.channel.id),
         limit(100)
       );
@@ -346,21 +356,21 @@ export function OnlineUsers() {
     const unsubscribe = onSnapshot(
       messagesQuery,
       (snapshot) => {
-        setMessagesError(false);
         const loadedMsgs: ChatMessage[] = [];
 
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           loadedMsgs.push({
             id: docSnap.id,
-            senderId: data.senderId,
+            senderId: data.senderId || data.userId,
             senderName: data.senderName,
             receiverId: data.receiverId,
             receiverName: data.receiverName,
             channelId: data.channelId,
             message: data.message,
             timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : (data.createdAt ? new Date(data.createdAt) : new Date()),
-            read: data.read || false
+            read: data.read || false,
+            mentions: data.mentions || []
           });
         });
 
@@ -390,17 +400,113 @@ export function OnlineUsers() {
       },
       (error) => {
         console.error('Erro ao carregar mensagens:', error);
-        setMessagesError(true);
       }
     );
 
     return () => unsubscribe();
-  }, [user, activeChat, playSound, retryTick, soundMuted]);
+  }, [user, activeChat, playSound, soundMuted]);
 
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Sugestões de menção calculadas
+  const mentionSuggestions = useMemo(() => {
+    if (mentionQuery === null) return [];
+
+    const special = [
+      { id: 'todos', name: 'todos', email: 'Notificar todos no canal', isSpecial: true },
+      { id: 'geral', name: 'geral', email: 'Notificar todos no canal', isSpecial: true }
+    ];
+
+    const userMatches = contacts.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      isSpecial: false
+    }));
+
+    const combined = [...special, ...userMatches];
+
+    if (!mentionQuery) return combined.slice(0, 6);
+
+    return combined.filter(item => 
+      item.name.toLowerCase().includes(mentionQuery) ||
+      item.email.toLowerCase().includes(mentionQuery)
+    ).slice(0, 6);
+  }, [mentionQuery, contacts]);
+
+  // Manipular digitação para detectar @
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setNewMessage(val);
+
+    const selectionStart = e.target.selectionStart || val.length;
+    const textBeforeCursor = val.substring(0, selectionStart);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      if (!/\s/.test(textAfterAt)) {
+        setMentionQuery(textAfterAt.toLowerCase());
+        setMentionIndex(0);
+        setShowMentions(true);
+        return;
+      }
+    }
+
+    setShowMentions(false);
+    setMentionQuery(null);
+  };
+
+  // Inserir menção selecionada
+  const selectMention = (name: string) => {
+    if (!inputRef.current) return;
+    const val = newMessage;
+    const selectionStart = inputRef.current.selectionStart || val.length;
+    const textBeforeCursor = val.substring(0, selectionStart);
+    const textAfterCursor = val.substring(selectionStart);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1) {
+      const newTextBefore = textBeforeCursor.substring(0, lastAtIndex) + `@${name} `;
+      setNewMessage(newTextBefore + textAfterCursor);
+    }
+
+    setShowMentions(false);
+    setMentionQuery(null);
+    inputRef.current.focus();
+  };
+
+  // Navegação no menu de menção por teclado
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showMentions && mentionSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((prev) => (prev + 1) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((prev) => (prev - 1 + mentionSuggestions.length) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const selected = mentionSuggestions[mentionIndex];
+        if (selected) {
+          selectMention(selected.name);
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowMentions(false);
+        return;
+      }
+    }
+  };
 
   if (!user) return null;
 
@@ -429,28 +535,103 @@ export function OnlineUsers() {
     setIsSending(true);
     setNewMessage('');
     setShowEmojiPicker(false);
+    setShowMentions(false);
 
     try {
+      const senderName = userData?.name || user.displayName || user.email?.split('@')[0] || 'Usuário';
+
+      // Detectar menções na mensagem
+      const lowerMsg = messageText.toLowerCase();
+      const targetUserIds = new Set<string>();
+
+      if (lowerMsg.includes('@todos') || lowerMsg.includes('@geral')) {
+        contacts.forEach(c => {
+          if (c.id !== user.uid) targetUserIds.add(c.id);
+        });
+      } else {
+        contacts.forEach(c => {
+          if (c.id !== user.uid) {
+            const namePattern = `@${c.name.toLowerCase()}`;
+            const firstNamePattern = `@${c.name.split(' ')[0].toLowerCase()}`;
+            const emailPattern = `@${c.email.toLowerCase()}`;
+
+            if (
+              lowerMsg.includes(namePattern) ||
+              lowerMsg.includes(firstNamePattern) ||
+              lowerMsg.includes(emailPattern)
+            ) {
+              targetUserIds.add(c.id);
+            }
+          }
+        });
+      }
+
+      const targetIdsArray = Array.from(targetUserIds);
+
       if (activeChat.type === 'channel') {
-        await addDoc(collection(db, 'channel_messages'), {
+        await addDoc(collection(db, 'chat_messages'), {
           channelId: activeChat.channel.id,
+          userId: user.uid,
           senderId: user.uid,
-          senderName: userData?.name || user.displayName || user.email?.split('@')[0] || 'Usuário',
+          senderName,
           message: messageText,
+          mentions: targetIdsArray,
           timestamp: serverTimestamp(),
           createdAt: new Date().toISOString()
         });
       } else {
         await addDoc(collection(db, 'private_messages'), {
           senderId: user.uid,
-          senderName: userData?.name || user.displayName || user.email?.split('@')[0] || 'Usuário',
+          senderName,
           receiverId: activeChat.user.id,
           receiverName: activeChat.user.name,
           message: messageText,
+          mentions: targetIdsArray,
           timestamp: serverTimestamp(),
           createdAt: new Date().toISOString(),
           read: false
         });
+      }
+
+      // Notificar usuários mencionados no Firestore (/notifications)
+      for (const targetId of targetIdsArray) {
+        try {
+          await addDoc(collection(db, 'notifications'), {
+            user_id: targetId,
+            title: activeChat.type === 'channel' ? `Mencionado em #${activeChat.channel.name}` : `Mencionado por ${senderName}`,
+            message: `${senderName}: ${messageText}`,
+            sender_id: user.uid,
+            sender_name: senderName,
+            chat_type: activeChat.type,
+            channel_id: activeChat.type === 'channel' ? activeChat.channel.id : null,
+            created_at: serverTimestamp(),
+            createdAt: new Date().toISOString(),
+            read: false,
+            type: 'chat_mention'
+          });
+        } catch (err) {
+          console.error('Erro ao salvar notificação de menção:', err);
+        }
+      }
+
+      // Notificar destinatário de mensagem direta se não estiver mencionado
+      if (activeChat.type === 'direct' && !targetUserIds.has(activeChat.user.id) && activeChat.user.id !== user.uid) {
+        try {
+          await addDoc(collection(db, 'notifications'), {
+            user_id: activeChat.user.id,
+            title: `Nova mensagem de ${senderName}`,
+            message: `${senderName}: ${messageText}`,
+            sender_id: user.uid,
+            sender_name: senderName,
+            chat_type: 'direct',
+            created_at: serverTimestamp(),
+            createdAt: new Date().toISOString(),
+            read: false,
+            type: 'chat_mention'
+          });
+        } catch (err) {
+          console.error('Erro ao notificar mensagem direta:', err);
+        }
       }
 
       if (!soundMuted) {
@@ -466,6 +647,45 @@ export function OnlineUsers() {
     }
   };
 
+  // Apagar mensagem individual
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!user || !activeChat) return;
+
+    try {
+      const colName = activeChat.type === 'channel' ? 'chat_messages' : 'private_messages';
+      await deleteDoc(doc(db, colName, msgId));
+      toast.success('Mensagem excluída com sucesso.');
+    } catch (err) {
+      console.error('Erro ao apagar mensagem:', err);
+      toast.error('Não foi possível apagar a mensagem.');
+    }
+  };
+
+  // Apagar minhas mensagens da conversa ativa
+  const handleClearMyMessages = async () => {
+    if (!user || !activeChat || messages.length === 0) return;
+
+    const myMessages = messages.filter(m => m.senderId === user.uid);
+    if (myMessages.length === 0) {
+      toast.error('Você não possui mensagens enviadas nesta conversa.');
+      return;
+    }
+
+    if (!confirm(`Deseja excluir todas as suas ${myMessages.length} mensagens enviadas nesta conversa?`)) {
+      return;
+    }
+
+    try {
+      const colName = activeChat.type === 'channel' ? 'chat_messages' : 'private_messages';
+      const deletePromises = myMessages.map(m => deleteDoc(doc(db, colName, m.id)));
+      await Promise.all(deletePromises);
+      toast.success(`${myMessages.length} mensagens minhas foram excluídas.`);
+    } catch (err) {
+      console.error('Erro ao excluir mensagens da conversa:', err);
+      toast.error('Erro ao excluir mensagens.');
+    }
+  };
+
   // Copiar lote ou código ao clicar
   const handleCopyCode = (text: string, typeName: string) => {
     navigator.clipboard.writeText(text);
@@ -478,9 +698,9 @@ export function OnlineUsers() {
     toast.success('Mensagem copiada!', { icon: '✨' });
   };
 
-  // Renderizar mensagem com destaque clicável para Lotes/Códigos
+  // Renderizar mensagem com destaque para Lotes, Códigos e Menções (@)
   const renderFormattedMessage = (text: string) => {
-    const combinedPattern = /([A-Z]\d[A-Z]\d{4})|(\b\d{6}\b)/g;
+    const combinedPattern = /(@todos|@geral|@[A-Za-zÀ-ÿ0-9._-]+(?:\s[A-Za-zÀ-ÿ0-9._-]+)?)|([A-Z]\d[A-Z]\d{4})|(\b\d{6}\b)/gi;
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
@@ -491,24 +711,38 @@ export function OnlineUsers() {
       }
 
       const matchedText = match[0];
-      const isLote = /[A-Z]\d[A-Z]\d{4}/.test(matchedText);
 
-      parts.push(
-        <button
-          key={match.index}
-          type="button"
-          onClick={() => handleCopyCode(matchedText, isLote ? 'Lote' : 'Código')}
-          title="Clique para copiar"
-          className={cn(
-            "px-1.5 py-0.5 mx-0.5 rounded font-mono font-bold text-xs transition-all hover:scale-105 inline-flex items-center gap-1 cursor-pointer",
-            isLote
-              ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-200"
-              : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200"
-          )}
-        >
-          {matchedText}
-        </button>
-      );
+      if (matchedText.startsWith('@')) {
+        // Tag de Menção Destacada
+        parts.push(
+          <span
+            key={match.index}
+            className="px-1.5 py-0.5 mx-0.5 rounded font-bold text-xs bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 inline-flex items-center gap-0.5 shadow-2xs"
+          >
+            {matchedText}
+          </span>
+        );
+      } else {
+        // Código ou Lote Clicável
+        const isLote = /[A-Z]\d[A-Z]\d{4}/i.test(matchedText);
+
+        parts.push(
+          <button
+            key={match.index}
+            type="button"
+            onClick={() => handleCopyCode(matchedText, isLote ? 'Lote' : 'Código')}
+            title="Clique para copiar"
+            className={cn(
+              "px-1.5 py-0.5 mx-0.5 rounded font-mono font-bold text-xs transition-all hover:scale-105 inline-flex items-center gap-1 cursor-pointer",
+              isLote
+                ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-200"
+                : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200"
+            )}
+          >
+            {matchedText}
+          </button>
+        );
+      }
 
       lastIndex = match.index + matchedText.length;
     }
@@ -662,17 +896,32 @@ export function OnlineUsers() {
               </div>
             )}
 
-            {/* Controles de Som */}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setSoundMuted(!soundMuted)}
-              className="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-white/10"
-              title={soundMuted ? "Ativar som de mensagens" : "Silenciar mensagens"}
-            >
-              {soundMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
-            </Button>
+            {/* Controles de Ação do Header */}
+            <div className="flex items-center gap-1">
+              {activeChat && messages.some(m => m.senderId === user.uid) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearMyMessages}
+                  className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-400 hover:bg-white/10 transition-colors"
+                  title="Excluir minhas mensagens desta conversa"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSoundMuted(!soundMuted)}
+                className="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-white/10"
+                title={soundMuted ? "Ativar som de mensagens" : "Silenciar mensagens"}
+              >
+                {soundMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
 
           {/* Abas Principais (Canais vs Mensagens Diretas) quando nenhuma conversa está aberta */}
@@ -682,7 +931,7 @@ export function OnlineUsers() {
                 type="button"
                 onClick={() => setMainTab('channels')}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5",
+                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer",
                   mainTab === 'channels'
                     ? "bg-blue-600 text-white shadow-xs"
                     : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -695,7 +944,7 @@ export function OnlineUsers() {
                 type="button"
                 onClick={() => setMainTab('direct')}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 relative",
+                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 relative cursor-pointer",
                   mainTab === 'direct'
                     ? "bg-blue-600 text-white shadow-xs"
                     : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -817,12 +1066,57 @@ export function OnlineUsers() {
           </div>
         ) : (
           /* --- ÁREA DE CONVERSA DO CHAT ATIVO --- */
-          <div className="h-[430px] flex flex-col bg-slate-50/50 dark:bg-slate-950">
-            {/* Mensagem de status offline/erro */}
+          <div className="h-[430px] flex flex-col bg-slate-50/50 dark:bg-slate-950 relative">
+            {/* Mensagem de status offline */}
             {!networkOnline && (
               <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold flex items-center gap-2">
                 <WifiOff className="w-3.5 h-3.5 shrink-0" />
                 Sem conexão. Suas mensagens não serão entregues.
+              </div>
+            )}
+
+            {/* Modal de Confirmação de Exclusão de Mensagem */}
+            {messageToDelete && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 max-w-xs w-full shadow-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                    <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">Excluir Mensagem?</h4>
+                  </div>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 italic line-clamp-2">
+                    "{messageToDelete.text}"
+                  </p>
+
+                  <p className="text-[11px] text-slate-400">
+                    Esta ação apagará a mensagem para todos nesta conversa.
+                  </p>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMessageToDelete(null)}
+                      className="h-8 text-xs font-bold rounded-xl"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        handleDeleteMessage(messageToDelete.id);
+                        setMessageToDelete(null);
+                      }}
+                      className="h-8 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                    >
+                      Excluir
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -837,18 +1131,19 @@ export function OnlineUsers() {
                     Inicie a conversa
                   </h4>
                   <p className="text-[11px] text-slate-400 max-w-[220px] mt-1">
-                    Envie uma mensagem para começar a colaborar.
+                    Envie uma mensagem para começar a colaborar. Use <span className="font-bold text-primary">@</span> para mencionar um colega.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {messages.map((msg) => {
                     const isMine = msg.senderId === user.uid;
+                    const canDelete = isMine || userData?.email === ADMIN_EMAIL;
 
                     return (
                       <div
                         key={msg.id}
-                        className={cn("flex flex-col group relative", isMine ? "items-end" : "items-start")}
+                        className={cn("flex flex-col group relative my-1", isMine ? "items-end" : "items-start")}
                       >
                         {/* Nome do remetente nos canais públicos */}
                         {!isMine && activeChat.type === 'channel' && (
@@ -857,34 +1152,54 @@ export function OnlineUsers() {
                           </span>
                         )}
 
-                        {/* Balão da Mensagem */}
-                        <div
-                          className={cn(
-                            "max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed relative shadow-xs",
-                            isMine
-                              ? "bg-primary text-white rounded-br-none"
-                              : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 rounded-bl-none"
-                          )}
-                        >
-                          <div className="break-words">
-                            {renderFormattedMessage(msg.message)}
-                          </div>
-
-                          <div className={cn("flex items-center justify-end gap-1 mt-1 text-[9.5px]", isMine ? "text-blue-100" : "text-slate-400")}>
-                            <span>{formatMsgTime(msg.timestamp)}</span>
-                            {isMine && activeChat.type === 'direct' && (
-                              <CheckCheck className={cn("w-3 h-3", msg.read ? "text-sky-300" : "text-blue-200/60")} />
+                        <div className="relative flex items-center gap-1 group/msg">
+                          {/* Barra de Ações Rápidas ao passar o mouse */}
+                          <div
+                            className={cn(
+                              "absolute -top-7 z-20 hidden group-hover/msg:flex items-center gap-0.5 p-1 rounded-lg bg-slate-900/90 text-white shadow-md border border-slate-700 backdrop-blur-xs transition-all animate-in fade-in zoom-in-95",
+                              isMine ? "right-0" : "left-0"
                             )}
-
-                            {/* Botão sutil de copiar mensagem ao passar o mouse */}
+                          >
                             <button
                               type="button"
                               onClick={() => handleCopyMessage(msg.message)}
-                              className="ml-1 opacity-0 group-hover:opacity-100 hover:text-white transition-opacity"
-                              title="Copiar texto"
+                              className="p-1 hover:bg-white/20 rounded text-slate-300 hover:text-white transition-colors cursor-pointer"
+                              title="Copiar mensagem"
                             >
-                              <Copy className="w-2.5 h-2.5" />
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
+
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => setMessageToDelete({ id: msg.id, text: msg.message })}
+                                className="p-1 hover:bg-rose-500/30 rounded text-rose-300 hover:text-rose-100 transition-colors cursor-pointer"
+                                title="Excluir mensagem"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Balão da Mensagem */}
+                          <div
+                            className={cn(
+                              "max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed relative shadow-xs",
+                              isMine
+                                ? "bg-primary text-white rounded-br-none"
+                                : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 rounded-bl-none"
+                            )}
+                          >
+                            <div className="break-words">
+                              {renderFormattedMessage(msg.message)}
+                            </div>
+
+                            <div className={cn("flex items-center justify-end gap-1.5 mt-1 text-[9.5px]", isMine ? "text-blue-100" : "text-slate-400")}>
+                              <span>{formatMsgTime(msg.timestamp)}</span>
+                              {isMine && activeChat.type === 'direct' && (
+                                <CheckCheck className={cn("w-3 h-3", msg.read ? "text-sky-300" : "text-blue-200/60")} />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -894,6 +1209,47 @@ export function OnlineUsers() {
                 </div>
               )}
             </ScrollArea>
+
+            {/* Popover de Sugestões de Menção (@) */}
+            {showMentions && mentionSuggestions.length > 0 && (
+              <div className="mx-3 mb-1 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl space-y-1 z-50 animate-in fade-in slide-in-from-bottom-2">
+                <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span>Mencionar Colaborador</span>
+                  <span className="text-[9px] font-normal text-slate-400">Use ↑↓ e Enter</span>
+                </div>
+                <div className="max-h-36 overflow-y-auto space-y-0.5">
+                  {mentionSuggestions.map((item, idx) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => selectMention(item.name)}
+                      className={cn(
+                        "w-full px-2.5 py-1.5 rounded-lg text-left text-xs flex items-center justify-between transition-colors cursor-pointer",
+                        idx === mentionIndex
+                          ? "bg-blue-500 text-white font-bold"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={cn(
+                          "w-5 h-5 rounded-full font-bold text-[10px] flex items-center justify-center shrink-0",
+                          idx === mentionIndex ? "bg-white/20 text-white" : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                        )}>
+                          {item.isSpecial ? '@' : getInitials(item.name)}
+                        </span>
+                        <span className="truncate font-semibold text-xs">@{item.name}</span>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] truncate max-w-[130px] ml-2",
+                        idx === mentionIndex ? "text-blue-100" : "text-slate-400"
+                      )}>
+                        {item.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Barra de Respostas Rápidas (Quick Chips) */}
             <div className="px-3 py-1.5 bg-white dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -924,7 +1280,7 @@ export function OnlineUsers() {
                       setShowEmojiPicker(false);
                       inputRef.current?.focus();
                     }}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-sm transition-transform hover:scale-125"
+                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-sm transition-transform hover:scale-125 cursor-pointer"
                   >
                     {emoji}
                   </button>
@@ -937,17 +1293,32 @@ export function OnlineUsers() {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Inserir emoji"
               >
                 <Smile className="w-4 h-4" />
               </button>
 
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMessage(prev => prev + '@');
+                  setMentionQuery('');
+                  setShowMentions(true);
+                  inputRef.current?.focus();
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Mencionar colaborador (@)"
+              >
+                <AtSign className="w-4 h-4" />
+              </button>
+
               <Input
                 ref={inputRef}
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Digite sua mensagem ou cole um lote/código..."
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Digite mensagem ou @ para mencionar..."
                 disabled={isSending || !networkOnline}
                 className="flex-1 h-9 text-xs rounded-xl border-slate-200 dark:border-slate-800 focus:ring-primary"
                 maxLength={500}
@@ -957,7 +1328,7 @@ export function OnlineUsers() {
                 type="submit"
                 disabled={!newMessage.trim() || isSending || !networkOnline}
                 size="icon"
-                className="h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 text-white shrink-0"
+                className="h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 text-white shrink-0 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </Button>

@@ -30,9 +30,6 @@ service cloud.firestore {
     }
 
     // Users collection
-    // - Qualquer usuário autenticado pode LER todos os documentos (necessário para online users)
-    // - O dono pode escrever em campos próprios (isOnline, lastActive, name...)
-    // - Apenas o Admin pode modificar as flags de controle de acesso (isApproved, role)
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
@@ -44,7 +41,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // NTs collection - authenticated users can read/write all NTs
+    // NTs collection
     match /nts/{ntId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -52,7 +49,7 @@ service cloud.firestore {
       allow delete: if isAuthenticated();
     }
     
-    // NT Items collection - authenticated users can read/write all items
+    // NT Items collection
     match /nt_items/{itemId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -61,15 +58,22 @@ service cloud.firestore {
     }
 
     // Production Items collection - Painel de Produção (Pesagem)
-    // Acesso restrito a Líderes e ao Admin Global (mesmas pessoas que acessam a tela)
     match /production_items/{itemId} {
       allow read: if isLeaderOrAdmin();
       allow create: if isLeaderOrAdmin();
       allow update: if isLeaderOrAdmin();
       allow delete: if isLeaderOrAdmin();
     }
+
+    // Heijunka Snapshots collection - Dashboard Heijunka
+    match /heijunka_snapshots/{snapshotId} {
+      allow read: if isLeaderOrAdmin();
+      allow create: if isLeaderOrAdmin();
+      allow update: if isLeaderOrAdmin();
+      allow delete: if isLeaderOrAdmin();
+    }
     
-    // Notifications collection - users can only access their own notifications
+    // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && 
                      resource.data.user_id == request.auth.uid;
@@ -80,8 +84,7 @@ service cloud.firestore {
                       resource.data.user_id == request.auth.uid;
     }
     
-    // Chat messages - authenticated users can read all and create
-    // Only owner can delete their own messages
+    // Chat messages
     match /chat_messages/{messageId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -89,7 +92,7 @@ service cloud.firestore {
                       resource.data.userId == request.auth.uid;
     }
     
-    // Private messages - users can only see messages sent to or from them
+    // Private messages
     match /private_messages/{messageId} {
       allow read: if isAuthenticated() && (
         resource.data.senderId == request.auth.uid ||

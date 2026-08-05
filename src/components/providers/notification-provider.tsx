@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useFirebase, ADMIN_EMAIL } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
@@ -43,8 +43,10 @@ export type Notification = {
   parts?: NotificationMessagePart[]; // Versão colorida/estruturada da mensagem (opcional)
   createdAt: Date;
   read: boolean;
-  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'item_paid' | 'production_updated' | 'system';
+  type: 'nt_created' | 'nt_updated' | 'nt_deleted' | 'item_added' | 'item_updated' | 'item_deleted' | 'item_paid' | 'production_updated' | 'chat_mention' | 'system';
   entityId?: string; // ID da entidade relacionada (NT, item, etc.)
+  senderId?: string;
+  channelId?: string;
 };
 
 // Tipo para operações em lote
@@ -401,6 +403,74 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       unsubscribeProduction();
     };
   }, [user, userData, notificationsEnabled, audioConfig, soundEnabled]);
+
+  // Listener em tempo real para a coleção 'notifications' do Firestore (ex.: menções de chat)
+  useEffect(() => {
+    if (!user || !notificationsEnabled) return;
+
+    console.log('🔔 Configurando listener de notificações pessoais Firestore para:', user.uid);
+
+    const notifQuery = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', user.uid)
+    );
+
+    const unsubscribeUserNotifs = onSnapshot(
+      notifQuery,
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            const notifId = change.doc.id;
+
+            setNotifications(prev => {
+              if (prev.some(n => n.id === notifId)) return prev;
+
+              const createdAtDate = data.created_at?.toDate 
+                ? data.created_at.toDate() 
+                : (data.createdAt ? new Date(data.createdAt) : new Date());
+              
+              const secondsSinceCreation = (Date.now() - createdAtDate.getTime()) / 1000;
+
+              if (secondsSinceCreation <= 15 && !data.read) {
+                playNotificationSound('notification');
+                toast(data.title ? `${data.title}: ${data.message}` : data.message, {
+                  icon: '💬',
+                  duration: 4000
+                });
+              }
+
+              return [
+                {
+                  id: notifId,
+                  title: data.title || 'Notificação de Chat',
+                  message: data.message || '',
+                  parts: data.parts || [
+                    { text: data.sender_name || 'Usuário', variant: 'actor' },
+                    { text: ' enviou uma mensagem' }
+                  ],
+                  createdAt: createdAtDate,
+                  read: data.read || false,
+                  type: data.type || 'chat_mention',
+                  entityId: data.channel_id || data.sender_id,
+                  senderId: data.sender_id,
+                  channelId: data.channel_id
+                },
+                ...prev
+              ];
+            });
+          }
+        });
+      },
+      (error) => {
+        console.error('Erro no listener de notificações do Firestore:', error);
+      }
+    );
+
+    return () => {
+      unsubscribeUserNotifs();
+    };
+  }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
   // Batch operation management
   const startBatchOperation = (type: BatchOperation['type'], entityId: string, itemCount?: number): string => {
