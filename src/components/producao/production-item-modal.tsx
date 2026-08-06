@@ -52,6 +52,7 @@ const formSchema = z.object({
   codigoReceita: z.string().optional(),
   via: z.enum(['UMIDA', 'SECA']).optional(),
   familia: z.string().optional(),
+  lp: z.boolean().optional(),
   produto: z.string().min(1, { message: 'Produto é obrigatório' }),
   prog: z.coerce.number().min(0, { message: 'Deve ser um número válido' }),
   real: z.coerce.number().min(0, { message: 'Deve ser um número válido' }),
@@ -105,6 +106,7 @@ export function ProductionItemModal({
       codigoReceita: '',
       via: defaultVia || 'SECA',
       familia: '',
+      lp: false,
       produto: '',
       prog: 1,
       real: 0,
@@ -121,6 +123,7 @@ export function ProductionItemModal({
         codigoReceita: '',
         via: item.via || defaultVia || 'SECA',
         familia: item.familia || '',
+        lp: item.lp || false,
         produto: item.produto,
         prog: item.prog,
         real: item.real,
@@ -137,6 +140,7 @@ export function ProductionItemModal({
         codigoReceita: '',
         via: defaultVia || 'SECA',
         familia: '',
+        lp: false,
         produto: '',
         prog: 1,
         real: 0,
@@ -242,6 +246,7 @@ export function ProductionItemModal({
           tipo,
           via: tipo === 'ordem' ? data.via : undefined,
           familia: tipo === 'ordem' ? (data.familia || undefined) : undefined,
+          lp: tipo === 'ordem' ? !!data.lp : undefined,
           codigoReceita: data.codigoReceita || undefined,
           produto: data.produto,
           prog: data.prog,
@@ -253,6 +258,7 @@ export function ProductionItemModal({
           turno,
           via: tipo === 'ordem' ? data.via : undefined,
           familia: tipo === 'ordem' ? (data.familia || undefined) : undefined,
+          lp: tipo === 'ordem' ? !!data.lp : undefined,
           codigoReceita: data.codigoReceita || undefined,
           produto: data.produto,
           prog: data.prog,
@@ -439,6 +445,33 @@ export function ProductionItemModal({
                       Preenchido automaticamente pelo código, mas pode ser editado manualmente.
                     </p>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {tipo === 'ordem' && (
+              <FormField
+                control={form.control}
+                name="lp"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-3 rounded-xl border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 px-4 py-3">
+                      <FormControl>
+                        <Checkbox
+                          id="lp"
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked === true)}
+                          disabled={isSubmitting || isLocked}
+                        />
+                      </FormControl>
+                      <label htmlFor="lp" className="text-sm font-bold text-purple-800 dark:text-purple-300 cursor-pointer">
+                        LP (Lote Piloto)
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Marca a ordem com a tag "LP" e destaca o card em roxo no quadro de produção.
+                    </p>
                   </FormItem>
                 )}
               />

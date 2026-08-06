@@ -27,6 +27,7 @@ const mapDocToProductionItem = (docId: string, data: any): ProductionItem => ({
   tipo: data.tipo,
   via: data.via,
   familia: data.familia,
+  lp: data.lp ?? false,
   codigoReceita: data.codigoReceita,
   produto: data.produto,
   prog: data.prog ?? 0,
@@ -47,6 +48,7 @@ export type CreateProductionItemInput = {
   tipo: ProductionTipo;
   via?: ProductionVia;
   familia?: string;
+  lp?: boolean;
   codigoReceita?: string;
   produto: string;
   prog: number;
@@ -78,6 +80,7 @@ export const createProductionItem = async (input: CreateProductionItemInput): Pr
     if (input.familia) {
       data.familia = input.familia;
     }
+    data.lp = input.lp ?? false;
   }
 
   if (input.splitParentId) {
@@ -100,6 +103,7 @@ export type UpdateProductionItemInput = Partial<{
   turno: ProductionTurno;
   via: ProductionVia;
   familia: string;
+  lp: boolean;
   codigoReceita: string;
   produto: string;
   prog: number;

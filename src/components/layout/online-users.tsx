@@ -698,9 +698,23 @@ export function OnlineUsers() {
     toast.success('Mensagem copiada!', { icon: '✨' });
   };
 
+  // Helper para escapar caracteres especiais em RegEx
+  const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   // Renderizar mensagem com destaque para Lotes, Códigos e Menções (@)
-  const renderFormattedMessage = (text: string) => {
-    const combinedPattern = /(@todos|@geral|@[A-Za-zÀ-ÿ0-9._-]+(?:\s[A-Za-zÀ-ÿ0-9._-]+)?)|([A-Z]\d[A-Z]\d{4})|(\b\d{6}\b)/gi;
+  const renderFormattedMessage = (text: string, isMine: boolean = false) => {
+    const contactNames = contacts.map(c => c.name).filter(Boolean);
+    const sortedNames = Array.from(new Set(['todos', 'geral', ...contactNames]))
+      .sort((a, b) => b.length - a.length);
+
+    const namesPattern = sortedNames.length > 0 ? sortedNames.map(escapeRegExp).join('|') : 'todos|geral';
+
+    // RegEx: casar menções conhecidas (@Nome Completo) ou @Palavra, Lote (A1B2345) ou Código (6 dígitos)
+    const combinedPattern = new RegExp(
+      `(@(?:${namesPattern}|[A-Za-zÀ-ÿ0-9._-]+))|([A-Z]\\d[A-Z]\\d{4})|(\\b\\d{6}\\b)`,
+      'gi'
+    );
+
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
@@ -717,7 +731,12 @@ export function OnlineUsers() {
         parts.push(
           <span
             key={match.index}
-            className="px-1.5 py-0.5 mx-0.5 rounded font-bold text-xs bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 inline-flex items-center gap-0.5 shadow-2xs"
+            className={cn(
+              "inline-flex items-center gap-0.5 px-1.5 py-0.5 mx-0.5 rounded-md font-bold text-[11px] align-middle shadow-2xs transition-colors",
+              isMine
+                ? "bg-white/25 text-white border border-white/40"
+                : "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30"
+            )}
           >
             {matchedText}
           </span>
@@ -733,10 +752,12 @@ export function OnlineUsers() {
             onClick={() => handleCopyCode(matchedText, isLote ? 'Lote' : 'Código')}
             title="Clique para copiar"
             className={cn(
-              "px-1.5 py-0.5 mx-0.5 rounded font-mono font-bold text-xs transition-all hover:scale-105 inline-flex items-center gap-1 cursor-pointer",
-              isLote
-                ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-200"
-                : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200"
+              "inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded-md font-mono font-bold text-[11px] align-middle transition-all hover:scale-105 cursor-pointer",
+              isMine
+                ? "bg-white/20 text-white hover:bg-white/30 border border-white/30"
+                : isLote
+                ? "bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 hover:bg-blue-200 border border-blue-200 dark:border-blue-800"
+                : "bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 hover:bg-purple-200 border border-purple-200 dark:border-purple-800"
             )}
           >
             {matchedText}
@@ -1184,20 +1205,25 @@ export function OnlineUsers() {
                           {/* Balão da Mensagem */}
                           <div
                             className={cn(
-                              "max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed relative shadow-xs",
+                              "max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed relative shadow-2xs transition-all",
                               isMine
-                                ? "bg-primary text-white rounded-br-none"
-                                : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 rounded-bl-none"
+                                ? "bg-primary text-white rounded-br-xs"
+                                : "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/60 rounded-bl-xs"
                             )}
                           >
-                            <div className="break-words">
-                              {renderFormattedMessage(msg.message)}
+                            <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                              {renderFormattedMessage(msg.message, isMine)}
                             </div>
 
-                            <div className={cn("flex items-center justify-end gap-1.5 mt-1 text-[9.5px]", isMine ? "text-blue-100" : "text-slate-400")}>
+                            <div
+                              className={cn(
+                                "flex items-center justify-end gap-1.5 mt-1 text-[10px] font-medium select-none",
+                                isMine ? "text-blue-100/90" : "text-slate-400 dark:text-slate-500"
+                              )}
+                            >
                               <span>{formatMsgTime(msg.timestamp)}</span>
                               {isMine && activeChat.type === 'direct' && (
-                                <CheckCheck className={cn("w-3 h-3", msg.read ? "text-sky-300" : "text-blue-200/60")} />
+                                <CheckCheck className={cn("w-3.5 h-3.5", msg.read ? "text-sky-300" : "text-blue-200/60")} />
                               )}
                             </div>
                           </div>

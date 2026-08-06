@@ -156,7 +156,7 @@ export default function ProducaoPage() {
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
   const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
-  const topBadgeBase = 'flex items-center gap-1.5 px-3 py-1 rounded-md border h-8';
+  const topBadgeBase = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border h-10';
 
   useEffect(() => {
     if (!authLoading) {
@@ -316,15 +316,15 @@ export default function ProducaoPage() {
               {/* Indicadores Globais Limpos */}
               <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                 <div className={cn(topBadgeBase, 'bg-white dark:bg-card border-blue-200 dark:border-blue-900/50')}>
-                  <span className="text-[11px] font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
-                  <span className="text-sm font-black text-blue-700 dark:text-blue-300 tabular-nums">{totaisGerais.real}</span>
-                  <span className="text-xs text-slate-400 font-bold">/{totaisGerais.prog}</span>
+                  <span className="text-xs font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
+                  <span className="text-lg font-black text-blue-700 dark:text-blue-300 tabular-nums">{totaisGerais.real}</span>
+                  <span className="text-sm text-slate-400 font-bold">/{totaisGerais.prog}</span>
                 </div>
 
                 <div className={cn(topBadgeBase, 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50')}>
-                  <span className="text-[11px] font-bold uppercase text-sky-700 dark:text-sky-300 mr-0.5">PD/PA:</span>
-                  <span className="text-sm font-black text-sky-700 dark:text-sky-300 tabular-nums">{totaisPDPA.real}</span>
-                  <span className="text-xs text-sky-700/70 dark:text-sky-300/70 font-bold">/{totaisPDPA.prog}</span>
+                  <span className="text-xs font-bold uppercase text-sky-700 dark:text-sky-300 mr-0.5">PD/PA:</span>
+                  <span className="text-lg font-black text-sky-700 dark:text-sky-300 tabular-nums">{totaisPDPA.real}</span>
+                  <span className="text-sm text-sky-700/70 dark:text-sky-300/70 font-bold">/{totaisPDPA.prog}</span>
                 </div>
 
                 <div

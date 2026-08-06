@@ -160,6 +160,8 @@ export function TurnoColumn({
             'p-2.5 rounded-md border border-l-4 cursor-pointer transition-colors duration-150 select-none group flex flex-col gap-1',
             item.locked
               ? 'bg-slate-100/80 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 border-l-slate-500 opacity-90'
+              : item.lp
+              ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-300 dark:border-purple-800 border-l-purple-600 dark:border-l-purple-500 hover:bg-purple-100/60 dark:hover:bg-purple-900/20'
               : completo
               ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-800 dark:border-l-slate-400 hover:bg-slate-50 dark:hover:bg-muted/10'
               : emAndamento
@@ -180,6 +182,12 @@ export function TurnoColumn({
               )}
               {item.locked && <Lock className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
               {item.splitParentId && <GitBranch className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
+
+              {item.lp && (
+                <span className="inline-flex items-center shrink-0 rounded-md border border-purple-700 bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white dark:border-purple-600 dark:bg-purple-700">
+                  LP
+                </span>
+              )}
 
               {familia && (
                 <span className={cn(badgeBase, 'max-w-[130px] shrink-0 truncate uppercase tracking-wide border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
@@ -256,6 +264,8 @@ export function TurnoColumn({
           'flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-l-[3px] cursor-pointer transition-colors duration-150 select-none group',
           item.locked
             ? 'bg-slate-100/80 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 border-l-slate-500 opacity-80 cursor-not-allowed'
+            : item.lp
+            ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-300 dark:border-purple-800 border-l-purple-600 dark:border-l-purple-500 hover:bg-purple-100/60 dark:hover:bg-purple-900/20'
             : completo
             ? 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-700 dark:border-l-slate-400 hover:bg-slate-50 dark:hover:bg-muted/10'
             : 'bg-white dark:bg-card border-slate-200 dark:border-border/80 border-l-slate-300 dark:border-l-slate-700 hover:border-slate-400 active:cursor-grabbing'
@@ -273,6 +283,12 @@ export function TurnoColumn({
             />
           )}
         </div>
+
+        {item.lp && (
+          <span className="inline-flex items-center shrink-0 rounded-md border border-purple-700 bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white dark:border-purple-600 dark:bg-purple-700">
+            LP
+          </span>
+        )}
 
         {familia && (
           <span className={cn(badgeBase, 'max-w-[90px] shrink-0 truncate uppercase tracking-wide border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>

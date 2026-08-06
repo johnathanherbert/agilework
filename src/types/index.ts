@@ -25,6 +25,7 @@ export type ProductionItem = {
   tipo: ProductionTipo;
   via?: ProductionVia; // Somente para tipo 'ordem'
   familia?: string; // Somente para tipo 'ordem'
+  lp?: boolean; // Tag "LP" (Lote Piloto) - somente para tipo 'ordem', destaca o card em roxo
   codigoReceita?: string; // Código do material/receita no rotas.json (ex: 700236)
   produto: string;
   prog: number;
