@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+// Garante que esta rota NUNCA seja armazenada em cache estático pelo Next.js
+// (Full Route Cache). Sem isso, em alguns ambientes de self-hosting (ex: Coolify)
+// a resposta poderia ficar "congelada" com o conteúdo lido em build time,
+// impedindo a detecção de novas versões após um redeploy.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 // Função para carregar versão do arquivo version.json
 function getAppVersion() {
   try {

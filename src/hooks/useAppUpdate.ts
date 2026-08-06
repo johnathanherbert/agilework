@@ -154,16 +154,19 @@ export const useAppUpdate = () => {
     // Verificar imediatamente quando o hook é montado (apenas em produção)
     checkForUpdate();
 
-    // Configurar verificação periódica a cada 10 minutos (aumentado para reduzir checagens)
-    const interval = setInterval(checkForUpdate, 10 * 60 * 1000);
+    // Configurar verificação periódica a cada 2 minutos. Isso garante que
+    // mesmo abas/telas que ficam sempre em foco (ex: painéis/kiosks que nunca
+    // disparam eventos de focus/visibilitychange) detectem uma nova versão
+    // publicada no Coolify em poucos minutos, sem depender de interação do usuário.
+    const interval = setInterval(checkForUpdate, 2 * 60 * 1000);
 
     // Verificar quando a aba ganha foco (apenas em produção)
     const handleFocus = () => {
       const now = new Date();
       const lastCheck = state.lastChecked;
       
-      // Verificar se passou mais de 5 minutos desde a última verificação (aumentado)
-      if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 5 * 60 * 1000) {
+      // Verificar se passou mais de 30 segundos desde a última verificação
+      if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 30 * 1000) {
         checkForUpdate();
       }
     };
@@ -174,20 +177,28 @@ export const useAppUpdate = () => {
         const now = new Date();
         const lastCheck = state.lastChecked;
         
-        // Verificar se passou mais de 5 minutos desde a última verificação
-        if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 5 * 60 * 1000) {
+        // Verificar se passou mais de 30 segundos desde a última verificação
+        if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 30 * 1000) {
           checkForUpdate();
         }
       }
     };
 
+    // Verificar assim que a conexão de rede voltar (ex: após o breve blip de
+    // rede causado pela troca de containers durante um redeploy no Coolify)
+    const handleOnline = () => {
+      checkForUpdate();
+    };
+
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
     };
   }, [checkForUpdate, state.lastChecked]);
   return {
