@@ -95,24 +95,23 @@ export function QuadroDiario({
     return result;
   }, [operators, occurrences, selectedDate, selectedTurno, searchQuery]);
 
-  // Totais do dia
+  // Totais do dia calculados diretamente do resumo completo (sem sofrer interferência do campo de busca)
   const totaisDia = useMemo(() => {
     const turnosFiltrados = selectedTurno === 'ALL' ? [1, 2, 3] : [selectedTurno];
-    let total = 0, presentes = 0, ausentes = 0, folgaEscala = 0, faltas = 0, atestados = 0, folgasFlexiveis = 0;
-    turnosFiltrados.forEach((t) => {
-      const items = operadoresPorTurno[t] || [];
-      items.forEach((item) => {
-        total++;
-        if (item.statusHoje === 'folga_escala') folgaEscala++;
-        else if (item.statusHoje === 'presente') presentes++;
-        else if (item.statusHoje === 'falta_injustificada' || item.statusHoje === 'falta_justificada') { ausentes++; faltas++; }
-        else if (item.statusHoje === 'atestado') { ausentes++; atestados++; }
-        else if (item.statusHoje === 'folga_flexivel') { ausentes++; folgasFlexiveis++; }
-        else if (item.statusHoje === 'ferias') { ausentes++; }
-      });
-    });
-    return { total, presentes, ausentes, folgaEscala, faltas, atestados, folgasFlexiveis };
-  }, [operadoresPorTurno, selectedTurno]);
+    const ops = operators.filter((op) => selectedTurno === 'ALL' || op.turno === selectedTurno);
+    const summary = getDailyPresenceSummary(selectedDate, ops, occurrences);
+
+    return {
+      total: summary.total,
+      presentes: summary.presentes,
+      ausentes: summary.ausentes,
+      folgaEscala: summary.folgasEscala,
+      faltas: summary.faltas,
+      atestados: summary.atestados,
+      folgasFlexiveis: summary.folgasFlexiveis,
+      ferias: summary.ferias,
+    };
+  }, [operators, occurrences, selectedDate, selectedTurno]);
 
   // Navegação de dias
   const handleShiftDay = (days: number) => {
@@ -220,30 +219,55 @@ export function QuadroDiario({
         </div>
       </div>
 
-      {/* Cards de Totais */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Cards de Totais Separando Faltas, Folgas Flexíveis e Férias */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Efetivo Total</p>
           <p className="text-2xl font-black text-foreground mt-1">{totaisDia.total}</p>
-          <p className="text-[11px] text-muted-foreground">{totaisDia.folgaEscala} folgas escala</p>
+          <p className="text-[11px] text-muted-foreground">quadro cadastrado</p>
         </div>
+
         <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 shadow-xs">
           <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">Presentes</p>
           <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">{totaisDia.presentes}</p>
           <p className="text-[11px] text-emerald-600/80">escalados p/ trabalhar</p>
         </div>
+
         <div className={cn(
           "rounded-2xl p-4 shadow-xs border",
-          totaisDia.ausentes > 0
+          (totaisDia.faltas + totaisDia.atestados) > 0
             ? "bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50"
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
         )}>
-          <p className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 tracking-wider">Ausências</p>
-          <p className="text-2xl font-black text-red-700 dark:text-red-300 mt-1">{totaisDia.ausentes}</p>
-          <p className="text-[11px] text-muted-foreground">{totaisDia.faltas}f · {totaisDia.atestados}at · {totaisDia.folgasFlexiveis}folga-flex</p>
+          <p className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 tracking-wider">Faltas & Atestados</p>
+          <p className="text-2xl font-black text-red-700 dark:text-red-300 mt-1">{totaisDia.faltas + totaisDia.atestados}</p>
+          <p className="text-[11px] text-muted-foreground">{totaisDia.faltas} faltas · {totaisDia.atestados} atestados</p>
         </div>
+
+        <div className={cn(
+          "rounded-2xl p-4 shadow-xs border",
+          totaisDia.folgasFlexiveis > 0
+            ? "bg-sky-50/50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/50"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+        )}>
+          <p className="text-[10px] uppercase font-bold text-sky-700 dark:text-sky-400 tracking-wider">Folga Flexível</p>
+          <p className="text-2xl font-black text-sky-700 dark:text-sky-300 mt-1">{totaisDia.folgasFlexiveis}</p>
+          <p className="text-[11px] text-sky-600/80">folgas alinhadas</p>
+        </div>
+
+        <div className={cn(
+          "rounded-2xl p-4 shadow-xs border",
+          totaisDia.ferias > 0
+            ? "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+        )}>
+          <p className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-400 tracking-wider">Em Férias</p>
+          <p className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">{totaisDia.ferias}</p>
+          <p className="text-[11px] text-indigo-600/80">férias programadas</p>
+        </div>
+
         <div
-          className="rounded-2xl p-4 shadow-xs border"
+          className="rounded-2xl p-4 shadow-xs border col-span-2 sm:col-span-1"
           style={{ borderColor: `${turmaFolgaInfo?.cor}40`, backgroundColor: `${turmaFolgaInfo?.cor}08` }}
         >
           <p className="text-[10px] uppercase font-bold tracking-wider" style={{ color: turmaFolgaInfo?.cor }}>Folga Escala</p>

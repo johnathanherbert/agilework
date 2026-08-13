@@ -81,7 +81,7 @@ const OCCURRENCE_TYPES: {
   {
     id: 'folga_flexivel',
     label: 'Folga Flexível',
-    descricao: 'Gozo ou concessão de folga do banco de folgas flexíveis',
+    descricao: 'Gozo de folga do banco de folgas flexíveis (desconta do saldo)',
     icon: CalendarDays,
     badgeClass: 'text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400',
   },
@@ -118,7 +118,7 @@ export function OcorrenciaModal({
   const [horasImpacto, setHorasImpacto] = useState<number>(8);
   const [cid, setCid] = useState<string>('');
   const [motivo, setMotivo] = useState<string>('');
-  const [tipoFolgaFlexivel, setTipoFolgaFlexivel] = useState<'debito' | 'concessao'>('debito');
+  // folga_flexivel é sempre débito (gozo do saldo)
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export function OcorrenciaModal({
     setTipo(defaultType);
     setCid('');
     setMotivo('');
-    setTipoFolgaFlexivel('debito');
+    // tipoFolgaFlexivel fixo como 'debito'
 
     if (selectedOperator) {
       setOperatorId(selectedOperator.id);
@@ -152,6 +152,7 @@ export function OcorrenciaModal({
   }, [dataInicio, dataFim]);
 
   const activeOp = operators.find((op) => op.id === operatorId) || selectedOperator;
+  const semSaldoFolga = tipo === 'folga_flexivel' && (activeOp?.saldoFolgasFlexiveis ?? 0) <= 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,7 +186,7 @@ export function OcorrenciaModal({
         horasImpacto,
         motivo: motivo.trim(),
         cid: tipo === 'atestado' ? cid.trim().toUpperCase() : undefined,
-        tipoFolgaFlexivel: tipo === 'folga_flexivel' ? tipoFolgaFlexivel : undefined,
+        tipoFolgaFlexivel: tipo === 'folga_flexivel' ? 'debito' : undefined,
       });
 
       toast.success(`Ocorrência (${tipo.replace('_', ' ')}) registrada com sucesso!`);
@@ -314,56 +315,16 @@ export function OcorrenciaModal({
               </div>
             </div>
 
-            {/* Opção Específica para Folga Flexível (Débito vs Concessão) */}
-            {tipo === 'folga_flexivel' && (
-              <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 space-y-2">
-                <Label className="text-xs font-bold uppercase text-sky-900 dark:text-sky-300">
-                  Ação no Saldo de Folgas Flexíveis
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTipoFolgaFlexivel('debito')}
-                    className={cn(
-                      "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5",
-                      tipoFolgaFlexivel === 'debito'
-                        ? "bg-white dark:bg-slate-900 border-sky-500 ring-2 ring-sky-500/50 shadow-xs"
-                        : "bg-white/60 dark:bg-slate-900/60 border-sky-200 dark:border-sky-800/60 opacity-80"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                      tipoFolgaFlexivel === 'debito' ? "border-sky-600 bg-sky-600" : "border-slate-400"
-                    )}>
-                      {tipoFolgaFlexivel === 'debito' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-bold text-foreground block leading-tight">Gozo de Folga (Débito)</span>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Desconta -{dias} dia(s) do saldo</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipoFolgaFlexivel('concessao')}
-                    className={cn(
-                      "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5",
-                      tipoFolgaFlexivel === 'concessao'
-                        ? "bg-white dark:bg-slate-900 border-sky-500 ring-2 ring-sky-500/50 shadow-xs"
-                        : "bg-white/60 dark:bg-slate-900/60 border-sky-200 dark:border-sky-800/60 opacity-80"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                      tipoFolgaFlexivel === 'concessao' ? "border-sky-600 bg-sky-600" : "border-slate-400"
-                    )}>
-                      {tipoFolgaFlexivel === 'concessao' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-bold text-foreground block leading-tight">Trabalhou em Folga (Crédito)</span>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Adiciona +{dias} dia(s) ao saldo</p>
-                    </div>
-                  </button>
+            {/* Aviso de saldo insuficiente para Folga Flexível */}
+            {tipo === 'folga_flexivel' && semSaldoFolga && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-bold text-amber-800 dark:text-amber-300">Saldo insuficiente</p>
+                  <p className="text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                    {activeOp?.nome} não possui saldo de folgas flexíveis disponível.
+                    Verifique o saldo antes de registrar.
+                  </p>
                 </div>
               </div>
             )}
@@ -463,8 +424,8 @@ export function OcorrenciaModal({
             </Button>
             <Button
               type="submit"
-              disabled={saving}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold"
+              disabled={saving || semSaldoFolga}
+              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold disabled:opacity-50"
             >
               {saving ? (
                 <>

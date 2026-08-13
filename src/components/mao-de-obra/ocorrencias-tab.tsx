@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from 'react';
+import { OcorrenciaDetalheModal } from './ocorrencia-detalhe-modal';
 import { toast } from 'react-hot-toast';
 import {
   LaborOccurrence,
@@ -70,6 +71,7 @@ export function OcorrenciasTab({
   const [typeFilter, setTypeFilter] = useState<'ALL' | LaborOccurrenceType>('ALL');
   const [periodoFilter, setPeriodoFilter] = useState<'mes_atual' | 'todos' | 'ano_2026'>('mes_atual');
   const [occToDelete, setOccToDelete] = useState<LaborOccurrence | null>(null);
+  const [occToView, setOccToView] = useState<LaborOccurrence | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const filteredOccurrences = useMemo(() => {
@@ -211,7 +213,8 @@ export function OcorrenciasTab({
               return (
                 <div
                   key={occ.id}
-                  className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                  className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                  onClick={() => setOccToView(occ)}
                 >
                   {/* Tipo */}
                   <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold shrink-0", meta.color, meta.bg, meta.border)}>
@@ -262,8 +265,8 @@ export function OcorrenciasTab({
                   {/* Excluir */}
                   <button
                     type="button"
-                    onClick={() => setOccToDelete(occ)}
-                    className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                    onClick={(e) => { e.stopPropagation(); setOccToDelete(occ); }}
+                    className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -274,7 +277,14 @@ export function OcorrenciasTab({
         </div>
       </div>
 
-      {/* Dialog de Confirmação */}
+      {/* Modal de Detalhe da Ocorrência */}
+      <OcorrenciaDetalheModal
+        open={Boolean(occToView)}
+        onOpenChange={(open) => !open && setOccToView(null)}
+        occurrence={occToView}
+      />
+
+      {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={Boolean(occToDelete)} onOpenChange={(open) => !open && !deleting && setOccToDelete(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>

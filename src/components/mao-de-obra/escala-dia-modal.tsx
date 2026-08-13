@@ -112,6 +112,8 @@ export function EscalaDiaModal({
     year: 'numeric',
   });
 
+  const feriasList = summary.operadoresStatus.filter((item) => item.statusHoje === 'ferias');
+  const folgaFlexivelList = summary.operadoresStatus.filter((item) => item.statusHoje === 'folga_flexivel');
   const ausentesList = summary.operadoresStatus.filter(
     (item) => item.statusHoje !== 'presente' && item.statusHoje !== 'folga_escala' && item.statusHoje !== 'inativo'
   );
@@ -240,14 +242,14 @@ export function EscalaDiaModal({
 
         {/* Resumo de Indicadores Rápidos */}
         <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-bold">Escalados</span>
                 <Users className="w-4 h-4 text-blue-500" />
               </div>
               <p className="text-2xl font-black text-foreground mt-1">{summary.escalados}</p>
-              <p className="text-[10px] text-muted-foreground">trabalhando na escala</p>
+              <p className="text-[10px] text-muted-foreground">p/ trabalhar</p>
             </div>
 
             <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs">
@@ -259,61 +261,102 @@ export function EscalaDiaModal({
                 {summary.presentes}
               </p>
               <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                {taxaCobertura}% de cobertura
+                {taxaCobertura}% cobertura
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20 shadow-2xs">
+            <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-2xs">
+              <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300">
+                <span className="text-xs font-bold">Em Férias</span>
+                <Palmtree className="w-4 h-4 text-indigo-500" />
+              </div>
+              <p className="text-2xl font-black text-indigo-800 dark:text-indigo-200 mt-1">
+                {feriasList.length}
+              </p>
+              <p className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                regulamentar
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl border border-sky-200 dark:border-sky-900/40 bg-sky-50/40 dark:bg-sky-950/20 shadow-2xs">
+              <div className="flex items-center justify-between text-sky-700 dark:text-sky-300">
+                <span className="text-xs font-bold">Folga Flex.</span>
+                <CalendarDays className="w-4 h-4 text-sky-500" />
+              </div>
+              <p className="text-2xl font-black text-sky-800 dark:text-sky-200 mt-1">
+                {folgaFlexivelList.length}
+              </p>
+              <p className="text-[10px] text-sky-600 dark:text-sky-400">
+                gozo no dia
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20 shadow-2xs col-span-2 sm:col-span-1">
               <div className="flex items-center justify-between text-rose-700 dark:text-rose-300">
                 <span className="text-xs font-bold">Ausências</span>
                 <XCircle className="w-4 h-4 text-rose-500" />
               </div>
               <p className="text-2xl font-black text-rose-800 dark:text-rose-200 mt-1">
-                {summary.ausentes}
+                {summary.ausentes - summary.ferias}
               </p>
               <p className="text-[10px] text-rose-600 dark:text-rose-400">
-                férias, faltas, atestados
+                faltas/atestados
               </p>
-            </div>
-
-            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-2xs">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-bold">Folga Escala</span>
-                <Clock className="w-4 h-4 text-purple-500" />
-              </div>
-              <p className="text-2xl font-black text-foreground mt-1">{summary.folgasEscala}</p>
-              <p className="text-[10px] text-muted-foreground">Turma {turmaFolga}</p>
             </div>
           </div>
 
-          {/* Abas Internas de Detalhamento */}
+          {/* Seletor de Turno + Abas Internas */}
           <Tabs value={modalTab} onValueChange={(v: any) => setModalTab(v)}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-              <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                <TabsTrigger
-                  value="ausencias"
-                  className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-                  Ausências ({ausentesList.length})
-                </TabsTrigger>
+              <div className="flex items-center gap-2 flex-wrap">
+                <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                  <TabsTrigger
+                    value="ausencias"
+                    className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                    Férias & Ausências ({ausentesList.length})
+                  </TabsTrigger>
 
-                <TabsTrigger
-                  value="escalados"
-                  className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
-                >
-                  <Users className="w-3.5 h-3.5 text-blue-500" />
-                  Escalados ({escaladosList.length})
-                </TabsTrigger>
+                  <TabsTrigger
+                    value="escalados"
+                    className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
+                  >
+                    <Users className="w-3.5 h-3.5 text-blue-500" />
+                    Escalados ({escaladosList.length})
+                  </TabsTrigger>
 
-                <TabsTrigger
-                  value="folga_escala"
-                  className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
-                >
-                  <Clock className="w-3.5 h-3.5 text-purple-500" />
-                  Folga de Escala ({folgaEscalaList.length})
-                </TabsTrigger>
-              </TabsList>
+                  <TabsTrigger
+                    value="folga_escala"
+                    className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 gap-1.5"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-purple-500" />
+                    Folga de Escala ({folgaEscalaList.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Seletor Rápido de Turno dentro do Modal (se Admin ou ALL) */}
+                {selectedTurno === 'ALL' && (
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl p-1 text-[11px] font-bold">
+                    <span className="text-muted-foreground px-1">Turno:</span>
+                    {(['ALL', 1, 2, 3] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setSelectedTurnoFilter(t)}
+                        className={cn(
+                          "px-2 py-0.5 rounded-lg transition-colors",
+                          selectedTurnoFilter === t
+                            ? "bg-primary text-white"
+                            : "text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-800"
+                        )}
+                      >
+                        {t === 'ALL' ? 'Todos' : `T${t}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Botão de Lançar Ocorrência nesta Data */}
               {onOpenOcorrencia && (

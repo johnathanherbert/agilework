@@ -11,6 +11,7 @@ import {
   getMonthlyAbsenteeismHistory,
   getTurnoAbsenteeismComparison,
 } from '@/lib/labor-helpers';
+import { isEscaladoParaTrabalhar } from '@/lib/escala-helpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -101,18 +102,8 @@ export function AbsenteismoDashboard({
     ].filter((item) => item.value > 0);
   }, [currentStats]);
 
-  // Ranking de operadores com ausências no mês
+  // Ranking de operadores com ausências no mês (respeitando a escala do calendário)
   const operatorsRanking = useMemo(() => {
-    const monthStartStr = `${year}-${String(selectedMonth).padStart(2, '0')}-01`;
-    const nextMonth = selectedMonth === 12 ? 1 : selectedMonth + 1;
-    const nextYear = selectedMonth === 12 ? year + 1 : year;
-    const monthEndStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
-    const monthOccs = occurrences.filter((occ) => {
-      if (turnoFilter && occ.turno !== turnoFilter) return false;
-      return occ.dataInicio >= monthStartStr && occ.dataInicio < monthEndStr && occ.impactaAbsenteismo;
-    });
-
     const opMap = new Map<string, {
       id: string;
       nome: string;
@@ -124,25 +115,44 @@ export function AbsenteismoDashboard({
       atestados: number;
     }>();
 
-    monthOccs.forEach((occ) => {
-      if (!opMap.has(occ.operadorId)) {
-        opMap.set(occ.operadorId, {
-          id: occ.operadorId,
-          nome: occ.operadorNome,
-          cargo: occ.operadorCargo,
-          turno: occ.turno,
-          letra: occ.operadorLetra,
-          totalDias: 0,
-          faltas: 0,
-          atestados: 0,
-        });
-      }
-      const item = opMap.get(occ.operadorId)!;
-      item.totalDias += occ.dias;
-      if (occ.tipo === 'atestado') {
-        item.atestados += occ.dias;
-      } else {
-        item.faltas += occ.dias;
+    occurrences.forEach((occ) => {
+      if (turnoFilter && occ.turno !== turnoFilter) return;
+      if (!occ.impactaAbsenteismo) return;
+
+      const start = new Date(occ.dataInicio + 'T12:00:00Z');
+      const end = new Date((occ.dataFim || occ.dataInicio) + 'T12:00:00Z');
+      const cur = new Date(start);
+
+      while (cur <= end) {
+        const curYear = cur.getUTCFullYear();
+        const curMonth = cur.getUTCMonth() + 1;
+
+        if (curYear === year && curMonth === selectedMonth) {
+          const dateStr = cur.toISOString().split('T')[0];
+          // Só contabiliza se o operador estava programado para trabalhar neste dia
+          if (isEscaladoParaTrabalhar(occ.operadorLetra, dateStr)) {
+            if (!opMap.has(occ.operadorId)) {
+              opMap.set(occ.operadorId, {
+                id: occ.operadorId,
+                nome: occ.operadorNome,
+                cargo: occ.operadorCargo,
+                turno: occ.turno,
+                letra: occ.operadorLetra,
+                totalDias: 0,
+                faltas: 0,
+                atestados: 0,
+              });
+            }
+            const item = opMap.get(occ.operadorId)!;
+            item.totalDias += 1;
+            if (occ.tipo === 'atestado') {
+              item.atestados += 1;
+            } else {
+              item.faltas += 1;
+            }
+          }
+        }
+        cur.setDate(cur.getDate() + 1);
       }
     });
 

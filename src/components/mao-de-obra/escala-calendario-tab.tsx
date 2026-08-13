@@ -13,6 +13,7 @@ import { getEscalaForMonth, getFeriadosYear, TURMAS_INFO } from '@/lib/escala-he
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EscalaDiaModal } from './escala-dia-modal';
 import {
   ChevronLeft,
   ChevronRight,
@@ -117,9 +118,14 @@ export function EscalaCalendarioTab({
   const handlePrevMonth = () => setCurrentMonth((m) => (m === 1 ? 12 : m - 1));
   const handleNextMonth = () => setCurrentMonth((m) => (m === 12 ? 1 : m + 1));
 
+  const [modalDateStr, setModalDateStr] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const handleDayClick = (d: EscalaDay) => {
     const occsDodia = occsByDate.get(d.data) || [];
     setSelectedDay({ escala: d, occsDodia });
+    setModalDateStr(d.data);
+    setModalOpen(true);
     if (onSelectDate) onSelectDate(d.data);
   };
 
@@ -416,6 +422,21 @@ export function EscalaCalendarioTab({
           )}
         </div>
       </div>
+
+      {/* Modal de Detalhamento do Dia */}
+      <EscalaDiaModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        dateStr={modalDateStr}
+        operators={operators}
+        occurrences={occurrences}
+        selectedTurno={selectedTurno}
+        onOpenOcorrencia={onOpenOcorrencia}
+        onNavigateToQuadro={(ds) => {
+          setModalOpen(false);
+          if (onSelectDate) onSelectDate(ds);
+        }}
+      />
     </div>
   );
 }

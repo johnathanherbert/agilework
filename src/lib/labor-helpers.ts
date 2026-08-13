@@ -760,17 +760,9 @@ export function calculateAbsenteeismStats(
 
   const horasHomemProgramadas = totalDiasHomemProgramados * 8;
 
-  // Filtra ocorrências do mês e turno
-  const monthStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextYear = month === 12 ? year + 1 : year;
-  const monthEndStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
-  const filteredOccurrences = occurrences.filter((occ) => {
-    if (turnoFilter && occ.turno !== turnoFilter) return false;
-    // Ocorrência dentro do mês
-    return occ.dataInicio >= monthStartStr && occ.dataInicio < monthEndStr;
-  });
+  // Mapeia operadores ativados para lookup rápido de letra
+  const opMap = new Map<string, Operator>();
+  filteredOperators.forEach((op) => opMap.set(op.id, op));
 
   let diasFaltasInjustificadas = 0;
   let diasFaltasJustificadas = 0;
@@ -778,26 +770,47 @@ export function calculateAbsenteeismStats(
   let diasFolgasFlexiveis = 0;
   let diasFerias = 0;
 
-  filteredOccurrences.forEach((occ) => {
-    const dias = occ.dias || 1;
-    switch (occ.tipo) {
-      case 'falta_injustificada':
-        diasFaltasInjustificadas += dias;
-        break;
-      case 'falta_justificada':
-        diasFaltasJustificadas += dias;
-        break;
-      case 'atestado':
-        diasAtestados += dias;
-        break;
-      case 'folga_flexivel':
-        if (occ.tipoFolgaFlexivel === 'debito') {
-          diasFolgasFlexiveis += dias;
+  // Itera por cada ocorrência e conta dia por dia (apenas nos dias de trabalho do operador no mês)
+  occurrences.forEach((occ) => {
+    const op = opMap.get(occ.operadorId);
+    if (!op) return;
+    if (turnoFilter && occ.turno !== turnoFilter) return;
+
+    const start = new Date(occ.dataInicio + 'T12:00:00Z');
+    const end = new Date((occ.dataFim || occ.dataInicio) + 'T12:00:00Z');
+    const cur = new Date(start);
+
+    while (cur <= end) {
+      const curYear = cur.getUTCFullYear();
+      const curMonth = cur.getUTCMonth() + 1;
+
+      // Conta somente se a data pertencer ao mês/ano analisado
+      if (curYear === year && curMonth === month) {
+        const dateStr = cur.toISOString().split('T')[0];
+        // Respeita a escala: se o operador estiver em folga de escala neste dia específico, não conta como ausência de trabalho
+        if (isEscaladoParaTrabalhar(op.letra, dateStr)) {
+          switch (occ.tipo) {
+            case 'falta_injustificada':
+              diasFaltasInjustificadas++;
+              break;
+            case 'falta_justificada':
+              diasFaltasJustificadas++;
+              break;
+            case 'atestado':
+              diasAtestados++;
+              break;
+            case 'folga_flexivel':
+              if (occ.tipoFolgaFlexivel === 'debito') {
+                diasFolgasFlexiveis++;
+              }
+              break;
+            case 'ferias':
+              diasFerias++;
+              break;
+          }
         }
-        break;
-      case 'ferias':
-        diasFerias += dias;
-        break;
+      }
+      cur.setDate(cur.getDate() + 1);
     }
   });
 
@@ -968,9 +981,6 @@ export function getDailyPresenceSummary(
 
     const estaEmFolgaDeEscala = op.letra === turmaDoDia;
     const escalado = !estaEmFolgaDeEscala;
-    if (escalado) {
-      escaladosCount++;
-    }
 
     // Busca se há alguma ocorrência ativa na data para este operador
     const occAtiva = occurrences.find(
@@ -979,6 +989,24 @@ export function getDailyPresenceSummary(
         dateStr >= occ.dataInicio &&
         dateStr <= (occ.dataFim || occ.dataInicio)
     );
+
+    // Se o operador está em dia de folga de escala normal (letra do dia):
+    // Férias se mantém como Férias. Porém faltas, atestados ou folgas flexíveis em dia que o operador JÁ ESTÁ DE FOLGA DE ESCALA não contam como ausência de trabalho.
+    if (estaEmFolgaDeEscala && occAtiva?.tipo !== 'ferias') {
+      folgasEscalaCount++;
+      return {
+        operator: op,
+        escaladoNaEscala: false,
+        statusHoje: 'folga_escala',
+        statusLabel: `Folga de Escala (Letra ${op.letra})`,
+        ocorrenciaHoje: occAtiva || null,
+        corStatus: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400',
+      };
+    }
+
+    if (escalado) {
+      escaladosCount++;
+    }
 
     if (occAtiva) {
       if (occAtiva.tipo === 'ferias') {
