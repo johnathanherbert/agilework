@@ -111,6 +111,14 @@ service cloud.firestore {
       allow delete: if isStaffOrAdmin();
     }
     
+    // Custom Routes collection - Cadastro de Ordens, Vias e Rotas (Gerenciamento)
+    match /custom_routes/{routeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
-import { useFirebase } from '@/components/providers/firebase-provider';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AppUpdateCard } from '@/components/settings/app-update-card';
 import { SoundConfigurationCard } from '@/components/settings/sound-configuration-card';
+import { RoutesManagementCard } from '@/components/settings/routes-management-card';
 import { Save, User, Bell, Shield, RefreshCw, LogOut, Sparkles, Mail, Volume2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNotifications } from '@/components/providers/notification-provider';
@@ -151,6 +152,11 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
             <div className="xl:col-span-8 space-y-4 sm:space-y-6">
+              {/* Gerenciamento de Ordens, Vias e Rotas (Visível apenas para Administradores) */}
+              {(userData?.email === ADMIN_EMAIL || userData?.role === 'admin') && (
+                <RoutesManagementCard />
+              )}
+
               <Card className="border-border/80">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
