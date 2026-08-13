@@ -1,6 +1,6 @@
 {
   "name": "nt-management-app",
-  "version": "0.1.45",
+  "version": "0.1.54",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -4873,5 +4873,11 @@
         "Código Produto SA ": "704265I",
         "Descrição": "MAL BRONF + CL FENIL 12+15MG CR LIB PROL",
         "VIA (ÚMIDA \/ SECA)": "Via Úmida"
+    },
+    {
+        "Código Produto SA ": "703012I",
+        "Descrição": "RISEDRONATO SODICO 35MG COM. REV.",
+        "Família Produto SA": "COP LEG.13",
+        "VIA (ÚMIDA \/ SECA)": "Via Seca"
     }
 ]

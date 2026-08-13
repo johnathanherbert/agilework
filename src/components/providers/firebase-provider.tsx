@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { ProductionTurno, UserRole } from '@/types';
 
 export interface UserData {
   uid: string;
@@ -21,7 +22,9 @@ export interface UserData {
   created_at: string;
   updated_at: string;
   isApproved?: boolean; // Opcional para manter compatibilidade com docs antigos
-  role?: 'user' | 'leader'; // Papel de líder atribuído pelo admin global (área de produção)
+  role?: UserRole; // 'admin' | 'supervisor' | 'leader' | 'user'
+  turno?: ProductionTurno | null; // Turno atribuído ao líder/supervisor (1, 2 ou 3)
+  allowedMaoDeObra?: boolean; // Permissão explícita de acesso ao módulo Mão de Obra
 }
 
 export const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';

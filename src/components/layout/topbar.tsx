@@ -22,7 +22,8 @@ export const Topbar = () => {
 
   const getUserRoleLabel = () => {
     if (userData?.email === ADMIN_EMAIL) return 'Administrador Global';
-    if (userData?.role === 'leader') return 'Líder de Produção';
+    if (userData?.role === 'supervisor') return `Supervisor Geral ${userData?.turno ? `(T${userData.turno})` : ''}`;
+    if (userData?.role === 'leader') return `Líder de Produção ${userData?.turno ? `(Turno ${userData.turno})` : ''}`;
     return 'Colaborador';
   };
 

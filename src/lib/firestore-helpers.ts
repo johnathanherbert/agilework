@@ -14,7 +14,7 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { NT, NTItem } from '@/types';
+import { NT, NTItem, ProductionTurno, UserRole } from '@/types';
 
 // Collections
 export const COLLECTIONS = {
@@ -116,7 +116,7 @@ export const deleteUserDb = async (uid: string): Promise<void> => {
   }
 };
 
-export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: 'user' | 'leader' }>): Promise<void> => {
+export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean }>): Promise<void> => {
   try {
     const userRef = doc(db, COLLECTIONS.USERS, uid);
     await updateDoc(userRef, {

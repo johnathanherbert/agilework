@@ -101,11 +101,120 @@ export type NTStats = {
 };
 
 // User types
+export type UserRole = 'admin' | 'supervisor' | 'leader' | 'user';
+
 export type User = {
   id: string;
   email: string;
   name: string | null;
-  role: 'admin' | 'user';
+  role: UserRole;
+  turno?: ProductionTurno | null;
+  allowedMaoDeObra?: boolean;
+};
+
+// Mão de Obra & Escala Types
+export type OperatorTurma = 'A' | 'B' | 'C' | 'D';
+export type OperatorStatus = 'ativo' | 'ferias' | 'afastado' | 'inativo';
+
+export type Operator = {
+  id: string;
+  nome: string;
+  matricula: string;
+  cargo: string;
+  letra: OperatorTurma;
+  turno: ProductionTurno;
+  saldoFolgasFlexiveis: number; // em dias (pode ser negativo/positivo/zero)
+  status: OperatorStatus;
+  dataAdmissao?: string;
+  telefone?: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  created_by_name?: string;
+  updated_by?: string;
+  updated_by_name?: string;
+};
+
+export type LaborOccurrenceType =
+  | 'falta_injustificada'
+  | 'falta_justificada'
+  | 'atestado'
+  | 'folga_flexivel'
+  | 'ferias'
+  | 'hora_extra';
+
+export type LaborOccurrence = {
+  id: string;
+  operadorId: string;
+  operadorNome: string;
+  operadorCargo: string;
+  operadorLetra: OperatorTurma;
+  turno: ProductionTurno;
+  tipo: LaborOccurrenceType;
+  dataInicio: string; // YYYY-MM-DD
+  dataFim: string;    // YYYY-MM-DD
+  dias: number;
+  horasImpacto?: number;
+  motivo?: string;
+  cid?: string; // Código CID para atestados médicos
+  tipoFolgaFlexivel?: 'concessao' | 'debito'; // concessão (+1 crédito) ou débito (-1 folga gozada)
+  impactaAbsenteismo: boolean;
+  created_at: string;
+  created_by?: string;
+  created_by_name?: string;
+  updated_at?: string;
+};
+
+export type VacationConflict = {
+  id: string;
+  tipo: 'cargo' | 'letra' | 'capacidade';
+  severidade: 'alta' | 'media' | 'baixa';
+  titulo: string;
+  descricao: string;
+  dataInicio: string;
+  dataFim: string;
+  turno: ProductionTurno;
+  operadores: {
+    id: string;
+    nome: string;
+    cargo: string;
+    letra: OperatorTurma;
+  }[];
+};
+
+export type AbsenteeismStats = {
+  totalOperadores: number;
+  diasHomemProgramados: number;
+  horasHomemProgramadas: number;
+  diasPerdidosFaltasInjustificadas: number;
+  diasPerdidosFaltasJustificadas: number;
+  diasPerdidosAtestados: number;
+  totalDiasPerdidos: number;
+  totalHorasPerdidas: number;
+  taxaAbsenteismo: number; // % geral
+  taxaAtestados: number;   // % de atestados
+  taxaFaltas: number;      // % de faltas
+  taxaFolgasFlexiveis: number;
+  diasFolgasFlexiveis: number;
+  diasFerias: number;
+};
+
+export type EscalaDay = {
+  data: string; // YYYY-MM-DD
+  dia: number;
+  mes: number;
+  mes_nome: string;
+  ano: number;
+  dia_semana: string;
+  dia_semana_curto: string;
+  dia_semana_iso: number;
+  e_fim_de_semana: boolean;
+  e_feriado: boolean;
+  feriado_nome: string | null;
+  feriado_tipo: string | null;
+  turma_escalada: OperatorTurma;
+  dia_ciclo_28: number;
 };
 
 // Analytics Types

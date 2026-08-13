@@ -27,12 +27,16 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { ProductionTurno, UserRole } from "@/types";
+
 interface UserItem {
   uid: string;
   email: string;
   name?: string;
   isApproved?: boolean;
-  role?: 'user' | 'leader';
+  role?: UserRole;
+  turno?: ProductionTurno | null;
+  allowedMaoDeObra?: boolean;
   created_at?: string;
   lastActive?: any;
 }
@@ -119,7 +123,19 @@ export default function AdminControlPanelPage() {
 
   // Edit User State
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [editForm, setEditForm] = useState<{ name: string; isApproved: boolean; role: 'user' | 'leader' }>({ name: '', isApproved: false, role: 'user' });
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    isApproved: boolean;
+    role: UserRole;
+    turno: ProductionTurno | null;
+    allowedMaoDeObra: boolean;
+  }>({
+    name: '',
+    isApproved: false,
+    role: 'user',
+    turno: null,
+    allowedMaoDeObra: false,
+  });
 
   // Delete User State
   const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
@@ -136,7 +152,7 @@ export default function AdminControlPanelPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'revoked' | 'inactive'>('all');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'leader' | 'user'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'supervisor' | 'leader' | 'user'>('all');
   const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
   const stats = useMemo(() => {
@@ -144,8 +160,9 @@ export default function AdminControlPanelPage() {
     const ativos = users.filter((u) => u.isApproved || u.email === ADMIN_EMAIL).length;
     const pendentes = users.filter((u) => !u.isApproved && u.email !== ADMIN_EMAIL).length;
     const lideres = users.filter((u) => u.role === 'leader').length;
+    const supervisores = users.filter((u) => u.role === 'supervisor').length;
     const inativos = users.filter((u) => getLastActiveInfo(u.lastActive).isInactive).length;
-    return { total, ativos, pendentes, lideres, inativos };
+    return { total, ativos, pendentes, lideres, supervisores, inativos };
   }, [users]);
 
   const filteredUsers = useMemo(() => {
@@ -179,11 +196,15 @@ export default function AdminControlPanelPage() {
           return false;
         }
 
+        if (roleFilter === 'supervisor' && (isAdmin || user.role !== 'supervisor')) {
+          return false;
+        }
+
         if (roleFilter === 'leader' && (isAdmin || user.role !== 'leader')) {
           return false;
         }
 
-        if (roleFilter === 'user' && (isAdmin || user.role === 'leader')) {
+        if (roleFilter === 'user' && (isAdmin || user.role === 'leader' || user.role === 'supervisor')) {
           return false;
         }
 
@@ -281,21 +302,58 @@ export default function AdminControlPanelPage() {
       return;
     }
     setEditingUser(user);
-    setEditForm({ name: user.name || '', isApproved: user.isApproved || false, role: user.role || 'user' });
+    setEditForm({
+      name: user.name || '',
+      isApproved: user.isApproved || false,
+      role: user.role || 'user',
+      turno: user.turno ?? null,
+      allowedMaoDeObra: user.allowedMaoDeObra ?? (user.role === 'supervisor' || user.role === 'admin'),
+    });
   };
 
   const handleEditSave = async () => {
     if (!editingUser) return;
     try {
-      await editUserDb(editingUser.uid, { name: editForm.name, isApproved: editForm.isApproved, role: editForm.role });
+      await editUserDb(editingUser.uid, {
+        name: editForm.name,
+        isApproved: editForm.isApproved,
+        role: editForm.role,
+        turno: editForm.role === 'leader' || editForm.role === 'supervisor' ? editForm.turno : null,
+        allowedMaoDeObra: editForm.allowedMaoDeObra,
+      });
       toast.success("Dados do usuário atualizados.");
       
       setUsers(prev => prev.map(u => 
-        u.uid === editingUser.uid ? { ...u, name: editForm.name, isApproved: editForm.isApproved, role: editForm.role } : u
+        u.uid === editingUser.uid ? {
+          ...u,
+          name: editForm.name,
+          isApproved: editForm.isApproved,
+          role: editForm.role,
+          turno: editForm.role === 'leader' || editForm.role === 'supervisor' ? editForm.turno : null,
+          allowedMaoDeObra: editForm.allowedMaoDeObra,
+        } : u
       ));
       setEditingUser(null);
     } catch(err) {
       toast.error("Erro ao salvar os novos dados.");
+    }
+  };
+
+  const handleToggleMaoDeObra = async (user: UserItem) => {
+    if (user.email === ADMIN_EMAIL) {
+      toast.error("O administrador global já possui acesso irrestrito.");
+      return;
+    }
+
+    const newAllowed = !user.allowedMaoDeObra;
+    try {
+      await editUserDb(user.uid, {
+        allowedMaoDeObra: newAllowed,
+      });
+      toast.success(`Acesso à Mão de Obra ${newAllowed ? 'concedido' : 'bloqueado'} para ${user.name || user.email}.`);
+      setUsers(prev => prev.map(u => u.uid === user.uid ? { ...u, allowedMaoDeObra: newAllowed } : u));
+    } catch (error) {
+      toast.error("Erro ao alterar permissão de Mão de Obra.");
     }
   };
 
@@ -411,13 +469,14 @@ export default function AdminControlPanelPage() {
                         </div>
 
                         <div className="lg:col-span-3 flex items-center gap-2">
-                          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'all' | 'admin' | 'leader' | 'user')}>
+                          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'all' | 'admin' | 'supervisor' | 'leader' | 'user')}>
                             <SelectTrigger className="h-9 bg-white/90 dark:bg-slate-900">
                               <SelectValue placeholder="Função" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">Todas funções</SelectItem>
                               <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="supervisor">Supervisor</SelectItem>
                               <SelectItem value="leader">Líder</SelectItem>
                               <SelectItem value="user">Usuário</SelectItem>
                             </SelectContent>
@@ -503,19 +562,62 @@ export default function AdminControlPanelPage() {
                                         </label>
                                       </div>
                                       <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Função</label>
+                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Função / Cargo</label>
                                         <Select
                                           value={editForm.role}
-                                          onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value as 'user' | 'leader' }))}
+                                          onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value as UserRole }))}
                                         >
                                           <SelectTrigger>
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            <SelectItem value="user">Usuário</SelectItem>
-                                            <SelectItem value="leader">Líder (acessa Painel de Produção)</SelectItem>
+                                            <SelectItem value="user">Usuário (Padrão)</SelectItem>
+                                            <SelectItem value="leader">Líder (Gerencia seu Turno)</SelectItem>
+                                            <SelectItem value="supervisor">Supervisor (Acessa todos os Turnos)</SelectItem>
+                                            <SelectItem value="admin">Administrador Global</SelectItem>
                                           </SelectContent>
                                         </Select>
+                                      </div>
+                                      {(editForm.role === 'leader' || editForm.role === 'supervisor') && (
+                                        <div className="space-y-1.5">
+                                          <label className="text-xs font-semibold text-muted-foreground uppercase">Turno de Atuação</label>
+                                          <Select
+                                            value={editForm.turno ? String(editForm.turno) : 'none'}
+                                            onValueChange={(value) => setEditForm(prev => ({
+                                              ...prev,
+                                              turno: value === 'none' ? null : (Number(value) as ProductionTurno)
+                                            }))}
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="1">Turno 1 (Manhã)</SelectItem>
+                                              <SelectItem value="2">Turno 2 (Tarde)</SelectItem>
+                                              <SelectItem value="3">Turno 3 (Noite)</SelectItem>
+                                              <SelectItem value="none">Todos os Turnos / Geral</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Permissão Específica de Mão de Obra & Escala */}
+                                      <div className="space-y-1.5 md:col-span-2">
+                                        <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-card border border-border/80 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                                          <Checkbox
+                                            checked={editForm.allowedMaoDeObra}
+                                            onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, allowedMaoDeObra: checked === true }))}
+                                          />
+                                          <div>
+                                            <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                                              <Users className="w-4 h-4 text-primary" />
+                                              Acesso ao Módulo de Mão de Obra & Escala 2026
+                                            </span>
+                                            <span className="text-xs text-muted-foreground block">
+                                              Permite que este líder acesse o controle de presença, quadro diário e escalas do seu turno ({editForm.turno ? `Turno ${editForm.turno}` : 'sem turno definido'}).
+                                            </span>
+                                          </div>
+                                        </label>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2 pt-1">
@@ -539,13 +641,32 @@ export default function AdminControlPanelPage() {
                                             <p className="text-sm font-bold text-foreground truncate">
                                               {displayName}
                                             </p>
-                                            {!isAdmin && user.role !== 'leader' && (
+                                            {!isAdmin && (!user.role || user.role === 'user') && (
                                               <Badge variant="outline" className="text-[11px] font-bold">Usuário</Badge>
                                             )}
                                             {!isAdmin && user.role === 'leader' && (
-                                              <Badge className="gap-1 bg-accent/10 text-accent hover:bg-accent/10 border border-accent/20">
-                                                <Star className="h-3 w-3" />
-                                                Líder
+                                              <Badge className="gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30">
+                                                <Star className="h-3 w-3 text-amber-500" />
+                                                Líder {user.turno ? `(Turno ${user.turno})` : ''}
+                                              </Badge>
+                                            )}
+                                            {!isAdmin && user.role === 'leader' && (
+                                              user.allowedMaoDeObra ? (
+                                                <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[11px] font-bold">
+                                                  <Users className="h-3 w-3 text-emerald-500" />
+                                                  Mão de Obra: Liberado
+                                                </Badge>
+                                              ) : (
+                                                <Badge variant="outline" className="gap-1 text-slate-500 border-slate-300 dark:border-slate-700 text-[11px] font-bold">
+                                                  <Users className="h-3 w-3 text-slate-400" />
+                                                  Mão de Obra: Bloqueado
+                                                </Badge>
+                                              )
+                                            )}
+                                            {!isAdmin && user.role === 'supervisor' && (
+                                              <Badge className="gap-1 bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 border border-purple-500/30">
+                                                <Shield className="h-3 w-3 text-purple-500" />
+                                                Supervisor Geral {user.turno ? `(T${user.turno})` : ''}
                                               </Badge>
                                             )}
                                             {isAdmin && (
@@ -578,7 +699,7 @@ export default function AdminControlPanelPage() {
 
                                           <div className="flex flex-wrap items-center gap-2 mt-1.5">
                                             <p className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wide">
-                                              Perfil: {isAdmin ? 'Admin' : user.role === 'leader' ? 'Líder' : 'Usuário'}
+                                              Perfil: {isAdmin ? 'Admin Global' : user.role === 'supervisor' ? `Supervisor ${user.turno ? `(Turno ${user.turno})` : '(Geral)'}` : user.role === 'leader' ? `Líder ${user.turno ? `(Turno ${user.turno})` : ''}` : 'Usuário'}
                                             </p>
                                             {user.created_at && (
                                               <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide">
@@ -601,6 +722,26 @@ export default function AdminControlPanelPage() {
                                     <div className="flex items-center gap-2">
                                       {!isAdmin && (
                                         <>
+                                          {/* Botão de Toggle Rápido de Mão de Obra para Líderes */}
+                                          {user.role === 'leader' && (
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              className={cn(
+                                                "h-9 px-2.5 text-xs font-bold gap-1.5 rounded-lg border",
+                                                user.allowedMaoDeObra
+                                                  ? "text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
+                                                  : "text-slate-600 bg-slate-50 border-slate-300 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400"
+                                              )}
+                                              onClick={() => handleToggleMaoDeObra(user)}
+                                              title={user.allowedMaoDeObra ? "Revogar Acesso à Mão de Obra" : "Liberar Acesso à Mão de Obra"}
+                                            >
+                                              <Users className="w-3.5 h-3.5" />
+                                              {user.allowedMaoDeObra ? "M.O. Liberado" : "Liberar M.O."}
+                                            </Button>
+                                          )}
+
                                           <Button
                                             type="button"
                                             variant="outline"
