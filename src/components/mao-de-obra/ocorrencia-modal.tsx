@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   Dialog,
@@ -12,16 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Operator,
   LaborOccurrenceType,
-  ProductionTurno,
 } from '@/types';
 import { createLaborOccurrence } from '@/lib/labor-helpers';
 import { TURMAS_INFO } from '@/lib/escala-helpers';
@@ -29,14 +21,19 @@ import {
   AlertTriangle,
   Stethoscope,
   CalendarDays,
-  Clock,
   FileText,
   Palmtree,
-  Sparkles,
   CheckCircle2,
   Loader2,
   Calendar,
   Zap,
+  MessageSquare,
+  Search,
+  ChevronDown,
+  X,
+  UserCheck,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,49 +52,88 @@ const OCCURRENCE_TYPES: {
   label: string;
   descricao: string;
   icon: React.ElementType;
-  badgeClass: string;
+  color: string;
+  bg: string;
+  border: string;
+  activeBg: string;
+  activeText: string;
 }[] = [
   {
     id: 'falta_injustificada',
     label: 'Falta Injustificada',
-    descricao: 'Ausência sem justificativa legal (impacta absenteísmo)',
+    descricao: 'Ausência sem justificativa',
     icon: AlertTriangle,
-    badgeClass: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-950/40 dark:text-red-400',
+    color: 'text-red-600 dark:text-red-400',
+    bg: 'bg-red-50 dark:bg-red-950/40',
+    border: 'border-red-200 dark:border-red-800',
+    activeBg: 'bg-red-600',
+    activeText: 'text-white',
   },
   {
     id: 'falta_justificada',
     label: 'Falta Justificada',
-    descricao: 'Ausência justificada por declaração ou força maior',
+    descricao: 'Ausência com declaração',
     icon: FileText,
-    badgeClass: 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400',
+    color: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-950/40',
+    border: 'border-amber-200 dark:border-amber-800',
+    activeBg: 'bg-amber-500',
+    activeText: 'text-white',
   },
   {
     id: 'atestado',
     label: 'Atestado Médico',
-    descricao: 'Afastamento médico com CID (impacta absenteísmo)',
+    descricao: 'Afastamento com documento médico',
     icon: Stethoscope,
-    badgeClass: 'text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400',
+    color: 'text-rose-600 dark:text-rose-400',
+    bg: 'bg-rose-50 dark:bg-rose-950/40',
+    border: 'border-rose-200 dark:border-rose-800',
+    activeBg: 'bg-rose-600',
+    activeText: 'text-white',
   },
   {
     id: 'folga_flexivel',
     label: 'Folga Flexível',
-    descricao: 'Gozo de folga do banco de folgas flexíveis (desconta do saldo)',
+    descricao: 'Gozo do banco de folgas',
     icon: CalendarDays,
-    badgeClass: 'text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400',
+    color: 'text-sky-600 dark:text-sky-400',
+    bg: 'bg-sky-50 dark:bg-sky-950/40',
+    border: 'border-sky-200 dark:border-sky-800',
+    activeBg: 'bg-sky-500',
+    activeText: 'text-white',
   },
   {
     id: 'ferias',
     label: 'Férias',
-    descricao: 'Período regulamentar de férias (10, 15, 20 ou 30 dias)',
+    descricao: 'Período regulamentar de férias',
     icon: Palmtree,
-    badgeClass: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400',
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+    border: 'border-indigo-200 dark:border-indigo-800',
+    activeBg: 'bg-indigo-600',
+    activeText: 'text-white',
+  },
+  {
+    id: 'atraso',
+    label: 'Atraso',
+    descricao: 'Chegada após o horário previsto',
+    icon: Clock,
+    color: 'text-orange-600 dark:text-orange-400',
+    bg: 'bg-orange-50 dark:bg-orange-950/40',
+    border: 'border-orange-200 dark:border-orange-800',
+    activeBg: 'bg-orange-500',
+    activeText: 'text-white',
   },
   {
     id: 'hora_extra',
     label: 'Hora Extra',
-    descricao: 'Operador comparece no trabalho no dia de folga dupla ou feriados',
+    descricao: 'Trabalho em folga ou feriado',
     icon: Zap,
-    badgeClass: 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400',
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    activeBg: 'bg-emerald-600',
+    activeText: 'text-white',
   },
 ];
 
@@ -111,26 +147,34 @@ export function OcorrenciaModal({
   onSuccess,
 }: OcorrenciaModalProps) {
   const [operatorId, setOperatorId] = useState<string>('');
+  const [operatorSearch, setOperatorSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [tipo, setTipo] = useState<LaborOccurrenceType>(defaultType);
   const [dataInicio, setDataInicio] = useState<string>('');
   const [dataFim, setDataFim] = useState<string>('');
   const [dias, setDias] = useState<number>(1);
   const [horasImpacto, setHorasImpacto] = useState<number>(8);
-  const [cid, setCid] = useState<string>('');
+  const [minutosAtraso, setMinutosAtraso] = useState<number>(0);
+  const [queixas, setQueixas] = useState<string>('');
   const [motivo, setMotivo] = useState<string>('');
-  // folga_flexivel é sempre débito (gozo do saldo)
   const [saving, setSaving] = useState(false);
 
+  // Reset ao abrir
   useEffect(() => {
     const today = defaultDate || new Date().toISOString().split('T')[0];
     setDataInicio(today);
     setDataFim(today);
     setDias(1);
     setHorasImpacto(8);
+    setMinutosAtraso(0);
     setTipo(defaultType);
-    setCid('');
+    setQueixas('');
     setMotivo('');
-    // tipoFolgaFlexivel fixo como 'debito'
+    setOperatorSearch('');
+    setDropdownOpen(false);
 
     if (selectedOperator) {
       setOperatorId(selectedOperator.id);
@@ -139,37 +183,48 @@ export function OcorrenciaModal({
     }
   }, [selectedOperator, defaultDate, defaultType, open, operators]);
 
-  // Recalcula dias ao mudar datas
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Recalcula dias
   useEffect(() => {
     if (dataInicio && dataFim) {
       const dt1 = new Date(dataInicio + 'T12:00:00Z');
       const dt2 = new Date(dataFim + 'T12:00:00Z');
-      const diffTime = dt2.getTime() - dt1.getTime();
-      const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+      const diffDays = Math.max(1, Math.round((dt2.getTime() - dt1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
       setDias(diffDays);
       setHorasImpacto(diffDays * 8);
     }
   }, [dataInicio, dataFim]);
 
+  // Filtra operadores
+  const filteredOperators = operators.filter((op) => {
+    const q = operatorSearch.toLowerCase();
+    if (!q) return true;
+    return (
+      op.nome.toLowerCase().includes(q) ||
+      op.matricula.toLowerCase().includes(q) ||
+      op.cargo.toLowerCase().includes(q) ||
+      op.letra.toLowerCase().includes(q)
+    );
+  });
+
   const activeOp = operators.find((op) => op.id === operatorId) || selectedOperator;
-  const semSaldoFolga = tipo === 'folga_flexivel' && (activeOp?.saldoFolgasFlexiveis ?? 0) <= 0;
+  const activeTipoMeta = OCCURRENCE_TYPES.find((t) => t.id === tipo);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!operatorId) {
-      toast.error('Selecione um operador.');
-      return;
-    }
-    if (!dataInicio) {
-      toast.error('Informe a data de início.');
-      return;
-    }
-
-    if (!activeOp) {
-      toast.error('Operador não encontrado.');
-      return;
-    }
+    if (!operatorId) { toast.error('Selecione um operador.'); return; }
+    if (!dataInicio) { toast.error('Informe a data de início.'); return; }
+    if (!activeOp) { toast.error('Operador não encontrado.'); return; }
 
     setSaving(true);
     try {
@@ -184,16 +239,16 @@ export function OcorrenciaModal({
         dataFim: dataFim || dataInicio,
         dias,
         horasImpacto,
+        minutosAtraso: tipo === 'atraso' ? minutosAtraso : undefined,
         motivo: motivo.trim(),
-        cid: tipo === 'atestado' ? cid.trim().toUpperCase() : undefined,
+        queixas: tipo === 'atestado' ? queixas.trim() : undefined,
         tipoFolgaFlexivel: tipo === 'folga_flexivel' ? 'debito' : undefined,
       });
-
-      toast.success(`Ocorrência (${tipo.replace('_', ' ')}) registrada com sucesso!`);
+      toast.success('Ocorrência registrada com sucesso!');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error('Erro ao registrar ocorrência:', error);
+      console.error(error);
       toast.error('Erro ao registrar ocorrência.');
     } finally {
       setSaving(false);
@@ -202,241 +257,315 @@ export function OcorrenciaModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl">
-        <form onSubmit={handleSubmit}>
-          {/* Header */}
-          <div className="p-5 border-b border-border bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-t-2xl">
+      <DialogContent className="max-w-lg p-0 gap-0 rounded-2xl border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[92vh]">
+
+          {/* ── Header ── */}
+          <div className="shrink-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white px-6 pt-6 pb-5">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2.5 text-white">
-                <div className="p-2 rounded-xl bg-white/10 border border-white/20">
-                  <CalendarDays className="h-5 w-5 text-indigo-400" />
+              <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                  <CalendarDays className="h-4 w-4 text-indigo-300" />
                 </div>
-                Registrar Ocorrência de Mão de Obra
+                Registrar Ocorrência
               </DialogTitle>
             </DialogHeader>
-            <p className="text-xs text-slate-300 mt-1">
-              Lance faltas, atestados com CID, folgas flexíveis e férias para controle de absenteísmo e saldo.
-            </p>
-          </div>
 
-          <div className="p-5 space-y-4">
-            {/* Seleção do Operador */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Colaborador / Operador *
-              </Label>
-              <Select value={operatorId} onValueChange={setOperatorId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o operador..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {operators.map((op) => {
-                    const turmaInfo = TURMAS_INFO[op.letra];
-                    return (
-                      <SelectItem key={op.id} value={op.id}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: turmaInfo.cor }}
-                          />
-                          <span className="font-bold text-foreground">{op.nome}</span>
-                          <span className="text-xs text-muted-foreground font-mono">({op.matricula})</span>
-                          <span className="text-xs text-muted-foreground">— {op.cargo} (T{op.turno})</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-
-              {activeOp && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
-                  <div
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: TURMAS_INFO[activeOp.letra]?.cor }}
-                  />
-                  <span className="font-bold">Turma {activeOp.letra}</span>
-                  <span className="text-muted-foreground">• Turno {activeOp.turno}</span>
-                  <span className="text-muted-foreground">• Saldo de Folgas:</span>
-                  <span
-                    className={cn(
-                      "font-mono font-bold px-1.5 py-0.5 rounded",
-                      activeOp.saldoFolgasFlexiveis > 0
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        : activeOp.saldoFolgasFlexiveis < 0
-                        ? "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
-                        : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    )}
-                  >
-                    {activeOp.saldoFolgasFlexiveis > 0 ? `+${activeOp.saldoFolgasFlexiveis}` : activeOp.saldoFolgasFlexiveis} dias
-                  </span>
+            {/* Operador selecionado no header — exibido quando já há um */}
+            {activeOp && (
+              <div className="mt-4 flex items-center gap-3 bg-white/8 rounded-xl px-4 py-3 border border-white/10">
+                <div
+                  className="w-10 h-10 rounded-xl text-white font-black text-sm flex items-center justify-center shrink-0 shadow-lg"
+                  style={{ backgroundColor: TURMAS_INFO[activeOp.letra]?.cor }}
+                >
+                  {activeOp.letra}
                 </div>
-              )}
-            </div>
-
-            {/* Tipo de Ocorrência */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Tipo de Ocorrência *
-              </Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {OCCURRENCE_TYPES.map((item) => {
-                  const Icon = item.icon;
-                  const selected = tipo === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setTipo(item.id)}
-                      className={cn(
-                        "p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer",
-                        selected
-                          ? "ring-2 ring-primary border-primary bg-primary/5 shadow-xs"
-                          : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "p-2 rounded-lg shrink-0",
-                          selected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground leading-tight">{item.label}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{item.descricao}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Aviso de saldo insuficiente para Folga Flexível */}
-            {tipo === 'folga_flexivel' && semSaldoFolga && (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <p className="font-bold text-amber-800 dark:text-amber-300">Saldo insuficiente</p>
-                  <p className="text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                    {activeOp?.nome} não possui saldo de folgas flexíveis disponível.
-                    Verifique o saldo antes de registrar.
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-white truncate">{activeOp.nome}</p>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                    {activeOp.cargo} &middot; Turma {activeOp.letra} &middot; Turno {activeOp.turno}
                   </p>
                 </div>
+                <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               </div>
             )}
+          </div>
 
-            {/* Período (Data Início e Fim) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="dataInicio" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Data de Início *
+          {/* ── Corpo com scroll ── */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-5 space-y-5">
+
+              {/* Seleção / Troca de Operador */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {activeOp ? 'Trocar Colaborador' : 'Colaborador *'}
                 </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="dataInicio"
-                    type="date"
-                    required
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                    className="pl-9"
-                  />
+
+                <div className="relative" ref={dropdownRef}>
+                  {/* Campo de busca */}
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 h-10 px-3 rounded-xl border bg-white dark:bg-slate-950 cursor-text transition-all",
+                      dropdownOpen
+                        ? "border-primary ring-2 ring-primary/20 shadow-sm"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                    onClick={() => { setDropdownOpen(true); setTimeout(() => searchRef.current?.focus(), 40); }}
+                  >
+                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <input
+                      ref={searchRef}
+                      type="text"
+                      placeholder={activeOp ? `Buscar para trocar (atual: ${activeOp.nome})` : "Buscar por nome, matrícula ou cargo..."}
+                      value={operatorSearch}
+                      onChange={(e) => { setOperatorSearch(e.target.value); setDropdownOpen(true); }}
+                      onFocus={() => setDropdownOpen(true)}
+                      className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 text-foreground min-w-0"
+                    />
+                    {operatorSearch && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setOperatorSearch(''); searchRef.current?.focus(); }} className="text-muted-foreground hover:text-foreground transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 shrink-0", dropdownOpen && "rotate-180")} />
+                  </div>
+
+                  {/* Dropdown */}
+                  {dropdownOpen && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden">
+                      <div className="max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {filteredOperators.length === 0 ? (
+                          <div className="px-4 py-8 text-center">
+                            <Search className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
+                            <p className="text-xs text-muted-foreground">
+                              Nenhum resultado para <span className="font-semibold">"{operatorSearch}"</span>
+                            </p>
+                          </div>
+                        ) : (
+                          filteredOperators.map((op) => {
+                            const turmaInfo = TURMAS_INFO[op.letra];
+                            const isSelected = op.id === operatorId;
+                            return (
+                              <button
+                                key={op.id}
+                                type="button"
+                                onClick={() => { setOperatorId(op.id); setOperatorSearch(''); setDropdownOpen(false); }}
+                                className={cn(
+                                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                                  isSelected
+                                    ? "bg-primary/5 dark:bg-primary/10"
+                                    : "hover:bg-slate-50 dark:hover:bg-slate-900"
+                                )}
+                              >
+                                <div
+                                  className="w-9 h-9 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
+                                  style={{ backgroundColor: turmaInfo.cor }}
+                                >
+                                  {op.letra}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className={cn("text-sm font-bold truncate", isSelected ? "text-primary" : "text-foreground")}>
+                                    {op.nome}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground truncate">
+                                    {op.matricula} &middot; {op.cargo} &middot; T{op.turno}
+                                  </p>
+                                </div>
+                                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="dataFim" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Data de Término *
+              {/* Tipo de Ocorrência */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Tipo de Ocorrência *
                 </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="dataFim"
-                    type="date"
-                    required
-                    min={dataInicio}
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  {OCCURRENCE_TYPES.map((item) => {
+                    const Icon = item.icon;
+                    const selected = tipo === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setTipo(item.id)}
+                        className={cn(
+                          "relative p-3 rounded-xl border text-left flex items-center gap-3 transition-all duration-150",
+                          selected
+                            ? cn("border-transparent shadow-md", item.bg, item.border, "ring-2", `ring-offset-1`)
+                            : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300"
+                        )}
+                        style={selected ? { '--tw-ring-color': 'currentColor' } as React.CSSProperties : undefined}
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                          selected ? item.activeBg : "bg-slate-100 dark:bg-slate-800"
+                        )}>
+                          <Icon className={cn("h-4 w-4", selected ? "text-white" : "text-slate-500 dark:text-slate-400")} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className={cn(
+                            "text-xs font-bold leading-tight truncate",
+                            selected ? item.color : "text-foreground"
+                          )}>{item.label}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.descricao}</p>
+                        </div>
+                        {selected && (
+                          <span className={cn("absolute top-2 right-2 w-1.5 h-1.5 rounded-full", item.activeBg)} />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
 
-            {/* Dias e Horas */}
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-              <div>
-                <span className="text-[11px] font-bold uppercase text-muted-foreground">Duração Total</span>
-                <p className="text-base font-black text-foreground">{dias} {dias === 1 ? 'dia' : 'dias'}</p>
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase text-muted-foreground">Impacto em Horas</span>
-                <p className="text-base font-black text-foreground">{horasImpacto} horas (8h/dia)</p>
-              </div>
-            </div>
-
-            {/* Campo Específico de CID para Atestado Médico */}
-            {tipo === 'atestado' && (
-              <div className="space-y-1.5">
-                <Label htmlFor="cid" className="text-xs font-bold uppercase text-rose-700 dark:text-rose-400">
-                  Código CID (Classificação Internacional de Doenças)
+              {/* Período */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Período
                 </Label>
-                <div className="relative">
-                  <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-rose-500" />
-                  <Input
-                    id="cid"
-                    placeholder="Ex: J06.9 (Infecção vias aéreas), M54.5 (Dor lombar)"
-                    value={cid}
-                    onChange={(e) => setCid(e.target.value)}
-                    className="pl-9 font-mono uppercase"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Início *</p>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        id="dataInicio"
+                        type="date"
+                        required
+                        value={dataInicio}
+                        onChange={(e) => setDataInicio(e.target.value)}
+                        className="pl-9 h-10 text-sm rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Término *</p>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        id="dataFim"
+                        type="date"
+                        required
+                        min={dataInicio}
+                        value={dataFim}
+                        onChange={(e) => setDataFim(e.target.value)}
+                        className="pl-9 h-10 text-sm rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumo de duração */}
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground">Duração:</span>
+                    <span className="text-sm font-black text-foreground">{dias} {dias === 1 ? 'dia' : 'dias'}</span>
+                  </div>
+                  <div className="w-px h-4 bg-border" />
+                  <div className="flex items-center gap-1.5 flex-1 justify-end">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground">Impacto:</span>
+                    <span className="text-sm font-black text-foreground">{horasImpacto}h</span>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Motivo / Justificativa */}
-            <div className="space-y-1.5">
-              <Label htmlFor="motivo" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Motivo / Justificativa / Observações
-              </Label>
-              <Input
-                id="motivo"
-                placeholder="Ex: Apresentou atestado médico de 2 dias emitido pelo Dr. Silva"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-              />
+              {/* Minutos de Atraso */}
+              {tipo === 'atraso' && (
+                <div className="space-y-1.5 p-3 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/40">
+                  <Label htmlFor="minutosAtraso" className="text-[11px] font-bold uppercase tracking-wider text-orange-700 dark:text-orange-400 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-orange-500" />
+                    Duração do Atraso (minutos) *
+                  </Label>
+                  <Input
+                    id="minutosAtraso"
+                    type="number"
+                    min="1"
+                    max="480"
+                    placeholder="Ex: 30"
+                    value={minutosAtraso || ''}
+                    onChange={(e) => setMinutosAtraso(Number(e.target.value))}
+                    className="bg-white dark:bg-slate-950 border-orange-200 dark:border-orange-900/50 focus-visible:ring-orange-400 rounded-xl"
+                  />
+                </div>
+              )}
+
+              {/* Queixas (atestado) */}
+              {tipo === 'atestado' && (
+                <div className="space-y-1.5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40">
+                  <Label htmlFor="queixas" className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                    <Stethoscope className="w-3.5 h-3.5" />
+                    Queixas / Motivo do Atestado
+                  </Label>
+                  <Input
+                    id="queixas"
+                    placeholder="Ex: Dor lombar, gripe, problema gastrointestinal..."
+                    value={queixas}
+                    onChange={(e) => setQueixas(e.target.value)}
+                    className="bg-white dark:bg-slate-950 border-rose-200 dark:border-rose-900/50 focus-visible:ring-rose-400"
+                  />
+                </div>
+              )}
+
+              {/* Motivo / Observações */}
+              <div className="space-y-1.5">
+                <Label htmlFor="motivo" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Observações / Justificativa
+                </Label>
+                <Input
+                  id="motivo"
+                  placeholder={
+                    tipo === 'falta_injustificada' ? 'Ex: Operador não compareceu e não comunicou...'
+                    : tipo === 'falta_justificada' ? 'Ex: Apresentou declaração de comparecimento médico...'
+                    : tipo === 'atestado' ? 'Ex: Atestado de 2 dias emitido pelo Dr. Silva em 12/08...'
+                    : tipo === 'folga_flexivel' ? 'Ex: Folga solicitada e aprovada pela supervisão...'
+                    : tipo === 'ferias' ? 'Ex: Férias programadas, aprovadas em reunião de escala...'
+                    : 'Ex: Operador solicitou e trabalhou na folga dupla...'
+                  }
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-2 rounded-b-2xl">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
+          {/* ── Footer ── */}
+          <div className="shrink-0 px-5 py-4 border-t border-border bg-slate-50/80 dark:bg-slate-900/60 flex items-center gap-3">
+            {/* Preview do tipo selecionado */}
+            {activeTipoMeta && (
+              <div className={cn("hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold flex-1 min-w-0", activeTipoMeta.color, activeTipoMeta.bg, activeTipoMeta.border)}>
+                <activeTipoMeta.icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{activeTipoMeta.label}</span>
+              </div>
+            )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving} className="rounded-xl">
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={saving || semSaldoFolga}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold disabled:opacity-50"
+              disabled={saving || !operatorId}
+              className={cn(
+                "gap-2 font-bold rounded-xl px-5 transition-all",
+                activeTipoMeta
+                  ? cn(activeTipoMeta.activeBg, "hover:opacity-90 text-white border-transparent")
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground"
+              )}
             >
               {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Registrando...
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" />Registrando...</>
               ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  Confirmar Ocorrência
-                </>
+                <><CheckCircle2 className="h-4 w-4" />Confirmar</>
               )}
             </Button>
           </div>

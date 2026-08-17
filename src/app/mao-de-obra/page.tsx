@@ -17,6 +17,7 @@ import {
   Sunset,
   Moon,
   BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
@@ -37,6 +38,7 @@ import {
 import { QuadroDiario } from '@/components/mao-de-obra/quadro-diario';
 import { OperadoresTable } from '@/components/mao-de-obra/operadores-table';
 import { OcorrenciasTab } from '@/components/mao-de-obra/ocorrencias-tab';
+import { TratativasTab } from '@/components/mao-de-obra/tratativas-tab';
 import { EscalaCalendarioTab } from '@/components/mao-de-obra/escala-calendario-tab';
 import { AbsenteismoDashboard } from '@/components/mao-de-obra/absenteismo-dashboard';
 import { OperadorModal } from '@/components/mao-de-obra/operador-modal';
@@ -274,6 +276,16 @@ export default function MaoDeObraPage() {
                   Ocorrências
                 </TabsTrigger>
 
+                {(isAdmin || isSupervisor) && (
+                  <TabsTrigger
+                    value="tratativas"
+                    className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Tratativas
+                  </TabsTrigger>
+                )}
+
                 <TabsTrigger
                   value="absenteismo"
                   className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
@@ -331,7 +343,19 @@ export default function MaoDeObraPage() {
                   onOpenOcorrencia={() => handleOpenOcorrencia()}
                 />
               </TabsContent>
-              {/* Aba 5: Absenteísmo */}
+
+              {/* Aba 5: Tratativas da Supervisão (Apenas Adm/Supervisão) */}
+              {(isAdmin || isSupervisor) && (
+                <TabsContent value="tratativas" className="focus-visible:outline-none">
+                  <TratativasTab
+                    occurrences={occurrences}
+                    operators={operators}
+                    selectedTurno={selectedTurno}
+                  />
+                </TabsContent>
+              )}
+
+              {/* Aba 6: Absenteísmo */}
               <TabsContent value="absenteismo" className="focus-visible:outline-none">
                 <AbsenteismoDashboard
                   operators={operators}

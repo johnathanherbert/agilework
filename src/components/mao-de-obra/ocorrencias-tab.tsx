@@ -40,18 +40,85 @@ import {
   Search,
   Plus,
   Zap,
-  TrendingUp,
-  TrendingDown,
+  ShieldCheck,
+  ChevronRight,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const OCC_META: Record<LaborOccurrenceType, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
-  falta_injustificada: { label: 'Falta Injustificada', color: 'text-red-700 dark:text-red-300', bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-900/50', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
-  falta_justificada: { label: 'Falta Justificada', color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-900/50', icon: <FileText className="w-3.5 h-3.5" /> },
-  atestado: { label: 'Atestado Médico', color: 'text-rose-700 dark:text-rose-300', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-900/50', icon: <Stethoscope className="w-3.5 h-3.5" /> },
-  folga_flexivel: { label: 'Folga Flexível', color: 'text-sky-700 dark:text-sky-300', bg: 'bg-sky-50 dark:bg-sky-950/30', border: 'border-sky-200 dark:border-sky-900/50', icon: <CalendarDays className="w-3.5 h-3.5" /> },
-  ferias: { label: 'Férias', color: 'text-indigo-700 dark:text-indigo-300', bg: 'bg-indigo-50 dark:bg-indigo-950/30', border: 'border-indigo-200 dark:border-indigo-900/50', icon: <Palmtree className="w-3.5 h-3.5" /> },
-  hora_extra: { label: 'Hora Extra', color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-900/50', icon: <Zap className="w-3.5 h-3.5" /> },
+// Metadados visuais por tipo de ocorrência
+const OCC_META: Record<LaborOccurrenceType, {
+  label: string;
+  shortLabel: string;
+  color: string;
+  bg: string;
+  border: string;
+  dot: string;
+  icon: React.ReactNode;
+}> = {
+  falta_injustificada: {
+    label: 'Falta Injustificada',
+    shortLabel: 'Falta Inj.',
+    color: 'text-red-700 dark:text-red-300',
+    bg: 'bg-red-50 dark:bg-red-950/40',
+    border: 'border-red-200 dark:border-red-900/60',
+    dot: 'bg-red-500',
+    icon: <AlertTriangle className="w-3.5 h-3.5" />,
+  },
+  falta_justificada: {
+    label: 'Falta Justificada',
+    shortLabel: 'Falta Just.',
+    color: 'text-amber-700 dark:text-amber-300',
+    bg: 'bg-amber-50 dark:bg-amber-950/40',
+    border: 'border-amber-200 dark:border-amber-900/60',
+    dot: 'bg-amber-500',
+    icon: <FileText className="w-3.5 h-3.5" />,
+  },
+  atestado: {
+    label: 'Atestado Médico',
+    shortLabel: 'Atestado',
+    color: 'text-rose-700 dark:text-rose-300',
+    bg: 'bg-rose-50 dark:bg-rose-950/40',
+    border: 'border-rose-200 dark:border-rose-900/60',
+    dot: 'bg-rose-500',
+    icon: <Stethoscope className="w-3.5 h-3.5" />,
+  },
+  folga_flexivel: {
+    label: 'Folga Flexível',
+    shortLabel: 'Folga Flex.',
+    color: 'text-sky-700 dark:text-sky-300',
+    bg: 'bg-sky-50 dark:bg-sky-950/40',
+    border: 'border-sky-200 dark:border-sky-900/60',
+    dot: 'bg-sky-500',
+    icon: <CalendarDays className="w-3.5 h-3.5" />,
+  },
+  ferias: {
+    label: 'Férias',
+    shortLabel: 'Férias',
+    color: 'text-indigo-700 dark:text-indigo-300',
+    bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+    border: 'border-indigo-200 dark:border-indigo-900/60',
+    dot: 'bg-indigo-500',
+    icon: <Palmtree className="w-3.5 h-3.5" />,
+  },
+  hora_extra: {
+    label: 'Hora Extra',
+    shortLabel: 'H. Extra',
+    color: 'text-emerald-700 dark:text-emerald-300',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+    border: 'border-emerald-200 dark:border-emerald-900/60',
+    dot: 'bg-emerald-500',
+    icon: <Zap className="w-3.5 h-3.5" />,
+  },
+  atraso: {
+    label: 'Atraso',
+    shortLabel: 'Atraso',
+    color: 'text-orange-700 dark:text-orange-300',
+    bg: 'bg-orange-50 dark:bg-orange-950/40',
+    border: 'border-orange-200 dark:border-orange-900/60',
+    dot: 'bg-orange-500',
+    icon: <Clock className="w-3.5 h-3.5" />,
+  },
 };
 
 interface OcorrenciasTabProps {
@@ -89,6 +156,7 @@ export function OcorrenciasTab({
           return (
             occ.operadorNome.toLowerCase().includes(query) ||
             (occ.motivo || '').toLowerCase().includes(query) ||
+            (occ.queixas || '').toLowerCase().includes(query) ||
             (occ.cid || '').toLowerCase().includes(query)
           );
         }
@@ -97,7 +165,7 @@ export function OcorrenciasTab({
       .sort((a, b) => b.dataInicio.localeCompare(a.dataInicio));
   }, [occurrences, selectedTurno, typeFilter, periodoFilter, searchQuery]);
 
-  // Sumário dos tipos
+  // Sumário por tipo
   const stats = useMemo(() => {
     const all = occurrences.filter((o) => selectedTurno === 'ALL' || o.turno === selectedTurno);
     return {
@@ -106,6 +174,7 @@ export function OcorrenciasTab({
       atestados: all.filter((o) => o.tipo === 'atestado').length,
       folgas: all.filter((o) => o.tipo === 'folga_flexivel').length,
       ferias: all.filter((o) => o.tipo === 'ferias').length,
+      atrasos: all.filter((o) => o.tipo === 'atraso').length,
     };
   }, [occurrences, selectedTurno]);
 
@@ -125,17 +194,21 @@ export function OcorrenciasTab({
 
   return (
     <div className="space-y-4">
-      {/* Sumário Compacto */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Cards de Sumário */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Faltas Inj.', value: stats.faltasInj, color: 'text-red-600', light: 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50' },
-          { label: 'Atestados', value: stats.atestados, color: 'text-rose-600', light: 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50' },
-          { label: 'Folgas Flex.', value: stats.folgas, color: 'text-sky-600', light: 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/50' },
-          { label: 'Férias', value: stats.ferias, color: 'text-indigo-600', light: 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50' },
+          { label: 'Faltas Inj.', value: stats.faltasInj, dot: 'bg-red-500', color: 'text-red-700 dark:text-red-300', light: 'bg-red-50/60 dark:bg-red-950/20 border-red-200 dark:border-red-900/40' },
+          { label: 'Atestados', value: stats.atestados, dot: 'bg-rose-500', color: 'text-rose-700 dark:text-rose-300', light: 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' },
+          { label: 'Folgas Flex.', value: stats.folgas, dot: 'bg-sky-500', color: 'text-sky-700 dark:text-sky-300', light: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/40' },
+          { label: 'Férias', value: stats.ferias, dot: 'bg-indigo-500', color: 'text-indigo-700 dark:text-indigo-300', light: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40' },
+          { label: 'Atrasos', value: stats.atrasos, dot: 'bg-orange-500', color: 'text-orange-700 dark:text-orange-300', light: 'bg-orange-50/60 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40' },
         ].map((item) => (
           <div key={item.label} className={cn("rounded-2xl p-4 border shadow-xs", item.light)}>
-            <p className={cn("text-[10px] uppercase font-bold tracking-wider", item.color)}>{item.label}</p>
-            <p className={cn("text-2xl font-black mt-1", item.color)}>{item.value}</p>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className={cn("w-2 h-2 rounded-full shrink-0", item.dot)} />
+              <p className={cn("text-[10px] uppercase font-bold tracking-wider", item.color)}>{item.label}</p>
+            </div>
+            <p className={cn("text-3xl font-black tabular-nums", item.color)}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -146,14 +219,16 @@ export function OcorrenciasTab({
         <div className="px-4 py-3 border-b border-border bg-slate-50/80 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 className="text-sm font-black text-foreground">
             Histórico de Ocorrências
-            <span className="ml-2 text-xs font-bold text-muted-foreground">({filteredOccurrences.length})</span>
+            <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-black text-muted-foreground">
+              {filteredOccurrences.length}
+            </span>
           </h3>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
               <Input
-                placeholder="Buscar..."
+                placeholder="Buscar operador..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 text-xs bg-white dark:bg-slate-950 rounded-lg w-[160px]"
@@ -171,6 +246,7 @@ export function OcorrenciasTab({
                 <SelectItem value="falta_justificada">Falta Justificada</SelectItem>
                 <SelectItem value="folga_flexivel">Folga Flexível</SelectItem>
                 <SelectItem value="ferias">Férias</SelectItem>
+                <SelectItem value="atraso">Atraso</SelectItem>
                 <SelectItem value="hora_extra">Hora Extra</SelectItem>
               </SelectContent>
             </Select>
@@ -197,79 +273,108 @@ export function OcorrenciasTab({
           </div>
         </div>
 
-        {/* Lista */}
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        {/* Cabeçalho da tabela */}
+        {filteredOccurrences.length > 0 && (
+          <div className="hidden md:grid md:grid-cols-[1fr_132px_116px_68px_84px] px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Colaborador</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground text-center">Tipo</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground text-center">Período</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground text-center">Dias</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground text-right">Ações</span>
+          </div>
+        )}
+
+        {/* Linhas */}
+        <div className="divide-y divide-slate-100 dark:divide-slate-800/70">
           {filteredOccurrences.length === 0 ? (
-            <div className="py-12 text-center text-xs text-muted-foreground">
-              Nenhuma ocorrência encontrada.
+            <div className="py-16 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-semibold text-muted-foreground">Nenhuma ocorrência encontrada</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Ajuste os filtros ou registre uma nova ocorrência.</p>
             </div>
           ) : (
             filteredOccurrences.map((occ) => {
               const meta = OCC_META[occ.tipo] || OCC_META.falta_injustificada;
               const turmaInfo = TURMAS_INFO[occ.operadorLetra];
-              const isFolga = occ.tipo === 'folga_flexivel';
-              const isCredito = isFolga && occ.tipoFolgaFlexivel === 'concessao';
+              const hasObsSupervisao = Boolean(occ.obsSupervisao);
+
+              const dataInicioFmt = new Date(occ.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+              const dataFimFmt = occ.dataFim && occ.dataFim !== occ.dataInicio
+                ? new Date(occ.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                : null;
+              const anoInicio = new Date(occ.dataInicio + 'T12:00:00Z').getFullYear();
 
               return (
                 <div
                   key={occ.id}
-                  className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                  className="group flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer md:grid md:grid-cols-[1fr_132px_116px_68px_84px] md:gap-0 md:items-center"
                   onClick={() => setOccToView(occ)}
                 >
-                  {/* Tipo */}
-                  <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold shrink-0", meta.color, meta.bg, meta.border)}>
-                    {meta.icon}
-                    <span className="hidden sm:inline">{meta.label}</span>
-                    {isFolga && (
-                      isCredito
-                        ? <TrendingUp className="w-3 h-3 text-emerald-500" />
-                        : <TrendingDown className="w-3 h-3 text-red-500" />
-                    )}
-                  </div>
-
                   {/* Operador */}
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={cn("w-1 h-10 rounded-full shrink-0 md:hidden", meta.dot)} />
                     <div
-                      className="w-7 h-7 rounded-lg text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs"
+                      className="w-8 h-8 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs"
                       style={{ backgroundColor: turmaInfo.cor }}
                     >
                       {occ.operadorLetra}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
+                        {hasObsSupervisao && (
+                          <span title="Tratativas registradas pela supervisão">
+                            <ShieldCheck className="w-3 h-3 text-violet-500 shrink-0" />
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[10px] text-muted-foreground truncate">
                         {occ.operadorCargo} · T{occ.turno}
-                        {occ.cid && <span className="ml-1 px-1 bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 rounded font-mono text-[9px]">CID: {occ.cid}</span>}
                       </p>
                     </div>
                   </div>
 
-                  {/* Período */}
-                  <div className="text-center shrink-0 hidden sm:block">
-                    <p className="text-xs font-bold font-mono text-foreground">
-                      {new Date(occ.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR')}
-                      {occ.dataFim && occ.dataFim !== occ.dataInicio && (
-                        <span className="text-muted-foreground"> → {new Date(occ.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR')}</span>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground font-mono">{occ.dias}d</p>
+                  {/* Tipo */}
+                  <div className="hidden sm:flex items-center justify-center">
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold",
+                      meta.color, meta.bg, meta.border
+                    )}>
+                      {meta.icon}
+                      <span className="truncate">{meta.shortLabel}</span>
+                    </div>
                   </div>
 
-                  {/* Motivo */}
-                  {occ.motivo && (
-                    <p className="text-[11px] text-muted-foreground italic truncate max-w-[140px] hidden md:block">
-                      {occ.motivo}
+                  {/* Período */}
+                  <div className="hidden md:flex flex-col items-center">
+                    <p className="text-xs font-bold font-mono text-foreground tabular-nums">
+                      {dataInicioFmt}
+                      {dataFimFmt && (
+                        <span className="text-muted-foreground"> → {dataFimFmt}</span>
+                      )}
                     </p>
-                  )}
+                    <p className="text-[10px] text-muted-foreground font-mono">{anoInicio}</p>
+                  </div>
 
-                  {/* Excluir */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setOccToDelete(occ); }}
-                    className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Dias */}
+                  <div className="hidden md:flex flex-col items-center">
+                    <p className="text-sm font-black text-foreground tabular-nums">{occ.dias}</p>
+                    <p className="text-[10px] text-muted-foreground">{occ.dias === 1 ? 'dia' : 'dias'}</p>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center gap-1 justify-end">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setOccToDelete(occ); }}
+                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                  </div>
                 </div>
               );
             })
@@ -277,14 +382,14 @@ export function OcorrenciasTab({
         </div>
       </div>
 
-      {/* Modal de Detalhe da Ocorrência */}
+      {/* Modal de Detalhe */}
       <OcorrenciaDetalheModal
         open={Boolean(occToView)}
         onOpenChange={(open) => !open && setOccToView(null)}
         occurrence={occToView}
       />
 
-      {/* Dialog de Confirmação de Exclusão */}
+      {/* Confirmação de exclusão */}
       <AlertDialog open={Boolean(occToDelete)} onOpenChange={(open) => !open && !deleting && setOccToDelete(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
@@ -295,7 +400,7 @@ export function OcorrenciasTab({
             <AlertDialogDescription>
               Excluir ocorrência de{' '}
               <span className="font-bold text-foreground">{occToDelete?.operadorNome}</span>?
-              {occToDelete?.tipo === 'folga_flexivel' && ' O saldo de folgas será recalculado automaticamente.'}
+              {' '}Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

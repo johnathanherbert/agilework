@@ -1,13 +1,19 @@
 "use client";
 
+import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { LaborOccurrence } from '@/types';
 import { TURMAS_INFO } from '@/lib/escala-helpers';
+import { updateOccurrenceSupervisaoObs } from '@/lib/labor-helpers';
+import { OcorrenciaEditModal } from './ocorrencia-edit-modal';
 import {
   CalendarDays,
   AlertTriangle,
@@ -17,13 +23,18 @@ import {
   Zap,
   Clock,
   User,
-  Hash,
   Briefcase,
   FileSearch,
   TrendingUp,
   TrendingDown,
   CheckCircle,
   XCircle,
+  ShieldCheck,
+  Pencil,
+  Save,
+  X,
+  MessageSquareDashed,
+  Edit3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -77,6 +88,13 @@ const OCC_META: Record<string, {
     border: 'border-emerald-200 dark:border-emerald-900/50',
     icon: <Zap className="w-4 h-4" />,
   },
+  atraso: {
+    label: 'Atraso',
+    color: 'text-orange-700 dark:text-orange-300',
+    bg: 'bg-orange-50 dark:bg-orange-950/30',
+    border: 'border-orange-200 dark:border-orange-900/50',
+    icon: <Clock className="w-4 h-4" />,
+  },
 };
 
 function fmt(dateStr: string) {
@@ -111,6 +129,18 @@ export function OcorrenciaDetalheModal({
   onOpenChange,
   occurrence,
 }: OcorrenciaDetalheModalProps) {
+  const [editingObs, setEditingObs] = useState(false);
+  const [obsValue, setObsValue] = useState('');
+  const [savingObs, setSavingObs] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (occurrence) {
+      setObsValue(occurrence.obsSupervisao || '');
+    }
+    setEditingObs(false);
+  }, [occurrence]);
+
   if (!occurrence) return null;
 
   const meta = OCC_META[occurrence.tipo] || OCC_META.falta_injustificada;
@@ -119,51 +149,91 @@ export function OcorrenciaDetalheModal({
   const isCredito = isFolga && occurrence.tipoFolgaFlexivel === 'concessao';
   const isSingleDay = occurrence.dataInicio === occurrence.dataFim;
 
+  const handleSaveObs = async () => {
+    setSavingObs(true);
+    try {
+      await updateOccurrenceSupervisaoObs(occurrence.id, obsValue);
+      toast.success('Observações da supervisão salvas.');
+      setEditingObs(false);
+    } catch {
+      toast.error('Erro ao salvar observações.');
+    } finally {
+      setSavingObs(false);
+    }
+  };
+
+  const handleCancelObs = () => {
+    setObsValue(occurrence.obsSupervisao || '');
+    setEditingObs(false);
+  };
+
+  // Queixas: campo novo ou fallback para CID retroativo
+  const queixasText = occurrence.queixas || (occurrence.cid ? `CID: ${occurrence.cid}` : '');
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 rounded-2xl border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
         {/* Header colorido conforme tipo */}
         <div className={cn('p-5 border-b', meta.bg, meta.border)}>
           <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs',
+                    meta.bg,
+                    meta.border,
+                    meta.color
+                  )}
+                >
+                  {meta.icon}
+                </div>
+                <div>
+                  <DialogTitle className={cn('text-base font-black', meta.color)}>
+                    <span className="flex items-center gap-2">
+                      {meta.label}
+                      {isFolga && (
+                        isCredito ? (
+                          <span className="inline-flex items-center gap-1">
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-xs text-emerald-600 font-bold">Concessão</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                            <span className="text-xs text-red-600 font-bold">Débito (Gozo)</span>
+                          </span>
+                        )
+                      )}
+                    </span>
+                  </DialogTitle>
+                  <p className={cn('text-xs mt-0.5 font-semibold opacity-75', meta.color)}>
+                    Detalhe da Ocorrência
+                  </p>
+                </div>
+              </div>
+
+              {/* Botão Editar */}
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(true)}
                 className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs',
-                  meta.bg,
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0',
+                  meta.color,
+                  'hover:opacity-80 border',
                   meta.border,
-                  meta.color
+                  'bg-white/60 dark:bg-black/20'
                 )}
               >
-                {meta.icon}
-              </div>
-              <div>
-                <DialogTitle className={cn('text-base font-black', meta.color)}>
-                  <span className="flex items-center gap-2">
-                    {meta.label}
-                    {isFolga && (
-                      isCredito ? (
-                        <span className="inline-flex items-center gap-1">
-                          <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                          <span className="text-xs text-emerald-600 font-bold">Concessão</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1">
-                          <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-                          <span className="text-xs text-red-600 font-bold">Débito (Gozo)</span>
-                        </span>
-                      )
-                    )}
-                  </span>
-                </DialogTitle>
-                <p className={cn('text-xs mt-0.5 font-semibold opacity-75', meta.color)}>
-                  Detalhe da Ocorrência
-                </p>
-              </div>
+                <Edit3 className="w-3.5 h-3.5" />
+                Editar
+              </button>
             </div>
           </DialogHeader>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
           {/* Operador */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
             <div
@@ -211,7 +281,6 @@ export function OcorrenciaDetalheModal({
             {/* Impacta Absenteísmo */}
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Hash className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Absenteísmo</span>
               </div>
               <div className="flex items-center gap-1.5 mt-1">
@@ -242,25 +311,40 @@ export function OcorrenciaDetalheModal({
               </div>
             )}
 
-            {/* CID */}
-            {occurrence.cid && (
-              <div className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20">
+            {/* Minutos de atraso */}
+            {occurrence.minutosAtraso != null && occurrence.minutosAtraso > 0 && (
+              <div className="p-3 rounded-xl border border-orange-200 dark:border-orange-900/40 bg-orange-50/40 dark:bg-orange-950/20">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Clock className="w-3.5 h-3.5 text-orange-500" />
+                  <span className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400 tracking-wider">Duração do Atraso</span>
+                </div>
+                <p className="text-sm font-black text-orange-700 dark:text-orange-300">{occurrence.minutosAtraso} min</p>
+              </div>
+            )}
+
+            {/* Queixas do operador (atestado) */}
+            {queixasText && (
+              <div className="col-span-2 p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Stethoscope className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 tracking-wider">CID</span>
+                  <span className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 tracking-wider">
+                    Queixas / Motivo do Atestado
+                  </span>
                 </div>
-                <p className="text-sm font-black text-rose-700 dark:text-rose-300 font-mono">{occurrence.cid}</p>
+                <p className="text-sm text-rose-700 dark:text-rose-300 font-medium leading-relaxed">
+                  {queixasText}
+                </p>
               </div>
             )}
           </div>
 
-          {/* Motivo / Observações — campo completo */}
+          {/* Motivo / Observações do lançamento */}
           {occurrence.motivo ? (
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-1.5 mb-2">
                 <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                  Motivo / Observações
+                  Observações do Lançamento
                 </span>
               </div>
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
@@ -268,10 +352,99 @@ export function OcorrenciaDetalheModal({
               </p>
             </div>
           ) : (
-            <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
-              <p className="text-xs text-muted-foreground italic">Nenhuma observação registrada.</p>
+            <div className="p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <p className="text-xs text-muted-foreground italic">Nenhuma observação de lançamento registrada.</p>
             </div>
           )}
+
+          {/* ────── OBS DA SUPERVISÃO ────── */}
+          <div className="rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20 overflow-hidden">
+            {/* Cabeçalho da seção */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-violet-200/70 dark:border-violet-900/40">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                <span className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">
+                  Tratativas da Supervisão
+                </span>
+              </div>
+              {!editingObs && (
+                <button
+                  type="button"
+                  onClick={() => setEditingObs(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-200 transition-colors px-2.5 py-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                >
+                  <Pencil className="w-3 h-3" />
+                  {obsValue ? 'Editar' : 'Adicionar'}
+                </button>
+              )}
+            </div>
+
+            {/* Corpo */}
+            <div className="p-4">
+              {editingObs ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={obsValue}
+                    onChange={(e) => setObsValue(e.target.value)}
+                    placeholder="Registre aqui as tratativas, ações tomadas, conversa com o colaborador, encaminhamentos, prazos e qualquer informação relevante para a supervisão..."
+                    rows={5}
+                    className="text-sm resize-none border-violet-300 dark:border-violet-800 focus-visible:ring-violet-400 bg-white dark:bg-slate-900"
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelObs}
+                      disabled={savingObs}
+                      className="h-8 text-xs gap-1.5 text-muted-foreground"
+                    >
+                      <X className="w-3 h-3" />
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleSaveObs}
+                      disabled={savingObs}
+                      className="h-8 text-xs gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold"
+                    >
+                      <Save className="w-3 h-3" />
+                      {savingObs ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                  </div>
+                </div>
+              ) : obsValue ? (
+                <div>
+                  <p className="text-sm text-violet-900 dark:text-violet-200 leading-relaxed whitespace-pre-wrap break-words">
+                    {obsValue}
+                  </p>
+                  {occurrence.obsSupervisaoUpdatedAt && (
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-violet-200/60 dark:border-violet-900/40">
+                      <Clock className="w-3 h-3 text-violet-400 shrink-0" />
+                      <span className="text-[10px] text-violet-500 dark:text-violet-400">
+                        Atualizado em {fmtDateTime(occurrence.obsSupervisaoUpdatedAt)}
+                        {occurrence.obsSupervisaoUpdatedBy && (
+                          <> · por <span className="font-semibold">{occurrence.obsSupervisaoUpdatedBy}</span></>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-4 text-center">
+                  <MessageSquareDashed className="w-6 h-6 text-violet-300 dark:text-violet-700" />
+                  <p className="text-xs text-violet-500 dark:text-violet-500 italic">
+                    Nenhuma tratativa registrada pela supervisão.
+                  </p>
+                  <p className="text-[10px] text-violet-400 dark:text-violet-600">
+                    Clique em "Adicionar" para registrar ações e encaminhamentos.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Metadados */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
@@ -304,5 +477,13 @@ export function OcorrenciaDetalheModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de edição */}
+    <OcorrenciaEditModal
+      open={editModalOpen}
+      onOpenChange={setEditModalOpen}
+      occurrence={occurrence}
+    />
+    </>
   );
 }

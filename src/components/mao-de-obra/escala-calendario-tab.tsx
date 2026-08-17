@@ -24,6 +24,8 @@ import {
   Flame,
   Info,
   Clock,
+  Plus,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -131,19 +133,29 @@ export function EscalaCalendarioTab({
 
   const todayStr = today.toISOString().split('T')[0];
 
-  // Contagem de ocorrências do mês para o sumário
+  // Sumário: conta operadores únicos afetados no mês (não dias)
   const monthStats = useMemo(() => {
-    let ferias = 0, faltas = 0, atestados = 0, folgasFlexiveis = 0;
+    const feriasOps = new Set<string>();
+    const faltasOps = new Set<string>();
+    const atestadosOps = new Set<string>();
+    const folgasOps = new Set<string>();
+
     monthDays.forEach((d) => {
       const occs = occsByDate.get(d.data) || [];
       occs.forEach((o) => {
-        if (o.tipo === 'ferias') ferias++;
-        else if (o.tipo === 'falta_injustificada' || o.tipo === 'falta_justificada') faltas++;
-        else if (o.tipo === 'atestado') atestados++;
-        else if (o.tipo === 'folga_flexivel') folgasFlexiveis++;
+        if (o.tipo === 'ferias') feriasOps.add(o.operadorId);
+        else if (o.tipo === 'falta_injustificada' || o.tipo === 'falta_justificada') faltasOps.add(o.operadorId);
+        else if (o.tipo === 'atestado') atestadosOps.add(o.operadorId);
+        else if (o.tipo === 'folga_flexivel') folgasOps.add(o.operadorId);
       });
     });
-    return { ferias, faltas, atestados, folgasFlexiveis };
+
+    return {
+      ferias: feriasOps.size,
+      faltas: faltasOps.size,
+      atestados: atestadosOps.size,
+      folgasFlexiveis: folgasOps.size,
+    };
   }, [monthDays, occsByDate]);
 
   return (
@@ -181,24 +193,45 @@ export function EscalaCalendarioTab({
           </button>
         </div>
 
-        {/* Legenda de Turmas */}
+        {/* Legenda */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Turmas — apenas badges coloridos */}
           {turmas.map((t) => (
-            <div key={t} className="flex items-center gap-1.5">
+            <div key={t} className="flex items-center gap-1">
               <div
                 className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shadow-xs"
                 style={{ backgroundColor: TURMAS_INFO[t].cor }}
               >
                 {t}
               </div>
-              <span className="text-[11px] font-bold text-muted-foreground hidden sm:inline">
-                Turma {t} — folga
-              </span>
             </div>
           ))}
-          <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border">
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          {/* Tipos de ocorrência */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+            <span className="text-[11px] text-muted-foreground font-medium">Falta</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
+            <span className="text-[11px] text-muted-foreground font-medium">Atestado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+            <span className="text-[11px] text-muted-foreground font-medium">Folga</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+            <span className="text-[11px] text-muted-foreground font-medium">Férias</span>
+          </div>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          <div className="flex items-center gap-1">
             <Flame className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] text-muted-foreground font-bold">Feriado</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Feriado</span>
           </div>
         </div>
       </div>
@@ -209,19 +242,22 @@ export function EscalaCalendarioTab({
         <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
           {/* Cabeçalho com dias da semana */}
           <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
-            {WEEK_DAYS.map((day) => (
-              <div
-                key={day}
-                className={cn(
-                  "py-2 text-center text-[11px] font-bold uppercase tracking-wider",
-                  day === 'Dom' || day === 'Sáb'
-                    ? "text-slate-400 dark:text-slate-600"
-                    : "text-muted-foreground"
-                )}
-              >
-                {day}
-              </div>
-            ))}
+            {WEEK_DAYS.map((day) => {
+              const isWeekend = day === 'Dom' || day === 'Sáb';
+              return (
+                <div
+                  key={day}
+                  className={cn(
+                    "py-3 text-center text-[11px] font-bold uppercase tracking-wider",
+                    isWeekend
+                      ? "bg-slate-50/80 dark:bg-slate-950/40 text-slate-400 dark:text-slate-600"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {day}
+                </div>
+              );
+            })}
           </div>
 
           {/* Grade de Dias */}
@@ -230,7 +266,7 @@ export function EscalaCalendarioTab({
             {Array.from({ length: firstDayOfWeek }).map((_, i) => (
               <div
                 key={`blank-${i}`}
-                className="min-h-[72px] border-b border-r border-slate-100 dark:border-slate-800/60 bg-slate-50/30 dark:bg-slate-950/20"
+                className="min-h-[88px] border-b border-r border-slate-100 dark:border-slate-800/60 bg-slate-50/30 dark:bg-slate-950/20"
               />
             ))}
 
@@ -254,20 +290,33 @@ export function EscalaCalendarioTab({
               const isLastInRow = col === 6;
               const isLastRow = Math.floor((firstDayOfWeek + idx) / 7) === rows - 1;
 
+              // Ring de prioridade de ocorrência
+              const ringClass = hasFalta
+                ? 'ring-1 ring-inset ring-red-400/40'
+                : hasAtestado
+                ? 'ring-1 ring-inset ring-rose-400/40'
+                : hasFolga
+                ? 'ring-1 ring-inset ring-sky-400/40'
+                : hasFerias
+                ? 'ring-1 ring-inset ring-indigo-400/40'
+                : '';
+
               return (
                 <button
                   key={d.data}
                   type="button"
                   onClick={() => handleDayClick(d)}
                   className={cn(
-                    "min-h-[72px] p-2 text-left flex flex-col gap-1 transition-colors relative",
+                    "min-h-[88px] p-2 text-left flex flex-col gap-1 transition-colors relative",
                     !isLastInRow && "border-r border-slate-100 dark:border-slate-800/60",
                     !isLastRow && "border-b border-slate-100 dark:border-slate-800/60",
+                    isFeriado && "bg-amber-50/40 dark:bg-amber-950/10",
                     isSelected
                       ? "bg-primary/5 ring-1 ring-inset ring-primary/40"
                       : isSunOrSat
                       ? "bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/30"
-                      : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
+                      : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30",
+                    !isSelected && ringClass
                   )}
                 >
                   {/* Número do dia e indicador de hoje */}
@@ -291,21 +340,21 @@ export function EscalaCalendarioTab({
                     )}
                   </div>
 
-                  {/* Badge de Turma de Folga */}
+                  {/* Badge de Turma de Folga — pill arredondado */}
                   <div
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-white text-[9px] font-black w-fit shadow-xs"
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[9px] font-black w-fit shadow-xs tracking-wide"
                     style={{ backgroundColor: turmaInfo.cor }}
                   >
                     {d.turma_escalada}
                   </div>
 
-                  {/* Dots de Ocorrências */}
+                  {/* Dots de Ocorrências — w-2 h-2 */}
                   {(hasFolga || hasFerias || hasFalta || hasAtestado) && (
-                    <div className="flex gap-0.5 flex-wrap mt-auto">
-                      {hasFalta && <span className="w-1.5 h-1.5 rounded-full bg-red-500" title="Falta" />}
-                      {hasAtestado && <span className="w-1.5 h-1.5 rounded-full bg-rose-400" title="Atestado" />}
-                      {hasFolga && <span className="w-1.5 h-1.5 rounded-full bg-sky-400" title="Folga Flexível" />}
-                      {hasFerias && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" title="Férias" />}
+                    <div className="flex gap-1 flex-wrap mt-auto">
+                      {hasFalta && <span className="w-2 h-2 rounded-full bg-red-500 shadow-sm" title="Falta" />}
+                      {hasAtestado && <span className="w-2 h-2 rounded-full bg-rose-400 shadow-sm" title="Atestado" />}
+                      {hasFolga && <span className="w-2 h-2 rounded-full bg-sky-400 shadow-sm" title="Folga Flexível" />}
+                      {hasFerias && <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm" title="Férias" />}
                     </div>
                   )}
                 </button>
@@ -318,20 +367,62 @@ export function EscalaCalendarioTab({
         <div className="w-full lg:w-72 space-y-3">
           {/* Sumário do Mês */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4">
-            <p className="text-xs font-black text-foreground mb-3 uppercase tracking-wide">Sumário do Mês</p>
-            <div className="space-y-2">
+            <p className="text-xs font-black text-foreground mb-3 uppercase tracking-wide">
+              Sumário — {MONTH_NAMES[currentMonth - 1]}
+            </p>
+
+            {/* Grid 2x2 de mini-cards */}
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Folgas Flexíveis', value: monthStats.folgasFlexiveis, color: 'text-sky-600', dot: 'bg-sky-400' },
-                { label: 'Férias', value: monthStats.ferias, color: 'text-indigo-600', dot: 'bg-indigo-500' },
-                { label: 'Faltas', value: monthStats.faltas, color: 'text-red-600', dot: 'bg-red-500' },
-                { label: 'Atestados', value: monthStats.atestados, color: 'text-rose-600', dot: 'bg-rose-400' },
+                {
+                  label: 'Folgas',
+                  value: monthStats.folgasFlexiveis,
+                  bg: 'bg-sky-50 dark:bg-sky-950/30',
+                  border: 'border-sky-100 dark:border-sky-900/40',
+                  valueColor: 'text-sky-600 dark:text-sky-400',
+                  dot: 'bg-sky-400',
+                },
+                {
+                  label: 'Em Férias',
+                  value: monthStats.ferias,
+                  bg: 'bg-indigo-50 dark:bg-indigo-950/30',
+                  border: 'border-indigo-100 dark:border-indigo-900/40',
+                  valueColor: 'text-indigo-600 dark:text-indigo-400',
+                  dot: 'bg-indigo-500',
+                },
+                {
+                  label: 'Faltas',
+                  value: monthStats.faltas,
+                  bg: 'bg-red-50 dark:bg-red-950/30',
+                  border: 'border-red-100 dark:border-red-900/40',
+                  valueColor: 'text-red-600 dark:text-red-400',
+                  dot: 'bg-red-500',
+                },
+                {
+                  label: 'Atestados',
+                  value: monthStats.atestados,
+                  bg: 'bg-rose-50 dark:bg-rose-950/30',
+                  border: 'border-rose-100 dark:border-rose-900/40',
+                  valueColor: 'text-rose-600 dark:text-rose-400',
+                  dot: 'bg-rose-400',
+                },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${item.dot}`} />
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
+                <div
+                  key={item.label}
+                  className={cn(
+                    "flex flex-col gap-1 p-2.5 rounded-xl border",
+                    item.bg,
+                    item.border
+                  )}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("w-2 h-2 rounded-full shrink-0", item.dot)} />
+                    <span className="text-[10px] text-muted-foreground font-semibold leading-tight">{item.label}</span>
                   </div>
-                  <span className={`text-sm font-black ${item.color}`}>{item.value}</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className={cn("text-xl font-black leading-none", item.valueColor)}>{item.value}</span>
+                    <span className="text-[9px] text-muted-foreground font-semibold">op.</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -356,14 +447,15 @@ export function EscalaCalendarioTab({
           {/* Detalhes do Dia Selecionado */}
           {selectedDay ? (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-xs font-black text-foreground">
-                    {selectedDay.escala.dia_semana_curto}, {String(selectedDay.escala.dia).padStart(2, '0')}/{String(selectedDay.escala.mes).padStart(2, '0')}
+                    {selectedDay.escala.dia_semana_curto},{' '}
+                    {String(selectedDay.escala.dia).padStart(2, '0')}/{String(selectedDay.escala.mes).padStart(2, '0')}
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <div
-                      className="w-4 h-4 rounded text-white text-[9px] font-black flex items-center justify-center"
+                      className="w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
                       style={{ backgroundColor: TURMAS_INFO[selectedDay.escala.turma_escalada].cor }}
                     >
                       {selectedDay.escala.turma_escalada}
@@ -378,9 +470,10 @@ export function EscalaCalendarioTab({
                   <button
                     type="button"
                     onClick={() => onOpenOcorrencia(undefined, undefined, selectedDay.escala.data)}
-                    className="text-[11px] text-primary font-bold hover:underline"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors shrink-0"
                   >
-                    + Ocorrência
+                    <Plus className="w-3 h-3" />
+                    Ocorrência
                   </button>
                 )}
               </div>
@@ -397,20 +490,34 @@ export function EscalaCalendarioTab({
                   Sem ocorrências neste dia
                 </p>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Ocorrências</p>
-                  {selectedDay.occsDodia.map((occ) => (
-                    <div
-                      key={occ.id}
-                      className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
-                    >
-                      <OccurrenceIcon tipo={occ.tipo} />
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
-                        <p className="text-[10px] text-muted-foreground">{OCC_LABELS[occ.tipo]}</p>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">Ocorrências</p>
+                  {selectedDay.occsDodia.map((occ) => {
+                    const op = operators.find((o) => o.id === occ.operadorId);
+                    const turma = op?.letra as OperatorTurma | undefined;
+                    const avatarColor = turma ? TURMAS_INFO[turma]?.cor : '#94a3b8';
+                    const avatarLetter = op?.nome?.charAt(0)?.toUpperCase() ?? '?';
+
+                    return (
+                      <div
+                        key={occ.id}
+                        className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default"
+                      >
+                        {/* Avatar colorido do operador */}
+                        <div
+                          className="w-6 h-6 rounded-full text-white text-[10px] font-black flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: avatarColor }}
+                        >
+                          {avatarLetter}
+                        </div>
+                        <OccurrenceIcon tipo={occ.tipo} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
+                          <p className="text-[10px] text-muted-foreground">{OCC_LABELS[occ.tipo]}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -448,6 +555,7 @@ const OCC_LABELS: Record<string, string> = {
   atestado: 'Atestado Médico',
   folga_flexivel: 'Folga Flexível',
   ferias: 'Férias',
+  atraso: 'Atraso',
   hora_extra: 'Hora Extra',
 };
 
@@ -455,6 +563,7 @@ function OccurrenceIcon({ tipo }: { tipo: string }) {
   if (tipo === 'ferias') return <Palmtree className="w-4 h-4 text-indigo-500 shrink-0" />;
   if (tipo === 'folga_flexivel') return <CalendarDays className="w-4 h-4 text-sky-500 shrink-0" />;
   if (tipo === 'atestado') return <Stethoscope className="w-4 h-4 text-rose-500 shrink-0" />;
+  if (tipo === 'atraso') return <Clock className="w-4 h-4 text-orange-500 shrink-0" />;
   if (tipo === 'falta_injustificada' || tipo === 'falta_justificada') return <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />;
   return <Clock className="w-4 h-4 text-muted-foreground shrink-0" />;
 }

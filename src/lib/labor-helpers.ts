@@ -66,9 +66,13 @@ const mapDocToOccurrence = (docId: string, data: any): LaborOccurrence => ({
   dias: Number(data.dias) || 1,
   horasImpacto: data.horasImpacto !== undefined ? Number(data.horasImpacto) : 8 * (Number(data.dias) || 1),
   motivo: data.motivo || '',
+  queixas: data.queixas || '',
   cid: data.cid || '',
   tipoFolgaFlexivel: data.tipoFolgaFlexivel,
   impactaAbsenteismo: data.impactaAbsenteismo !== undefined ? Boolean(data.impactaAbsenteismo) : (data.tipo === 'falta_injustificada' || data.tipo === 'falta_justificada' || data.tipo === 'atestado'),
+  obsSupervisao: data.obsSupervisao || '',
+  obsSupervisaoUpdatedAt: data.obsSupervisaoUpdatedAt?.toDate ? data.obsSupervisaoUpdatedAt.toDate().toISOString() : data.obsSupervisaoUpdatedAt || '',
+  obsSupervisaoUpdatedBy: data.obsSupervisaoUpdatedBy || '',
   created_at: data.created_at?.toDate ? data.created_at.toDate().toISOString() : data.created_at || new Date().toISOString(),
   created_by: data.created_by,
   created_by_name: data.created_by_name,
@@ -434,7 +438,9 @@ export type CreateLaborOccurrenceInput = {
   dataFim?: string;
   dias: number;
   horasImpacto?: number;
+  minutosAtraso?: number;
   motivo?: string;
+  queixas?: string; // Queixas/sintomas do operador
   cid?: string;
   tipoFolgaFlexivel?: 'concessao' | 'debito';
 };
@@ -448,11 +454,12 @@ export const createLaborOccurrence = async (input: CreateLaborOccurrenceInput): 
   const dias = Math.max(1, Number(input.dias) || 1);
   const horasImpacto = input.horasImpacto !== undefined ? Number(input.horasImpacto) : dias * 8;
 
-  // Impacto em absenteísmo: Faltas e Atestados contam no absenteísmo
+  // Impacto em absenteísmo: Faltas, Atestados e Atrasos contam no absenteísmo
   const impactaAbsenteismo =
     input.tipo === 'falta_injustificada' ||
     input.tipo === 'falta_justificada' ||
-    input.tipo === 'atestado';
+    input.tipo === 'atestado' ||
+    input.tipo === 'atraso';
 
   const data: any = {
     operadorId: input.operadorId,
@@ -465,7 +472,9 @@ export const createLaborOccurrence = async (input: CreateLaborOccurrenceInput): 
     dataFim: dataFim,
     dias: dias,
     horasImpacto: horasImpacto,
+    minutosAtraso: input.minutosAtraso || 0,
     motivo: input.motivo || '',
+    queixas: input.queixas || '',
     cid: input.cid || '',
     impactaAbsenteismo: impactaAbsenteismo,
     created_at: now,
@@ -522,7 +531,8 @@ export const updateLaborOccurrence = async (
     updateData.impactaAbsenteismo =
       input.tipo === 'falta_injustificada' ||
       input.tipo === 'falta_justificada' ||
-      input.tipo === 'atestado';
+      input.tipo === 'atestado' ||
+      input.tipo === 'atraso';
   }
 
   if (userInfo) {
@@ -584,6 +594,32 @@ export const deleteLaborOccurrence = async (occurrence: LaborOccurrence): Promis
 
   console.log(`✅ Ocorrência excluída: ${occurrence.id}`);
 };
+
+/**
+ * Atualiza as observações/tratativas da supervisão em uma ocorrência.
+ * Apenas atualiza o campo obsSupervisao sem afetar os demais campos.
+ */
+export const updateOccurrenceSupervisaoObs = async (
+  occurrenceId: string,
+  obsSupervisao: string
+): Promise<void> => {
+  const occRef = doc(db, LABOR_OCCURRENCES_COLLECTION, occurrenceId);
+  const now = Timestamp.now();
+  const userInfo = await getCurrentUserInfo();
+
+  const updateData: any = {
+    obsSupervisao: obsSupervisao.trim(),
+    obsSupervisaoUpdatedAt: now,
+  };
+
+  if (userInfo) {
+    updateData.obsSupervisaoUpdatedBy = userInfo.name;
+  }
+
+  await updateDoc(occRef, updateData);
+  console.log(`✅ Obs. da supervisão atualizada na ocorrência: ${occurrenceId}`);
+};
+
 
 export const subscribeToLaborOccurrences = (
   callback: (occurrences: LaborOccurrence[]) => void,

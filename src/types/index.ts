@@ -142,7 +142,8 @@ export type LaborOccurrenceType =
   | 'atestado'
   | 'folga_flexivel'
   | 'ferias'
-  | 'hora_extra';
+  | 'hora_extra'
+  | 'atraso';
 
 export type LaborOccurrence = {
   id: string;
@@ -156,10 +157,15 @@ export type LaborOccurrence = {
   dataFim: string;    // YYYY-MM-DD
   dias: number;
   horasImpacto?: number;
+  minutosAtraso?: number;
   motivo?: string;
-  cid?: string; // Código CID para atestados médicos
-  tipoFolgaFlexivel?: 'concessao' | 'debito'; // concessão (+1 crédito) ou débito (-1 folga gozada)
+  queixas?: string; // Queixas/sintomas do operador (simplificado — antes era campo CID)
+  cid?: string; // Mantido para compatibilidade retroativa
+  tipoFolgaFlexivel?: 'concessao' | 'debito';
   impactaAbsenteismo: boolean;
+  obsSupervisao?: string; // Observações e tratativas registradas pela supervisão
+  obsSupervisaoUpdatedAt?: string; // Data da última atualização das obs da supervisão
+  obsSupervisaoUpdatedBy?: string; // Nome do supervisor que atualizou
   created_at: string;
   created_by?: string;
   created_by_name?: string;
