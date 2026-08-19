@@ -93,12 +93,18 @@ module.exports = {
           "0%, 100%": { borderColor: "rgb(249 115 22 / 0.5)" }, // orange-500 with opacity
           "50%": { borderColor: "rgb(249 115 22)" }, // orange-500
         },
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%, 60%": { transform: "translateX(-8px)" },
+          "40%, 80%": { transform: "translateX(8px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fadeIn": "fadeIn 0.3s ease-out forwards",
         "pulse-slow": "pulse-slow 3s infinite",
+        "shake": "shake 0.4s ease-in-out",
       },
     },
   },

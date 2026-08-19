@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ClipboardCheck, ClipboardList,
   Home, Settings, Shield, Factory,
-  ChevronLeft, ChevronRight, Menu, Github, ExternalLink, TrendingUp, Users
+  ChevronLeft, ChevronRight, Menu, Github, ExternalLink, TrendingUp, Users, ShieldCheck
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';

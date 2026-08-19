@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 
 const OCC_META: Record<string, {
   label: string;
@@ -129,6 +130,8 @@ export function OcorrenciaDetalheModal({
   onOpenChange,
   occurrence,
 }: OcorrenciaDetalheModalProps) {
+  const { userData } = useFirebase();
+  const isSupervisorOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin' || userData?.role === 'supervisor';
   const [editingObs, setEditingObs] = useState(false);
   const [obsValue, setObsValue] = useState('');
   const [savingObs, setSavingObs] = useState(false);
@@ -214,21 +217,23 @@ export function OcorrenciaDetalheModal({
                 </div>
               </div>
 
-              {/* Botão Editar */}
-              <button
-                type="button"
-                onClick={() => setEditModalOpen(true)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0',
-                  meta.color,
-                  'hover:opacity-80 border',
-                  meta.border,
-                  'bg-white/60 dark:bg-black/20'
-                )}
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                Editar
-              </button>
+              {/* Botão Editar com espaçamento seguro em relação ao botão de fechar (X) */}
+              <div className="mr-8">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(true)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 shadow-2xs hover:scale-105',
+                    meta.color,
+                    'hover:opacity-90 border',
+                    meta.border,
+                    'bg-white/80 dark:bg-black/40'
+                  )}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Editar
+                </button>
+              </div>
             </div>
           </DialogHeader>
         </div>
@@ -357,94 +362,96 @@ export function OcorrenciaDetalheModal({
             </div>
           )}
 
-          {/* ────── OBS DA SUPERVISÃO ────── */}
-          <div className="rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20 overflow-hidden">
-            {/* Cabeçalho da seção */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-violet-200/70 dark:border-violet-900/40">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">
-                  Tratativas da Supervisão
-                </span>
+          {/* ────── OBS DA SUPERVISÃO (Apenas Supervisão e Admin) ────── */}
+          {isSupervisorOrAdmin && (
+            <div className="rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20 overflow-hidden">
+              {/* Cabeçalho da seção */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-violet-200/70 dark:border-violet-900/40">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  <span className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">
+                    Tratativas da Supervisão
+                  </span>
+                </div>
+                {!editingObs && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingObs(true)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-200 transition-colors px-2.5 py-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    {obsValue ? 'Editar' : 'Adicionar'}
+                  </button>
+                )}
               </div>
-              {!editingObs && (
-                <button
-                  type="button"
-                  onClick={() => setEditingObs(true)}
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-200 transition-colors px-2.5 py-1 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40"
-                >
-                  <Pencil className="w-3 h-3" />
-                  {obsValue ? 'Editar' : 'Adicionar'}
-                </button>
-              )}
-            </div>
 
-            {/* Corpo */}
-            <div className="p-4">
-              {editingObs ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={obsValue}
-                    onChange={(e) => setObsValue(e.target.value)}
-                    placeholder="Registre aqui as tratativas, ações tomadas, conversa com o colaborador, encaminhamentos, prazos e qualquer informação relevante para a supervisão..."
-                    rows={5}
-                    className="text-sm resize-none border-violet-300 dark:border-violet-800 focus-visible:ring-violet-400 bg-white dark:bg-slate-900"
-                    autoFocus
-                  />
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCancelObs}
-                      disabled={savingObs}
-                      className="h-8 text-xs gap-1.5 text-muted-foreground"
-                    >
-                      <X className="w-3 h-3" />
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleSaveObs}
-                      disabled={savingObs}
-                      className="h-8 text-xs gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold"
-                    >
-                      <Save className="w-3 h-3" />
-                      {savingObs ? 'Salvando...' : 'Salvar'}
-                    </Button>
-                  </div>
-                </div>
-              ) : obsValue ? (
-                <div>
-                  <p className="text-sm text-violet-900 dark:text-violet-200 leading-relaxed whitespace-pre-wrap break-words">
-                    {obsValue}
-                  </p>
-                  {occurrence.obsSupervisaoUpdatedAt && (
-                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-violet-200/60 dark:border-violet-900/40">
-                      <Clock className="w-3 h-3 text-violet-400 shrink-0" />
-                      <span className="text-[10px] text-violet-500 dark:text-violet-400">
-                        Atualizado em {fmtDateTime(occurrence.obsSupervisaoUpdatedAt)}
-                        {occurrence.obsSupervisaoUpdatedBy && (
-                          <> · por <span className="font-semibold">{occurrence.obsSupervisaoUpdatedBy}</span></>
-                        )}
-                      </span>
+              {/* Corpo */}
+              <div className="p-4">
+                {editingObs ? (
+                  <div className="space-y-3">
+                    <Textarea
+                      value={obsValue}
+                      onChange={(e) => setObsValue(e.target.value)}
+                      placeholder="Registre aqui as tratativas, ações tomadas, conversa com o colaborador, encaminhamentos, prazos e qualquer informação relevante para a supervisão..."
+                      rows={5}
+                      className="text-sm resize-none border-violet-300 dark:border-violet-800 focus-visible:ring-violet-400 bg-white dark:bg-slate-900"
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelObs}
+                        disabled={savingObs}
+                        className="h-8 text-xs gap-1.5 text-muted-foreground"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveObs}
+                        disabled={savingObs}
+                        className="h-8 text-xs gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold"
+                      >
+                        <Save className="w-3 h-3" />
+                        {savingObs ? 'Salvando...' : 'Salvar'}
+                      </Button>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 py-4 text-center">
-                  <MessageSquareDashed className="w-6 h-6 text-violet-300 dark:text-violet-700" />
-                  <p className="text-xs text-violet-500 dark:text-violet-500 italic">
-                    Nenhuma tratativa registrada pela supervisão.
-                  </p>
-                  <p className="text-[10px] text-violet-400 dark:text-violet-600">
-                    Clique em "Adicionar" para registrar ações e encaminhamentos.
-                  </p>
-                </div>
-              )}
+                  </div>
+                ) : obsValue ? (
+                  <div>
+                    <p className="text-sm text-violet-900 dark:text-violet-200 leading-relaxed whitespace-pre-wrap break-words">
+                      {obsValue}
+                    </p>
+                    {occurrence.obsSupervisaoUpdatedAt && (
+                      <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-violet-200/60 dark:border-violet-900/40">
+                        <Clock className="w-3 h-3 text-violet-400 shrink-0" />
+                        <span className="text-[10px] text-violet-500 dark:text-violet-400">
+                          Atualizado em {fmtDateTime(occurrence.obsSupervisaoUpdatedAt)}
+                          {occurrence.obsSupervisaoUpdatedBy && (
+                            <> · por <span className="font-semibold">{occurrence.obsSupervisaoUpdatedBy}</span></>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 py-4 text-center">
+                    <MessageSquareDashed className="w-6 h-6 text-violet-300 dark:text-violet-700" />
+                    <p className="text-xs text-violet-500 dark:text-violet-500 italic">
+                      Nenhuma tratativa registrada pela supervisão.
+                    </p>
+                    <p className="text-[10px] text-violet-400 dark:text-violet-600">
+                      Clique em "Adicionar" para registrar ações e encaminhamentos.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Metadados */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
@@ -474,6 +481,27 @@ export function OcorrenciaDetalheModal({
               <span className="font-mono opacity-50 text-[10px]">ID: {occurrence.id}</span>
             </div>
           </div>
+        </div>
+
+        {/* Rodapé de Ações com botões claros e espaçados */}
+        <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between gap-3 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="h-8 text-xs font-bold rounded-xl"
+          >
+            Fechar
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setEditModalOpen(true)}
+            className="h-8 text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-xs"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Editar Ocorrência
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

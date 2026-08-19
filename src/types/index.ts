@@ -145,6 +145,21 @@ export type LaborOccurrenceType =
   | 'hora_extra'
   | 'atraso';
 
+export type TratativaStatus = 'pendente' | 'em_andamento' | 'encaminhado_rh' | 'encaminhado_medicina' | 'concluido' | 'arquivado';
+export type TratativaPriority = 'baixa' | 'media' | 'alta' | 'urgente';
+
+export type TratativaActionStep = {
+  id: string;
+  tipoAcao: 'conversa_feedback' | 'orientacao_verbal' | 'advertencia_escrita' | 'suspensao' | 'encaminhamento_rh' | 'encaminhamento_medicina' | 'reuniao_alinhamento' | 'outro';
+  descricao: string;
+  data: string; // ISO ou YYYY-MM-DD
+  registradoPor: string;
+  registradoPorId?: string;
+  statusConclusao?: boolean;
+  prazoRevisao?: string;
+  anexosInfo?: string;
+};
+
 export type LaborOccurrence = {
   id: string;
   operadorId: string;
@@ -166,6 +181,10 @@ export type LaborOccurrence = {
   obsSupervisao?: string; // Observações e tratativas registradas pela supervisão
   obsSupervisaoUpdatedAt?: string; // Data da última atualização das obs da supervisão
   obsSupervisaoUpdatedBy?: string; // Nome do supervisor que atualizou
+  tratativaStatus?: TratativaStatus;
+  tratativaPriority?: TratativaPriority;
+  tratativaPassos?: TratativaActionStep[];
+  prazoTratativa?: string; // YYYY-MM-DD
   created_at: string;
   created_by?: string;
   created_by_name?: string;

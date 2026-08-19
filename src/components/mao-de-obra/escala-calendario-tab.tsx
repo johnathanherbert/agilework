@@ -383,7 +383,7 @@ export function EscalaCalendarioTab({
                   dot: 'bg-sky-400',
                 },
                 {
-                  label: 'Em Férias',
+                  label: 'Férias no Mês',
                   value: monthStats.ferias,
                   bg: 'bg-indigo-50 dark:bg-indigo-950/30',
                   border: 'border-indigo-100 dark:border-indigo-900/40',

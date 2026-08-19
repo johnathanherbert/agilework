@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
-import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory } from "@/lib/firestore-helpers";
+import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory, resetUserMaoDeObraPin } from "@/lib/firestore-helpers";
 import {
   Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, Edit, Save, X,
-  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search,
+  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,8 @@ interface UserItem {
   role?: UserRole;
   turno?: ProductionTurno | null;
   allowedMaoDeObra?: boolean;
+  pinMaoDeObra?: string | null;
+  pinMaoDeObraUpdatedAt?: string;
   created_at?: string;
   lastActive?: any;
 }
@@ -140,6 +142,10 @@ export default function AdminControlPanelPage() {
   // Delete User State
   const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+
+  // Reset PIN State
+  const [userToResetPin, setUserToResetPin] = useState<UserItem | null>(null);
+  const [resettingPin, setResettingPin] = useState(false);
 
   // Maintenance State
   const [wiping, setWiping] = useState(false);
@@ -354,6 +360,22 @@ export default function AdminControlPanelPage() {
       setUsers(prev => prev.map(u => u.uid === user.uid ? { ...u, allowedMaoDeObra: newAllowed } : u));
     } catch (error) {
       toast.error("Erro ao alterar permissão de Mão de Obra.");
+    }
+  };
+
+  const confirmResetPin = async () => {
+    if (!userToResetPin) return;
+    setResettingPin(true);
+    try {
+      await resetUserMaoDeObraPin(userToResetPin.uid);
+      toast.success(`PIN de ${userToResetPin.name || userToResetPin.email} foi resetado. No próximo acesso a Mão de Obra, o usuário criará um novo PIN.`);
+      setUsers(prev => prev.map(u => u.uid === userToResetPin.uid ? { ...u, pinMaoDeObra: null } : u));
+      setUserToResetPin(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao resetar PIN do usuário.");
+    } finally {
+      setResettingPin(false);
     }
   };
 
@@ -691,6 +713,18 @@ export default function AdminControlPanelPage() {
                                                 Status: Inativo
                                               </Badge>
                                             )}
+                                            {/* Badge de PIN de Segurança */}
+                                            {user.pinMaoDeObra ? (
+                                              <Badge className="gap-1 bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 text-[11px] font-bold">
+                                                <Key className="h-3 w-3 text-violet-500" />
+                                                PIN Cadastrado
+                                              </Badge>
+                                            ) : (
+                                              <Badge variant="outline" className="gap-1 text-slate-400 border-slate-200 dark:border-slate-800 text-[11px] font-bold">
+                                                <Key className="h-3 w-3 text-slate-400" />
+                                                Sem PIN
+                                              </Badge>
+                                            )}
                                           </div>
 
                                           <p className="text-xs font-medium text-muted-foreground truncate">
@@ -741,6 +775,19 @@ export default function AdminControlPanelPage() {
                                               {user.allowedMaoDeObra ? "M.O. Liberado" : "Liberar M.O."}
                                             </Button>
                                           )}
+
+                                          {/* Botão de Reset de PIN de Mão de Obra */}
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 px-2.5 text-xs font-bold gap-1 text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300 border-violet-200 dark:border-violet-800"
+                                            onClick={() => setUserToResetPin(user)}
+                                            title="Resetar PIN de Mão de Obra deste usuário"
+                                          >
+                                            <Key className="w-3.5 h-3.5" />
+                                            <span className="hidden sm:inline">Resetar PIN</span>
+                                          </Button>
 
                                           <Button
                                             type="button"
@@ -918,6 +965,35 @@ export default function AdminControlPanelPage() {
             >
               {deletingUser && <Loader2 className="h-4 w-4 animate-spin" />}
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!userToResetPin} onOpenChange={(open) => !open && !resettingPin && setUserToResetPin(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
+              <Key className="h-5 w-5" />
+              Resetar PIN de Mão de Obra
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja resetar o PIN de segurança de <span className="font-semibold text-foreground">{userToResetPin?.name || userToResetPin?.email}</span>?
+              <br /><br />
+              No próximo acesso ao módulo de Mão de Obra, o sistema solicitará automaticamente que o usuário cadastre um novo PIN de 4 a 6 dígitos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resettingPin}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmResetPin();
+              }}
+              disabled={resettingPin}
+              className="bg-violet-600 hover:bg-violet-700 text-white gap-2"
+            >
+              {resettingPin && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirmar Reset de PIN
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

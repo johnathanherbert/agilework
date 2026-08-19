@@ -73,6 +73,10 @@ const mapDocToOccurrence = (docId: string, data: any): LaborOccurrence => ({
   obsSupervisao: data.obsSupervisao || '',
   obsSupervisaoUpdatedAt: data.obsSupervisaoUpdatedAt?.toDate ? data.obsSupervisaoUpdatedAt.toDate().toISOString() : data.obsSupervisaoUpdatedAt || '',
   obsSupervisaoUpdatedBy: data.obsSupervisaoUpdatedBy || '',
+  tratativaStatus: data.tratativaStatus || (data.obsSupervisao?.trim() ? 'concluido' : 'pendente'),
+  tratativaPriority: data.tratativaPriority || 'media',
+  tratativaPassos: Array.isArray(data.tratativaPassos) ? data.tratativaPassos : [],
+  prazoTratativa: data.prazoTratativa || '',
   created_at: data.created_at?.toDate ? data.created_at.toDate().toISOString() : data.created_at || new Date().toISOString(),
   created_by: data.created_by,
   created_by_name: data.created_by_name,
@@ -620,6 +624,104 @@ export const updateOccurrenceSupervisaoObs = async (
   console.log(`✅ Obs. da supervisão atualizada na ocorrência: ${occurrenceId}`);
 };
 
+/**
+ * Atualiza dados estruturados completos da tratativa
+ */
+export const updateOccurrenceTratativa = async (
+  occurrenceId: string,
+  input: {
+    obsSupervisao?: string;
+    tratativaStatus?: string;
+    tratativaPriority?: string;
+    prazoTratativa?: string;
+    tratativaPassos?: any[];
+  }
+): Promise<void> => {
+  const occRef = doc(db, LABOR_OCCURRENCES_COLLECTION, occurrenceId);
+  const now = Timestamp.now();
+  const userInfo = await getCurrentUserInfo();
+
+  const updateData: any = {
+    updated_at: now,
+    obsSupervisaoUpdatedAt: now,
+  };
+
+  if (input.obsSupervisao !== undefined) {
+    updateData.obsSupervisao = input.obsSupervisao.trim();
+  }
+  if (input.tratativaStatus !== undefined) {
+    updateData.tratativaStatus = input.tratativaStatus;
+  }
+  if (input.tratativaPriority !== undefined) {
+    updateData.tratativaPriority = input.tratativaPriority;
+  }
+  if (input.prazoTratativa !== undefined) {
+    updateData.prazoTratativa = input.prazoTratativa;
+  }
+  if (input.tratativaPassos !== undefined) {
+    updateData.tratativaPassos = input.tratativaPassos;
+  }
+
+  if (userInfo) {
+    updateData.obsSupervisaoUpdatedBy = userInfo.name;
+    updateData.updated_by = userInfo.uid;
+    updateData.updated_by_name = userInfo.name;
+  }
+
+  await updateDoc(occRef, updateData);
+  console.log(`✅ Tratativa atualizada com sucesso na ocorrência: ${occurrenceId}`);
+};
+
+/**
+ * Adiciona um novo passo/etapa no histórico de tratativa da ocorrência
+ */
+export const addTratativaActionStep = async (
+  occurrenceId: string,
+  passo: {
+    tipoAcao: any;
+    descricao: string;
+    prazoRevisao?: string;
+    anexosInfo?: string;
+  },
+  currentPassos: any[] = [],
+  novoStatus?: string
+): Promise<void> => {
+  const occRef = doc(db, LABOR_OCCURRENCES_COLLECTION, occurrenceId);
+  const now = Timestamp.now();
+  const userInfo = await getCurrentUserInfo();
+
+  const newStep = {
+    id: 'step_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    tipoAcao: passo.tipoAcao,
+    descricao: passo.descricao.trim(),
+    data: new Date().toISOString(),
+    registradoPor: userInfo?.name || 'Supervisor',
+    registradoPorId: userInfo?.uid || '',
+    prazoRevisao: passo.prazoRevisao || '',
+    anexosInfo: passo.anexosInfo || '',
+    statusConclusao: true,
+  };
+
+  const updatedPassos = [newStep, ...currentPassos];
+
+  const updateData: any = {
+    tratativaPassos: updatedPassos,
+    obsSupervisaoUpdatedAt: now,
+    updated_at: now,
+  };
+
+  if (novoStatus) {
+    updateData.tratativaStatus = novoStatus;
+  }
+
+  if (userInfo) {
+    updateData.obsSupervisaoUpdatedBy = userInfo.name;
+  }
+
+  await updateDoc(occRef, updateData);
+  console.log(`✅ Novo passo de ação adicionado na tratativa: ${occurrenceId}`);
+};
+
 
 export const subscribeToLaborOccurrences = (
   callback: (occurrences: LaborOccurrence[]) => void,
@@ -1129,7 +1231,7 @@ export function getDailyPresenceSummary(
     }
   });
 
-  const total = operators.filter((o) => o.status === 'ativo').length;
+  const total = operators.filter((o) => o.status !== 'inativo').length;
   const ausentes = faltasCount + atestadosCount + folgasFlexiveisCount + feriasCount;
 
   return {

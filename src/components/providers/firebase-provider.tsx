@@ -25,6 +25,8 @@ export interface UserData {
   role?: UserRole; // 'admin' | 'supervisor' | 'leader' | 'user'
   turno?: ProductionTurno | null; // Turno atribuído ao líder/supervisor (1, 2 ou 3)
   allowedMaoDeObra?: boolean; // Permissão explícita de acesso ao módulo Mão de Obra
+  pinMaoDeObra?: string | null; // PIN numérico para autenticação em Mão de Obra
+  pinMaoDeObraUpdatedAt?: string;
 }
 
 export const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';
@@ -49,6 +51,7 @@ interface FirebaseContextType {
     error: any;
     success: boolean;
   }>;
+  refreshUserData: () => Promise<void>;
   signOut: () => Promise<{ error: any }>;
 }
 
@@ -194,6 +197,19 @@ export function FirebaseProvider({
     }
   };
 
+  const refreshUserData = async () => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        setUserData(userDoc.data() as UserData);
+      }
+    } catch (err) {
+      console.error('❌ Erro ao atualizar dados do usuário:', err);
+    }
+  };
+
   const value = {
     user,
     userData,
@@ -202,6 +218,7 @@ export function FirebaseProvider({
     signUp,
     resetPassword,
     confirmReset,
+    refreshUserData,
     signOut,
   };
 

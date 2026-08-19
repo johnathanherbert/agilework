@@ -7,6 +7,7 @@ import {
   OperatorTurma,
   ProductionTurno,
   OperatorStatus,
+  LaborOccurrence,
   LaborOccurrenceType,
 } from '@/types';
 import { TURMAS_INFO } from '@/lib/escala-helpers';
@@ -53,6 +54,7 @@ const TURNO_LABELS: Record<number, { label: string; color: string; icon: React.R
 
 interface OperadoresTableProps {
   operators: Operator[];
+  occurrences?: LaborOccurrence[];
   selectedTurno: ProductionTurno | 'ALL';
   onOpenNewOperator: () => void;
   onOpenImportarMassa?: () => void;
@@ -63,6 +65,7 @@ interface OperadoresTableProps {
 
 export function OperadoresTable({
   operators,
+  occurrences = [],
   selectedTurno,
   onOpenNewOperator,
   onOpenImportarMassa,
@@ -76,11 +79,33 @@ export function OperadoresTable({
   const [operatorToDelete, setOperatorToDelete] = useState<Operator | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Helper para determinar o status real/efetivo do operador (se data atual > férias, status volta a ser 'ativo')
+  const getEffectiveStatus = useMemo(() => {
+    return (op: Operator): OperatorStatus => {
+      if (op.status === 'inativo') return 'inativo';
+      if (op.status === 'afastado') return 'afastado';
+
+      const isCurrentlyOnVacation = occurrences.some(
+        (occ) =>
+          occ.operadorId === op.id &&
+          occ.tipo === 'ferias' &&
+          todayStr >= occ.dataInicio &&
+          todayStr <= (occ.dataFim || occ.dataInicio)
+      );
+
+      if (isCurrentlyOnVacation) return 'ferias';
+      return 'ativo';
+    };
+  }, [occurrences, todayStr]);
+
   // Estatísticas
   const stats = useMemo(() => {
     const activeOps = operators.filter((op) => selectedTurno === 'ALL' || op.turno === selectedTurno);
     const total = activeOps.length;
-    const ativos = activeOps.filter((o) => o.status === 'ativo').length;
+    const ativos = activeOps.filter((o) => getEffectiveStatus(o) === 'ativo').length;
+    const ferias = activeOps.filter((o) => getEffectiveStatus(o) === 'ferias').length;
     const turmasCount = {
       A: activeOps.filter((o) => o.letra === 'A').length,
       B: activeOps.filter((o) => o.letra === 'B').length,
@@ -88,16 +113,17 @@ export function OperadoresTable({
       D: activeOps.filter((o) => o.letra === 'D').length,
     };
     const saldoTotal = activeOps.reduce((acc, o) => acc + (o.saldoFolgasFlexiveis || 0), 0);
-    return { total, ativos, turmasCount, saldoTotal };
-  }, [operators, selectedTurno]);
+    return { total, ativos, ferias, turmasCount, saldoTotal };
+  }, [operators, selectedTurno, getEffectiveStatus]);
 
   // Operadores filtrados
   const filteredOperators = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return operators.filter((op) => {
+      const effStatus = getEffectiveStatus(op);
       if (selectedTurno !== 'ALL' && op.turno !== selectedTurno) return false;
       if (turmaFilter !== 'ALL' && op.letra !== turmaFilter) return false;
-      if (statusFilter !== 'ALL' && op.status !== statusFilter) return false;
+      if (statusFilter !== 'ALL' && effStatus !== statusFilter) return false;
       if (query) {
         return (
           op.nome.toLowerCase().includes(query) ||
@@ -107,7 +133,7 @@ export function OperadoresTable({
       }
       return true;
     });
-  }, [operators, selectedTurno, turmaFilter, statusFilter, searchQuery]);
+  }, [operators, selectedTurno, turmaFilter, statusFilter, searchQuery, getEffectiveStatus]);
 
   const handleDeleteConfirm = async () => {
     if (!operatorToDelete) return;
@@ -130,7 +156,9 @@ export function OperadoresTable({
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs col-span-3 sm:col-span-2">
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p>
           <p className="text-xl font-black text-foreground">{stats.total}</p>
-          <p className="text-[11px] text-muted-foreground">{stats.ativos} ativos</p>
+          <p className="text-[11px] text-muted-foreground">
+            {stats.ativos} ativos{stats.ferias > 0 ? ` · ${stats.ferias} em férias` : ''}
+          </p>
         </div>
         {(['A', 'B', 'C', 'D'] as OperatorTurma[]).map((t) => (
           <div
@@ -303,9 +331,9 @@ export function OperadoresTable({
                         </button>
                       </td>
 
-                      {/* Status */}
+                      {/* Status Efetivo (Ativo vs Férias Vigentes) */}
                       <td className="px-4 py-3 text-center">
-                        <StatusBadge status={op.status} />
+                        <StatusBadge status={getEffectiveStatus(op)} />
                       </td>
 
                       {/* Ações */}

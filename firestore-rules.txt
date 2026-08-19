@@ -45,6 +45,11 @@ service cloud.firestore {
       return isAdmin() || isSupervisor() || isAuthorizedLeader();
     }
 
+    // Helper to check if user is Supervisor or Admin
+    function isSupervisorOrAdmin() {
+      return isAdmin() || isSupervisor();
+    }
+
     // Helper to check if user is admin, supervisor OR leader (Gestão de Produção e Heijunka)
     function isStaffOrAdmin() {
       return isAdmin() || isSupervisor() || isLeader();
@@ -72,11 +77,31 @@ service cloud.firestore {
     }
 
     // Labor Occurrences collection - Ocorrências, Atestados, Faltas, Folgas Flexíveis e Férias
+    // Tratativas e parecer da supervisão restritos exclusivamente a Supervisão e Admin
     match /labor_occurrences/{occurrenceId} {
       allow read: if canAccessMaoDeObra();
-      allow create: if canAccessMaoDeObra();
-      allow update: if canAccessMaoDeObra();
-      allow delete: if canAccessMaoDeObra();
+      allow create: if canAccessMaoDeObra() && (
+        isSupervisorOrAdmin() || (
+          // Líder não pode cadastrar tratativas disciplinares da supervisão na criação
+          !request.resource.data.keys().hasAny([
+            'obsSupervisao', 'obsSupervisaoUpdatedAt', 'obsSupervisaoUpdatedBy',
+            'tratativaStatus', 'tratativaPriority', 'tratativaPassos', 'prazoTratativa'
+          ])
+        )
+      );
+      allow update: if canAccessMaoDeObra() && (
+        isSupervisorOrAdmin() || (
+          // Líder não pode alterar tratativas disciplinares da supervisão
+          request.resource.data.get('obsSupervisao', null) == resource.data.get('obsSupervisao', null) &&
+          request.resource.data.get('obsSupervisaoUpdatedAt', null) == resource.data.get('obsSupervisaoUpdatedAt', null) &&
+          request.resource.data.get('obsSupervisaoUpdatedBy', null) == resource.data.get('obsSupervisaoUpdatedBy', null) &&
+          request.resource.data.get('tratativaStatus', null) == resource.data.get('tratativaStatus', null) &&
+          request.resource.data.get('tratativaPriority', null) == resource.data.get('tratativaPriority', null) &&
+          request.resource.data.get('tratativaPassos', null) == resource.data.get('tratativaPassos', null) &&
+          request.resource.data.get('prazoTratativa', null) == resource.data.get('prazoTratativa', null)
+        )
+      );
+      allow delete: if isSupervisorOrAdmin();
     }
     
     // NTs collection

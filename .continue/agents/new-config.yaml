@@ -1,0 +1,10 @@
+models:
+  - name: Qwen3.5-9B
+    provider: ollama
+    model: qwen3.5:9b
+    apiBase: http://192.168.15.100:11434
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete

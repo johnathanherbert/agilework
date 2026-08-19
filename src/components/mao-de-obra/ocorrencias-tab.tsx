@@ -45,6 +45,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 
 // Metadados visuais por tipo de ocorrência
 const OCC_META: Record<LaborOccurrenceType, {
@@ -134,6 +135,8 @@ export function OcorrenciasTab({
   selectedTurno,
   onOpenOcorrencia,
 }: OcorrenciasTabProps) {
+  const { userData } = useFirebase();
+  const isSupervisorOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin' || userData?.role === 'supervisor';
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | LaborOccurrenceType>('ALL');
   const [periodoFilter, setPeriodoFilter] = useState<'mes_atual' | 'todos' | 'ano_2026'>('mes_atual');
@@ -165,15 +168,22 @@ export function OcorrenciasTab({
       .sort((a, b) => b.dataInicio.localeCompare(a.dataInicio));
   }, [occurrences, selectedTurno, typeFilter, periodoFilter, searchQuery]);
 
-  // Sumário por tipo
+  // Sumário por tipo (respeitando férias vigentes na data atual)
   const stats = useMemo(() => {
     const all = occurrences.filter((o) => selectedTurno === 'ALL' || o.turno === selectedTurno);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Férias ativas no momento (período vigente onde hoje está entre dataInicio e dataFim)
+    const feriasAtivas = all.filter(
+      (o) => o.tipo === 'ferias' && todayStr >= o.dataInicio && todayStr <= (o.dataFim || o.dataInicio)
+    );
+
     return {
       total: all.length,
       faltasInj: all.filter((o) => o.tipo === 'falta_injustificada').length,
       atestados: all.filter((o) => o.tipo === 'atestado').length,
       folgas: all.filter((o) => o.tipo === 'folga_flexivel').length,
-      ferias: all.filter((o) => o.tipo === 'ferias').length,
+      ferias: feriasAtivas.length,
       atrasos: all.filter((o) => o.tipo === 'atraso').length,
     };
   }, [occurrences, selectedTurno]);
@@ -200,7 +210,7 @@ export function OcorrenciasTab({
           { label: 'Faltas Inj.', value: stats.faltasInj, dot: 'bg-red-500', color: 'text-red-700 dark:text-red-300', light: 'bg-red-50/60 dark:bg-red-950/20 border-red-200 dark:border-red-900/40' },
           { label: 'Atestados', value: stats.atestados, dot: 'bg-rose-500', color: 'text-rose-700 dark:text-rose-300', light: 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' },
           { label: 'Folgas Flex.', value: stats.folgas, dot: 'bg-sky-500', color: 'text-sky-700 dark:text-sky-300', light: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/40' },
-          { label: 'Férias', value: stats.ferias, dot: 'bg-indigo-500', color: 'text-indigo-700 dark:text-indigo-300', light: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40' },
+          { label: 'Em Férias (Hoje)', value: stats.ferias, dot: 'bg-indigo-500', color: 'text-indigo-700 dark:text-indigo-300', light: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40' },
           { label: 'Atrasos', value: stats.atrasos, dot: 'bg-orange-500', color: 'text-orange-700 dark:text-orange-300', light: 'bg-orange-50/60 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40' },
         ].map((item) => (
           <div key={item.label} className={cn("rounded-2xl p-4 border shadow-xs", item.light)}>
@@ -324,7 +334,7 @@ export function OcorrenciasTab({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
-                        {hasObsSupervisao && (
+                        {isSupervisorOrAdmin && hasObsSupervisao && (
                           <span title="Tratativas registradas pela supervisão">
                             <ShieldCheck className="w-3 h-3 text-violet-500 shrink-0" />
                           </span>

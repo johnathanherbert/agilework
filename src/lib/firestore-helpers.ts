@@ -116,7 +116,7 @@ export const deleteUserDb = async (uid: string): Promise<void> => {
   }
 };
 
-export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean }>): Promise<void> => {
+export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean; pinMaoDeObra?: string | null }>): Promise<void> => {
   try {
     const userRef = doc(db, COLLECTIONS.USERS, uid);
     await updateDoc(userRef, {
@@ -126,6 +126,36 @@ export const editUserDb = async (uid: string, data: Partial<{ name: string; emai
     console.log(`✅ editUserDb: Usuário atualizado (UID: ${uid})`);
   } catch (error) {
     console.error('❌ editUserDb: Erro ao editar conta:', error);
+    throw error;
+  }
+};
+
+export const setUserMaoDeObraPin = async (uid: string, pin: string): Promise<void> => {
+  try {
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    await updateDoc(userRef, {
+      pinMaoDeObra: pin,
+      pinMaoDeObraUpdatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    console.log(`✅ setUserMaoDeObraPin: PIN configurado com sucesso (UID: ${uid})`);
+  } catch (error) {
+    console.error('❌ setUserMaoDeObraPin: Erro ao definir PIN:', error);
+    throw error;
+  }
+};
+
+export const resetUserMaoDeObraPin = async (uid: string): Promise<void> => {
+  try {
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    await updateDoc(userRef, {
+      pinMaoDeObra: null,
+      pinMaoDeObraUpdatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    console.log(`✅ resetUserMaoDeObraPin: PIN resetado com sucesso (UID: ${uid})`);
+  } catch (error) {
+    console.error('❌ resetUserMaoDeObraPin: Erro ao resetar PIN:', error);
     throw error;
   }
 };
