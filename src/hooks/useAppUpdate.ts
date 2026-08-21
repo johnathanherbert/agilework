@@ -25,52 +25,83 @@ export const useAppUpdate = () => {
   // Ref para controlar se já foi feito o reload para esta versão
   const reloadTriggeredForVersion = useRef<string | null>(null);
 
+  // Função para recarregar o app limpando caches
+  const reloadApp = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        // Limpar service workers se houver
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => registration.unregister());
+          }).catch(() => {});
+        }
+        
+        // Limpar CacheStorage do navegador
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('Erro ao limpar caches antes do reload:', err);
+      }
+      
+      // Forçar recarregamento completo
+      window.location.reload();
+    }
+  }, []);
+
   // Função para verificar se há uma nova versão
   const checkForUpdate = useCallback(async () => {
     if (typeof window === 'undefined') return;
 
-    // Não verificar atualizações em desenvolvimento
+    // Não verificar atualizações em desenvolvimento local
     if (process.env.NODE_ENV === 'development') {
-      console.log('Auto-update desabilitado em desenvolvimento');
       return;
     }
 
     setState(prev => ({ ...prev, isChecking: true }));
 
     try {
-      // Fazer request para a API que retorna a versão atual
-      const response = await fetch('/api/version', { 
+      // Fazer request com timestamp para contornar qualquer proxy/CDN cache
+      const response = await fetch(`/api/version?_t=${Date.now()}`, { 
         method: 'GET',
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         }
       });
       
       if (response.ok) {
         const data = await response.json();
-        const serverVersion = data.version;
+        // Usar assinatura única da build (versão + buildNumber/timestamp)
+        const serverSignature = data.buildSignature || (data.buildNumber ? `${data.version}-${data.buildNumber}` : data.version);
         
-        // Obter a última versão conhecida do localStorage
-        const lastKnownVersion = localStorage.getItem('app_last_known_version');
+        // Obter a última assinatura/versão conhecida do localStorage
+        const lastKnownSignature = localStorage.getItem('app_last_known_signature') || localStorage.getItem('app_last_known_version');
         
-        // Em produção, inicializar com a versão do servidor se não existe versão conhecida
-        if (!lastKnownVersion && process.env.NODE_ENV === 'production') {
-          localStorage.setItem('app_last_known_version', serverVersion);
+        // Na primeira execução no terminal, registrar a versão atual do servidor
+        if (!lastKnownSignature && process.env.NODE_ENV === 'production') {
+          localStorage.setItem('app_last_known_signature', serverSignature);
+          localStorage.setItem('app_last_known_version', data.version);
           setState({
             updateAvailable: false,
             isChecking: false,
             lastChecked: new Date(),
           });
-          console.log('🔄 Versão inicial registrada:', serverVersion);
+          console.log('🔄 Versão inicial registrada no terminal:', serverSignature);
           return;
         }
-          // Verificar se há uma nova versão comparando com a última versão conhecida
-        const updateAvailable = Boolean(lastKnownVersion && 
-                                serverVersion !== lastKnownVersion && 
-                                serverVersion !== 'development' && 
-                                lastKnownVersion !== 'development');
+
+        // Verificar se há uma nova versão comparando a assinatura
+        const updateAvailable = Boolean(
+          lastKnownSignature && 
+          serverSignature !== lastKnownSignature && 
+          serverSignature !== 'development' && 
+          lastKnownSignature !== 'development'
+        );
                                 
         setState({
           updateAvailable,
@@ -79,25 +110,26 @@ export const useAppUpdate = () => {
         });
 
         // Se há uma atualização disponível, mostrar notificação e atualizar automaticamente
-        // Mas apenas se ainda não foi mostrado o toast para esta versão E não foi feito reload
-        if (updateAvailable && 
-            toastShownForVersion.current !== serverVersion && 
-            reloadTriggeredForVersion.current !== serverVersion) {
+        if (
+          updateAvailable && 
+          toastShownForVersion.current !== serverSignature && 
+          reloadTriggeredForVersion.current !== serverSignature
+        ) {
+          toastShownForVersion.current = serverSignature;
+          reloadTriggeredForVersion.current = serverSignature;
           
-          toastShownForVersion.current = serverVersion;
-          reloadTriggeredForVersion.current = serverVersion;
+          console.log('🚀 Nova versão detectada no VPS/Coolify:', serverSignature, 'anterior:', lastKnownSignature);
           
-          console.log('🚀 Nova versão detectada:', serverVersion, 'anterior:', lastKnownVersion);
+          // Atualizar o localStorage antes do reload
+          localStorage.setItem('app_last_known_signature', serverSignature);
+          localStorage.setItem('app_last_known_version', data.version);
           
-          // Atualizar a versão conhecida antes de fazer reload
-          localStorage.setItem('app_last_known_version', serverVersion);
-          
-          toast.success('Nova versão detectada! Atualizando aplicação...', {
-            duration: 3000,
+          toast.success(`Nova versão (${data.version}) disponível! Atualizando terminal...`, {
+            duration: 3500,
             icon: '🚀',
           });
 
-          // Aguardar um pouco antes de recarregar para não interromper ações do usuário
+          // Aguardar 2s para o usuário ler o aviso e recarregar limpando os caches
           setTimeout(() => {
             reloadApp();
           }, 2000);
@@ -107,32 +139,12 @@ export const useAppUpdate = () => {
       console.log('Erro ao verificar atualizações:', error);
       setState(prev => ({ ...prev, isChecking: false, lastChecked: new Date() }));
     }
-  }, [currentVersion]);
-  // Função para recarregar o app
-  const reloadApp = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      // Limpar cache e recarregar
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => registration.unregister());
-        });
-      }
-      
-      // Limpar caches do navegador
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          names.forEach(name => caches.delete(name));
-        });
-      }
-      
-      // Forçar recarregamento completo
-      window.location.reload();
-    }
-  }, []);
+  }, [reloadApp]);
 
   // Função para resetar o estado de update (útil para debugging)
   const resetUpdateState = useCallback(() => {
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('app_last_known_signature');
       localStorage.removeItem('app_last_known_version');
       toastShownForVersion.current = null;
       reloadTriggeredForVersion.current = null;
@@ -143,64 +155,90 @@ export const useAppUpdate = () => {
       });
       console.log('🔄 Estado de auto-update resetado');
     }
-  }, []);// Verificar atualizações periodicamente
+  }, []);
+
+  // Verificar atualizações periodicamente e monitorar erros de chunk (ChunkLoadError)
   useEffect(() => {
-    // Em desenvolvimento, não verificar atualizações automaticamente
     if (process.env.NODE_ENV === 'development') {
-      console.log('Auto-update desabilitado em desenvolvimento');
       return;
     }
 
-    // Verificar imediatamente quando o hook é montado (apenas em produção)
+    // Verificar imediatamente quando o hook é montado
     checkForUpdate();
 
-    // Configurar verificação periódica a cada 2 minutos. Isso garante que
-    // mesmo abas/telas que ficam sempre em foco (ex: painéis/kiosks que nunca
-    // disparam eventos de focus/visibilitychange) detectem uma nova versão
-    // publicada no Coolify em poucos minutos, sem depender de interação do usuário.
-    const interval = setInterval(checkForUpdate, 2 * 60 * 1000);
+    // Verificação periódica a cada 45 segundos (garante que kiosks e painéis atualizem rápido após deploy no Coolify)
+    const interval = setInterval(checkForUpdate, 45 * 1000);
 
-    // Verificar quando a aba ganha foco (apenas em produção)
+    // Verificar quando a aba ganha foco
     const handleFocus = () => {
       const now = new Date();
       const lastCheck = state.lastChecked;
-      
-      // Verificar se passou mais de 30 segundos desde a última verificação
-      if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 30 * 1000) {
+      if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 15 * 1000) {
         checkForUpdate();
       }
     };
 
-    // Verificar quando a aba fica visível (mais específico que focus)
+    // Verificar quando a aba fica visível
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         const now = new Date();
         const lastCheck = state.lastChecked;
-        
-        // Verificar se passou mais de 30 segundos desde a última verificação
-        if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 30 * 1000) {
+        if (!lastCheck || (now.getTime() - lastCheck.getTime()) > 15 * 1000) {
           checkForUpdate();
         }
       }
     };
 
-    // Verificar assim que a conexão de rede voltar (ex: após o breve blip de
-    // rede causado pela troca de containers durante um redeploy no Coolify)
+    // Verificar assim que a conexão de rede voltar (após o container swap no Coolify)
     const handleOnline = () => {
       checkForUpdate();
+    };
+
+    // Auto-recuperação de ChunkLoadError:
+    // Se o Next.js falhar ao carregar um chunk antigo porque um novo container subiu no VPS,
+    // recarrega a página automaticamente evitando tela branca.
+    const handleError = (event: ErrorEvent) => {
+      const msg = event.message || '';
+      if (
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch dynamically imported module') ||
+        msg.includes('Importing a module script failed')
+      ) {
+        console.warn('⚠️ Chunk antigo 404 detectado após redeploy. Atualizando página...');
+        reloadApp();
+      }
+    };
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason?.message || String(event.reason || '');
+      if (
+        reason.includes('ChunkLoadError') ||
+        reason.includes('Loading chunk') ||
+        reason.includes('Failed to fetch dynamically imported module') ||
+        reason.includes('Importing a module script failed')
+      ) {
+        console.warn('⚠️ Chunk antigo 404 em Promise detectado após redeploy. Atualizando página...');
+        reloadApp();
+      }
     };
 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('online', handleOnline);
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
     };
-  }, [checkForUpdate, state.lastChecked]);
+  }, [checkForUpdate, reloadApp, state.lastChecked]);
+
   return {
     ...state,
     checkForUpdate,

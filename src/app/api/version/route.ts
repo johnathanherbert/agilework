@@ -35,47 +35,26 @@ function getAppVersion() {
 }
 
 export async function GET() {
-  // Em produção (Vercel), priorizar git hash; caso contrário, usar nosso sistema de versão
-  const isProduction = process.env.VERCEL_GIT_COMMIT_SHA;
-  
-  if (isProduction) {
-    // Produção no Vercel - usar git hash como antes
-    const version = process.env.VERCEL_GIT_COMMIT_SHA || 'production';
-    
-    return NextResponse.json(
-      { 
-        version,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        source: 'vercel-git'
+  const versionData = getAppVersion();
+  const buildSignature = `${versionData.version}-${versionData.buildNumber || versionData.timestamp}`;
+
+  return NextResponse.json(
+    { 
+      version: versionData.version,
+      timestamp: versionData.timestamp,
+      buildNumber: versionData.buildNumber,
+      buildSignature,
+      environment: process.env.NODE_ENV,
+      source: 'version-file'
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store',
+        'CDN-Cache-Control': 'no-store',
       },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      }
-    );
-  } else {
-    // Desenvolvimento/build local - usar nosso sistema de versão
-    const versionData = getAppVersion();
-    
-    return NextResponse.json(
-      { 
-        version: versionData.version,
-        timestamp: versionData.timestamp,
-        buildNumber: versionData.buildNumber,
-        environment: process.env.NODE_ENV,
-        source: 'version-file'
-      },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      }
-    );
-  }
+    }
+  );
 }
