@@ -12,8 +12,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { LaborOccurrence } from '@/types';
 import { TURMAS_INFO } from '@/lib/escala-helpers';
-import { updateOccurrenceSupervisaoObs } from '@/lib/labor-helpers';
+import { updateOccurrenceSupervisaoObs, deleteLaborOccurrence } from '@/lib/labor-helpers';
 import { OcorrenciaEditModal } from './ocorrencia-edit-modal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   CalendarDays,
   AlertTriangle,
@@ -35,6 +45,7 @@ import {
   X,
   MessageSquareDashed,
   Edit3,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -136,6 +147,8 @@ export function OcorrenciaDetalheModal({
   const [obsValue, setObsValue] = useState('');
   const [savingObs, setSavingObs] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (occurrence) {
@@ -145,6 +158,26 @@ export function OcorrenciaDetalheModal({
   }, [occurrence]);
 
   if (!occurrence) return null;
+
+  const handleDelete = async () => {
+    if (!occurrence) return;
+    setDeleting(true);
+    try {
+      await deleteLaborOccurrence(occurrence);
+      toast.success(
+        occurrence.tipo === 'folga_flexivel'
+          ? 'Folga flexível removida com sucesso. Saldo restabelecido.'
+          : 'Ocorrência excluída com sucesso.'
+      );
+      setDeleteConfirmOpen(false);
+      onOpenChange(false);
+    } catch (err) {
+      console.error('Erro ao excluir:', err);
+      toast.error('Erro ao excluir ocorrência.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const meta = OCC_META[occurrence.tipo] || OCC_META.falta_injustificada;
   const turmaInfo = TURMAS_INFO[occurrence.operadorLetra];
@@ -487,24 +520,72 @@ export function OcorrenciaDetalheModal({
         <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between gap-3 shrink-0">
           <Button
             type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="h-8 text-xs font-bold rounded-xl"
+            variant="ghost"
+            onClick={() => setDeleteConfirmOpen(true)}
+            className="h-8 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 gap-1.5 rounded-xl"
           >
-            Fechar
+            <Trash2 className="w-3.5 h-3.5" />
+            {isFolga ? 'Remover Folga' : 'Excluir Ocorrência'}
           </Button>
 
-          <Button
-            type="button"
-            onClick={() => setEditModalOpen(true)}
-            className="h-8 text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-xs"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            Editar Ocorrência
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="h-8 text-xs font-bold rounded-xl"
+            >
+              Fechar
+            </Button>
+
+            <Button
+              type="button"
+              onClick={() => setEditModalOpen(true)}
+              className="h-8 text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-xs"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              Editar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de confirmação de exclusão */}
+    <AlertDialog open={deleteConfirmOpen} onOpenChange={(v) => !deleting && setDeleteConfirmOpen(v)}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            {isFolga ? 'Remover Folga Flexível' : 'Excluir Ocorrência'}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-1">
+            <span>
+              Tem certeza que deseja {isFolga ? 'remover a folga flexível de' : 'excluir esta ocorrência de'}{' '}
+              <strong className="text-foreground">{occurrence.operadorNome}</strong>?
+            </span>
+            {isFolga && (
+              <span className="block text-xs text-muted-foreground pt-1">
+                ℹ️ Ao remover esta folga ({occurrence.dias} dia{occurrence.dias > 1 ? 's' : ''}), o saldo de folgas flexíveis do operador será automaticamente restabelecido.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting} className="rounded-xl">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+          >
+            {deleting ? 'Excluindo...' : isFolga ? 'Sim, remover folga' : 'Sim, excluir'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     {/* Modal de edição */}
     <OcorrenciaEditModal

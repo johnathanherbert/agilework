@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
-import { getAllUsers, updateUserStatus, deleteUserDb, editUserDb, wipeDataByCategory, resetUserMaoDeObraPin } from "@/lib/firestore-helpers";
+import { getAllUsers, deleteUserDb, editUserDb, wipeDataByCategory, resetUserMaoDeObraPin } from "@/lib/firestore-helpers";
 import {
-  Shield, ShieldCheck, ShieldAlert, UserX, UserCheck, Trash2, Edit, Save, X,
-  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock,
+  Shield, ShieldCheck, ShieldAlert, Trash2, X, UserCheck,
+  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock, SlidersHorizontal,
 } from "lucide-react";
+import { UserManageModal } from "@/components/users/user-manage-modal";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -123,21 +124,8 @@ export default function AdminControlPanelPage() {
   // Tabs & Navigation
   const [activeTab, setActiveTab] = useState<'users' | 'maintenance'>('users');
 
-  // Edit User State
-  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [editForm, setEditForm] = useState<{
-    name: string;
-    isApproved: boolean;
-    role: UserRole;
-    turno: ProductionTurno | null;
-    allowedMaoDeObra: boolean;
-  }>({
-    name: '',
-    isApproved: false,
-    role: 'user',
-    turno: null,
-    allowedMaoDeObra: false,
-  });
+  // Manage User Modal State
+  const [selectedUserForManage, setSelectedUserForManage] = useState<UserItem | null>(null);
 
   // Delete User State
   const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
@@ -258,27 +246,6 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  const handleToggleStatus = async (user: UserItem) => {
-    if (user.email === ADMIN_EMAIL) {
-      toast.error("Não é possível alterar o status do administrador principal.");
-      return;
-    }
-
-    const newStatus = !user.isApproved;
-    try {
-      await updateUserStatus(user.uid, newStatus);
-      toast.success(`Usuário ${newStatus ? 'aprovado' : 'desabilitado'} com sucesso.`);
-      
-      setUsers(prev => 
-        prev.map(u => 
-          u.uid === user.uid ? { ...u, isApproved: newStatus } : u
-        )
-      );
-    } catch (error) {
-      toast.error("Erro ao alterar status do usuário.");
-    }
-  };
-
   const requestDeleteUser = (user: UserItem) => {
     if (user.email === ADMIN_EMAIL) {
       toast.error("Não é possível deletar o admin principal.");
@@ -302,64 +269,20 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  const handleEditInitiate = (user: UserItem) => {
-    if (user.email === ADMIN_EMAIL) {
-      toast.error("O admin global não pode ser editado nesta tela.");
-      return;
+  const handleSaveUserFromModal = async (
+    uid: string,
+    data: {
+      name: string;
+      isApproved: boolean;
+      role: UserRole;
+      turno: ProductionTurno | null;
+      allowedMaoDeObra: boolean;
     }
-    setEditingUser(user);
-    setEditForm({
-      name: user.name || '',
-      isApproved: user.isApproved || false,
-      role: user.role || 'user',
-      turno: user.turno ?? null,
-      allowedMaoDeObra: user.allowedMaoDeObra ?? (user.role === 'supervisor' || user.role === 'admin'),
-    });
-  };
-
-  const handleEditSave = async () => {
-    if (!editingUser) return;
-    try {
-      await editUserDb(editingUser.uid, {
-        name: editForm.name,
-        isApproved: editForm.isApproved,
-        role: editForm.role,
-        turno: editForm.role === 'leader' || editForm.role === 'supervisor' ? editForm.turno : null,
-        allowedMaoDeObra: editForm.allowedMaoDeObra,
-      });
-      toast.success("Dados do usuário atualizados.");
-      
-      setUsers(prev => prev.map(u => 
-        u.uid === editingUser.uid ? {
-          ...u,
-          name: editForm.name,
-          isApproved: editForm.isApproved,
-          role: editForm.role,
-          turno: editForm.role === 'leader' || editForm.role === 'supervisor' ? editForm.turno : null,
-          allowedMaoDeObra: editForm.allowedMaoDeObra,
-        } : u
-      ));
-      setEditingUser(null);
-    } catch(err) {
-      toast.error("Erro ao salvar os novos dados.");
-    }
-  };
-
-  const handleToggleMaoDeObra = async (user: UserItem) => {
-    if (user.email === ADMIN_EMAIL) {
-      toast.error("O administrador global já possui acesso irrestrito.");
-      return;
-    }
-
-    const newAllowed = !user.allowedMaoDeObra;
-    try {
-      await editUserDb(user.uid, {
-        allowedMaoDeObra: newAllowed,
-      });
-      toast.success(`Acesso à Mão de Obra ${newAllowed ? 'concedido' : 'bloqueado'} para ${user.name || user.email}.`);
-      setUsers(prev => prev.map(u => u.uid === user.uid ? { ...u, allowedMaoDeObra: newAllowed } : u));
-    } catch (error) {
-      toast.error("Erro ao alterar permissão de Mão de Obra.");
+  ) => {
+    await editUserDb(uid, data);
+    setUsers((prev) => prev.map((u) => (u.uid === uid ? { ...u, ...data } : u)));
+    if (selectedUserForManage?.uid === uid) {
+      setSelectedUserForManage((prev) => (prev ? { ...prev, ...data } : null));
     }
   };
 
@@ -548,7 +471,6 @@ export default function AdminControlPanelPage() {
                         filteredUsers.map((user) => {
                           const isAdmin = user.email === ADMIN_EMAIL;
                           const isApproved = user.isApproved;
-                          const isEditing = editingUser?.uid === user.uid;
                           const displayName = user.name || "Sem Nome Definido";
                           const lastActiveInfo = getLastActiveInfo(user.lastActive);
                           const initials = displayName
@@ -559,277 +481,109 @@ export default function AdminControlPanelPage() {
                             .join('') || 'U';
 
                           return (
-                            <li key={user.uid} className="px-4 py-3.5 hover:bg-muted/30 transition-colors">
-                              <div className="flex flex-wrap items-center justify-between gap-4">
-                                {isEditing ? (
-                                  <div className="flex-1 min-w-0 p-3 bg-muted/40 rounded-xl space-y-3 border border-border/80">
-                                    <h3 className="text-sm font-bold text-foreground">Editando Perfil: {user.email}</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                      <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Nome de Exibição</label>
-                                        <Input
-                                          autoFocus
-                                          value={editForm.name}
-                                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                          placeholder="Digite o nome..."
-                                        />
-                                      </div>
-                                      <div className="space-y-1.5 flex flex-col justify-end">
-                                        <label className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border/80 cursor-pointer">
-                                          <Checkbox
-                                            checked={editForm.isApproved}
-                                            onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isApproved: checked === true }))}
-                                          />
-                                          <span className="text-sm font-medium text-foreground">Acesso Aprovado (Status Ativo)</span>
-                                        </label>
-                                      </div>
-                                      <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-muted-foreground uppercase">Função / Cargo</label>
-                                        <Select
-                                          value={editForm.role}
-                                          onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value as UserRole }))}
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="user">Usuário (Padrão)</SelectItem>
-                                            <SelectItem value="leader">Líder (Gerencia seu Turno)</SelectItem>
-                                            <SelectItem value="supervisor">Supervisor (Acessa todos os Turnos)</SelectItem>
-                                            <SelectItem value="admin">Administrador Global</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      {(editForm.role === 'leader' || editForm.role === 'supervisor') && (
-                                        <div className="space-y-1.5">
-                                          <label className="text-xs font-semibold text-muted-foreground uppercase">Turno de Atuação</label>
-                                          <Select
-                                            value={editForm.turno ? String(editForm.turno) : 'none'}
-                                            onValueChange={(value) => setEditForm(prev => ({
-                                              ...prev,
-                                              turno: value === 'none' ? null : (Number(value) as ProductionTurno)
-                                            }))}
-                                          >
-                                            <SelectTrigger>
-                                              <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="1">Turno 1 (Manhã)</SelectItem>
-                                              <SelectItem value="2">Turno 2 (Tarde)</SelectItem>
-                                              <SelectItem value="3">Turno 3 (Noite)</SelectItem>
-                                              <SelectItem value="none">Todos os Turnos / Geral</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
+                            <li
+                              key={user.uid}
+                              onClick={() => setSelectedUserForManage(user)}
+                              className="px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                {/* Informações e Badges do Usuário */}
+                                <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100 shrink-0 shadow-2xs">
+                                    {initials}
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <p className="text-sm font-black text-foreground truncate">
+                                        {displayName}
+                                      </p>
+
+                                      {/* Badge de Cargo */}
+                                      {isAdmin ? (
+                                        <Badge className="bg-primary/15 text-primary hover:bg-primary/20 border-primary/30 text-[10px] font-black">
+                                          <ShieldCheck className="w-3 h-3 mr-1" />
+                                          Admin Global
+                                        </Badge>
+                                      ) : user.role === 'supervisor' ? (
+                                        <Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30 text-[10px] font-black">
+                                          <Shield className="w-3 h-3 mr-1 text-purple-500" />
+                                          Supervisor {user.turno ? `(T${user.turno})` : ''}
+                                        </Badge>
+                                      ) : user.role === 'leader' ? (
+                                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] font-black">
+                                          <Star className="w-3 h-3 mr-1 text-amber-500" />
+                                          Líder {user.turno ? `(T${user.turno})` : ''}
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
+                                          Usuário
+                                        </Badge>
                                       )}
-                                      
-                                      {/* Permissão Específica de Mão de Obra & Escala */}
-                                      <div className="space-y-1.5 md:col-span-2">
-                                        <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-card border border-border/80 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                          <Checkbox
-                                            checked={editForm.allowedMaoDeObra}
-                                            onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, allowedMaoDeObra: checked === true }))}
-                                          />
-                                          <div>
-                                            <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                                              <Users className="w-4 h-4 text-primary" />
-                                              Acesso ao Módulo de Mão de Obra & Escala 2026
-                                            </span>
-                                            <span className="text-xs text-muted-foreground block">
-                                              Permite que este líder acesse o controle de presença, quadro diário e escalas do seu turno ({editForm.turno ? `Turno ${editForm.turno}` : 'sem turno definido'}).
-                                            </span>
-                                          </div>
-                                        </label>
-                                      </div>
+
+                                      {/* Badge de Mão de Obra */}
+                                      {!isAdmin && user.role === 'leader' && (
+                                        user.allowedMaoDeObra ? (
+                                          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-black gap-1">
+                                            <Users className="w-3 h-3 text-emerald-500" /> Mão de Obra
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
+                                            M.O. Bloqueado
+                                          </Badge>
+                                        )
+                                      )}
+
+                                      {/* Badge de PIN */}
+                                      {user.pinMaoDeObra ? (
+                                        <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30 text-[10px] font-black gap-1">
+                                          <Key className="w-3 h-3 text-violet-500" /> PIN Ativo
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold gap-1">
+                                          <Key className="w-3 h-3 text-slate-400" /> Sem PIN
+                                        </Badge>
+                                      )}
+
+                                      {/* Badge de Status Ativo/Bloqueado/Inativo */}
+                                      {!isAdmin && !isApproved ? (
+                                        <Badge variant="destructive" className="text-[10px] font-black gap-1">
+                                          <ShieldAlert className="w-3 h-3" /> Bloqueado
+                                        </Badge>
+                                      ) : !isAdmin && lastActiveInfo.isInactive ? (
+                                        <Badge variant="outline" className="text-amber-600 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-[10px] font-bold">
+                                          Inativo {lastActiveInfo.inactiveDays !== null ? `(${lastActiveInfo.inactiveDays}d)` : ''}
+                                        </Badge>
+                                      ) : !isAdmin ? (
+                                        <Badge variant="success" className="text-[10px] font-bold">
+                                          Ativo
+                                        </Badge>
+                                      ) : null}
                                     </div>
-                                    <div className="flex items-center gap-2 pt-1">
-                                      <Button onClick={handleEditSave} className="gap-1.5 bg-green-600 hover:bg-green-700 text-white">
-                                        <Save className="w-4 h-4" /> Salvar Alterações
-                                      </Button>
-                                      <Button variant="secondary" onClick={() => setEditingUser(null)} className="gap-1.5">
-                                        <X className="w-4 h-4" /> Cancelar
-                                      </Button>
+
+                                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                                      <span className="truncate">{user.email}</span>
+                                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                                      <span className="text-[11px]">Online: {lastActiveInfo.text}</span>
                                     </div>
                                   </div>
-                                ) : (
-                                  <>
-                                    <div className="flex-1 min-w-0 pr-4">
-                                      <div className="flex items-start gap-3">
-                                        <div className="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-border flex items-center justify-center text-xs font-black text-slate-700 dark:text-slate-200 shrink-0">
-                                          {initials}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                                            <p className="text-sm font-bold text-foreground truncate">
-                                              {displayName}
-                                            </p>
-                                            {!isAdmin && (!user.role || user.role === 'user') && (
-                                              <Badge variant="outline" className="text-[11px] font-bold">Usuário</Badge>
-                                            )}
-                                            {!isAdmin && user.role === 'leader' && (
-                                              <Badge className="gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30">
-                                                <Star className="h-3 w-3 text-amber-500" />
-                                                Líder {user.turno ? `(Turno ${user.turno})` : ''}
-                                              </Badge>
-                                            )}
-                                            {!isAdmin && user.role === 'leader' && (
-                                              user.allowedMaoDeObra ? (
-                                                <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[11px] font-bold">
-                                                  <Users className="h-3 w-3 text-emerald-500" />
-                                                  Mão de Obra: Liberado
-                                                </Badge>
-                                              ) : (
-                                                <Badge variant="outline" className="gap-1 text-slate-500 border-slate-300 dark:border-slate-700 text-[11px] font-bold">
-                                                  <Users className="h-3 w-3 text-slate-400" />
-                                                  Mão de Obra: Bloqueado
-                                                </Badge>
-                                              )
-                                            )}
-                                            {!isAdmin && user.role === 'supervisor' && (
-                                              <Badge className="gap-1 bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 border border-purple-500/30">
-                                                <Shield className="h-3 w-3 text-purple-500" />
-                                                Supervisor Geral {user.turno ? `(T${user.turno})` : ''}
-                                              </Badge>
-                                            )}
-                                            {isAdmin && (
-                                              <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10 border border-primary/20">
-                                                <ShieldCheck className="h-3 w-3" />
-                                                Admin Global
-                                              </Badge>
-                                            )}
-                                            {!isAdmin && !isApproved && (
-                                              <Badge variant="destructive" className="gap-1">
-                                                <ShieldAlert className="h-3 w-3" />
-                                                Acesso Revogado
-                                              </Badge>
-                                            )}
-                                            {!isAdmin && isApproved && !lastActiveInfo.isInactive && (
-                                              <Badge variant="success" className="gap-1">
-                                                Status: Ativo
-                                              </Badge>
-                                            )}
-                                            {!isAdmin && isApproved && lastActiveInfo.isInactive && (
-                                              <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:bg-amber-900/20">
-                                                Status: Inativo
-                                              </Badge>
-                                            )}
-                                            {/* Badge de PIN de Segurança */}
-                                            {user.pinMaoDeObra ? (
-                                              <Badge className="gap-1 bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 text-[11px] font-bold">
-                                                <Key className="h-3 w-3 text-violet-500" />
-                                                PIN Cadastrado
-                                              </Badge>
-                                            ) : (
-                                              <Badge variant="outline" className="gap-1 text-slate-400 border-slate-200 dark:border-slate-800 text-[11px] font-bold">
-                                                <Key className="h-3 w-3 text-slate-400" />
-                                                Sem PIN
-                                              </Badge>
-                                            )}
-                                          </div>
+                                </div>
 
-                                          <p className="text-xs font-medium text-muted-foreground truncate">
-                                            {user.email}
-                                          </p>
-
-                                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                            <p className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wide">
-                                              Perfil: {isAdmin ? 'Admin Global' : user.role === 'supervisor' ? `Supervisor ${user.turno ? `(Turno ${user.turno})` : '(Geral)'}` : user.role === 'leader' ? `Líder ${user.turno ? `(Turno ${user.turno})` : ''}` : 'Usuário'}
-                                            </p>
-                                            {user.created_at && (
-                                              <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide">
-                                                Ingressou em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                                              </p>
-                                            )}
-                                            <p className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wide">
-                                              Último online: {lastActiveInfo.text}
-                                            </p>
-                                            {lastActiveInfo.isInactive && (
-                                              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
-                                                Inativo {lastActiveInfo.inactiveDays !== null ? `há ${lastActiveInfo.inactiveDays} dias` : ''}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      {!isAdmin && (
-                                        <>
-                                          {/* Botão de Toggle Rápido de Mão de Obra para Líderes */}
-                                          {user.role === 'leader' && (
-                                            <Button
-                                              type="button"
-                                              variant="outline"
-                                              size="sm"
-                                              className={cn(
-                                                "h-9 px-2.5 text-xs font-bold gap-1.5 rounded-lg border",
-                                                user.allowedMaoDeObra
-                                                  ? "text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
-                                                  : "text-slate-600 bg-slate-50 border-slate-300 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400"
-                                              )}
-                                              onClick={() => handleToggleMaoDeObra(user)}
-                                              title={user.allowedMaoDeObra ? "Revogar Acesso à Mão de Obra" : "Liberar Acesso à Mão de Obra"}
-                                            >
-                                              <Users className="w-3.5 h-3.5" />
-                                              {user.allowedMaoDeObra ? "M.O. Liberado" : "Liberar M.O."}
-                                            </Button>
-                                          )}
-
-                                          {/* Botão de Reset de PIN de Mão de Obra */}
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-9 px-2.5 text-xs font-bold gap-1 text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300 border-violet-200 dark:border-violet-800"
-                                            onClick={() => setUserToResetPin(user)}
-                                            title="Resetar PIN de Mão de Obra deste usuário"
-                                          >
-                                            <Key className="w-3.5 h-3.5" />
-                                            <span className="hidden sm:inline">Resetar PIN</span>
-                                          </Button>
-
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className={cn(
-                                              isApproved
-                                                ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-500'
-                                                : 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700'
-                                            )}
-                                            onClick={() => handleToggleStatus(user)}
-                                            title={isApproved ? "Revogar Acesso" : "Aprovar Acesso"}
-                                          >
-                                            {isApproved ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
-                                          </Button>
-
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400"
-                                            onClick={() => handleEditInitiate(user)}
-                                            title="Editar Dados e Acessos"
-                                          >
-                                            <Edit className="h-5 w-5" />
-                                          </Button>
-
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className="text-muted-foreground hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20"
-                                            onClick={() => requestDeleteUser(user)}
-                                            title="Excluir Usuário (Ação Permanente)"
-                                          >
-                                            <Trash2 className="h-5 w-5" />
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
+                                {/* Botão de Ação para Abrir o Modal */}
+                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedUserForManage(user);
+                                    }}
+                                    className="h-8 px-3 text-xs font-bold gap-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white rounded-xl shadow-xs"
+                                  >
+                                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                                    <span>Gerenciar Acesso</span>
+                                  </Button>
+                                </div>
                               </div>
                             </li>
                           );
@@ -998,6 +752,16 @@ export default function AdminControlPanelPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de Gerenciamento Unificado de Acessos do Usuário */}
+      <UserManageModal
+        open={!!selectedUserForManage}
+        onOpenChange={(open) => !open && setSelectedUserForManage(null)}
+        user={selectedUserForManage}
+        onSave={handleSaveUserFromModal}
+        onResetPin={(u) => setUserToResetPin(u as UserItem)}
+        onDeleteUser={(u) => requestDeleteUser(u as UserItem)}
+      />
     </ProtectedRoute>
   );
 }

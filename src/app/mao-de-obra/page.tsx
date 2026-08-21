@@ -66,12 +66,15 @@ export default function MaoDeObraPage() {
   const isAuthorizedLeader = userData?.role === 'leader' && Boolean(userData?.allowedMaoDeObra);
   const canAccess = isAdmin || isSupervisor || isAuthorizedLeader;
 
-  // Turno ativo (Admin vê 'ALL', demais ficam travados no seu turno)
+  // Pode selecionar e alternar entre todos os turnos (Admin e Supervisor)
+  const canSelectTurno = isAdmin || isSupervisor;
+
+  // Turno ativo (Admin e Supervisor vêem 'ALL' por padrão, demais ficam travados no seu turno)
   const initialTurno: ProductionTurno | 'ALL' = useMemo(() => {
-    if (isAdmin) return 'ALL';
+    if (canSelectTurno) return 'ALL';
     if (userData?.turno) return userData.turno;
     return 1;
-  }, [isAdmin, userData?.turno]);
+  }, [canSelectTurno, userData?.turno]);
 
   const [selectedTurno, setSelectedTurno] = useState<ProductionTurno | 'ALL'>(initialTurno);
   const [activeTab, setActiveTab] = useState<string>('quadro');
@@ -81,12 +84,12 @@ export default function MaoDeObraPage() {
 
   const [isPinUnlocked, setIsPinUnlocked] = useState(false);
 
-  // Sincroniza e trava o turno do líder/supervisor
+  // Sincroniza e trava o turno do líder (Supervisor e Admin podem navegar livremente)
   useEffect(() => {
-    if (userData && !isAdmin) {
+    if (userData && !canSelectTurno) {
       setSelectedTurno(userData.turno || 1);
     }
-  }, [userData, isAdmin]);
+  }, [userData, canSelectTurno]);
 
   // Modais
   const [operadorModalOpen, setOperadorModalOpen] = useState(false);
@@ -186,8 +189,8 @@ export default function MaoDeObraPage() {
 
               {/* Seletor de Turno + Ações */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Seletor de Turno (apenas Admin) */}
-                {isAdmin ? (
+                {/* Seletor de Turno (Admin e Supervisor) */}
+                {canSelectTurno ? (
                   <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
                     <span className="text-[11px] font-bold text-muted-foreground px-1.5">Turno:</span>
                     {(['ALL', 1, 2, 3] as const).map((t) => (

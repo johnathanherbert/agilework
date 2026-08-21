@@ -19,7 +19,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LaborOccurrence, LaborOccurrenceType } from '@/types';
-import { updateLaborOccurrence } from '@/lib/labor-helpers';
+import { updateLaborOccurrence, deleteLaborOccurrence } from '@/lib/labor-helpers';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   AlertTriangle,
   Stethoscope,
@@ -32,6 +42,7 @@ import {
   MessageSquare,
   Pencil,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +84,8 @@ export function OcorrenciaEditModal({
   const [queixas, setQueixas] = useState('');
   const [motivo, setMotivo] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!occurrence) return;
@@ -98,6 +111,27 @@ export function OcorrenciaEditModal({
   }, [dataInicio, dataFim]);
 
   if (!occurrence) return null;
+
+  const handleDelete = async () => {
+    if (!occurrence) return;
+    setDeleting(true);
+    try {
+      await deleteLaborOccurrence(occurrence);
+      toast.success(
+        occurrence.tipo === 'folga_flexivel'
+          ? 'Folga flexível removida com sucesso. Saldo restabelecido.'
+          : 'Ocorrência excluída com sucesso.'
+      );
+      setDeleteConfirmOpen(false);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao excluir ocorrência.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +165,7 @@ export function OcorrenciaEditModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl">
         <form onSubmit={handleSubmit}>
@@ -299,24 +334,74 @@ export function OcorrenciaEditModal({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-2 rounded-b-2xl">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancelar
-            </Button>
+          <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between gap-2 rounded-b-2xl">
             <Button
-              type="submit"
-              disabled={saving}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold"
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={saving || deleting}
+              className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 gap-1.5 rounded-xl"
             >
-              {saving ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>
-              ) : (
-                <><Pencil className="h-4 w-4" />Salvar Alterações</>
-              )}
+              <Trash2 className="w-3.5 h-3.5" />
+              {occurrence.tipo === 'folga_flexivel' ? 'Remover Folga' : 'Excluir'}
             </Button>
+
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving || deleting} className="rounded-xl">
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || deleting}
+                className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl"
+              >
+                {saving ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>
+                ) : (
+                  <><Pencil className="h-4 w-4" />Salvar Alterações</>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de confirmação de exclusão */}
+    <AlertDialog open={deleteConfirmOpen} onOpenChange={(v) => !deleting && setDeleteConfirmOpen(v)}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            {occurrence.tipo === 'folga_flexivel' ? 'Remover Folga Flexível' : 'Excluir Ocorrência'}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-1">
+            <span>
+              Tem certeza que deseja {occurrence.tipo === 'folga_flexivel' ? 'remover a folga flexível de' : 'excluir esta ocorrência de'}{' '}
+              <strong className="text-foreground">{occurrence.operadorNome}</strong>?
+            </span>
+            {occurrence.tipo === 'folga_flexivel' && (
+              <span className="block text-xs text-muted-foreground pt-1">
+                ℹ️ Ao remover esta folga ({occurrence.dias} dia{occurrence.dias > 1 ? 's' : ''}), o saldo de folgas flexíveis do operador será automaticamente restabelecido.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting} className="rounded-xl">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+          >
+            {deleting ? 'Excluindo...' : occurrence.tipo === 'folga_flexivel' ? 'Sim, remover folga' : 'Sim, excluir'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

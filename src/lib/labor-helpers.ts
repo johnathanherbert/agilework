@@ -589,10 +589,12 @@ export const deleteLaborOccurrence = async (occurrence: LaborOccurrence): Promis
 
   // Se for exclusão de folga flexível, reverte a movimentação de saldo
   if (occurrence.tipo === 'folga_flexivel') {
+    const dias = occurrence.dias || 1;
     if (occurrence.tipoFolgaFlexivel === 'concessao') {
-      await updateOperatorSaldoFolgas(occurrence.operadorId, -occurrence.dias, 'Reversão de concessão de folga');
-    } else if (occurrence.tipoFolgaFlexivel === 'debito') {
-      await updateOperatorSaldoFolgas(occurrence.operadorId, occurrence.dias, 'Reversão de gozo de folga');
+      await updateOperatorSaldoFolgas(occurrence.operadorId, -dias, 'Reversão de concessão de folga');
+    } else {
+      // Padrão de folga flexível (débito/gozo): devolve os dias ao saldo do colaborador
+      await updateOperatorSaldoFolgas(occurrence.operadorId, dias, 'Reversão de gozo de folga flexível');
     }
   }
 

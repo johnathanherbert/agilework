@@ -18,7 +18,19 @@ import {
   OperatorTurma,
 } from '@/types';
 import { getEscalaForDate, TURMAS_INFO } from '@/lib/escala-helpers';
-import { getDailyPresenceSummary } from '@/lib/labor-helpers';
+import { getDailyPresenceSummary, deleteLaborOccurrence } from '@/lib/labor-helpers';
+import { toast } from 'react-hot-toast';
+import { OcorrenciaDetalheModal } from './ocorrencia-detalhe-modal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Calendar,
   Clock,
@@ -37,6 +49,8 @@ import {
   Zap,
   Briefcase,
   Layers,
+  Trash2,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +77,28 @@ export function EscalaDiaModal({
 }: EscalaDiaModalProps) {
   const [modalTab, setModalTab] = useState<'ausencias' | 'escalados' | 'folga_escala'>('ausencias');
   const [selectedTurnoFilter, setSelectedTurnoFilter] = useState<'ALL' | ProductionTurno>('ALL');
+  const [occToView, setOccToView] = useState<LaborOccurrence | null>(null);
+  const [occToDelete, setOccToDelete] = useState<LaborOccurrence | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteConfirm = async () => {
+    if (!occToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteLaborOccurrence(occToDelete);
+      toast.success(
+        occToDelete.tipo === 'folga_flexivel'
+          ? 'Folga flexível removida com sucesso. Saldo restabelecido.'
+          : 'Ocorrência excluída com sucesso.'
+      );
+      setOccToDelete(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao excluir ocorrência.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const escalaDia = useMemo(() => {
     if (!dateStr) return null;
@@ -173,6 +209,7 @@ export function EscalaDiaModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border-slate-200 dark:border-slate-800 shadow-2xl">
         {/* Header com Informações da Data */}
@@ -445,15 +482,39 @@ export function EscalaDiaModal({
                           </div>
                         </div>
 
-                        {onOpenOcorrencia && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onOpenOcorrencia(op, occ?.tipo || 'falta_injustificada', dateStr)}
-                            className="h-8 text-xs font-semibold shrink-0"
-                          >
-                            Editar
-                          </Button>
+                        {occ ? (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setOccToView(occ)}
+                              className="h-8 text-xs font-bold gap-1 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5"
+                              title="Ver detalhes da ocorrência"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Ver Detalhes
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setOccToDelete(occ)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"
+                              title={occ.tipo === 'folga_flexivel' ? 'Remover folga flexível' : 'Excluir ocorrência'}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          onOpenOcorrencia && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onOpenOcorrencia(op, 'falta_injustificada', dateStr)}
+                              className="h-8 text-xs font-semibold shrink-0"
+                            >
+                              Lançar
+                            </Button>
+                          )
                         )}
                       </div>
                     );
@@ -574,5 +635,49 @@ export function EscalaDiaModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de Detalhe / Edição da Ocorrência */}
+    <OcorrenciaDetalheModal
+      open={Boolean(occToView)}
+      onOpenChange={(v) => !v && setOccToView(null)}
+      occurrence={occToView}
+    />
+
+    {/* Confirmação de exclusão */}
+    <AlertDialog open={Boolean(occToDelete)} onOpenChange={(v) => !v && !deleting && setOccToDelete(null)}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            {occToDelete?.tipo === 'folga_flexivel' ? 'Remover Folga Flexível' : 'Excluir Ocorrência'}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-1">
+            <span>
+              Tem certeza que deseja {occToDelete?.tipo === 'folga_flexivel' ? 'remover a folga de' : 'excluir a ocorrência de'}{' '}
+              <strong className="text-foreground">{occToDelete?.operadorNome}</strong>?
+            </span>
+            {occToDelete?.tipo === 'folga_flexivel' && (
+              <span className="block text-xs text-muted-foreground pt-1">
+                ℹ️ Ao remover esta folga ({occToDelete?.dias} dia{occToDelete?.dias > 1 ? 's' : ''}), o saldo de folgas flexíveis do operador será automaticamente restabelecido.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting} className="rounded-xl">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              handleDeleteConfirm();
+            }}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+          >
+            {deleting ? 'Excluindo...' : occToDelete?.tipo === 'folga_flexivel' ? 'Sim, remover folga' : 'Sim, excluir'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

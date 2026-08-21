@@ -15,6 +15,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
@@ -32,7 +39,11 @@ import {
   Moon,
   Sun,
   Sunset,
+  SlidersHorizontal,
+  FilterX,
+  X,
 } from 'lucide-react';
+import { OcorrenciaDetalheModal } from './ocorrencia-detalhe-modal';
 import { cn } from '@/lib/utils';
 
 // Turnos e horários
@@ -65,35 +76,97 @@ export function QuadroDiario({
   onOpenSaldoFolgas,
   onEditOperator,
 }: QuadroDiarioProps) {
+  // Filtros
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | string>('ALL');
+  const [turmaFilter, setTurmaFilter] = useState<'ALL' | OperatorTurma>('ALL');
+  const [cargoFilter, setCargoFilter] = useState<'ALL' | string>('ALL');
+  const [turnoViewFilter, setTurnoViewFilter] = useState<'ALL' | ProductionTurno>('ALL');
+  const [occToView, setOccToView] = useState<LaborOccurrence | null>(null);
+
+  // Lista única de cargos para filtro
+  const listaCargos = useMemo(() => {
+    const set = new Set<string>();
+    operators.forEach((op) => {
+      if (op.cargo) set.add(op.cargo);
+    });
+    return Array.from(set).sort();
+  }, [operators]);
+
+  // Turnos a serem exibidos (para supervisor/admin com 'ALL' ou turno individual da liderança)
+  const turnosParaExibir = useMemo(() => {
+    if (selectedTurno !== 'ALL') return [selectedTurno];
+    if (turnoViewFilter !== 'ALL') return [turnoViewFilter];
+    return [1, 2, 3];
+  }, [selectedTurno, turnoViewFilter]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    statusFilter !== 'ALL' ||
+    turmaFilter !== 'ALL' ||
+    cargoFilter !== 'ALL' ||
+    (selectedTurno === 'ALL' && turnoViewFilter !== 'ALL')
+  );
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('ALL');
+    setTurmaFilter('ALL');
+    setCargoFilter('ALL');
+    setTurnoViewFilter('ALL');
+  };
 
   // Dados da escala do dia selecionado
   const escalaDia = useMemo(() => getEscalaForDate(selectedDate), [selectedDate]);
   const turmaDoDia = escalaDia ? escalaDia.turma_escalada : 'A';
   const turmaFolgaInfo = TURMAS_INFO[turmaDoDia];
 
-  // Filtrar operadores pelo turno selecionado
+  // Filtrar operadores com todos os critérios selecionados
   const operadoresPorTurno = useMemo(() => {
-    const turnosParaExibir = selectedTurno === 'ALL' ? [1, 2, 3] : [selectedTurno];
     const result: Record<number, DailyOperatorStatus[]> = {};
+    const query = searchQuery.trim().toLowerCase();
 
     turnosParaExibir.forEach((t) => {
       const ops = operators.filter((op) => op.turno === t);
       const summary = getDailyPresenceSummary(selectedDate, ops, occurrences);
 
-      const query = searchQuery.trim().toLowerCase();
-      result[t] = query
-        ? summary.operadoresStatus.filter((item) => {
-            const op = item.operator;
-            return op.nome.toLowerCase().includes(query) ||
-              op.matricula.toLowerCase().includes(query) ||
-              op.cargo.toLowerCase().includes(query);
-          })
-        : summary.operadoresStatus;
+      result[t] = summary.operadoresStatus.filter((item) => {
+        const op = item.operator;
+
+        // Busca textual
+        if (query) {
+          const matches =
+            op.nome.toLowerCase().includes(query) ||
+            op.matricula.toLowerCase().includes(query) ||
+            op.cargo.toLowerCase().includes(query);
+          if (!matches) return false;
+        }
+
+        // Filtro de Turma (A, B, C, D)
+        if (turmaFilter !== 'ALL' && op.letra !== turmaFilter) {
+          return false;
+        }
+
+        // Filtro de Cargo
+        if (cargoFilter !== 'ALL' && op.cargo !== cargoFilter) {
+          return false;
+        }
+
+        // Filtro de Status
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'ausentes') {
+            if (item.statusHoje === 'presente' || item.statusHoje === 'folga_escala') return false;
+          } else if (item.statusHoje !== statusFilter) {
+            return false;
+          }
+        }
+
+        return true;
+      });
     });
 
     return result;
-  }, [operators, occurrences, selectedDate, selectedTurno, searchQuery]);
+  }, [operators, occurrences, selectedDate, turnosParaExibir, searchQuery, turmaFilter, cargoFilter, statusFilter]);
 
   // Totais do dia calculados diretamente do resumo completo (sem sofrer interferência do campo de busca)
   const totaisDia = useMemo(() => {
@@ -123,8 +196,6 @@ export function QuadroDiario({
   const handleToday = () => {
     onDateChange(new Date().toISOString().split('T')[0]);
   };
-
-  const turnosParaExibir = selectedTurno === 'ALL' ? [1, 2, 3] : [selectedTurno];
 
   return (
     <div className="space-y-4">
@@ -179,43 +250,160 @@ export function QuadroDiario({
           )}
         </div>
 
-        {/* Turma de folga e busca */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Folga da escala do dia */}
+        {/* Folga da escala do dia */}
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-xs w-fit"
+          style={{ borderColor: `${turmaFolgaInfo?.cor}50`, backgroundColor: `${turmaFolgaInfo?.cor}12` }}
+        >
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-xs"
-            style={{ borderColor: `${turmaFolgaInfo?.cor}50`, backgroundColor: `${turmaFolgaInfo?.cor}12` }}
+            className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shadow-xs"
+            style={{ backgroundColor: turmaFolgaInfo?.cor }}
           >
-            <div
-              className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shadow-xs"
-              style={{ backgroundColor: turmaFolgaInfo?.cor }}
-            >
-              {turmaDoDia}
+            {turmaDoDia}
+          </div>
+          <span className="text-xs font-bold" style={{ color: turmaFolgaInfo?.cor }}>
+            Turma {turmaDoDia} de Folga · Dia {escalaDia?.dia_ciclo_28}/28
+          </span>
+        </div>
+      </div>
+
+      {/* Barra de Filtros Completos + Lançar Ocorrência */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+          {/* Grupo de Filtros */}
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mr-1 shrink-0">
+              <SlidersHorizontal className="w-4 h-4 text-primary" />
+              <span>Filtros:</span>
             </div>
-            <span className="text-xs font-bold" style={{ color: turmaFolgaInfo?.cor }}>
-              Turma {turmaDoDia} de Folga · Dia {escalaDia?.dia_ciclo_28}/28
-            </span>
+
+            {/* Busca textual */}
+            <div className="relative min-w-[170px] flex-1 sm:flex-initial">
+              <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder="Buscar operador, cargo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-8 pr-7 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Filtro de Status */}
+            <div className="w-[145px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="ALL" className="text-xs">Todos os Status</SelectItem>
+                  <SelectItem value="presente" className="text-xs font-bold text-emerald-600">Presentes</SelectItem>
+                  <SelectItem value="folga_flexivel" className="text-xs font-bold text-sky-600">Folga Flexível</SelectItem>
+                  <SelectItem value="atestado" className="text-xs font-bold text-rose-600">Atestado Médico</SelectItem>
+                  <SelectItem value="falta_injustificada" className="text-xs font-bold text-red-600">Falta Injustificada</SelectItem>
+                  <SelectItem value="falta_justificada" className="text-xs font-bold text-amber-600">Falta Justificada</SelectItem>
+                  <SelectItem value="ferias" className="text-xs font-bold text-indigo-600">Férias</SelectItem>
+                  <SelectItem value="folga_escala" className="text-xs font-bold text-slate-600">Folga da Escala</SelectItem>
+                  <SelectItem value="hora_extra" className="text-xs font-bold text-emerald-600">Hora Extra</SelectItem>
+                  <SelectItem value="ausentes" className="text-xs font-bold text-orange-600">Todas Ausências</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro de Turma */}
+            <div className="w-[125px]">
+              <Select value={turmaFilter} onValueChange={(v: any) => setTurmaFilter(v)}>
+                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                  <SelectValue placeholder="Turma" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="ALL" className="text-xs">Todas Turmas</SelectItem>
+                  {(['A', 'B', 'C', 'D'] as const).map((t) => (
+                    <SelectItem key={t} value={t} className="text-xs font-bold">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: TURMAS_INFO[t].cor }} />
+                        Turma {t}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro de Cargo */}
+            <div className="w-[160px]">
+              <Select value={cargoFilter} onValueChange={setCargoFilter}>
+                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 truncate">
+                  <SelectValue placeholder="Cargo/Função" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-56">
+                  <SelectItem value="ALL" className="text-xs">Todos os Cargos</SelectItem>
+                  {listaCargos.map((c) => (
+                    <SelectItem key={c} value={c} className="text-xs">
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro de Turno (se selectedTurno === 'ALL', visão do Supervisor) */}
+            {selectedTurno === 'ALL' && (
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5">
+                <span className="text-[10px] font-bold text-muted-foreground px-1.5">Turno:</span>
+                {(['ALL', 1, 2, 3] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTurnoViewFilter(t)}
+                    className={cn(
+                      "h-7 px-2 rounded-lg text-[10px] font-bold transition-colors",
+                      turnoViewFilter === t
+                        ? "bg-primary text-white shadow-2xs"
+                        : "text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    {t === 'ALL' ? 'Todos 3' : `T${t}`}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Botão Limpar Filtros */}
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="h-8 px-2.5 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl gap-1 shrink-0"
+                title="Limpar todos os filtros ativos"
+              >
+                <FilterX className="w-3.5 h-3.5" />
+                Limpar
+              </Button>
+            )}
           </div>
 
-          {/* Busca */}
-          <div className="relative">
-            <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <Input
-              placeholder="Buscar operador..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 pl-8 text-xs bg-white dark:bg-slate-900 rounded-lg w-[180px]"
-            />
+          {/* Botão Lançar Ocorrência */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onOpenOcorrencia()}
+              className="h-8 text-xs gap-1.5 font-bold rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Lançar Ocorrência
+            </Button>
           </div>
-
-          <Button
-            size="sm"
-            onClick={() => onOpenOcorrencia()}
-            className="h-9 text-xs gap-1.5 font-bold rounded-lg bg-primary"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Lançar Ocorrência
-          </Button>
         </div>
       </div>
 
@@ -319,41 +507,55 @@ export function QuadroDiario({
                     const op = item.operator;
                     const opTurmaInfo = TURMAS_INFO[op.letra];
                     const initials = op.nome.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'OP';
+                    const hasOccurrence = Boolean(item.ocorrenciaHoje);
 
                     return (
                       <div
                         key={op.id}
-                        className="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                        onClick={() => {
+                          if (item.ocorrenciaHoje) {
+                            setOccToView(item.ocorrenciaHoje);
+                          } else {
+                            onOpenOcorrencia(op);
+                          }
+                        }}
+                        className="group px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-slate-100/90 dark:hover:bg-slate-800/60 transition-all cursor-pointer select-none"
+                        title={
+                          hasOccurrence
+                            ? `Clique para ver detalhes, editar ou remover a ocorrência de ${op.nome}`
+                            : `Clique para lançar ocorrência para ${op.nome}`
+                        }
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           {/* Avatar com cor da turma */}
                           <div
-                            className="w-7 h-7 rounded-lg text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs"
+                            className="w-8 h-8 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform"
                             style={{ backgroundColor: opTurmaInfo.cor }}
                           >
                             {initials}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-foreground truncate">{op.nome}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono">{op.matricula} · {op.cargo}</p>
+                            <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                              {op.nome}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground font-mono">
+                              {op.matricula} · {op.cargo}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           {/* Status */}
-                          <StatusChip statusHoje={item.statusHoje} statusLabel={item.statusLabel} corStatus={item.corStatus} />
+                          <StatusChip
+                            statusHoje={item.statusHoje}
+                            statusLabel={item.statusLabel}
+                            corStatus={item.corStatus}
+                          />
 
-                          {/* Ação rápida */}
-                          {item.statusHoje !== 'folga_escala' && (
-                            <button
-                              type="button"
-                              onClick={() => onOpenOcorrencia(op)}
-                              className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-                              title="Lançar ocorrência"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          {/* Indicador de clique na célula */}
+                          <div className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground/40 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
                         </div>
                       </div>
                     );
@@ -364,6 +566,13 @@ export function QuadroDiario({
           );
         })}
       </div>
+
+      {/* Modal de Detalhe e Exclusão da Ocorrência */}
+      <OcorrenciaDetalheModal
+        open={Boolean(occToView)}
+        onOpenChange={(v) => !v && setOccToView(null)}
+        occurrence={occToView}
+      />
     </div>
   );
 }
@@ -381,7 +590,7 @@ function StatusChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all text-left shadow-2xs",
         corStatus
       )}
     >
