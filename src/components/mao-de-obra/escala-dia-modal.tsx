@@ -641,6 +641,7 @@ export function EscalaDiaModal({
       open={Boolean(occToView)}
       onOpenChange={(v) => !v && setOccToView(null)}
       occurrence={occToView}
+      occurrences={occurrences}
     />
 
     {/* Confirmação de exclusão */}

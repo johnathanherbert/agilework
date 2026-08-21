@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   Dialog,
@@ -134,12 +134,14 @@ interface OcorrenciaDetalheModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   occurrence: LaborOccurrence | null;
+  occurrences?: LaborOccurrence[];
 }
 
 export function OcorrenciaDetalheModal({
   open,
   onOpenChange,
   occurrence,
+  occurrences = [],
 }: OcorrenciaDetalheModalProps) {
   const { userData } = useFirebase();
   const isSupervisorOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin' || userData?.role === 'supervisor';
@@ -149,6 +151,22 @@ export function OcorrenciaDetalheModal({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
+  // Outras ocorrências do colaborador para contextualizar o histórico
+  const otherOccurrences = useMemo(() => {
+    if (!occurrence || !occurrences) return [];
+    return occurrences
+      .filter(
+        (o) =>
+          (o.operadorId === occurrence.operadorId ||
+            (o.operadorNome &&
+              occurrence.operadorNome &&
+              o.operadorNome.toLowerCase() === occurrence.operadorNome.toLowerCase())) &&
+          o.id !== occurrence.id
+      )
+      .sort((a, b) => (b.dataInicio || '').localeCompare(a.dataInicio || ''));
+  }, [occurrence, occurrences]);
 
   useEffect(() => {
     if (occurrence) {
@@ -482,6 +500,65 @@ export function OcorrenciaDetalheModal({
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Outras Ocorrências do Colaborador (Histórico) */}
+          {otherOccurrences.length > 0 && (
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-bold text-foreground">
+                    Outras Ocorrências do Colaborador ({otherOccurrences.length})
+                  </span>
+                </div>
+                {otherOccurrences.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllHistory(!showAllHistory)}
+                    className="text-[10px] font-bold text-primary hover:underline"
+                  >
+                    {showAllHistory ? "Recolher" : "Ver todas"}
+                  </button>
+                )}
+              </div>
+
+              <div className={cn("space-y-1.5", showAllHistory ? "max-h-48 overflow-y-auto pr-1" : "")}>
+                {(showAllHistory ? otherOccurrences : otherOccurrences.slice(0, 2)).map((oOcc) => {
+                  const oMeta = OCC_META[oOcc.tipo] || OCC_META.falta_injustificada;
+                  const formattedDate = oOcc.dataInicio === oOcc.dataFim || !oOcc.dataFim
+                    ? new Date(oOcc.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR')
+                    : `${new Date(oOcc.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR')} a ${new Date(oOcc.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR')}`;
+
+                  return (
+                    <div
+                      key={oOcc.id}
+                      className="p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 text-xs shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={cn("p-1 rounded-md shrink-0", oMeta.bg, oMeta.color)}>
+                          {oMeta.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground truncate text-[11px]">
+                            {oMeta.label}
+                            {oOcc.dias && <span className="font-normal text-muted-foreground ml-1">({oOcc.dias}d)</span>}
+                          </p>
+                          {(oOcc.motivo || oOcc.queixas) && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {oOcc.queixas || oOcc.motivo}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-muted-foreground shrink-0 font-medium">
+                        {formattedDate}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

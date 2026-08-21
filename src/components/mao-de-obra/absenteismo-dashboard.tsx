@@ -92,13 +92,12 @@ export function AbsenteismoDashboard({
     return getTurnoAbsenteeismComparison(operators, occurrences, year, selectedMonth);
   }, [operators, occurrences, year, selectedMonth]);
 
-  // Distribuição de ausências para o gráfico Donut
+  // Distribuição de ausências para o gráfico Donut (Atestados e Faltas que geram absenteísmo)
   const pieData = useMemo(() => {
     return [
       { name: 'Atestados Médicos', value: currentStats.diasPerdidosAtestados, color: '#F43F5E' },
       { name: 'Faltas Injustificadas', value: currentStats.diasPerdidosFaltasInjustificadas, color: '#EF4444' },
       { name: 'Faltas Justificadas', value: currentStats.diasPerdidosFaltasJustificadas, color: '#F59E0B' },
-      { name: 'Folgas Flexíveis (Gozadas)', value: currentStats.diasFolgasFlexiveis, color: '#0EA5E9' },
     ].filter((item) => item.value > 0);
   }, [currentStats]);
 

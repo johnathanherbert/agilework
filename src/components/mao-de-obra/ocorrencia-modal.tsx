@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Operator,
+  LaborOccurrence,
   LaborOccurrenceType,
 } from '@/types';
 import { createLaborOccurrence } from '@/lib/labor-helpers';
@@ -44,6 +45,7 @@ interface OcorrenciaModalProps {
   selectedOperator?: Operator | null;
   defaultDate?: string;
   defaultType?: LaborOccurrenceType;
+  occurrences?: LaborOccurrence[];
   onSuccess?: () => void;
 }
 
@@ -144,6 +146,7 @@ export function OcorrenciaModal({
   selectedOperator,
   defaultDate,
   defaultType = 'falta_injustificada',
+  occurrences = [],
   onSuccess,
 }: OcorrenciaModalProps) {
   const [operatorId, setOperatorId] = useState<string>('');
@@ -156,6 +159,7 @@ export function OcorrenciaModal({
   const [dataInicio, setDataInicio] = useState<string>('');
   const [dataFim, setDataFim] = useState<string>('');
   const [dias, setDias] = useState<number>(1);
+  const [diasFerias, setDiasFerias] = useState<number>(30);
   const [horasImpacto, setHorasImpacto] = useState<number>(8);
   const [minutosAtraso, setMinutosAtraso] = useState<number>(0);
   const [queixas, setQueixas] = useState<string>('');
@@ -166,15 +170,27 @@ export function OcorrenciaModal({
   useEffect(() => {
     const today = defaultDate || new Date().toISOString().split('T')[0];
     setDataInicio(today);
-    setDataFim(today);
-    setDias(1);
-    setHorasImpacto(8);
-    setMinutosAtraso(0);
     setTipo(defaultType);
     setQueixas('');
     setMotivo('');
+    setMinutosAtraso(0);
     setOperatorSearch('');
     setDropdownOpen(false);
+
+    if (defaultType === 'ferias') {
+      const start = new Date(today + 'T12:00:00Z');
+      const end = new Date(start);
+      end.setDate(end.getDate() + 29);
+      setDataFim(end.toISOString().split('T')[0]);
+      setDias(30);
+      setDiasFerias(30);
+      setHorasImpacto(240);
+    } else {
+      setDataFim(today);
+      setDias(1);
+      setDiasFerias(30);
+      setHorasImpacto(8);
+    }
 
     if (selectedOperator) {
       setOperatorId(selectedOperator.id);
@@ -194,18 +210,70 @@ export function OcorrenciaModal({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Recalcula dias
+  // Recalcula dias quando dataInicio ou dataFim mudam (se não for férias)
   useEffect(() => {
-    if (dataInicio && dataFim) {
+    if (tipo !== 'ferias' && dataInicio && dataFim) {
       const dt1 = new Date(dataInicio + 'T12:00:00Z');
       const dt2 = new Date(dataFim + 'T12:00:00Z');
       const diffDays = Math.max(1, Math.round((dt2.getTime() - dt1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
       setDias(diffDays);
       setHorasImpacto(diffDays * 8);
     }
-  }, [dataInicio, dataFim]);
+  }, [dataInicio, dataFim, tipo]);
 
-  // Filtra operadores
+  // Muda de tipo de ocorrência
+  const handleSelectTipo = (newTipo: LaborOccurrenceType) => {
+    setTipo(newTipo);
+    if (newTipo === 'ferias') {
+      const numDays = diasFerias || 30;
+      const start = new Date((dataInicio || new Date().toISOString().split('T')[0]) + 'T12:00:00Z');
+      const end = new Date(start);
+      end.setDate(end.getDate() + numDays - 1);
+      setDataFim(end.toISOString().split('T')[0]);
+      setDias(numDays);
+      setHorasImpacto(numDays * 8);
+    } else if (tipo === 'ferias') {
+      setDataFim(dataInicio);
+      setDias(1);
+      setHorasImpacto(8);
+    }
+  };
+
+  // Alteração de dias de férias (input simples)
+  const handleDiasFeriasChange = (numDays: number) => {
+    const validDays = Math.max(1, numDays || 1);
+    setDiasFerias(validDays);
+    setDias(validDays);
+    setHorasImpacto(validDays * 8);
+    if (dataInicio) {
+      const start = new Date(dataInicio + 'T12:00:00Z');
+      const end = new Date(start);
+      end.setDate(end.getDate() + validDays - 1);
+      setDataFim(end.toISOString().split('T')[0]);
+    }
+  };
+
+  // Alteração de data de início
+  const handleDataInicioChange = (newDateStr: string) => {
+    setDataInicio(newDateStr);
+    if (tipo === 'ferias') {
+      const numDays = diasFerias || 30;
+      const start = new Date(newDateStr + 'T12:00:00Z');
+      const end = new Date(start);
+      end.setDate(end.getDate() + numDays - 1);
+      setDataFim(end.toISOString().split('T')[0]);
+    }
+  };
+
+  // Data de retorno (dia seguinte ao término)
+  const dataRetorno = useMemo(() => {
+    if (!dataFim) return '';
+    const nextDay = new Date(dataFim + 'T12:00:00Z');
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay.toLocaleDateString('pt-BR');
+  }, [dataFim]);
+
+  // Filtra operadores na busca
   const filteredOperators = operators.filter((op) => {
     const q = operatorSearch.toLowerCase();
     if (!q) return true;
@@ -219,6 +287,42 @@ export function OcorrenciaModal({
 
   const activeOp = operators.find((op) => op.id === operatorId) || selectedOperator;
   const activeTipoMeta = OCCURRENCE_TYPES.find((t) => t.id === tipo);
+
+  // Alerta simples: outros colaboradores do mesmo turno de férias no mesmo período
+  const conflitosFerias = useMemo(() => {
+    if (tipo !== 'ferias' || !activeOp || !dataInicio || !dataFim) return [];
+    const myStart = new Date(dataInicio + 'T12:00:00Z');
+    const myEnd = new Date(dataFim + 'T12:00:00Z');
+
+    const list: {
+      nome: string;
+      cargo: string;
+      turma: string;
+      dataInicio: string;
+      dataFim: string;
+    }[] = [];
+
+    (occurrences || []).forEach((occ) => {
+      if (occ.tipo !== 'ferias') return;
+      if (occ.operadorId === activeOp.id) return;
+      if (activeOp.turno && occ.turno !== activeOp.turno) return;
+
+      const occStart = new Date(occ.dataInicio + 'T12:00:00Z');
+      const occEnd = new Date((occ.dataFim || occ.dataInicio) + 'T12:00:00Z');
+
+      if (myStart <= occEnd && myEnd >= occStart) {
+        list.push({
+          nome: occ.operadorNome,
+          cargo: occ.operadorCargo,
+          turma: occ.operadorLetra,
+          dataInicio: occ.dataInicio,
+          dataFim: occ.dataFim || occ.dataInicio,
+        });
+      }
+    });
+
+    return list;
+  }, [tipo, activeOp, dataInicio, dataFim, occurrences]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,7 +375,7 @@ export function OcorrenciaModal({
               </DialogTitle>
             </DialogHeader>
 
-            {/* Operador selecionado no header — exibido quando já há um */}
+            {/* Operador selecionado */}
             {activeOp && (
               <div className="mt-4 flex items-center gap-3 bg-white/8 rounded-xl px-4 py-3 border border-white/10">
                 <div
@@ -291,18 +395,17 @@ export function OcorrenciaModal({
             )}
           </div>
 
-          {/* ── Corpo com scroll ── */}
+          {/* ── Corpo ── */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-5 space-y-5">
 
-              {/* Seleção / Troca de Operador */}
+              {/* Seleção de Operador */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   {activeOp ? 'Trocar Colaborador' : 'Colaborador *'}
                 </Label>
 
                 <div className="relative" ref={dropdownRef}>
-                  {/* Campo de busca */}
                   <div
                     className={cn(
                       "flex items-center gap-2 h-10 px-3 rounded-xl border bg-white dark:bg-slate-950 cursor-text transition-all",
@@ -330,7 +433,6 @@ export function OcorrenciaModal({
                     <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 shrink-0", dropdownOpen && "rotate-180")} />
                   </div>
 
-                  {/* Dropdown */}
                   {dropdownOpen && (
                     <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden">
                       <div className="max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -395,7 +497,7 @@ export function OcorrenciaModal({
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setTipo(item.id)}
+                        onClick={() => handleSelectTipo(item.id)}
                         className={cn(
                           "relative p-3 rounded-xl border text-left flex items-center gap-3 transition-all duration-150",
                           selected
@@ -431,37 +533,104 @@ export function OcorrenciaModal({
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Período
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Início *</p>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        id="dataInicio"
-                        type="date"
-                        required
-                        value={dataInicio}
-                        onChange={(e) => setDataInicio(e.target.value)}
-                        className="pl-9 h-10 text-sm rounded-xl"
-                      />
+
+                {tipo === 'ferias' ? (
+                  /* Layout simplificado para Férias */
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Data Início *</p>
+                        <Input
+                          id="dataInicio"
+                          type="date"
+                          required
+                          value={dataInicio}
+                          onChange={(e) => handleDataInicioChange(e.target.value)}
+                          className="h-10 text-xs rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase">Dias de Férias</p>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="60"
+                          value={diasFerias}
+                          onChange={(e) => handleDiasFeriasChange(Number(e.target.value))}
+                          className="h-10 text-sm font-bold text-center border-indigo-300 dark:border-indigo-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Data Término</p>
+                        <Input
+                          id="dataFim"
+                          type="date"
+                          required
+                          value={dataFim}
+                          onChange={(e) => {
+                            setDataFim(e.target.value);
+                            if (dataInicio && e.target.value) {
+                              const dt1 = new Date(dataInicio + 'T12:00:00Z');
+                              const dt2 = new Date(e.target.value + 'T12:00:00Z');
+                              const diff = Math.max(1, Math.round((dt2.getTime() - dt1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                              setDiasFerias(diff);
+                              setDias(diff);
+                              setHorasImpacto(diff * 8);
+                            }
+                          }}
+                          className="h-10 text-xs rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Data de Retorno simples */}
+                    {dataRetorno && (
+                      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/50 text-xs">
+                        <span className="text-indigo-800 dark:text-indigo-300 font-medium">
+                          Data da Volta ao Trabalho:
+                        </span>
+                        <span className="font-black text-indigo-700 dark:text-indigo-300">
+                          {dataRetorno}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Layout padrão para demais ocorrências */
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Início *</p>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          id="dataInicio"
+                          type="date"
+                          required
+                          value={dataInicio}
+                          onChange={(e) => setDataInicio(e.target.value)}
+                          className="pl-9 h-10 text-sm rounded-xl"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Término *</p>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          id="dataFim"
+                          type="date"
+                          required
+                          min={dataInicio}
+                          value={dataFim}
+                          onChange={(e) => setDataFim(e.target.value)}
+                          className="pl-9 h-10 text-sm rounded-xl"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Término *</p>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        id="dataFim"
-                        type="date"
-                        required
-                        min={dataInicio}
-                        value={dataFim}
-                        onChange={(e) => setDataFim(e.target.value)}
-                        className="pl-9 h-10 text-sm rounded-xl"
-                      />
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Resumo de duração */}
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
@@ -478,6 +647,21 @@ export function OcorrenciaModal({
                   </div>
                 </div>
               </div>
+
+              {/* Alerta simples de Férias Coincidentes no Mesmo Turno */}
+              {tipo === 'ferias' && conflitosFerias.length > 0 && (
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    Atenção: colaborador já de férias no Turno {activeOp?.turno} neste período
+                  </p>
+                  {conflitosFerias.map((c, i) => (
+                    <p key={i} className="text-[11px] text-amber-700 dark:text-amber-400 pl-5">
+                      • <span className="font-semibold">{c.nome}</span> ({c.cargo} · Turma {c.turma}): {new Date(c.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR')} a {new Date(c.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR')}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               {/* Minutos de Atraso */}
               {tipo === 'atraso' && (
@@ -529,7 +713,7 @@ export function OcorrenciaModal({
                     : tipo === 'falta_justificada' ? 'Ex: Apresentou declaração de comparecimento médico...'
                     : tipo === 'atestado' ? 'Ex: Atestado de 2 dias emitido pelo Dr. Silva em 12/08...'
                     : tipo === 'folga_flexivel' ? 'Ex: Folga solicitada e aprovada pela supervisão...'
-                    : tipo === 'ferias' ? 'Ex: Férias programadas, aprovadas em reunião de escala...'
+                    : tipo === 'ferias' ? 'Ex: Férias programadas...'
                     : 'Ex: Operador solicitou e trabalhou na folga dupla...'
                   }
                   value={motivo}

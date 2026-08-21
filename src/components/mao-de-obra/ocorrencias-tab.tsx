@@ -397,6 +397,7 @@ export function OcorrenciasTab({
         open={Boolean(occToView)}
         onOpenChange={(open) => !open && setOccToView(null)}
         occurrence={occToView}
+        occurrences={occurrences}
       />
 
       {/* Confirmação de exclusão */}

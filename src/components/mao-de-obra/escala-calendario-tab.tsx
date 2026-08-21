@@ -48,6 +48,43 @@ interface DayDetail {
   occsDodia: LaborOccurrence[];
 }
 
+// Helpers para exibição visual simples de ocorrências no calendário
+function formatOperatorShortName(name: string): string {
+  if (!name) return 'Op';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const first = parts[0];
+  const second = parts[1];
+  if (['da', 'de', 'do', 'dos', 'das'].includes(second.toLowerCase()) && parts[2]) {
+    return `${first} ${parts[2][0]?.toUpperCase() || ''}.`;
+  }
+  return `${first} ${second[0]?.toUpperCase() || ''}.`;
+}
+
+function getSimpleTypeLabel(tipo: LaborOccurrenceType): string {
+  switch (tipo) {
+    case 'falta_injustificada': return 'Falta';
+    case 'falta_justificada': return 'Falta J.';
+    case 'atestado': return 'Atestado';
+    case 'folga_flexivel': return 'Folga';
+    case 'ferias': return 'Férias';
+    case 'hora_extra': return 'H. Extra';
+    default: return 'Ausente';
+  }
+}
+
+function getDotColor(tipo: LaborOccurrenceType): string {
+  switch (tipo) {
+    case 'falta_injustificada': return 'bg-red-500';
+    case 'falta_justificada': return 'bg-amber-500';
+    case 'atestado': return 'bg-rose-400';
+    case 'folga_flexivel': return 'bg-sky-400';
+    case 'ferias': return 'bg-indigo-500';
+    case 'hora_extra': return 'bg-emerald-500';
+    default: return 'bg-slate-400';
+  }
+}
+
 export function EscalaCalendarioTab({
   operators,
   occurrences,
@@ -301,64 +338,84 @@ export function EscalaCalendarioTab({
                 ? 'ring-1 ring-inset ring-indigo-400/40'
                 : '';
 
-              return (
-                <button
-                  key={d.data}
-                  type="button"
-                  onClick={() => handleDayClick(d)}
-                  className={cn(
-                    "min-h-[88px] p-2 text-left flex flex-col gap-1 transition-colors relative",
-                    !isLastInRow && "border-r border-slate-100 dark:border-slate-800/60",
-                    !isLastRow && "border-b border-slate-100 dark:border-slate-800/60",
-                    isFeriado && "bg-amber-50/40 dark:bg-amber-950/10",
-                    isSelected
-                      ? "bg-primary/5 ring-1 ring-inset ring-primary/40"
-                      : isSunOrSat
-                      ? "bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/30"
-                      : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30",
-                    !isSelected && ringClass
-                  )}
-                >
-                  {/* Número do dia e indicador de hoje */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        "text-sm font-black w-7 h-7 flex items-center justify-center rounded-full",
-                        isToday
-                          ? "bg-primary text-white shadow-sm"
-                          : isSunOrSat
-                          ? "text-slate-400 dark:text-slate-600"
-                          : "text-foreground"
-                      )}
-                    >
-                      {d.dia}
-                    </span>
-
-                    {/* Indicador de feriado */}
-                    {isFeriado && (
-                      <Flame className="w-3 h-3 text-amber-500 shrink-0" />
+                return (
+                  <button
+                    key={d.data}
+                    type="button"
+                    onClick={() => handleDayClick(d)}
+                    className={cn(
+                      "min-h-[88px] p-2 text-left flex flex-col gap-1 transition-colors relative",
+                      !isLastInRow && "border-r border-slate-100 dark:border-slate-800/60",
+                      !isLastRow && "border-b border-slate-100 dark:border-slate-800/60",
+                      isFeriado && "bg-amber-50/40 dark:bg-amber-950/10",
+                      isSelected
+                        ? "bg-primary/5 ring-1 ring-inset ring-primary/40"
+                        : isSunOrSat
+                        ? "bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/30"
+                        : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30",
+                      !isSelected && ringClass
                     )}
-                  </div>
-
-                  {/* Badge de Turma de Folga — pill arredondado */}
-                  <div
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[9px] font-black w-fit shadow-xs tracking-wide"
-                    style={{ backgroundColor: turmaInfo.cor }}
                   >
-                    {d.turma_escalada}
-                  </div>
+                    {/* Número do dia e indicador de hoje */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "text-sm font-black w-7 h-7 flex items-center justify-center rounded-full",
+                          isToday
+                            ? "bg-primary text-white shadow-sm"
+                            : isSunOrSat
+                            ? "text-slate-400 dark:text-slate-600"
+                            : "text-foreground"
+                        )}
+                      >
+                        {d.dia}
+                      </span>
 
-                  {/* Dots de Ocorrências — w-2 h-2 */}
-                  {(hasFolga || hasFerias || hasFalta || hasAtestado) && (
-                    <div className="flex gap-1 flex-wrap mt-auto">
-                      {hasFalta && <span className="w-2 h-2 rounded-full bg-red-500 shadow-sm" title="Falta" />}
-                      {hasAtestado && <span className="w-2 h-2 rounded-full bg-rose-400 shadow-sm" title="Atestado" />}
-                      {hasFolga && <span className="w-2 h-2 rounded-full bg-sky-400 shadow-sm" title="Folga Flexível" />}
-                      {hasFerias && <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm" title="Férias" />}
+                      {/* Indicador de feriado */}
+                      {isFeriado && (
+                        <span title={d.feriado_nome || 'Feriado'}>
+                          <Flame className="w-3 h-3 text-amber-500 shrink-0" />
+                        </span>
+                      )}
                     </div>
-                  )}
-                </button>
-              );
+
+                    {/* Badge de Turma de Folga — pill arredondado */}
+                    <div
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[9px] font-black w-fit shadow-xs tracking-wide"
+                      style={{ backgroundColor: turmaInfo.cor }}
+                    >
+                      {d.turma_escalada}
+                    </div>
+
+                    {/* Nome dos operadores e ocorrência no canto inferior direito */}
+                    {occs.length > 0 && (
+                      <div className="mt-auto self-end flex flex-col items-end gap-0.5 text-right w-full overflow-hidden">
+                        {occs.slice(0, 2).map((occ, oIdx) => {
+                          const shortName = formatOperatorShortName(occ.operadorNome);
+                          const typeLabel = getSimpleTypeLabel(occ.tipo);
+                          const dotColor = getDotColor(occ.tipo);
+
+                          return (
+                            <div
+                              key={`${occ.id}-${oIdx}`}
+                              className="text-[9.5px] leading-tight font-medium text-slate-700 dark:text-slate-300 truncate max-w-full flex items-center justify-end gap-1"
+                              title={`${occ.operadorNome} (${typeLabel}) - ${occ.operadorCargo} · Turma ${occ.operadorLetra}`}
+                            >
+                              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />
+                              <span className="truncate">{shortName}</span>
+                              <span className="text-[8.5px] text-muted-foreground font-normal shrink-0">({typeLabel})</span>
+                            </div>
+                          );
+                        })}
+                        {occs.length > 2 && (
+                          <span className="text-[8.5px] font-bold text-muted-foreground">
+                            +{occs.length - 2} mais
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
             })}
           </div>
         </div>

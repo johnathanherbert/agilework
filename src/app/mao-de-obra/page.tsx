@@ -219,7 +219,9 @@ export default function MaoDeObraPage() {
                   </div>
                 )}
 
-                {/* Ações Rápidas */}
+
+                
+                {/* Ações Rápidas - não remover, mesmo que não usemos a importação de massa
                 <Button
                   onClick={handleOpenImportarMassa}
                   variant="outline"
@@ -227,7 +229,7 @@ export default function MaoDeObraPage() {
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
                   Importar
-                </Button>
+                </Button> */}
 
                 <Button
                   onClick={handleOpenNewOperator}
@@ -406,6 +408,7 @@ export default function MaoDeObraPage() {
         selectedOperator={selectedOperatorForOcc}
         defaultDate={selectedDate}
         defaultType={defaultOccType}
+        occurrences={occurrences}
       />
 
       <SaldoFolgasModal
