@@ -268,7 +268,7 @@ export default function HeijunkaPage() {
   const [deletingDay, setDeletingDay] = useState(false);
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
-  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
+  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader' || userData?.role === 'supervisor';
 
   useEffect(() => {
     if (!authLoading) {

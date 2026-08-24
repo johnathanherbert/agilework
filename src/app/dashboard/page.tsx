@@ -76,7 +76,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const { user, userData } = useFirebase();
   const isAdmin = userData?.email === ADMIN_EMAIL;
-  const isLeaderOrAdmin = isAdmin || userData?.role === "leader";
+  const isLeaderOrAdmin = isAdmin || userData?.role === "leader" || userData?.role === "supervisor";
 
   const quickSections: Array<{ href: string; title: string; description: string; icon: React.ReactNode; tone: string }> = [
     {

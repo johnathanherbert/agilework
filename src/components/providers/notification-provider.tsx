@@ -346,10 +346,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
   }, [user, notificationsEnabled, audioConfig, soundEnabled]);
 
-  // Listener para edições no Painel de Produção (somente para Líderes e Admin Global,
+  // Listener para edições no Painel de Produção (somente para Líderes, Supervisores e Admin Global,
   // já que são os únicos que enxergam essa tela)
   useEffect(() => {
-    const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader';
+    const isLeaderOrAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'leader' || userData?.role === 'supervisor';
     if (!user || !notificationsEnabled || !isLeaderOrAdmin) return;
 
     console.log('🔔 Configurando listener de notificação do Painel de Produção');

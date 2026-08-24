@@ -155,13 +155,13 @@ export default function ProducaoPage() {
   const [showHeijunka, setShowHeijunka] = useState(false);
 
   const isAdmin = userData?.email === ADMIN_EMAIL;
-  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader';
+  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader' || userData?.role === 'supervisor';
   const topBadgeBase = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border h-10';
 
   useEffect(() => {
     if (!authLoading) {
       if (!userData || !isLeaderOrAdmin) {
-        toast.error('Acesso negado. Apenas líderes e administradores podem ver esta página.');
+        toast.error('Acesso negado. Apenas líderes, supervisores e administradores podem ver esta página.');
         router.push('/dashboard');
       }
     }
