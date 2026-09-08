@@ -101,7 +101,7 @@ service cloud.firestore {
           request.resource.data.get('prazoTratativa', null) == resource.data.get('prazoTratativa', null)
         )
       );
-      allow delete: if isSupervisorOrAdmin();
+      allow delete: if canAccessMaoDeObra();
     }
     
     // NTs collection
