@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import Autocomplete from "@/components/solicitacoes/Autocomplete";
 import TabelaPrincipal from "@/components/solicitacoes/TabelaPrincipal";
 import DetalhamentoMateriais from "@/components/solicitacoes/DetalhamentoMateriais";
-import ExcelUploader from "@/components/solicitacoes/ExcelUploader";
+import PullProductionDialog from "@/components/solicitacoes/PullProductionDialog";
 import Sap from "@/components/solicitacoes/Sap";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -30,9 +30,9 @@ import {
   BeakerIcon,
   HashtagIcon,
   MagnifyingGlassIcon,
-  CloudArrowUpIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { Factory } from "lucide-react";
 
 const EXCIPIENTES_ESPECIAIS = [
   "LACTOSE (200)",
@@ -76,7 +76,8 @@ export default function SolicitacoesPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [sapDialogOpen, setSapDialogOpen] = useState(false);
-  const [openUploadDialog, setOpenUploadDialog] = useState(false);
+  const [pullProductionOpen, setPullProductionOpen] = useState(false);
+  const [importingProduction, setImportingProduction] = useState(false);
 
   const [opModalOpen, setOpModalOpen] = useState(false);
   const [newOP, setNewOP] = useState("");
@@ -230,11 +231,16 @@ export default function SolicitacoesPage() {
     if (!ativo.trim()) return;
 
     try {
+      let rawInput = ativo.trim();
+      if (rawInput.toUpperCase().endsWith('I')) {
+        rawInput = rawInput.slice(0, -1).trim();
+      }
+
       let data: any[] = [];
       if (addMode === "codigo") {
-        data = await fetchListaTecnica({ codigo_receita: ativo.trim() });
+        data = await fetchListaTecnica({ codigo_receita: rawInput });
       } else {
-        data = await fetchListaTecnica({ ativo: ativo.trim() });
+        data = await fetchListaTecnica({ ativo: rawInput });
       }
 
       if (!data || data.length === 0) {
@@ -291,6 +297,91 @@ export default function SolicitacoesPage() {
     } catch (err) {
       console.error("Erro ao adicionar ordem:", err);
       toast.error("Erro ao buscar dados da receita");
+    }
+  };
+
+  // Importar múltiplos itens do Painel de Produção
+  const handleImportProductionItems = async (
+    itemsToImport: { codigoReceita: string; produto: string; prog: number; op?: string }[]
+  ) => {
+    try {
+      setImportingProduction(true);
+      const novasOrdensCriadas: any[] = [];
+      const updatedPesados = { ...pesados };
+      let sucessos = 0;
+      let falhas = 0;
+
+      for (const item of itemsToImport) {
+        let cleanCode = (item.codigoReceita || item.produto || '').trim();
+        if (cleanCode.toUpperCase().endsWith('I')) {
+          cleanCode = cleanCode.slice(0, -1).trim();
+        }
+
+        // Tenta buscar por código primeiro, depois por nome do produto
+        let data = await fetchListaTecnica({ codigo_receita: cleanCode });
+        if (!data || data.length === 0) {
+          data = await fetchListaTecnica({ ativo: item.produto });
+        }
+
+        if (data && data.length > 0) {
+          const primeiroRegistro = data[0];
+          const codigo = primeiroRegistro.Codigo_Receita || primeiroRegistro.semi_acabado || cleanCode;
+          const nome = primeiroRegistro.Ativo || primeiroRegistro.descricao_semi_acabado || item.produto;
+
+          // Se item tem multiplicador de lotes (prog), adiciona cada lote como uma ordem ou proporcional
+          const numLotes = Math.max(1, Math.round(item.prog || 1));
+          for (let i = 0; i < numLotes; i++) {
+            const ordemId = uuidv4();
+            const novaOrdem = {
+              id: ordemId,
+              codigo,
+              nome: numLotes > 1 ? `${nome} (Lote ${i + 1}/${numLotes})` : nome,
+              op: item.op || null,
+              excipientes: data.reduce((acc: any, row: any) => {
+                const nomeExp = row.Excipiente || row.descricao_materia_prima;
+                acc[nomeExp] = {
+                  quantidade: parseFloat(row.qtd_materia_prima || 0),
+                  codigo: row.codigo_materia_prima || row.materia_prima,
+                };
+                return acc;
+              }, {}),
+            };
+
+            novasOrdensCriadas.push(novaOrdem);
+
+            data.forEach((row: any) => {
+              const nomeExp = row.Excipiente || row.descricao_materia_prima;
+              if (!updatedPesados[nomeExp]) {
+                updatedPesados[nomeExp] = {};
+              }
+              updatedPesados[nomeExp][ordemId] = false;
+            });
+          }
+          sucessos++;
+        } else {
+          console.warn(`Receita não encontrada para ${item.produto} (cód: ${cleanCode})`);
+          falhas++;
+        }
+      }
+
+      if (novasOrdensCriadas.length > 0) {
+        const combinedOrdens = [...ordens, ...novasOrdensCriadas];
+        setOrdens(combinedOrdens);
+        setPesados(updatedPesados);
+        await calcularExcipientes(combinedOrdens, updatedPesados);
+        toast.success(`${novasOrdensCriadas.length} ordens de produção importadas com sucesso!`);
+      } else {
+        toast.error("Nenhuma receita correspondente foi encontrada na Lista Técnica.");
+      }
+
+      if (falhas > 0) {
+        toast.error(`${falhas} produto(s) não foram localizados na Lista Técnica.`);
+      }
+    } catch (err) {
+      console.error("Erro ao importar do painel de produção:", err);
+      toast.error("Erro ao importar itens de produção.");
+    } finally {
+      setImportingProduction(false);
     }
   };
 
@@ -608,11 +699,11 @@ export default function SolicitacoesPage() {
                 </button>
 
                 <button
-                  onClick={() => setOpenUploadDialog(true)}
+                  onClick={() => setPullProductionOpen(true)}
                   className="px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 rounded-lg transition-colors flex items-center gap-1.5"
                 >
-                  <CloudArrowUpIcon className="w-3.5 h-3.5" />
-                  <span>Upload Planilha SAP</span>
+                  <Factory className="w-3.5 h-3.5" />
+                  <span>Puxar Produção</span>
                 </button>
               </div>
             </div>
@@ -849,13 +940,12 @@ export default function SolicitacoesPage() {
         {/* Modal de Consulta SAP */}
         <Sap open={sapDialogOpen} onClose={() => setSapDialogOpen(false)} user={user} />
 
-        {/* Modal Upload Excel */}
-        <ExcelUploader
-          openUploadDialog={openUploadDialog}
-          handleCloseUploadDialog={() => setOpenUploadDialog(false)}
-          onDataUpdated={() => {
-            handleUpdateAllSAPValues();
-          }}
+        {/* Modal Puxar Produção */}
+        <PullProductionDialog
+          open={pullProductionOpen}
+          onClose={() => setPullProductionOpen(false)}
+          onImport={handleImportProductionItems}
+          isLoading={importingProduction}
         />
 
         {/* Modal de Inserção de OP */}
