@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ClipboardCheck, ClipboardList,
   Home, Settings, Shield, Factory,
-  ChevronLeft, ChevronRight, Menu, Github, ExternalLink, TrendingUp, Users, ShieldCheck
+  ChevronLeft, ChevronRight, Menu, Github, ExternalLink, TrendingUp, Users, ShieldCheck, FileBox
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <Home size={19} />, section: 'principal' },
   { label: 'Gerenciar NTs', href: '/almoxarifado/nts', icon: <ClipboardList size={19} />, section: 'principal' },
   { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: <ClipboardCheck size={19} />, section: 'principal' },
+  { label: 'Solicitações', href: '/solicitacoes', icon: <FileBox size={19} />, section: 'principal' },
   { label: 'Configurações', href: '/settings', icon: <Settings size={19} />, section: 'principal' },
 ];
 
