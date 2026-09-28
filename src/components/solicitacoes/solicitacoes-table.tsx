@@ -17,6 +17,7 @@ import { SolicitacaoStatusDialog } from "./solicitacao-status-dialog";
 import { Trash2, ArrowUpDown, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatNumber } from "@/lib/utils";
 
 interface SolicitacoesTableProps {
   solicitacoes: Solicitacao[];
@@ -190,7 +191,7 @@ export function SolicitacoesTable({
                       </TableCell>
                       <TableCell>{solicitacao.nome_mp}</TableCell>
                       <TableCell>
-                        {Number(solicitacao.quantidade_solicitada).toFixed(3)}{" "}
+                        {formatNumber(solicitacao.quantidade_solicitada, 3)}{" "}
                         {solicitacao.unidade}
                       </TableCell>
                       <TableCell>

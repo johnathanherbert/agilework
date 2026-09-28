@@ -4,13 +4,11 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { v4 as uuidv4 } from "uuid";
 import Autocomplete from "@/components/solicitacoes/Autocomplete";
 import TabelaPrincipal from "@/components/solicitacoes/TabelaPrincipal";
-import DetalhamentoMateriais from "@/components/solicitacoes/DetalhamentoMateriais";
 import PullProductionDialog from "@/components/solicitacoes/PullProductionDialog";
 import Sap from "@/components/solicitacoes/Sap";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
-import { RequestsProvider } from "@/contexts/RequestsContext";
 import { 
   fetchListaTecnica, 
   loadAppState, 
@@ -20,6 +18,7 @@ import {
 } from "@/lib/dashpesagem-api";
 import { useFirebase } from "@/components/providers/firebase-provider";
 import toast from "react-hot-toast";
+import { formatNumber, parseBrazilianNumber } from "@/lib/utils";
 
 import {
   PlusCircleIcon,
@@ -171,9 +170,9 @@ export default function SolicitacoesPage() {
     }
   }, [ordens, excipientes, pesados, materiaisNaArea, inputValues, isLoading, saveState, userId]);
 
-  // Cálculo de excipientes agregados a partir das ordens
+  // Cálculo síncrono e instantâneo de excipientes agregados a partir das ordens em memória
   const calcularExcipientes = useCallback(
-    async (ordensAtuais: any[] = [], pesadosAtuais: Record<string, Record<string, boolean>> = {}) => {
+    (ordensAtuais: any[] = [], pesadosAtuais: Record<string, Record<string, boolean>> = {}) => {
       if (!ordensAtuais || ordensAtuais.length === 0) {
         setExcipientes({});
         return;
@@ -182,14 +181,11 @@ export default function SolicitacoesPage() {
       const newExcipientes: Record<string, any> = {};
 
       for (const ordem of ordensAtuais) {
-        const data = await fetchListaTecnica({ codigo_receita: ordem.codigo });
-
-        if (Array.isArray(data)) {
-          data.forEach((item: any) => {
-            const rawCode = String(item.codigo_materia_prima || item.materia_prima || "");
-            const codigoExcipiente = rawCode.padStart(6, "0");
-            const nomeExcipiente = item.Excipiente || item.descricao_materia_prima || "Excipiente";
-            const quantidade = parseFloat(item.qtd_materia_prima || 0);
+        if (ordem.excipientes && typeof ordem.excipientes === "object") {
+          Object.entries(ordem.excipientes).forEach(([nomeExcipiente, info]: [string, any]) => {
+            const rawCode = String(info.codigo || "");
+            const codigoExcipiente = rawCode ? rawCode.padStart(6, "0") : "";
+            const quantidade = parseFloat(info.quantidade || 0);
 
             if (!newExcipientes[nomeExcipiente]) {
               newExcipientes[nomeExcipiente] = {
@@ -287,7 +283,7 @@ export default function SolicitacoesPage() {
       });
       setPesados(newPesados);
 
-      await calcularExcipientes(newOrdens, newPesados);
+      calcularExcipientes(newOrdens, newPesados);
       setAtivo("");
       toast.success(`Ordem ${nome} adicionada!`);
 
@@ -311,24 +307,28 @@ export default function SolicitacoesPage() {
       let sucessos = 0;
       let falhas = 0;
 
-      for (const item of itemsToImport) {
-        let cleanCode = (item.codigoReceita || item.produto || '').trim();
-        if (cleanCode.toUpperCase().endsWith('I')) {
-          cleanCode = cleanCode.slice(0, -1).trim();
-        }
+      const results = await Promise.all(
+        itemsToImport.map(async (item) => {
+          let cleanCode = (item.codigoReceita || item.produto || '').trim();
+          if (cleanCode.toUpperCase().endsWith('I')) {
+            cleanCode = cleanCode.slice(0, -1).trim();
+          }
 
-        // Tenta buscar por código primeiro, depois por nome do produto
-        let data = await fetchListaTecnica({ codigo_receita: cleanCode });
-        if (!data || data.length === 0) {
-          data = await fetchListaTecnica({ ativo: item.produto });
-        }
+          let data = await fetchListaTecnica({ codigo_receita: cleanCode });
+          if (!data || data.length === 0) {
+            data = await fetchListaTecnica({ ativo: item.produto });
+          }
 
+          return { item, cleanCode, data };
+        })
+      );
+
+      for (const { item, cleanCode, data } of results) {
         if (data && data.length > 0) {
           const primeiroRegistro = data[0];
           const codigo = primeiroRegistro.Codigo_Receita || primeiroRegistro.semi_acabado || cleanCode;
           const nome = primeiroRegistro.Ativo || primeiroRegistro.descricao_semi_acabado || item.produto;
 
-          // Se item tem multiplicador de lotes (prog), adiciona cada lote como uma ordem ou proporcional
           const numLotes = Math.max(1, Math.round(item.prog || 1));
           for (let i = 0; i < numLotes; i++) {
             const ordemId = uuidv4();
@@ -368,7 +368,7 @@ export default function SolicitacoesPage() {
         const combinedOrdens = [...ordens, ...novasOrdensCriadas];
         setOrdens(combinedOrdens);
         setPesados(updatedPesados);
-        await calcularExcipientes(combinedOrdens, updatedPesados);
+        calcularExcipientes(combinedOrdens, updatedPesados);
         toast.success(`${novasOrdensCriadas.length} ordens de produção importadas com sucesso!`);
       } else {
         toast.error("Nenhuma receita correspondente foi encontrada na Lista Técnica.");
@@ -405,27 +405,26 @@ export default function SolicitacoesPage() {
     toast.success("Ordem removida");
   };
 
-  const handleEditOrdem = async (ordem: any) => {
+  const handleEditOrdem = (ordem: any) => {
     setEditingOrdemDialog(ordem);
 
-    try {
-      const data = await fetchListaTecnica({ codigo_receita: ordem.codigo });
-      if (Array.isArray(data)) {
-        const ordemExcipientes = data.reduce((acc: any, item: any, index: number) => {
-          const nomeExp = item.Excipiente || item.descricao_materia_prima;
+    if (ordem.excipientes && typeof ordem.excipientes === "object") {
+      const ordemExcipientes = Object.entries(ordem.excipientes).reduce(
+        (acc: any, [nomeExp, info]: [string, any], index: number) => {
           const uniqueKey = `${nomeExp}_${index}`;
           acc[uniqueKey] = {
             nome: nomeExp,
-            quantidade: parseFloat(item.qtd_materia_prima || 0),
+            quantidade: parseFloat(info.quantidade || 0),
             pesado: pesados[nomeExp]?.[ordem.id] || false,
             isEspecial: EXCIPIENTES_ESPECIAIS.includes(nomeExp),
           };
           return acc;
-        }, {});
-        setEditingExcipientes(ordemExcipientes);
-      }
-    } catch (err) {
-      console.error("Erro ao carregar excipientes para edição:", err);
+        },
+        {}
+      );
+      setEditingExcipientes(ordemExcipientes);
+    } else {
+      setEditingExcipientes({});
     }
   };
 
@@ -490,7 +489,7 @@ export default function SolicitacoesPage() {
         [excipient]: value,
       }));
 
-      const numVal = value === "" ? 0 : parseFloat(value) || 0;
+      const numVal = value === "" ? 0 : parseBrazilianNumber(value);
       setMateriaisNaArea((prev) => ({
         ...prev,
         [excipient]: numVal,
@@ -508,8 +507,8 @@ export default function SolicitacoesPage() {
           (sum: number, item: any) => sum + parseFloat(item.estoque_disponivel || 0),
           0
         );
-        handleMateriaisNaAreaChange(excipient, saldoTotal.toFixed(3));
-        toast.success(`Saldo SAP atualizado: ${saldoTotal.toFixed(3)} kg`);
+        handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotal, 3));
+        toast.success(`Saldo SAP atualizado: ${formatNumber(saldoTotal, 3)} kg`);
       } else {
         toast.error("Nenhum estoque encontrado para este código no SAP");
       }
@@ -521,20 +520,31 @@ export default function SolicitacoesPage() {
 
   const handleUpdateAllSAPValues = async () => {
     try {
-      let count = 0;
-      for (const [excipient, data] of Object.entries(filteredExcipientes)) {
-        if (data.codigo) {
-          const sapData = await fetchSapMaterialStock(data.codigo);
-          if (Array.isArray(sapData) && sapData.length > 0) {
-            const saldoTotal = sapData.reduce(
-              (sum: number, item: any) => sum + parseFloat(item.estoque_disponivel || 0),
-              0
-            );
-            handleMateriaisNaAreaChange(excipient, saldoTotal.toFixed(3));
-            count++;
-          }
-        }
+      const entries = Object.entries(filteredExcipientes).filter(([, data]) => Boolean(data.codigo));
+      if (entries.length === 0) {
+        toast("Nenhuma matéria-prima para sincronizar com SAP.", { icon: "ℹ️" });
+        return;
       }
+
+      let count = 0;
+      await Promise.all(
+        entries.map(async ([excipient, data]) => {
+          try {
+            const sapData = await fetchSapMaterialStock(data.codigo);
+            if (Array.isArray(sapData) && sapData.length > 0) {
+              const saldoTotal = sapData.reduce(
+                (sum: number, item: any) => sum + parseFloat(item.estoque_disponivel || 0),
+                0
+              );
+              handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotal, 3));
+              count++;
+            }
+          } catch (e) {
+            console.warn(`Erro ao buscar saldo SAP para ${excipient}:`, e);
+          }
+        })
+      );
+
       toast.success(`${count} matérias-primas atualizadas com sucesso pelo SAP!`);
     } catch (err) {
       console.error("Erro ao sincronizar tudo com SAP:", err);
@@ -591,40 +601,6 @@ export default function SolicitacoesPage() {
     return filtered;
   }, [excipientes, selectedOrdem]);
 
-  const getFilteredAtivos = useCallback(() => {
-    if (selectedOrdem) {
-      return [selectedOrdem.nome];
-    }
-    return Array.from(new Set(ordens.map((o) => o.nome)));
-  }, [selectedOrdem, ordens]);
-
-  const getAtivoStatus = useCallback(
-    (ativoNome: string) => {
-      const excipientesDoAtivo = Object.entries(filteredExcipientes).filter(
-        ([, data]: any) => data.ordens && data.ordens.some((ordem: any) => ordem.nome === ativoNome)
-      );
-
-      let totalNecessario = 0;
-      let totalDisponivel = 0;
-
-      excipientesDoAtivo.forEach(([excipient, data]: any) => {
-        const ordensDoAtivo = data.ordens.filter((ordem: any) => ordem.nome === ativoNome);
-        ordensDoAtivo.forEach((ordem: any) => {
-          if (!ordem.pesado) {
-            totalNecessario += ordem.quantidade;
-            totalDisponivel += Math.min(materiaisNaArea[excipient] || 0, ordem.quantidade);
-          }
-        });
-      });
-
-      if (totalNecessario === 0) return "pesado";
-      if (totalDisponivel >= totalNecessario) return "completo";
-      if (totalDisponivel > 0) return "parcial";
-      return "indisponivel";
-    },
-    [filteredExcipientes, materiaisNaArea]
-  );
-
   const getOrdensAtendidas = useCallback(
     (excipient: string) => {
       if (!filteredExcipientes[excipient]) {
@@ -662,8 +638,7 @@ export default function SolicitacoesPage() {
 
   return (
     <ProtectedRoute>
-      <RequestsProvider>
-        <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
           <Sidebar />
 
           <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 min-w-0">
@@ -674,10 +649,10 @@ export default function SolicitacoesPage() {
               <div className="flex items-center gap-3">
                 <h1 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <BeakerIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  Solicitações e Pesagem de MP
+                  Solicitações
                 </h1>
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  PostgreSQL Dashpesagem
+                  {ordens.length} Ordens
                 </span>
               </div>
 
@@ -731,7 +706,7 @@ export default function SolicitacoesPage() {
 
                   {/* Card Adicionar Ordem */}
                   <div className="bg-white dark:bg-gray-800/90 rounded-xl shadow-xs border border-gray-200/80 dark:border-gray-700/50 overflow-hidden">
-                    <div className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center gap-2">
+                    <div className="px-4 py-2.5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex items-center gap-2">
                       <PlusCircleIcon className="w-4 h-4" />
                       <h3 className="text-xs font-bold uppercase tracking-wider">Nova Ordem de Produção</h3>
                     </div>
@@ -772,7 +747,7 @@ export default function SolicitacoesPage() {
 
                       {/* Botões do Formulário */}
                       <div className="flex gap-2">
-                        <button
+                        {/* <button
                           onClick={() => {
                             setAddMode(addMode === "codigo" ? "ativo" : "codigo");
                             setAtivo("");
@@ -781,11 +756,11 @@ export default function SolicitacoesPage() {
                         >
                           {addMode === "codigo" ? <BeakerIcon className="w-3.5 h-3.5" /> : <HashtagIcon className="w-3.5 h-3.5" />}
                           <span>{addMode === "codigo" ? "Por Ativo" : "Por Código"}</span>
-                        </button>
+                        </button> */}
 
                         <button
                           onClick={() => setAutoIncrementOP(!autoIncrementOP)}
-                          className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border flex items-center gap-1 ${
+                          className={`px-2.5 py-1.5 text-xs font-medium rounded-md border flex items-center gap-1 ${
                             autoIncrementOP ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600"
                           }`}
                         >
@@ -794,7 +769,7 @@ export default function SolicitacoesPage() {
 
                         <button
                           onClick={handleAddOrdem}
-                          className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                          className="px-3.5 py-1.5 bg-blue-900 hover:bg-blue-900 text-white rounded-md text-xs font-bold transition-colors flex items-center gap-1"
                         >
                           <PlusCircleIcon className="w-4 h-4" />
                           <span>Adicionar</span>
@@ -901,8 +876,8 @@ export default function SolicitacoesPage() {
                   </div>
                 </div>
 
-                {/* Coluna Central: Tabela Principal de Matérias-Primas e Solicitações (6 colunas) */}
-                <div className="col-span-12 lg:col-span-6">
+                {/* Coluna Central/Principal: Tabela Principal de Matérias-Primas e Solicitações (9 colunas) */}
+                <div className="col-span-12 lg:col-span-9">
                   <TabelaPrincipal
                     filteredExcipientes={filteredExcipientes}
                     materiaisNaArea={materiaisNaArea}
@@ -919,17 +894,6 @@ export default function SolicitacoesPage() {
                     handleUpdateSAPValues={handleUpdateSAPValues}
                     handleUpdateAllSAPValues={handleUpdateAllSAPValues}
                     handleEditOrdem={handleEditOrdem}
-                  />
-                </div>
-
-                {/* Coluna Direita: Detalhamento por Ativo e Status de Fabricação (3 colunas) */}
-                <div className="col-span-12 lg:col-span-3">
-                  <DetalhamentoMateriais
-                    getFilteredAtivos={getFilteredAtivos}
-                    getAtivoStatus={getAtivoStatus}
-                    ordens={ordens}
-                    filteredExcipientes={filteredExcipientes}
-                    materiaisNaArea={materiaisNaArea}
                   />
                 </div>
               </div>
@@ -1024,7 +988,7 @@ export default function SolicitacoesPage() {
                         />
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-gray-100">{data.nome}</p>
-                          <p className="text-[11px] text-gray-500">{data.quantidade.toFixed(3)} kg</p>
+                          <p className="text-[11px] text-gray-500">{formatNumber(data.quantidade, 3)} kg</p>
                         </div>
                       </div>
                     </div>
@@ -1049,7 +1013,6 @@ export default function SolicitacoesPage() {
             </div>
           </div>
         )}
-      </RequestsProvider>
     </ProtectedRoute>
   );
 }

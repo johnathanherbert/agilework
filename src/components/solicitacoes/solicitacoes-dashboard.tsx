@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Solicitacao, SaldoMP } from "@/types/solicitacao";
+import { formatNumber } from "@/lib/utils";
 import {
   ClipboardList,
   Clock,
@@ -167,7 +168,7 @@ export function SolicitacoesDashboard({ solicitacoes, saldoMP }: SolicitacoesDas
                     {item.mp_nome}
                   </p>
                   <p className="text-sm font-bold mt-1">
-                    {Number(item.saldo_total).toFixed(3)} kg
+                    {formatNumber(item.saldo_total, 3)} kg
                   </p>
                 </div>
               ))}

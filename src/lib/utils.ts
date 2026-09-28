@@ -453,6 +453,55 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+/**
+ * Formata um número no padrão brasileiro (ponto para milhar, vírgula para decimal).
+ * Ex: 1234.567 -> "1.234,567"
+ */
+export function formatNumber(
+  value: number | string | null | undefined,
+  decimals: number = 3
+): string {
+  if (value === null || value === undefined || value === "") {
+    return decimals > 0 ? `0,${"0".repeat(decimals)}` : "0";
+  }
+  let num: number;
+  if (typeof value === "string") {
+    const clean = value.trim();
+    if (clean.includes(",") && clean.includes(".")) {
+      num = parseFloat(clean.replace(/\./g, "").replace(",", "."));
+    } else if (clean.includes(",")) {
+      num = parseFloat(clean.replace(",", "."));
+    } else {
+      num = parseFloat(clean);
+    }
+  } else {
+    num = value;
+  }
+  if (isNaN(num)) {
+    return decimals > 0 ? `0,${"0".repeat(decimals)}` : "0";
+  }
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num);
+}
+
+/**
+ * Converte string ou número para float considerando vírgula ou ponto como separador decimal.
+ */
+export function parseBrazilianNumber(value: string | number | null | undefined): number {
+  if (value === null || value === undefined || value === "") return 0;
+  if (typeof value === "number") return isNaN(value) ? 0 : value;
+  const clean = value.toString().trim();
+  if (clean.includes(",") && clean.includes(".")) {
+    return parseFloat(clean.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+  if (clean.includes(",")) {
+    return parseFloat(clean.replace(",", ".")) || 0;
+  }
+  return parseFloat(clean) || 0;
+}
+
 // Validate NT number format
 export function isValidNTNumber(ntNumber: string): boolean {
   // NT numbers should follow the pattern: NT-YYYY-XXXXX

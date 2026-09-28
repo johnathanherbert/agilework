@@ -19,6 +19,7 @@ import { SolicitacaoFormData, ListaTecnicaItem, SaldoMP } from "@/types/solicita
 import { Send, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { formatNumber } from "@/lib/utils";
 
 const formSchema = z.object({
   codigo_mp: z.string().min(1, "Código MP é obrigatório"),
@@ -156,7 +157,7 @@ export function SolicitacaoForm({ onSubmit, listaTecnica, saldoMP, isLoading }: 
           {saldoInfo && (
             <div className="mt-2 flex items-center gap-2">
               <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
-                Saldo na Área: {Number(saldoInfo.saldo_total).toFixed(3)} kg
+                Saldo na Área: {formatNumber(saldoInfo.saldo_total, 3)} kg
               </Badge>
               <Badge variant="outline" className="text-slate-600 border-slate-200 bg-slate-50 dark:bg-slate-950/30 dark:border-slate-800">
                 {saldoInfo.total_lotes} lote(s)

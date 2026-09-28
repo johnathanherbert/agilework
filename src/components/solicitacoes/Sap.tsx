@@ -11,6 +11,7 @@ import {
   DocumentDuplicateIcon,
   CheckIcon
 } from "@heroicons/react/24/outline";
+import { formatNumber } from "@/lib/utils";
 
 export default function Sap({ open, onClose, user }: { open: boolean; onClose: () => void; user?: any }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,10 +91,10 @@ export default function Sap({ open, onClose, user }: { open: boolean; onClose: (
 
     const formatData = () => {
       const header = `${materialData.codigo_materia_prima} - ${materialData.descricao}\n`;
-      const summary = `Saldo Total: ${materialData.saldo_total.toFixed(3)} ${materialData.unidade_medida}\n`;
+      const summary = `Saldo Total: ${formatNumber(materialData.saldo_total, 3)} ${materialData.unidade_medida}\n`;
       const lotes = materialData.lotes
         .map((lote: any) => 
-          `${lote.lote}\t${lote.quantidade.toFixed(3)}\t${lote.posicao || lote.deposito || '-'}\t${lote.data_validade ? new Date(lote.data_validade).toLocaleDateString() : '-'}`
+          `${lote.lote}\t${formatNumber(lote.quantidade, 3)}\t${lote.posicao || lote.deposito || '-'}\t${lote.data_validade ? new Date(lote.data_validade).toLocaleDateString('pt-BR') : '-'}`
         )
         .join('\n');
       return `${header}${summary}\nLotes:\n${lotes}`;
@@ -205,7 +206,7 @@ export default function Sap({ open, onClose, user }: { open: boolean; onClose: (
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Saldo Total</p>
                     <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                      {materialData.saldo_total.toFixed(3)} {materialData.unidade_medida}
+                      {formatNumber(materialData.saldo_total, 3)} {materialData.unidade_medida}
                     </p>
                   </div>
                   <div>
@@ -217,13 +218,13 @@ export default function Sap({ open, onClose, user }: { open: boolean; onClose: (
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Menor Lote</p>
                     <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                      {materialData.estatisticas.menor_lote.toFixed(3)} {materialData.unidade_medida}
+                      {formatNumber(materialData.estatisticas.menor_lote, 3)} {materialData.unidade_medida}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Maior Lote</p>
                     <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                      {materialData.estatisticas.maior_lote.toFixed(3)} {materialData.unidade_medida}
+                      {formatNumber(materialData.estatisticas.maior_lote, 3)} {materialData.unidade_medida}
                     </p>
                   </div>
                 </div>
@@ -262,7 +263,7 @@ export default function Sap({ open, onClose, user }: { open: boolean; onClose: (
                             {lote.lote}
                           </td>
                           <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-gray-100">
-                            {lote.quantidade.toFixed(3)} {materialData.unidade_medida}
+                            {formatNumber(lote.quantidade, 3)} {materialData.unidade_medida}
                           </td>
                           <td className="px-4 py-2.5 text-center">
                             <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">

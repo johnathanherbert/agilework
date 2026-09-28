@@ -18,6 +18,7 @@ import {
 import { Solicitacao } from "@/types/solicitacao";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { formatNumber } from "@/lib/utils";
 
 interface SolicitacaoStatusDialogProps {
   solicitacao: Solicitacao;
@@ -49,7 +50,7 @@ export function SolicitacaoStatusDialog({
             <span className="font-medium">{solicitacao.nome_mp}</span>
             <span className="text-muted-foreground">Quantidade:</span>
             <span className="font-medium">
-              {Number(solicitacao.quantidade_solicitada).toFixed(3)} {solicitacao.unidade}
+              {formatNumber(solicitacao.quantidade_solicitada, 3)} {solicitacao.unidade}
             </span>
             <span className="text-muted-foreground">Solicitante:</span>
             <span className="font-medium">{solicitacao.solicitante}</span>
