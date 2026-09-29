@@ -5,6 +5,7 @@ import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestor
 import { db } from '@/lib/firebase';
 import { useFirebase, ADMIN_EMAIL } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
+import { useAutoNTCleanup } from '@/hooks/useAutoNTCleanup';
 import { PRODUCTION_COLLECTION } from '@/lib/production-helpers';
 import toast from 'react-hot-toast';
 
@@ -94,6 +95,9 @@ export const useNotifications = () => {
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, userData } = useFirebase();
   const { playSound, testSound: testAudioSound, loadAudioConfig, saveAudioConfig } = useAudioNotification();
+  
+  // Executa rotina de limpeza automática em background se ativada
+  useAutoNTCleanup();
   
   // Estados das notificações
   const [notifications, setNotifications] = useState<Notification[]>([]);

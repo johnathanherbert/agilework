@@ -16,9 +16,11 @@ import {
   clearAppState,
   fetchSapMaterialStock 
 } from "@/lib/dashpesagem-api";
+import { subscribeToNTs } from "@/lib/firestore-helpers";
 import { useFirebase } from "@/components/providers/firebase-provider";
 import toast from "react-hot-toast";
-import { formatNumber, parseBrazilianNumber } from "@/lib/utils";
+import { formatNumber, parseBrazilianNumber, matchNTItemWithExcipient } from "@/lib/utils";
+import { NT, NTItem, ExcipienteNTInfo, PendingNTItemDetail } from "@/types";
 
 import {
   PlusCircleIcon,
@@ -54,7 +56,9 @@ export default function SolicitacoesPage() {
   const [expandedExcipient, setExpandedExcipient] = useState<string | string[] | null>(null);
   const [selectedOrdem, setSelectedOrdem] = useState<any>(null);
   const [pesados, setPesados] = useState<Record<string, Record<string, boolean>>>({});
+  const [nts, setNts] = useState<NT[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Estados dos modais de edição
   const [editingOrdemDialog, setEditingOrdemDialog] = useState<any>(null);
@@ -136,7 +140,24 @@ export default function SolicitacoesPage() {
     loadState(userId);
   }, [userId, loadState]);
 
+  // Escutar NTs em tempo real do Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeToNTs(
+      (ntsData) => {
+        setNts(ntsData);
+      },
+      (error) => {
+        console.error("Erro ao sincronizar NTs em tempo real:", error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   // Salvar estado no PostgreSQL
+
   const saveState = useCallback(
     async (uId: string) => {
       const stateToSave = {
@@ -601,7 +622,123 @@ export default function SolicitacoesPage() {
     return filtered;
   }, [excipientes, selectedOrdem]);
 
+  // Cálculo das quantidades solicitadas nas NTs pendentes agrupadas por matéria-prima
+  const ntsPendentesPorExcipiente = useMemo<Record<string, ExcipienteNTInfo>>(() => {
+    const result: Record<string, ExcipienteNTInfo> = {};
+
+    Object.keys(filteredExcipientes).forEach((excipient) => {
+      result[excipient] = { total: 0, items: [] };
+    });
+
+    if (!nts || nts.length === 0) return result;
+
+    // Coletar itens com status diferente de 'Pago'
+    const pendingItemsWithNT: Array<{ nt: NT; item: NTItem }> = [];
+    nts.forEach((nt) => {
+      if (nt.items && Array.isArray(nt.items)) {
+        nt.items.forEach((item) => {
+          if (item.status !== "Pago") {
+            pendingItemsWithNT.push({ nt, item });
+          }
+        });
+      }
+    });
+
+    Object.entries(filteredExcipientes).forEach(([excipientName, excipientData]: [string, any]) => {
+      const matchingItems: PendingNTItemDetail[] = [];
+      let totalQty = 0;
+
+      pendingItemsWithNT.forEach(({ nt, item }) => {
+        const isMatch = matchNTItemWithExcipient(
+          item.code,
+          item.description,
+          excipientData.codigo,
+          excipientName
+        );
+
+        if (isMatch) {
+          const qty = parseBrazilianNumber(item.quantity);
+          totalQty += qty;
+          matchingItems.push({
+            ntId: nt.id,
+            ntNumber: nt.nt_number,
+            itemId: item.id,
+            code: item.code,
+            description: item.description,
+            quantity: qty,
+            rawQuantity: item.quantity,
+            status: item.status,
+            createdDate: item.created_date || nt.created_date,
+            createdTime: item.created_time || nt.created_time,
+            batch: item.batch,
+          });
+        }
+      });
+
+      result[excipientName] = {
+        total: Number(totalQty.toFixed(3)),
+        items: matchingItems,
+      };
+    });
+
+    return result;
+  }, [filteredExcipientes, nts]);
+
+  // Lista global de todos os itens pendentes e itens fora da necessidade
+  const { allPendingNTItems, outsideNeedNTItems, totalPendingNTsCount } = useMemo(() => {
+    const allItems: PendingNTItemDetail[] = [];
+    const pendingNTIds = new Set<string>();
+
+    if (nts && nts.length > 0) {
+      nts.forEach((nt) => {
+        if (nt.items && Array.isArray(nt.items)) {
+          nt.items.forEach((item) => {
+            if (item.status !== "Pago") {
+              pendingNTIds.add(nt.id);
+              const qty = parseBrazilianNumber(item.quantity);
+              allItems.push({
+                ntId: nt.id,
+                ntNumber: nt.nt_number,
+                itemId: item.id,
+                code: item.code,
+                description: item.description,
+                quantity: qty,
+                rawQuantity: item.quantity,
+                status: item.status,
+                createdDate: item.created_date || nt.created_date,
+                createdTime: item.created_time || nt.created_time,
+                batch: item.batch,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Itens fora da necessidade: itens pendentes que não pertencem a nenhuma matéria-prima da lista de ordens
+    const outsideItems = allItems.filter((item) => {
+      const matchesAnyExcipient = Object.entries(filteredExcipientes).some(
+        ([excipientName, excipientData]: [string, any]) =>
+          matchNTItemWithExcipient(
+            item.code,
+            item.description,
+            excipientData.codigo,
+            excipientName
+          )
+      );
+      return !matchesAnyExcipient;
+    });
+
+    return {
+      allPendingNTItems: allItems,
+      outsideNeedNTItems: outsideItems,
+      totalPendingNTsCount: pendingNTIds.size,
+    };
+  }, [nts, filteredExcipientes]);
+
+
   const getOrdensAtendidas = useCallback(
+
     (excipient: string) => {
       if (!filteredExcipientes[excipient]) {
         return { ordensAtendidas: [], ordensNaoAtendidas: [] };
@@ -883,6 +1020,10 @@ export default function SolicitacoesPage() {
                     materiaisNaArea={materiaisNaArea}
                     faltaSolicitar={faltaSolicitar}
                     inputValues={inputValues}
+                    ntsPendentesPorExcipiente={ntsPendentesPorExcipiente}
+                    allPendingNTItems={allPendingNTItems}
+                    outsideNeedNTItems={outsideNeedNTItems}
+                    totalPendingNTsCount={totalPendingNTsCount}
                     handleMateriaisNaAreaChange={handleMateriaisNaAreaChange}
                     handleDetailClick={() => {}}
                     handleToggleExpandExcipient={handleToggleExpandExcipient}
@@ -895,6 +1036,8 @@ export default function SolicitacoesPage() {
                     handleUpdateAllSAPValues={handleUpdateAllSAPValues}
                     handleEditOrdem={handleEditOrdem}
                   />
+
+
                 </div>
               </div>
             </main>

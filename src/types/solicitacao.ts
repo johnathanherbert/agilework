@@ -46,3 +46,23 @@ export interface SaldoMP {
   saldo_total: number;
   total_lotes: number;
 }
+
+export interface PendingNTItemDetail {
+  ntId: string;
+  ntNumber: string;
+  itemId: string;
+  code: string;
+  description: string;
+  quantity: number;
+  rawQuantity: string;
+  status: string;
+  createdDate: string;
+  createdTime: string;
+  batch?: string | null;
+}
+
+export interface ExcipienteNTInfo {
+  total: number;
+  items: PendingNTItemDetail[];
+}
+

@@ -9,6 +9,7 @@ import {
   Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock, SlidersHorizontal,
 } from "lucide-react";
 import { UserManageModal } from "@/components/users/user-manage-modal";
+import { NTCleanupCard } from "@/components/settings/nt-cleanup-card";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -657,6 +658,10 @@ export default function AdminControlPanelPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  <div className="md:col-span-2">
+                    <NTCleanupCard />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>

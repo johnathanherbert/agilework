@@ -664,3 +664,53 @@ export function debugDate(label: string, date: any): void {
     }
   }
 }
+
+/**
+ * Normaliza o código do material (remove zeros à esquerda e espaços) para comparação.
+ */
+export function normalizeMaterialCode(code: string | number | null | undefined): string {
+  if (code === null || code === undefined) return '';
+  return String(code).trim().replace(/^0+/, '');
+}
+
+/**
+ * Normaliza o nome/descrição de material para comparação flexível (sem acentos, minúsculo, alfanumérico).
+ */
+export function normalizeMaterialName(name: string | null | undefined): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+/**
+ * Verifica se um item de NT corresponde a uma matéria-prima/excipiente por código ou nome.
+ */
+export function matchNTItemWithExcipient(
+  itemCode: string | null | undefined,
+  itemDesc: string | null | undefined,
+  excipientCode: string | null | undefined,
+  excipientName: string | null | undefined
+): boolean {
+  const normItemCode = normalizeMaterialCode(itemCode);
+  const normExpCode = normalizeMaterialCode(excipientCode);
+
+  if (normItemCode && normExpCode && normItemCode === normExpCode) {
+    return true;
+  }
+
+  const normItemDesc = normalizeMaterialName(itemDesc);
+  const normExpDesc = normalizeMaterialName(excipientName);
+
+  if (normItemDesc && normExpDesc) {
+    if (normItemDesc === normExpDesc) return true;
+    if (normExpDesc.length >= 4 && normItemDesc.includes(normExpDesc)) return true;
+    if (normItemDesc.length >= 4 && normExpDesc.includes(normItemDesc)) return true;
+  }
+
+  return false;
+}
+

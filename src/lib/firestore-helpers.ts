@@ -3,9 +3,11 @@ import {
   doc, 
   getDoc, 
   getDocs, 
+  setDoc,
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  writeBatch,
   query, 
   where, 
   orderBy,
@@ -22,6 +24,7 @@ export const COLLECTIONS = {
   NT_ITEMS: 'nt_items',
   USERS: 'users',
   NOTIFICATIONS: 'notifications',
+  SYSTEM_SETTINGS: 'system_settings',
 };
 
 // Helper to get current user info
@@ -508,4 +511,268 @@ export const subscribeToNTItems = (
       errorCallback?.(error);
     }
   );
+};
+
+// ==========================================
+// NT Automatic Cleanup Operations
+// ==========================================
+
+export interface NTCleanupConfig {
+  enabled: boolean;
+  retentionDays: number;
+  lastRun?: string | null;
+  lastCleanedNTs?: number;
+  lastCleanedItems?: number;
+}
+
+export const getNTCleanupConfig = async (): Promise<NTCleanupConfig> => {
+  const defaultConfig: NTCleanupConfig = {
+    enabled: false,
+    retentionDays: 30,
+    lastRun: null,
+    lastCleanedNTs: 0,
+    lastCleanedItems: 0,
+  };
+
+  try {
+    const configDoc = await getDoc(doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'nt_cleanup'));
+    if (configDoc.exists()) {
+      return { ...defaultConfig, ...configDoc.data() } as NTCleanupConfig;
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao carregar config de limpeza do Firestore, usando fallback local:', error);
+  }
+
+  // Fallback para localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem('nt_cleanup_config');
+      if (local) {
+        return { ...defaultConfig, ...JSON.parse(local) };
+      }
+    } catch {}
+  }
+
+  return defaultConfig;
+};
+
+export const saveNTCleanupConfig = async (config: Partial<NTCleanupConfig>): Promise<void> => {
+  try {
+    const settingRef = doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'nt_cleanup');
+    const existing = await getDoc(settingRef);
+    if (existing.exists()) {
+      await updateDoc(settingRef, {
+        ...config,
+        updated_at: new Date().toISOString(),
+      });
+    } else {
+      await setDoc(settingRef, {
+        enabled: false,
+        retentionDays: 30,
+        ...config,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao salvar config de limpeza no Firestore:', error);
+  }
+
+  // Persistir no localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem('nt_cleanup_config');
+      const current = local ? JSON.parse(local) : {};
+      localStorage.setItem('nt_cleanup_config', JSON.stringify({ ...current, ...config }));
+    } catch {}
+  }
+};
+
+export function extractNTDate(ntData: any, items: any[]): Date | null {
+  // 1. created_at na NT
+  if (ntData.created_at) {
+    if (typeof ntData.created_at.toDate === 'function') {
+      const d = ntData.created_at.toDate();
+      if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(ntData.created_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // 2. created_date na NT (ex: "DD/MM/YYYY", "YYYY-MM-DD", "DD-MM-YYYY")
+  if (typeof ntData.created_date === 'string' && ntData.created_date.trim()) {
+    const clean = ntData.created_date.trim();
+    if (clean.includes('/')) {
+      const parts = clean.split('/').map(Number);
+      if (parts.length === 3) {
+        const d = new Date(parts[2], parts[1] - 1, parts[0]);
+        if (!isNaN(d.getTime())) return d;
+      }
+    } else if (clean.includes('-')) {
+      const parts = clean.split('-').map(Number);
+      if (parts.length === 3) {
+        if (parts[0] > 1000) {
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          if (!isNaN(d.getTime())) return d;
+        } else {
+          const d = new Date(parts[2], parts[1] - 1, parts[0]);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+    }
+  }
+
+  // 3. updated_at na NT
+  if (ntData.updated_at) {
+    if (typeof ntData.updated_at.toDate === 'function') {
+      const d = ntData.updated_at.toDate();
+      if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(ntData.updated_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // 4. Fallback: procurar nas datas dos itens
+  if (items && items.length > 0) {
+    for (const item of items) {
+      if (item.created_at) {
+        if (typeof item.created_at.toDate === 'function') {
+          const d = item.created_at.toDate();
+          if (!isNaN(d.getTime())) return d;
+        }
+        const d = new Date(item.created_at);
+        if (!isNaN(d.getTime())) return d;
+      }
+      if (typeof item.created_date === 'string' && item.created_date.trim()) {
+        const clean = item.created_date.trim();
+        if (clean.includes('/')) {
+          const parts = clean.split('/').map(Number);
+          if (parts.length === 3) {
+            const d = new Date(parts[2], parts[1] - 1, parts[0]);
+            if (!isNaN(d.getTime())) return d;
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+export const cleanOldCompletedNTs = async (
+  retentionDays: number = 30
+): Promise<{ success: boolean; deletedNTs: number; deletedItems: number; totalAnalyzedNTs: number }> => {
+  try {
+    console.log(`🧹 [FAST CLEANUP] Iniciando limpeza de NTs concluídas com mais de ${retentionDays} dias...`);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+    cutoffDate.setHours(23, 59, 59, 999);
+
+    // 1. Busca em paralelo NTS e NT_ITEMS (apenas 2 requisições no total)
+    const [ntsSnapshot, itemsSnapshot] = await Promise.all([
+      getDocs(collection(db, COLLECTIONS.NTS)),
+      getDocs(collection(db, COLLECTIONS.NT_ITEMS))
+    ]);
+
+    const totalAnalyzedNTs = ntsSnapshot.docs.length;
+    console.log(`📊 Encontradas ${totalAnalyzedNTs} NTs e ${itemsSnapshot.docs.length} itens no Firestore.`);
+
+    // 2. Mapeia itens por nt_id em memória
+    const itemsByNtId = new Map<string, { docId: string; data: any }[]>();
+    itemsSnapshot.docs.forEach((itemDoc) => {
+      const data = itemDoc.data();
+      const ntId = data.nt_id;
+      if (ntId) {
+        const list = itemsByNtId.get(ntId) || [];
+        list.push({ docId: itemDoc.id, data });
+        itemsByNtId.set(ntId, list);
+      }
+    });
+
+    const docsToDelete: { collection: string; id: string }[] = [];
+    let deletedNTsCount = 0;
+    let deletedItemsCount = 0;
+
+    // 3. Avalia cada NT
+    for (const ntDoc of ntsSnapshot.docs) {
+      const ntData = ntDoc.data();
+      const ntId = ntDoc.id;
+      const ntItems = itemsByNtId.get(ntId) || [];
+
+      // Verifica status de conclusão:
+      // - Possui itens e todos com status 'Pago' (ou payment_time preenchido)
+      // - Ou NT marcada com status 'completed' / 'concluida' / 'Concluído' / 'pago'
+      const hasItems = ntItems.length > 0;
+      const allItemsPaid = hasItems && ntItems.every((item) => {
+        const st = (item.data.status || '').toLowerCase().trim();
+        return st === 'pago' || Boolean(item.data.payment_time);
+      });
+      
+      const ntStatus = (ntData.status || '').toLowerCase().trim();
+      const isCompleted = allItemsPaid || ntStatus === 'completed' || ntStatus === 'concluida' || ntStatus === 'concluído' || ntStatus === 'pago';
+
+      // Se tiver itens e não estiver concluída (tem itens pendentes), preserva a NT
+      if (!isCompleted && hasItems) {
+        continue;
+      }
+
+      // Se for uma NT concluída ou vazia, verifica a data
+      const ntDate = extractNTDate(ntData, ntItems.map(i => i.data));
+
+      // Se temos data e a data é mais antiga que o período de retenção (ex: > 30 dias)
+      if (ntDate && ntDate < cutoffDate) {
+        // Marca NT para exclusão
+        docsToDelete.push({ collection: COLLECTIONS.NTS, id: ntId });
+        deletedNTsCount++;
+
+        // Marca todos os itens da NT para exclusão
+        ntItems.forEach((item) => {
+          docsToDelete.push({ collection: COLLECTIONS.NT_ITEMS, id: item.docId });
+          deletedItemsCount++;
+        });
+      }
+    }
+
+    console.log(`🗑️ Total a deletar: ${deletedNTsCount} NTs e ${deletedItemsCount} itens.`);
+
+    // 4. Executa deleções em lotes (writeBatch) de até 450 operações por requisição
+    if (docsToDelete.length > 0) {
+      const BATCH_SIZE = 450;
+      let currentBatch = writeBatch(db);
+      let opCount = 0;
+
+      for (const item of docsToDelete) {
+        const ref = doc(db, item.collection, item.id);
+        currentBatch.delete(ref);
+        opCount++;
+
+        if (opCount >= BATCH_SIZE) {
+          await currentBatch.commit();
+          currentBatch = writeBatch(db);
+          opCount = 0;
+        }
+      }
+
+      if (opCount > 0) {
+        await currentBatch.commit();
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+    await saveNTCleanupConfig({
+      lastRun: nowIso,
+      lastCleanedNTs: deletedNTsCount,
+      lastCleanedItems: deletedItemsCount,
+    });
+
+    console.log(`✅ [FAST CLEANUP] Concluído: ${deletedNTsCount} NTs e ${deletedItemsCount} itens removidos.`);
+    return { 
+      success: true, 
+      deletedNTs: deletedNTsCount, 
+      deletedItems: deletedItemsCount,
+      totalAnalyzedNTs
+    };
+  } catch (error) {
+    console.error('❌ Erro no fast cleanup de NTs:', error);
+    throw error;
+  }
 };

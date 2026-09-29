@@ -293,3 +293,5 @@ export type HeijunkaSnapshot = {
   created_by?: string;
   created_by_name?: string;
 };
+
+export * from './solicitacao';
