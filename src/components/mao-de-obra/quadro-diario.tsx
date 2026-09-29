@@ -203,265 +203,227 @@ export function QuadroDiario({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         {/* Navegação de Data */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="flex items-center bg-[var(--surface)] border border-[var(--border-strong)] rounded-md overflow-hidden">
             <button
               type="button"
               onClick={() => handleShiftDay(-1)}
-              className="h-9 w-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="h-8 w-8 flex items-center justify-center hover:bg-[var(--hover)] text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
             >
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={handleToday}
-              className="h-9 px-3 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-x border-slate-200 dark:border-slate-800"
+              className="h-8 px-3 text-xs font-medium hover:bg-[var(--hover)] transition-colors border-x border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]"
             >
               Hoje
             </button>
             <div className="relative flex items-center">
-              <CalendarIcon className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <CalendarIcon className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-3)] pointer-events-none" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => onDateChange(e.target.value)}
-                className="h-9 pl-8 pr-2.5 text-xs font-bold bg-transparent border-none outline-none w-36 cursor-pointer"
+                className="h-8 pl-8 pr-2.5 text-xs font-mono bg-transparent border-none outline-none w-32 text-[var(--text)] cursor-pointer"
               />
             </div>
             <button
               type="button"
               onClick={() => handleShiftDay(1)}
-              className="h-9 w-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="h-8 w-8 flex items-center justify-center hover:bg-[var(--hover)] text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
             >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           {escalaDia && (
-            <span className="text-sm font-bold text-slate-600 dark:text-slate-300 hidden sm:inline">
+            <span className="text-xs font-medium text-[var(--text-2)] hidden sm:inline font-mono">
               {escalaDia.dia_semana_curto}, {String(escalaDia.dia).padStart(2, '0')}/{String(escalaDia.mes).padStart(2, '0')}
             </span>
           )}
 
           {escalaDia?.e_feriado && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300">
-              <Flame className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs font-bold">{escalaDia.feriado_nome}</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 text-amber-400">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-xs font-medium">{escalaDia.feriado_nome}</span>
             </div>
           )}
         </div>
 
         {/* Folga da escala do dia */}
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-xs w-fit"
-          style={{ borderColor: `${turmaFolgaInfo?.cor}50`, backgroundColor: `${turmaFolgaInfo?.cor}12` }}
-        >
-          <div
-            className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shadow-xs"
-            style={{ backgroundColor: turmaFolgaInfo?.cor }}
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-2)] font-mono">
+          <span
+            className="w-4 h-4 rounded text-white font-semibold text-[10px] flex items-center justify-center"
+            style={{ backgroundColor: turmaFolgaInfo?.cor || 'var(--accent)' }}
           >
             {turmaDoDia}
-          </div>
-          <span className="text-xs font-bold" style={{ color: turmaFolgaInfo?.cor }}>
-            Turma {turmaDoDia} de Folga · Dia {escalaDia?.dia_ciclo_28}/28
+          </span>
+          <span>
+            Turma {turmaDoDia} de Folga · Ciclo {escalaDia?.dia_ciclo_28}/28
           </span>
         </div>
       </div>
 
-      {/* Barra de Filtros Completos + Lançar Ocorrência */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
-          {/* Grupo de Filtros */}
-          <div className="flex flex-wrap items-center gap-2 flex-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mr-1 shrink-0">
-              <SlidersHorizontal className="w-4 h-4 text-primary" />
-              <span>Filtros:</span>
-            </div>
+      {/* Grid de Métricas de Resumo Diário */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border border-[var(--border)] rounded-md bg-[var(--surface)] overflow-hidden divide-x divide-y sm:divide-y-0 divide-[var(--border)]">
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
+            Efetivo Total
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+            {totaisDia.total}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">cadastrado</p>
+        </div>
 
-            {/* Busca textual */}
-            <div className="relative min-w-[170px] flex-1 sm:flex-initial">
-              <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="Buscar operador, cargo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 pr-7 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Presentes
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-emerald-400 font-mono block">
+            {totaisDia.presentes}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">em operação</p>
+        </div>
 
-            {/* Filtro de Status */}
-            <div className="w-[145px]">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="ALL" className="text-xs">Todos os Status</SelectItem>
-                  <SelectItem value="presente" className="text-xs font-bold text-emerald-600">Presentes</SelectItem>
-                  <SelectItem value="folga_flexivel" className="text-xs font-bold text-sky-600">Folga Flexível</SelectItem>
-                  <SelectItem value="atestado" className="text-xs font-bold text-rose-600">Atestado Médico</SelectItem>
-                  <SelectItem value="falta_injustificada" className="text-xs font-bold text-red-600">Falta Injustificada</SelectItem>
-                  <SelectItem value="falta_justificada" className="text-xs font-bold text-amber-600">Falta Justificada</SelectItem>
-                  <SelectItem value="ferias" className="text-xs font-bold text-indigo-600">Férias</SelectItem>
-                  <SelectItem value="folga_escala" className="text-xs font-bold text-slate-600">Folga da Escala</SelectItem>
-                  <SelectItem value="hora_extra" className="text-xs font-bold text-emerald-600">Hora Extra</SelectItem>
-                  <SelectItem value="ausentes" className="text-xs font-bold text-orange-600">Todas Ausências</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-red-400 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Faltas & Atestados
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-red-400 font-mono block">
+            {totaisDia.faltas + totaisDia.atestados}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5 font-mono">
+            {totaisDia.faltas} fal · {totaisDia.atestados} ate
+          </p>
+        </div>
 
-            {/* Filtro de Turma */}
-            <div className="w-[125px]">
-              <Select value={turmaFilter} onValueChange={(v: any) => setTurmaFilter(v)}>
-                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-                  <SelectValue placeholder="Turma" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="ALL" className="text-xs">Todas Turmas</SelectItem>
-                  {(['A', 'B', 'C', 'D'] as const).map((t) => (
-                    <SelectItem key={t} value={t} className="text-xs font-bold">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: TURMAS_INFO[t].cor }} />
-                        Turma {t}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-sky-400 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+            Folga Flexível
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-sky-400 font-mono block">
+            {totaisDia.folgasFlexiveis}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">alinhadas</p>
+        </div>
 
-            {/* Filtro de Cargo */}
-            <div className="w-[160px]">
-              <Select value={cargoFilter} onValueChange={setCargoFilter}>
-                <SelectTrigger className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 truncate">
-                  <SelectValue placeholder="Cargo/Função" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl max-h-56">
-                  <SelectItem value="ALL" className="text-xs">Todos os Cargos</SelectItem>
-                  {listaCargos.map((c) => (
-                    <SelectItem key={c} value={c} className="text-xs">
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-purple-400 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+            Em Férias
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-purple-400 font-mono block">
+            {totaisDia.ferias}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">programadas</p>
+        </div>
 
-            {/* Filtro de Turno (se selectedTurno === 'ALL', visão do Supervisor) */}
-            {selectedTurno === 'ALL' && (
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5">
-                <span className="text-[10px] font-bold text-muted-foreground px-1.5">Turno:</span>
-                {(['ALL', 1, 2, 3] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTurnoViewFilter(t)}
-                    className={cn(
-                      "h-7 px-2 rounded-lg text-[10px] font-bold transition-colors",
-                      turnoViewFilter === t
-                        ? "bg-primary text-white shadow-2xs"
-                        : "text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    {t === 'ALL' ? 'Todos 3' : `T${t}`}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Botão Limpar Filtros */}
-            {hasActiveFilters && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleClearFilters}
-                className="h-8 px-2.5 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl gap-1 shrink-0"
-                title="Limpar todos os filtros ativos"
-              >
-                <FilterX className="w-3.5 h-3.5" />
-                Limpar
-              </Button>
-            )}
-          </div>
-
-          {/* Botão Lançar Ocorrência */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              onClick={() => onOpenOcorrencia()}
-              className="h-8 text-xs gap-1.5 font-bold rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Lançar Ocorrência
-            </Button>
-          </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--border-strong)]" />
+            Folga da Escala
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-[var(--text-2)] font-mono block">
+            {totaisDia.folgaEscala}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">Turma {turmaDoDia}</p>
         </div>
       </div>
 
-      {/* Cards de Totais Separando Faltas, Folgas Flexíveis e Férias */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Efetivo Total</p>
-          <p className="text-2xl font-black text-foreground mt-1">{totaisDia.total}</p>
-          <p className="text-[11px] text-muted-foreground">quadro cadastrado</p>
+      {/* Barra de Filtros Compacta */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Busca */}
+        <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+          <Search className="h-3.5 w-3.5 text-[var(--text-3)] absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <Input
+            placeholder="Buscar operador, cargo..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 pl-8 pr-7 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md text-[var(--text)] placeholder:text-[var(--text-3)]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-3)] hover:text-[var(--text)]"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
-        <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 shadow-xs">
-          <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">Presentes</p>
-          <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">{totaisDia.presentes}</p>
-          <p className="text-[11px] text-emerald-600/80">escalados p/ trabalhar</p>
+        {/* Filtro de Status */}
+        <div className="w-[140px]">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 text-xs rounded-md bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text-2)]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
+              <SelectItem value="ALL" className="text-xs">Todos os Status</SelectItem>
+              <SelectItem value="presente" className="text-xs text-emerald-400">Presentes</SelectItem>
+              <SelectItem value="folga_flexivel" className="text-xs text-sky-400">Folga Flexível</SelectItem>
+              <SelectItem value="atestado" className="text-xs text-rose-400">Atestado Médico</SelectItem>
+              <SelectItem value="falta_injustificada" className="text-xs text-red-400">Falta Injustificada</SelectItem>
+              <SelectItem value="falta_justificada" className="text-xs text-amber-400">Falta Justificada</SelectItem>
+              <SelectItem value="ferias" className="text-xs text-purple-400">Férias</SelectItem>
+              <SelectItem value="folga_escala" className="text-xs text-[var(--text-3)]">Folga da Escala</SelectItem>
+              <SelectItem value="hora_extra" className="text-xs text-emerald-400">Hora Extra</SelectItem>
+              <SelectItem value="ausentes" className="text-xs text-amber-400">Todas Ausências</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className={cn(
-          "rounded-2xl p-4 shadow-xs border",
-          (totaisDia.faltas + totaisDia.atestados) > 0
-            ? "bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-        )}>
-          <p className="text-[10px] uppercase font-bold text-red-700 dark:text-red-400 tracking-wider">Faltas & Atestados</p>
-          <p className="text-2xl font-black text-red-700 dark:text-red-300 mt-1">{totaisDia.faltas + totaisDia.atestados}</p>
-          <p className="text-[11px] text-muted-foreground">{totaisDia.faltas} faltas · {totaisDia.atestados} atestados</p>
+        {/* Filtro de Turma */}
+        <div className="w-[120px]">
+          <Select value={turmaFilter} onValueChange={(v: any) => setTurmaFilter(v)}>
+            <SelectTrigger className="h-8 text-xs rounded-md bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text-2)]">
+              <SelectValue placeholder="Turma" />
+            </SelectTrigger>
+            <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
+              <SelectItem value="ALL" className="text-xs">Todas Turmas</SelectItem>
+              {(['A', 'B', 'C', 'D'] as const).map((t) => (
+                <SelectItem key={t} value={t} className="text-xs">
+                  Turma {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className={cn(
-          "rounded-2xl p-4 shadow-xs border",
-          totaisDia.folgasFlexiveis > 0
-            ? "bg-sky-50/50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/50"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-        )}>
-          <p className="text-[10px] uppercase font-bold text-sky-700 dark:text-sky-400 tracking-wider">Folga Flexível</p>
-          <p className="text-2xl font-black text-sky-700 dark:text-sky-300 mt-1">{totaisDia.folgasFlexiveis}</p>
-          <p className="text-[11px] text-sky-600/80">folgas alinhadas</p>
+        {/* Filtro de Cargo */}
+        <div className="w-[150px]">
+          <Select value={cargoFilter} onValueChange={setCargoFilter}>
+            <SelectTrigger className="h-8 text-xs rounded-md bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text-2)] truncate">
+              <SelectValue placeholder="Cargo/Função" />
+            </SelectTrigger>
+            <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)] max-h-56">
+              <SelectItem value="ALL" className="text-xs">Todos os Cargos</SelectItem>
+              {listaCargos.map((c) => (
+                <SelectItem key={c} value={c} className="text-xs truncate">
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className={cn(
-          "rounded-2xl p-4 shadow-xs border",
-          totaisDia.ferias > 0
-            ? "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-        )}>
-          <p className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-400 tracking-wider">Em Férias</p>
-          <p className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">{totaisDia.ferias}</p>
-          <p className="text-[11px] text-indigo-600/80">férias programadas</p>
-        </div>
-
-        <div
-          className="rounded-2xl p-4 shadow-xs border col-span-2 sm:col-span-1"
-          style={{ borderColor: `${turmaFolgaInfo?.cor}40`, backgroundColor: `${turmaFolgaInfo?.cor}08` }}
-        >
-          <p className="text-[10px] uppercase font-bold tracking-wider" style={{ color: turmaFolgaInfo?.cor }}>Folga Escala</p>
-          <p className="text-2xl font-black mt-1" style={{ color: turmaFolgaInfo?.cor }}>{totaisDia.folgaEscala}</p>
-          <p className="text-[11px] text-muted-foreground">Turma {turmaDoDia} — descanso</p>
-        </div>
+        {hasActiveFilters && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-8 px-2.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md gap-1"
+          >
+            <FilterX className="w-3.5 h-3.5" />
+            Limpar
+          </Button>
+        )}
       </div>
 
       {/* Grade de Turnos */}
@@ -478,28 +440,24 @@ export function QuadroDiario({
           return (
             <div
               key={turno}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col"
+              className="bg-[var(--surface)] rounded-md border border-[var(--border)] overflow-hidden flex flex-col"
             >
               {/* Header do Turno */}
-              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={cn("flex items-center justify-center w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs", ti.color)}>
-                    {ti.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-foreground">{ti.label}</p>
-                    <p className="text-[11px] text-muted-foreground font-mono">{ti.horario}</p>
-                  </div>
+              <div className="px-3.5 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--text-2)]">{ti.icon}</span>
+                  <span className="text-xs font-medium text-[var(--text)]">{ti.label}</span>
+                  <span className="text-[11px] text-[var(--text-3)] font-mono">({ti.horario})</span>
                 </div>
-                <Badge variant="secondary" className="font-bold text-xs">
+                <span className="text-[11px] font-mono text-[var(--text-3)] bg-[var(--surface)] px-2 py-0.5 rounded border border-[var(--border)]">
                   {items.length} op.
-                </Badge>
+                </span>
               </div>
 
               {/* Lista de Operadores */}
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1">
+              <div className="divide-y divide-[var(--border)] flex-1 max-h-[520px] overflow-y-auto">
                 {items.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-muted-foreground">
+                  <div className="py-10 text-center text-xs text-[var(--text-3)]">
                     Nenhum operador neste turno
                   </div>
                 ) : (
@@ -507,7 +465,6 @@ export function QuadroDiario({
                     const op = item.operator;
                     const opTurmaInfo = TURMAS_INFO[op.letra];
                     const initials = op.nome.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'OP';
-                    const hasOccurrence = Boolean(item.ocorrenciaHoje);
 
                     return (
                       <div
@@ -519,43 +476,31 @@ export function QuadroDiario({
                             onOpenOcorrencia(op);
                           }
                         }}
-                        className="group px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-slate-100/90 dark:hover:bg-slate-800/60 transition-all cursor-pointer select-none"
-                        title={
-                          hasOccurrence
-                            ? `Clique para ver detalhes, editar ou remover a ocorrência de ${op.nome}`
-                            : `Clique para lançar ocorrência para ${op.nome}`
-                        }
+                        className="group px-3 py-2 flex items-center justify-between gap-3 hover:bg-[var(--hover)] transition-colors cursor-pointer select-none"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          {/* Avatar com cor da turma */}
                           <div
-                            className="w-8 h-8 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform"
-                            style={{ backgroundColor: opTurmaInfo.cor }}
+                            className="w-6 h-6 rounded text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: opTurmaInfo?.cor || 'var(--accent)' }}
                           >
-                            {initials}
+                            {op.letra}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                            <p className="text-xs font-medium text-[var(--text)] truncate group-hover:text-[var(--accent)] transition-colors">
                               {op.nome}
                             </p>
-                            <p className="text-[10px] text-muted-foreground font-mono">
+                            <p className="text-[11px] text-[var(--text-3)] font-mono truncate">
                               {op.matricula} · {op.cargo}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          {/* Status */}
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <StatusChip
                             statusHoje={item.statusHoje}
                             statusLabel={item.statusLabel}
                             corStatus={item.corStatus}
                           />
-
-                          {/* Indicador de clique na célula */}
-                          <div className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground/40 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </div>
                         </div>
                       </div>
                     );

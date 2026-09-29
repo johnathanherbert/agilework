@@ -2,38 +2,67 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  ClipboardCheck, ClipboardList,
-  Home, Settings, Shield, Factory,
-  ChevronLeft, ChevronRight, Menu, Github, ExternalLink, TrendingUp, Users, ShieldCheck, FileBox
+  Home,
+  FileText,
+  CheckSquare,
+  Package,
+  Factory,
+  TrendingUp,
+  Users,
+  Settings,
+  Shield,
+  Moon,
+  Sun,
+  LogOut,
+  User,
+  Info
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
+import { useTheme } from 'next-themes';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import type { LucideIcon } from 'lucide-react';
 
-type NavItem = {
+interface NavItem {
   label: string;
   href: string;
-  icon: React.ReactNode;
-  section?: 'principal' | 'operacoes' | 'gestao';
-};
+  icon: LucideIcon;
+  requiredRole?: 'all' | 'leader' | 'supervisor' | 'admin' | 'maoDeObra';
+}
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <Home size={19} />, section: 'principal' },
-  { label: 'Gerenciar NTs', href: '/almoxarifado/nts', icon: <ClipboardList size={19} />, section: 'principal' },
-  { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: <ClipboardCheck size={19} />, section: 'principal' },
-  { label: 'Solicitações', href: '/solicitacoes', icon: <FileBox size={19} />, section: 'principal' },
-  { label: 'Configurações', href: '/settings', icon: <Settings size={19} />, section: 'principal' },
+  { label: 'Dashboard', href: '/dashboard', icon: Home, requiredRole: 'all' },
+  { label: 'Notas Técnicas', href: '/almoxarifado/nts', icon: FileText, requiredRole: 'all' },
+  { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
+  { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'all' },
+  { label: 'Painel de Produção', href: '/producao', icon: Factory, requiredRole: 'leader' },
+  { label: 'Heijunka', href: '/heijunka', icon: TrendingUp, requiredRole: 'leader' },
+  { label: 'Mão de Obra', href: '/mao-de-obra', icon: Users, requiredRole: 'maoDeObra' },
+  { label: 'Configurações', href: '/settings', icon: Settings, requiredRole: 'all' },
+  { label: 'Gestão de Usuários', href: '/settings/users', icon: Shield, requiredRole: 'admin' },
 ];
 
 export const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { userData } = useFirebase();
+  const { user, userData, signOut } = useFirebase();
+  const { theme, setTheme } = useTheme();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Update active item when pathname or search params change
   useEffect(() => {
     const status = searchParams?.get('status') || null;
     let fullPath = pathname || '';
@@ -43,265 +72,166 @@ export const Sidebar = () => {
     setCurrentPath(fullPath);
   }, [pathname, searchParams]);
 
-  // Auto-collapse fallback timeout
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (!collapsed) {
-      timeoutId = setTimeout(() => {
-        setCollapsed(true);
-      }, 6000);
+  const isNavActive = (href: string) => {
+    if (href.includes('?')) {
+      return currentPath === href;
     }
-    return () => clearTimeout(timeoutId);
-  }, [collapsed]);
+    return pathname === href && !searchParams?.get('status');
+  };
 
-  const isNavActive = (href: string) => currentPath === href;
+  const isItemVisible = (item: NavItem) => {
+    if (item.requiredRole === 'all') return true;
+    if (!userData) return false;
+    if (userData.email === ADMIN_EMAIL) return true;
+
+    if (item.requiredRole === 'admin') {
+      return userData.email === ADMIN_EMAIL;
+    }
+
+    if (item.requiredRole === 'leader') {
+      return userData.role === 'leader' || userData.role === 'supervisor';
+    }
+
+    if (item.requiredRole === 'maoDeObra') {
+      return (
+        userData.role === 'supervisor' ||
+        (userData.role === 'leader' && Boolean(userData.allowedMaoDeObra))
+      );
+    }
+
+    return false;
+  };
+
+  const visibleItems = navItems.filter(isItemVisible);
 
   return (
-    <div
-      className={cn(
-        "h-screen fixed left-0 top-0 z-50 bg-white dark:bg-slate-950 border-r border-slate-200/80 dark:border-slate-800 flex flex-col transition-all duration-300 select-none",
-        collapsed ? "w-[64px] shadow-sm" : "w-[260px] shadow-2xl"
-      )}
-      onMouseEnter={() => setCollapsed(false)}
-      onMouseLeave={() => setCollapsed(true)}
-    >
-      {/* Header do Logo AgileWork */}
-      <div className="h-16 flex items-center justify-center border-b border-white/10 bg-gradient-to-r from-[#003760] via-[#00477a] to-[#003760] relative overflow-hidden shrink-0">
-        <div className={cn(
-          "relative flex items-center transition-all duration-300 overflow-hidden",
-          collapsed ? "justify-center w-12" : "justify-start w-full px-5"
-        )}>
-          <div className="p-2 rounded-xl bg-white/15 border border-white/20 shadow-xs flex items-center justify-center shrink-0">
-            <ClipboardList className="h-5 w-5 text-white drop-shadow-md" />
-          </div>
-          {!collapsed && (
-            <div className="ml-3 flex flex-col items-start leading-tight">
-              <span className="font-black text-base text-white tracking-tight drop-shadow-md">AgileWork</span>
-              <div className="text-[11px] text-blue-200 font-medium">Gestão de NTs & Produção</div>
-            </div>
-          )}
+    <TooltipProvider delayDuration={150}>
+      <aside className="w-[52px] h-screen fixed left-0 top-0 z-50 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col items-center py-2.5 select-none transition-colors">
+        {/* Brand Icon / Logo */}
+        <div 
+          onClick={() => router.push('/dashboard')}
+          className="w-7 h-7 rounded-[6px] bg-[var(--text)] text-[var(--bg)] grid place-items-center font-bold text-xs mb-3 cursor-pointer shadow-sm hover:opacity-90 transition-opacity"
+          title="AgileWork"
+        >
+          A
         </div>
-      </div>
 
-      {/* Navegação Principal */}
-      <div className="flex-1 py-4 overflow-y-auto overscroll-contain no-scrollbar">
-        <nav className="flex flex-col gap-1 px-2.5">
-          {!collapsed && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 py-1">
-              Menu Principal
-            </span>
-          )}
-
-          {navItems.map((item) => {
+        {/* Navigation Item Rail */}
+        <nav className="flex-1 w-full flex flex-col items-center gap-1 overflow-y-auto no-scrollbar">
+          {visibleItems.map((item) => {
             const active = isNavActive(item.href);
+            const Icon = item.icon;
+
             return (
-              <button
-                key={item.href}
-                type="button"
-                onClick={() => router.push(item.href)}
-                className={cn(
-                  "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-                  collapsed ? "justify-center" : "justify-start",
-                  active
-                    ? "bg-blue-50 dark:bg-blue-950/50 text-primary font-bold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                )}
-                title={collapsed ? item.label : ""}
-              >
-                {/* Pilar de indicação ativa no lado esquerdo */}
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs" />
-                )}
-
-                <div className={cn(
-                  "shrink-0 transition-transform duration-200 group-hover:scale-110",
-                  active ? "text-primary" : "text-slate-500 dark:text-slate-400"
-                )}>
-                  {item.icon}
-                </div>
-
-                {!collapsed && (
-                  <span className="text-xs font-semibold whitespace-nowrap truncate">
-                    {item.label}
-                  </span>
-                )}
-              </button>
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    className={cn(
+                      "relative w-9 h-9 rounded-[6px] grid place-items-center transition-colors cursor-pointer",
+                      active
+                        ? "text-[var(--text)] bg-[var(--hover)] font-semibold"
+                        : "text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)]"
+                    )}
+                  >
+                    {/* Active Accent Strip */}
+                    {active && (
+                      <span className="absolute left-0 top-2 bottom-2 w-[2.5px] bg-[var(--accent)] rounded-r-[2px]" />
+                    )}
+                    <Icon size={16} className="shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={10} className="text-xs font-medium py-1 px-2.5 bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
-
-          {/* Seção Operações */}
-          {(userData?.email === ADMIN_EMAIL || userData?.role === 'leader' || userData?.role === 'supervisor') && (
-            <>
-              {!collapsed && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-4 pb-1">
-                  Operações & Fábrica
-                </span>
-              )}
-
-              {/* Mão de Obra (Gestão de Pessoas & Escala) - Apenas Admin, Supervisor ou Líderes Autorizados */}
-              {(userData?.email === ADMIN_EMAIL || userData?.role === 'admin' || userData?.role === 'supervisor' || (userData?.role === 'leader' && userData?.allowedMaoDeObra)) && (
-                <button
-                  type="button"
-                  onClick={() => router.push('/mao-de-obra')}
-                  className={cn(
-                    "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-                    collapsed ? "justify-center" : "justify-start",
-                    isNavActive('/mao-de-obra')
-                      ? "bg-blue-50 dark:bg-blue-950/50 text-primary font-bold shadow-2xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                  )}
-                  title={collapsed ? "Mão de Obra" : ""}
-                >
-                  {isNavActive('/mao-de-obra') && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs" />
-                  )}
-                  <div className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform">
-                    <Users size={19} />
-                  </div>
-                  {!collapsed && (
-                    <span className="text-xs font-semibold whitespace-nowrap truncate">
-                      Mão de Obra
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* Painel de Produção */}
-              <button
-                type="button"
-                onClick={() => router.push('/producao')}
-                className={cn(
-                  "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-                  collapsed ? "justify-center" : "justify-start",
-                  isNavActive('/producao')
-                    ? "bg-blue-50 dark:bg-blue-950/50 text-primary font-bold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                )}
-                title={collapsed ? "Painel de Produção" : ""}
-              >
-                {isNavActive('/producao') && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs" />
-                )}
-                <div className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform">
-                  <Factory size={19} />
-                </div>
-                {!collapsed && (
-                  <span className="text-xs font-semibold whitespace-nowrap truncate">
-                    Painel de Produção
-                  </span>
-                )}
-              </button>
-
-              {/* Dashboard Heijunka */}
-              <button
-                type="button"
-                onClick={() => router.push('/heijunka')}
-                className={cn(
-                  "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-                  collapsed ? "justify-center" : "justify-start",
-                  isNavActive('/heijunka')
-                    ? "bg-blue-50 dark:bg-blue-950/50 text-primary font-bold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                )}
-                title={collapsed ? "Dashboard Heijunka" : ""}
-              >
-                {isNavActive('/heijunka') && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs" />
-                )}
-                <div className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform">
-                  <TrendingUp size={19} />
-                </div>
-                {!collapsed && (
-                  <span className="text-xs font-semibold whitespace-nowrap truncate">
-                    Heijunka
-                  </span>
-                )}
-              </button>
-            </>
-          )}
-
-          {/* Gestão Admin */}
-          {userData?.email === ADMIN_EMAIL && (
-            <>
-              {!collapsed && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-4 pb-1">
-                  Administração
-                </span>
-              )}
-
-              <button
-                type="button"
-                onClick={() => router.push('/settings/users')}
-                className={cn(
-                  "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-                  collapsed ? "justify-center" : "justify-start",
-                  isNavActive('/settings/users')
-                    ? "bg-blue-50 dark:bg-blue-950/50 text-primary font-bold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-                )}
-                title={collapsed ? "Gestão de Usuários" : ""}
-              >
-                {isNavActive('/settings/users') && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs" />
-                )}
-                <div className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform">
-                  <Shield size={19} />
-                </div>
-                {!collapsed && (
-                  <span className="text-xs font-semibold whitespace-nowrap truncate">
-                    Gestão de Usuários
-                  </span>
-                )}
-              </button>
-            </>
-          )}
         </nav>
-      </div>
 
-      {/* Cartão de Crédito ao Desenvolvedor */}
-      {!collapsed && (
-        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 shrink-0">
-          <div className="text-center p-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Desenvolvido por
-            </div>
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
-              Johnathan Herbert
-            </div>
-            <div className="text-[10px] text-slate-500 font-mono">
-              ID: 75710
-            </div>
-            <a
-              href="https://github.com/johnathanherbert"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-primary bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 rounded-lg transition-all hover:scale-105"
-            >
-              <Github size={12} />
-              <span>GitHub</span>
-              <ExternalLink size={9} />
-            </a>
-          </div>
+        {/* Bottom Actions: Theme Toggle & User Avatar */}
+        <div className="flex flex-col items-center gap-2 pt-2 border-t border-[var(--border)] w-full">
+          {/* Quick Theme Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-8 h-8 rounded-[6px] grid place-items-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
+              >
+                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={10} className="text-xs bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]">
+              Alternar tema ({theme === 'dark' ? 'Claro' : 'Escuro'})
+            </TooltipContent>
+          </Tooltip>
+
+          {/* User Menu Avatar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-7 h-7 rounded-full bg-[var(--surface-2)] border border-[var(--border-strong)] text-[var(--text)] grid place-items-center font-bold text-[11px] cursor-pointer hover:border-[var(--accent)] transition-colors"
+                title={userData?.name || user?.email || 'Usuário'}
+              >
+                {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end" sideOffset={12} className="w-56 p-1.5 bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-xl rounded-[6px]">
+              <div className="px-2.5 py-2 border-b border-[var(--border)] mb-1">
+                <p className="text-xs font-semibold text-[var(--text)] truncate">
+                  {userData?.name || 'Usuário'}
+                </p>
+                <p className="text-[11px] text-[var(--text-3)] font-mono truncate mt-0.5">
+                  {user?.email}
+                </p>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--accent-weak)] text-[var(--accent)] uppercase font-mono">
+                    {userData?.role || 'operador'} {userData?.turno ? `· T${userData.turno}` : ''}
+                  </span>
+                </div>
+              </div>
+
+              <DropdownMenuItem 
+                onClick={() => router.push('/dashboard')}
+                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
+              >
+                <User size={14} className="mr-2 text-[var(--text-3)]" />
+                Painel Geral
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={() => router.push('/settings')}
+                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
+              >
+                <Settings size={14} className="mr-2 text-[var(--text-3)]" />
+                Configurações
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-[var(--border)] my-1" />
+
+              <div className="px-2.5 py-1 text-[10px] text-[var(--text-3)] font-mono">
+                AgileWork v2.0 · ID: 75710
+              </div>
+
+              <DropdownMenuSeparator className="bg-[var(--border)] my-1" />
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  await signOut();
+                  router.push('/login');
+                }}
+                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer text-[var(--red)] hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
+              >
+                <LogOut size={14} className="mr-2" />
+                Encerrar Sessão
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
-
-      {/* Toggle Expandir / Recolher */}
-      <div className="border-t border-slate-200/80 dark:border-slate-800 p-2 shrink-0">
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-        >
-          {collapsed ? (
-            <Menu size={18} />
-          ) : (
-            <>
-              <ChevronLeft size={16} />
-              <span className="text-xs font-semibold">Recolher Menu</span>
-            </>
-          )}
-        </button>
-      </div>
-    </div>
+      </aside>
+    </TooltipProvider>
   );
 };

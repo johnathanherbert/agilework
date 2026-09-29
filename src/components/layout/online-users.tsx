@@ -808,43 +808,38 @@ export function OnlineUsers() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition-all duration-200 text-white/90 hover:text-white cursor-pointer"
-          title="Abrir Chat da Equipe"
+          className="relative flex items-center gap-1.5 px-1.5 py-1 rounded-[6px] hover:bg-[var(--hover)] transition-colors text-[var(--text-2)] hover:text-[var(--text)] cursor-pointer"
+          title={`Equipe: ${onlineCount} online`}
         >
           {/* Avatar stack para usuários online */}
-          <div className="flex items-center -space-x-2">
+          <div className="flex items-center -space-x-1.5">
             {displayedAvatars.map((onlineUser, index) => (
               <div
                 key={onlineUser.id}
                 className={cn(
-                  "relative w-7 h-7 rounded-full flex items-center justify-center border-2 border-[#003d6b] shadow-xs text-[10px] font-bold text-white",
+                  "relative w-5 h-5 rounded-full flex items-center justify-center border border-[var(--surface)] text-[9px] font-bold text-white shadow-xs",
                   getColorFromId(onlineUser.id)
                 )}
                 style={{ zIndex: displayedAvatars.length - index }}
               >
                 {getInitials(onlineUser.name)}
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#003d6b]" />
               </div>
             ))}
 
             {onlineCount === 0 && (
-              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white/80">
-                <MessageSquare className="w-4 h-4" />
+              <div className="w-5 h-5 rounded-[4px] bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-3)]">
+                <MessageSquare className="w-3.5 h-3.5" />
               </div>
             )}
           </div>
 
-          <div className="hidden md:flex flex-col text-left">
-            <span className="text-xs font-bold leading-tight">Chat</span>
-            <span className="text-[10px] text-emerald-300 font-medium leading-none flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {onlineCount} online
-            </span>
-          </div>
+          <span className="text-[11px] font-medium text-[var(--text-2)] hidden sm:inline">
+            {onlineCount} <span className="text-[var(--text-3)] font-normal">online</span>
+          </span>
 
           {/* Badge Geral de Não Lidas */}
           {totalUnreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black border-2 border-[#003d6b] animate-pulse shadow-md">
+            <span className="absolute -top-1 -right-1 bg-[var(--red)] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold shadow-sm">
               {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
             </span>
           )}

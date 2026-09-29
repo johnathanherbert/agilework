@@ -330,172 +330,138 @@ export default function Dashboard() {
   
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
+        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
-          <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-            <section className="mb-6 rounded-2xl border border-blue-800/40 bg-gradient-to-br from-[#0c2f4f] via-[#114a75] to-[#1d6a9e] text-white shadow-lg p-5 sm:p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Dashboard Operacional</h1>
-                    <p className="text-sm text-white/85 mt-1">Visão consolidada de desempenho, pendências e ritmo de pagamento.</p>
-                    <div className="flex items-center gap-2 mt-3">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-white/15 px-2.5 py-1 rounded-full border border-white/20">
-                        <Activity className="w-3.5 h-3.5" />
-                        Última atividade: {formatLastActivity(stats.recentActivity)}
-                      </span>
-                      {lastUpdate && (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-white/15 px-2.5 py-1 rounded-full border border-white/20">
-                          Atualizado {formatLastActivity(lastUpdate.toISOString())}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+          <main className="flex-1 p-5 sm:p-6 overflow-y-auto min-w-0">
+            {/* Header da Página */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Visão Geral · Painel Operacional</h1>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Tempo real
+                  </span>
                 </div>
+                <p className="text-xs text-[var(--text-3)] mt-0.5">
+                  Telemetria de fluxo contínuo, ritmo de pagamentos de NTs e indicadores de turno
+                </p>
+              </div>
 
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => fetchStats(true)}
                   disabled={refreshing}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-[var(--border-strong)] bg-[var(--surface)] hover:bg-[var(--hover)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors disabled:opacity-50"
                 >
-                  <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-                  <span className="text-sm font-semibold">Atualizar agora</span>
+                  <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+                  <span>{refreshing ? "Atualizando..." : "Sincronizar"}</span>
                 </button>
               </div>
-            </section>
+            </div>
 
-            {refreshing && (
-              <div className="mb-4 flex items-center justify-center gap-2 py-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                <span className="text-xs font-bold text-primary">Atualizando dados...</span>
+            {/* Faixa de Indicadores Principais */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden mb-5">
+              <div className="p-4">
+                <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
+                  Total de NTs
+                </label>
+                <strong className="text-2xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+                  {loading ? "--" : stats.totalNTs}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">notas cadastradas</p>
               </div>
-            )}
 
-            <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-              <StatCard
-                label="Total de NTs"
-                value={stats.totalNTs}
-                loading={loading}
-                tone="blue"
-                helperText="Volume total de notas registradas."
-                icon={<Package className="w-5 h-5 text-primary" />}
-              />
-              <StatCard
-                label="Total de Itens"
-                value={stats.totalItems}
-                loading={loading}
-                tone="emerald"
-                helperText="Itens processados em toda a base."
-                icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
-              />
-              <StatCard
-                label="Pendentes"
-                value={stats.pendingItems}
-                loading={loading}
-                tone="amber"
-                helperText="Itens aguardando pagamento."
-                icon={<Clock className="w-5 h-5 text-amber-600" />}
-              />
-              <StatCard
-                label="Concluídas"
-                value={stats.completedNTs}
-                loading={loading}
-                tone="green"
-                helperText="NTs com itens 100% pagos."
-                icon={<CheckCircle2 className="w-5 h-5 text-green-600" />}
-              />
-            </section>
+              <div className="p-4">
+                <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Total de Itens
+                </label>
+                <strong className="text-2xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+                  {loading ? "--" : stats.totalItems}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">fracionados</p>
+              </div>
 
-            <section className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
-              <Card className="xl:col-span-7 border shadow-sm">
-                <CardHeader className="pb-3 border-b border-border/60">
-                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    Atalhos Operacionais
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {quickSections.map((section) => (
-                      <Link
-                        key={section.href}
-                        href={section.href}
-                        className={cn(
-                          "group flex items-center gap-3 p-4 rounded-xl border border-border transition-all",
-                          section.tone === "blue" && "hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/10",
-                          section.tone === "slate" && "hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/60 dark:hover:bg-slate-800/50",
-                          section.tone === "green" && "hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/10",
-                          section.tone === "violet" && "hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/60 dark:hover:bg-violet-900/10",
-                          section.tone === "amber" && "hover:border-amber-300 dark:hover:border-amber-700 hover:bg-amber-50/60 dark:hover:bg-amber-900/10"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center",
-                          section.tone === "blue" && "bg-blue-50 dark:bg-blue-900/20",
-                          section.tone === "slate" && "bg-slate-100 dark:bg-slate-800/80",
-                          section.tone === "green" && "bg-emerald-50 dark:bg-emerald-900/20",
-                          section.tone === "violet" && "bg-violet-50 dark:bg-violet-900/20",
-                          section.tone === "amber" && "bg-amber-50 dark:bg-amber-900/20"
-                        )}>
-                          {section.icon}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>
-                          <p className="text-xs text-muted-foreground">{section.description}</p>
-                        </div>
-                        <ArrowRight className="ml-auto w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </Link>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="p-4">
+                <label className="flex items-center gap-1.5 text-[11px] text-amber-400 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Pendentes
+                </label>
+                <strong className="text-2xl font-semibold tracking-tight text-amber-400 font-mono block">
+                  {loading ? "--" : stats.pendingItems}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">aguardando pagamento</p>
+              </div>
 
-              <Card className="xl:col-span-5 border shadow-sm">
-                <CardHeader className="pb-3 border-b border-border/60">
-                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-primary" />
-                    Pulso do Sistema
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/15 p-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-green-700 dark:text-green-300">Pagos Hoje</p>
-                      <p className="text-2xl font-black text-green-700 dark:text-green-300 mt-1">
-                        {loading ? <span className="inline-block w-8 h-6 bg-green-200 dark:bg-green-800 animate-pulse rounded" /> : stats.paidToday}
-                      </p>
+              <div className="p-4">
+                <label className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Concluídas 100%
+                </label>
+                <strong className="text-2xl font-semibold tracking-tight text-emerald-400 font-mono block">
+                  {loading ? "--" : stats.completedNTs}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">
+                  {stats.totalNTs > 0 ? `${Math.round((stats.completedNTs / stats.totalNTs) * 100)}% de conclusão` : "0%"}
+                </p>
+              </div>
+            </div>
+
+            {/* Seções de Acesso Rápido e Pulso */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+              <div className="lg:col-span-7 space-y-3">
+                <h2 className="text-xs font-semibold text-[var(--text)] uppercase tracking-wider">Atalhos Operacionais</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {quickSections.map((section) => (
+                    <Link
+                      key={section.href}
+                      href={section.href}
+                      className="flex items-center gap-3 p-3.5 rounded-md border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--hover)] transition-colors group"
+                    >
+                      <div className="w-9 h-9 rounded bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-[var(--text-2)] group-hover:text-[var(--text)] transition-colors">
+                        {section.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-xs text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
+                          {section.title}
+                        </h3>
+                        <p className="text-[11px] text-[var(--text-3)] truncate">{section.description}</p>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-[var(--text-3)] group-hover:text-[var(--text)] transition-colors" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 space-y-3">
+                <h2 className="text-xs font-semibold text-[var(--text)] uppercase tracking-wider">Pulso Operacional</h2>
+                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-md p-4 space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded p-2.5 border border-emerald-500/20 bg-emerald-500/5 text-center">
+                      <p className="text-[10px] uppercase font-mono text-emerald-400">Pagos Hoje</p>
+                      <p className="text-xl font-semibold font-mono text-emerald-400 mt-0.5">{stats.paidToday}</p>
                     </div>
-
-                    <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/15 p-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">Semana</p>
-                      <p className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">
-                        {loading ? <span className="inline-block w-8 h-6 bg-blue-200 dark:bg-blue-800 animate-pulse rounded" /> : stats.paidThisWeek}
-                      </p>
+                    <div className="rounded p-2.5 border border-blue-500/20 bg-blue-500/5 text-center">
+                      <p className="text-[10px] uppercase font-mono text-blue-400">Semana</p>
+                      <p className="text-xl font-semibold font-mono text-blue-400 mt-0.5">{stats.paidThisWeek}</p>
                     </div>
-
-                    <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15 p-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-red-700 dark:text-red-300">Atrasados</p>
-                      <p className="text-2xl font-black text-red-700 dark:text-red-300 mt-1">
-                        {loading ? <span className="inline-block w-8 h-6 bg-red-200 dark:bg-red-800 animate-pulse rounded" /> : stats.overdueItems}
-                      </p>
+                    <div className="rounded p-2.5 border border-red-500/20 bg-red-500/5 text-center">
+                      <p className="text-[10px] uppercase font-mono text-red-400">Atrasados</p>
+                      <p className="text-xl font-semibold font-mono text-red-400 mt-0.5">{stats.overdueItems}</p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-muted/20 p-3.5 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Última atividade registrada</p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">{formatLastActivity(stats.recentActivity)}</p>
-                    </div>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div className="border-t border-[var(--border)] pt-3 flex items-center justify-between text-xs text-[var(--text-3)] font-mono">
+                    <span>Última atividade registrada</span>
+                    <span className="text-[var(--text-2)]">{formatLastActivity(stats.recentActivity)}</span>
                   </div>
-                </CardContent>
-              </Card>
-            </section>
+                </div>
+              </div>
+            </div>
           </main>
         </div>
       </div>

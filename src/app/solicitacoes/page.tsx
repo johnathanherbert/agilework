@@ -775,271 +775,202 @@ export default function SolicitacoesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-          <Sidebar />
+      <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
+        <Sidebar />
 
-          <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 min-w-0">
-            <Topbar />
+        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+          <Topbar />
 
-            {/* Barra de Ações Rápidas Superior */}
-            <div className="bg-white dark:bg-gray-800/90 border-b border-gray-200 dark:border-gray-700/60 px-6 py-2.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <h1 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <BeakerIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  Solicitações
-                </h1>
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  {ordens.length} Ordens
-                </span>
-              </div>
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_1fr] min-h-0 overflow-hidden">
+            {/* Coluna de Ordens (300px) */}
+            <aside className="border-r border-[var(--border)] bg-[var(--surface)] flex flex-col min-h-0 shrink-0">
+              {/* Formulário Nova Ordem */}
+              <div className="p-4 border-b border-[var(--border)]">
+                <label className="block text-xs text-[var(--text-3)] mb-1.5 font-medium" htmlFor="recipeInput">
+                  Nova ordem de produção
+                </label>
+                <div className="relative">
+                  {addMode === "codigo" ? (
+                    <input
+                      id="recipeInput"
+                      type="text"
+                      inputMode="numeric"
+                      value={ativo}
+                      onChange={(e) => setAtivo(e.target.value.replace(/\D/g, ""))}
+                      onKeyDown={handleKeyPress}
+                      ref={inputRef}
+                      placeholder="Código da receita (ex.: 701171)"
+                      className="h-8 w-full px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] font-mono text-[12.5px] outline-none focus:border-[var(--accent)] text-[var(--text)] placeholder:text-[var(--text-3)] transition-colors"
+                    />
+                  ) : (
+                    <Autocomplete
+                      value={ativo}
+                      onChange={(val) => setAtivo(val)}
+                      onKeyPress={handleKeyPress}
+                      ref={inputRef}
+                      placeholder="Digite o nome do ativo"
+                    />
+                  )}
+                </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setSapDialogOpen(true)}
-                  className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors flex items-center gap-1.5"
-                >
-                  <MagnifyingGlassIcon className="w-3.5 h-3.5" />
-                  <span>Consulta SAP</span>
-                </button>
-
-                <button
-                  onClick={handleUpdateAllSAPValues}
-                  className="px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 border border-green-200 dark:border-green-800 rounded-lg transition-colors flex items-center gap-1.5"
-                >
-                  <ArrowPathIcon className="w-3.5 h-3.5" />
-                  <span>Atualizar Saldos</span>
-                </button>
-
-                <button
-                  onClick={() => setPullProductionOpen(true)}
-                  className="px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 rounded-lg transition-colors flex items-center gap-1.5"
-                >
-                  <Factory className="w-3.5 h-3.5" />
-                  <span>Puxar Produção</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Conteúdo Principal — Grid 3 Colunas como no PWA-Kastor */}
-            <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
-              <div className="grid grid-cols-12 gap-5">
-                {/* Coluna Esquerda: Nova Ordem + Lista de Ordens (3 colunas) */}
-                <div className="col-span-12 lg:col-span-3 space-y-4">
-                  {/* Card Estatísticas */}
-                  <div className="bg-white dark:bg-gray-800/90 rounded-xl shadow-xs border border-gray-200/80 dark:border-gray-700/50 p-3.5">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                        <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Total Ordens</p>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{ordens.length}</p>
-                      </div>
-                      <div className="p-2.5 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                        <p className="text-[11px] font-medium text-green-600 dark:text-green-400">Pesadas</p>
-                        <p className="text-xl font-bold text-green-700 dark:text-green-300">
-                          {ordens.filter((o) => isOrdemPesada(o, pesados)).length}
-                        </p>
-                      </div>
-                    </div>
+                {/* Campo Próxima OP se Auto OP ativo */}
+                {autoIncrementOP && (
+                  <div className="mt-2">
+                    <input
+                      type="number"
+                      value={initialOP}
+                      onChange={(e) => setInitialOP(e.target.value)}
+                      placeholder={`Próxima OP: ${lastOP + 1}`}
+                      className="h-7 w-full px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] font-mono text-xs outline-none focus:border-[var(--accent)] text-[var(--text)] placeholder:text-[var(--text-3)]"
+                    />
                   </div>
+                )}
 
-                  {/* Card Adicionar Ordem */}
-                  <div className="bg-white dark:bg-gray-800/90 rounded-xl shadow-xs border border-gray-200/80 dark:border-gray-700/50 overflow-hidden">
-                    <div className="px-4 py-2.5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex items-center gap-2">
-                      <PlusCircleIcon className="w-4 h-4" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider">Nova Ordem de Produção</h3>
-                    </div>
+                <div className="flex items-center justify-between gap-2 mt-2.5">
+                  <label className="flex items-center gap-2 text-xs text-[var(--text-2)] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={autoIncrementOP}
+                      onChange={(e) => setAutoIncrementOP(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-[26px] h-[15px] rounded-full bg-[var(--border-strong)] peer-checked:bg-[var(--accent)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-[11px] after:h-[11px] after:rounded-full after:bg-[var(--text-2)] peer-checked:after:bg-white peer-checked:after:left-[13px] after:transition-all" />
+                    <span>Auto OP</span>
+                  </label>
 
-                    <div className="p-4 space-y-3">
-                      {addMode === "codigo" ? (
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={ativo}
-                            onChange={(e) => setAtivo(e.target.value.replace(/\D/g, ""))}
-                            onKeyPress={handleKeyPress}
-                            ref={inputRef}
-                            placeholder="Digite o código da receita (Ex: 701171)"
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono"
-                          />
+                  <button
+                    onClick={handleAddOrdem}
+                    className="h-7 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
+                  >
+                    <PlusCircleIcon className="w-3.5 h-3.5" />
+                    <span>Adicionar</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Cabeçalho da Lista de Ordens */}
+              <div className="flex items-baseline justify-between p-3 px-4 pb-2 border-b border-[var(--border)]/50">
+                <div>
+                  <h2 className="text-xs font-semibold text-[var(--text)]">Ordens em andamento</h2>
+                  <div className="text-[11px] text-[var(--text-3)] mt-0.5">
+                    {ordens.length} {ordens.length === 1 ? "ordem" : "ordens"} • {ordens.filter((o) => isOrdemPesada(o, pesados)).length} pesadas
+                  </div>
+                </div>
+                {selectedOrdem && (
+                  <button
+                    onClick={() => setSelectedOrdem(null)}
+                    className="text-xs text-[var(--accent)] hover:underline"
+                  >
+                    Limpar filtro
+                  </button>
+                )}
+              </div>
+
+              {/* Lista de Ordens */}
+              <div className="flex-1 overflow-y-auto divide-y divide-[var(--border)]">
+                {ordens.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-[var(--text-3)]">
+                    Nenhuma ordem em andamento.
+                  </div>
+                ) : (
+                  ordens.map((ordem) => {
+                    const isPesada = isOrdemPesada(ordem, pesados);
+                    const isSelected = selectedOrdem?.id === ordem.id;
+                    const excipientesCount = Object.keys(ordem.excipientes || {}).length;
+
+                    return (
+                      <div
+                        key={ordem.id}
+                        onClick={() => handleOrdemClick(ordem)}
+                        className={`group flex items-center justify-between p-2.5 px-4 cursor-pointer transition-colors border-l-2 ${
+                          isSelected
+                            ? "bg-[var(--accent-weak)] border-[var(--accent)]"
+                            : isPesada
+                            ? "border-transparent hover:bg-[var(--hover)] opacity-70"
+                            : "border-transparent hover:bg-[var(--hover)]"
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1 pr-2">
+                          <div className={`font-medium text-xs truncate ${isPesada ? "line-through text-[var(--text-3)]" : "text-[var(--text)]"}`}>
+                            {ordem.nome}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[var(--text-3)]">
+                            <span className="font-mono">{ordem.op ? `OP: ${ordem.op}` : "S/N"}</span>
+                            <span>•</span>
+                            <span>{excipientesCount} {excipientesCount === 1 ? "item" : "itens"}</span>
+                            {isPesada && (
+                              <span className="text-[10px] text-emerald-400 font-medium ml-1">
+                                Pesada
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <Autocomplete
-                          value={ativo}
-                          onChange={(val) => setAtivo(val)}
-                          onKeyPress={handleKeyPress}
-                          ref={inputRef}
-                          placeholder="Digite o nome do ativo (Ex: AMOXICILINA)"
-                        />
-                      )}
 
-                      {/* Auto Increment OP */}
-                      {autoIncrementOP && (
-                        <input
-                          type="number"
-                          value={initialOP}
-                          onChange={(e) => setInitialOP(e.target.value)}
-                          placeholder={`Próxima OP: ${lastOP + 1}`}
-                          className="w-full px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs"
-                        />
-                      )}
-
-                      {/* Botões do Formulário */}
-                      <div className="flex gap-2">
-                        {/* <button
-                          onClick={() => {
-                            setAddMode(addMode === "codigo" ? "ativo" : "codigo");
-                            setAtivo("");
-                          }}
-                          className="px-2.5 py-1.5 text-xs font-medium rounded-lg border flex items-center justify-center gap-1 flex-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100"
-                        >
-                          {addMode === "codigo" ? <BeakerIcon className="w-3.5 h-3.5" /> : <HashtagIcon className="w-3.5 h-3.5" />}
-                          <span>{addMode === "codigo" ? "Por Ativo" : "Por Código"}</span>
-                        </button> */}
-
-                        <button
-                          onClick={() => setAutoIncrementOP(!autoIncrementOP)}
-                          className={`px-2.5 py-1.5 text-xs font-medium rounded-md border flex items-center gap-1 ${
-                            autoIncrementOP ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600"
-                          }`}
-                        >
-                          Auto OP
-                        </button>
-
-                        <button
-                          onClick={handleAddOrdem}
-                          className="px-3.5 py-1.5 bg-blue-900 hover:bg-blue-900 text-white rounded-md text-xs font-bold transition-colors flex items-center gap-1"
-                        >
-                          <PlusCircleIcon className="w-4 h-4" />
-                          <span>Adicionar</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lista de Ordens Ativas e Pesadas */}
-                  <div className="bg-white dark:bg-gray-800/90 rounded-xl shadow-xs border border-gray-200/80 dark:border-gray-700/50 overflow-hidden">
-                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                        Ordens em Andamento ({ordens.length})
-                      </span>
-                      {selectedOrdem && (
-                        <button
-                          onClick={() => setSelectedOrdem(null)}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Limpar filtro
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="p-2 space-y-1.5 max-h-[calc(100vh-420px)] overflow-y-auto">
-                      {ordens.length === 0 ? (
-                        <p className="text-xs text-gray-400 text-center py-6">Nenhuma ordem adicionada</p>
-                      ) : (
-                        ordens.map((ordem) => {
-                          const isPesada = isOrdemPesada(ordem, pesados);
-                          const isSelected = selectedOrdem?.id === ordem.id;
-
-                          return (
-                            <div
-                              key={ordem.id}
-                              onClick={() => handleOrdemClick(ordem)}
-                              className={`group p-2.5 rounded-lg border cursor-pointer transition-all ${
-                                isSelected
-                                  ? "bg-blue-50/80 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700"
-                                  : isPesada
-                                  ? "bg-green-50/50 border-green-200 dark:bg-green-900/20 dark:border-green-800/50"
-                                  : "bg-gray-50 dark:bg-gray-700/40 border-gray-200/70 dark:border-gray-700/50 hover:bg-gray-100"
-                              }`}
+                        {/* Hover Actions */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {!ordem.op && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenOPModal(ordem.id);
+                              }}
+                              className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-3)] hover:bg-[var(--border)] hover:text-[var(--accent)]"
+                              title="Adicionar OP"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
-                                      {ordem.nome}
-                                    </span>
-                                    {isPesada && (
-                                      <span className="text-[10px] font-bold text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40 px-1.5 py-0.2 rounded">
-                                        Pesada
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                                    <span>OP: {ordem.op || "S/N"}</span>
-                                    <span>•</span>
-                                    <span>{Object.keys(ordem.excipientes || {}).length} excipientes</span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
-                                  {!ordem.op && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenOPModal(ordem.id);
-                                      }}
-                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                      title="Adicionar OP"
-                                    >
-                                      <PlusCircleIcon className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditOrdem(ordem);
-                                    }}
-                                    className="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
-                                    title="Editar pesagem"
-                                  >
-                                    <PencilIcon className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteOrdem(ordem.id);
-                                    }}
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                    title="Remover ordem"
-                                  >
-                                    <TrashIcon className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Coluna Central/Principal: Tabela Principal de Matérias-Primas e Solicitações (9 colunas) */}
-                <div className="col-span-12 lg:col-span-9">
-                  <TabelaPrincipal
-                    filteredExcipientes={filteredExcipientes}
-                    materiaisNaArea={materiaisNaArea}
-                    faltaSolicitar={faltaSolicitar}
-                    inputValues={inputValues}
-                    ntsPendentesPorExcipiente={ntsPendentesPorExcipiente}
-                    allPendingNTItems={allPendingNTItems}
-                    outsideNeedNTItems={outsideNeedNTItems}
-                    totalPendingNTsCount={totalPendingNTsCount}
-                    handleMateriaisNaAreaChange={handleMateriaisNaAreaChange}
-                    handleDetailClick={() => {}}
-                    handleToggleExpandExcipient={handleToggleExpandExcipient}
-                    expandedExcipient={expandedExcipient}
-                    allExpanded={false}
-                    togglePesado={togglePesado}
-                    calcularMovimentacaoTotal={() => 0}
-                    getOrdensAtendidas={getOrdensAtendidas}
-                    handleUpdateSAPValues={handleUpdateSAPValues}
-                    handleUpdateAllSAPValues={handleUpdateAllSAPValues}
-                    handleEditOrdem={handleEditOrdem}
-                  />
-
-
-                </div>
+                              <HashtagIcon className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditOrdem(ordem);
+                            }}
+                            className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-3)] hover:bg-[var(--border)] hover:text-[var(--text)]"
+                            title="Editar pesagens da ordem"
+                          >
+                            <PencilIcon className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteOrdem(ordem.id);
+                            }}
+                            className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-3)] hover:bg-[var(--border)] hover:text-[var(--red)]"
+                            title="Remover ordem"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
+            </aside>
+
+            {/* Conteúdo Principal (Direita) */}
+            <main className="flex-1 overflow-y-auto p-5 sm:p-6 min-w-0 bg-[var(--bg)]">
+              <TabelaPrincipal
+                filteredExcipientes={filteredExcipientes}
+                materiaisNaArea={materiaisNaArea}
+                faltaSolicitar={faltaSolicitar}
+                inputValues={inputValues}
+                ntsPendentesPorExcipiente={ntsPendentesPorExcipiente}
+                allPendingNTItems={allPendingNTItems}
+                outsideNeedNTItems={outsideNeedNTItems}
+                totalPendingNTsCount={totalPendingNTsCount}
+                selectedOrdem={selectedOrdem}
+                onClearSelectedOrdem={() => setSelectedOrdem(null)}
+                handleMateriaisNaAreaChange={handleMateriaisNaAreaChange}
+                handleToggleExpandExcipient={handleToggleExpandExcipient}
+                expandedExcipient={expandedExcipient}
+                togglePesado={togglePesado}
+                handleUpdateSAPValues={handleUpdateSAPValues}
+                handleUpdateAllSAPValues={handleUpdateAllSAPValues}
+                handleEditOrdem={handleEditOrdem}
+                onOpenSap={() => setSapDialogOpen(true)}
+                onOpenPullProduction={() => setPullProductionOpen(true)}
+              />
             </main>
           </div>
         </div>
@@ -1057,9 +988,9 @@ export default function SolicitacoesPage() {
 
         {/* Modal de Inserção de OP */}
         {opModalOpen && (
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-sm w-full p-5 shadow-2xl border border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg max-w-sm w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+              <h3 className="text-sm font-semibold text-[var(--text)] mb-3">
                 Adicionar Número de OP
               </h3>
               <input
@@ -1067,18 +998,19 @@ export default function SolicitacoesPage() {
                 value={newOP}
                 onChange={(e) => setNewOP(e.target.value)}
                 placeholder="Ex: 2213345"
-                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono mb-4"
+                className="w-full h-8 px-2.5 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] font-mono mb-4 outline-none focus:border-[var(--accent)]"
+                autoFocus
               />
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setOpModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg"
+                  className="h-7 px-3 text-xs text-[var(--text-3)] hover:text-[var(--text)] rounded border border-[var(--border-strong)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveOP}
-                  className="px-3.5 py-1.5 text-xs bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+                  className="h-7 px-3 text-xs bg-[var(--text)] text-[var(--bg)] font-medium rounded hover:opacity-90 transition-opacity"
                 >
                   Salvar
                 </button>
@@ -1089,66 +1021,67 @@ export default function SolicitacoesPage() {
 
         {/* Modal de Edição de Pesagens da Ordem */}
         {editingOrdemDialog && (
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-700">
-              <div className="px-5 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center justify-between">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold">{editingOrdemDialog.nome}</h3>
-                  <p className="text-xs text-blue-200">OP: {editingOrdemDialog.op || "Sem OP"}</p>
+                  <h3 className="text-sm font-semibold text-[var(--text)]">{editingOrdemDialog.nome}</h3>
+                  <p className="text-xs text-[var(--text-3)] font-mono">OP: {editingOrdemDialog.op || "Sem OP"}</p>
                 </div>
-                <button onClick={handleCloseEditDialog} className="text-white/80 hover:text-white">
+                <button
+                  onClick={handleCloseEditDialog}
+                  className="w-6 h-6 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)]"
+                >
                   ✕
                 </button>
               </div>
 
-              <div className="p-5 space-y-3">
-                <div className="flex items-center justify-between p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                  <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">Marcar todos como pesados</span>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between p-2 rounded bg-[var(--surface-2)] border border-[var(--border)]">
+                  <span className="text-xs font-medium text-[var(--text-2)]">Marcar todos como pesados</span>
                   <input
                     type="checkbox"
                     checked={selectAllChecked}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 rounded text-blue-600"
+                    className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer"
                   />
                 </div>
 
-                <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-1">
+                <div className="max-h-[45vh] overflow-y-auto space-y-1.5 divide-y divide-[var(--border)]">
                   {Object.entries(editingExcipientes).map(([key, data]: any) => (
                     <div
                       key={key}
-                      className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
-                        data.pesado
-                          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                          : "bg-gray-50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-700"
-                      }`}
+                      className="flex items-center justify-between pt-1.5 first:pt-0 text-xs"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <label className="flex items-center gap-2 cursor-pointer select-none flex-1">
                         <input
                           type="checkbox"
                           checked={data.pesado}
                           onChange={() => handleToggleExcipiente(key)}
-                          className="w-4 h-4 rounded text-blue-600"
+                          className="w-4 h-4 rounded accent-[var(--accent)] cursor-pointer"
                         />
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-gray-100">{data.nome}</p>
-                          <p className="text-[11px] text-gray-500">{formatNumber(data.quantidade, 3)} kg</p>
-                        </div>
-                      </div>
+                        <span className={`font-medium ${data.pesado ? "line-through text-[var(--text-3)]" : "text-[var(--text)]"}`}>
+                          {data.nome}
+                        </span>
+                      </label>
+                      <span className="font-mono text-[11px] text-[var(--text-3)]">
+                        {formatNumber(data.quantidade, 3)} kg
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="px-5 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <div className="p-3 px-4 bg-[var(--surface-2)] border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   onClick={handleCloseEditDialog}
-                  className="px-4 py-1.5 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border rounded-lg"
+                  className="h-7 px-3 text-xs text-[var(--text-3)] hover:text-[var(--text)] rounded border border-[var(--border-strong)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveEditDialog}
-                  className="px-4 py-1.5 text-xs bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+                  className="h-7 px-3 text-xs bg-[var(--text)] text-[var(--bg)] font-medium rounded hover:opacity-90 transition-opacity"
                 >
                   Salvar
                 </button>
@@ -1156,6 +1089,7 @@ export default function SolicitacoesPage() {
             </div>
           </div>
         )}
+      </div>
     </ProtectedRoute>
   );
 }

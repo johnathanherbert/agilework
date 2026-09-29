@@ -1,37 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { 
-  Factory, 
   Printer, 
-  Wifi, 
-  WifiOff, 
-  TrendingUp, 
   Eye,
   EyeOff,
-  Maximize2,
-  Minimize2,
-  Search,
-  Layers,
-  Sparkles,
-  X
+  TrendingUp,
+  Plus
 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import ProtectedRoute from '@/components/auth/protected-route';
-import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
+import { useFirebase } from '@/components/providers/firebase-provider';
 import { useProductionRealtime } from '@/hooks/useProductionRealtime';
 import { moveProductionItem, mergeSplitProductionItem } from '@/lib/production-helpers';
 import { TurnoColumn } from '@/components/producao/turno-column';
@@ -80,458 +62,356 @@ function printPanel() {
     .join('\n');
 
   const clone = el.cloneNode(true) as HTMLElement;
-
-  const header = clone.querySelector('#producao-print-header') as HTMLElement | null;
-  if (header) {
-    header.style.display = 'flex';
-    header.classList.remove('hidden');
-    const dateEl = header.querySelector('[data-print-date]') as HTMLElement | null;
-    if (dateEl) dateEl.textContent = new Date().toLocaleString('pt-BR');
-  }
-
   clone.querySelectorAll('button').forEach((b) => b.remove());
-
-  clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
-    const s = el.style;
-    s.overflow = 'visible';
-    s.maxHeight = 'none';
-    if (s.height && s.height !== 'auto' && s.height !== '100%') s.height = 'auto';
-  });
 
   pw.document.write(`
     <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="utf-8" />
-      <title>Painel de Produção — ${new Date().toLocaleDateString('pt-BR')}</title>
-      ${linkTags}
-      <style>
-        ${styleSheetText}
-        @page { size: A4 landscape; margin: 10mm 8mm; }
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        html, body { background: white !important; margin: 0; padding: 12px; }
-        #producao-print-root { display: flex; flex-direction: column; gap: 12px; }
-        #producao-print-header { display: flex !important; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1.5px solid #0066B3; margin-bottom: 8px; }
-        .print-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; align-items: start !important; height: auto !important; }
-        .print-col { height: auto !important; overflow: visible !important; display: flex; flex-direction: column; }
-        .print-col > * { height: auto !important; overflow: visible !important; max-height: none !important; flex: none !important; }
-        button { display: none !important; }
-      </style>
-    </head>
-    <body>
-      ${clone.outerHTML}
-    </body>
+    <html>
+      <head>
+        <title>Painel de Produção · Pesagem</title>
+        ${linkTags}
+        <style>
+          ${styleSheetText}
+          body { padding: 16px; background: #fff !important; color: #000 !important; }
+        </style>
+      </head>
+      <body>
+        ${clone.outerHTML}
+        <script>
+          setTimeout(() => { window.print(); window.close(); }, 500);
+        </script>
+      </body>
     </html>
   `);
   pw.document.close();
-
-  pw.addEventListener('load', () => {
-    setTimeout(() => {
-      pw.focus();
-      pw.print();
-    }, 300);
-  });
 }
 
-export default function ProducaoPage() {
-  const { userData, loading: authLoading } = useFirebase();
+function ProducaoPageContent() {
   const router = useRouter();
-  const { items, loading, connected } = useProductionRealtime();
+  const { userData } = useFirebase();
+  const { items, loading } = useProductionRealtime();
 
-  // Estados de Visibilidade dos Turnos e Filtros
-  const [visibleTurnos, setVisibleTurnos] = useState<ProductionTurno[]>([3, 1, 2]);
-  const [cardDetailMode, setCardDetailMode] = useState<'auto' | 'compact' | 'expanded'>('auto');
-  const [selectedFamily, setSelectedFamily] = useState<string | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const [modal, setModal] = useState<ModalState>({
+  const [modalState, setModalState] = useState<ModalState>({
     open: false,
     mode: 'create',
     tipo: 'ordem',
+    item: null,
     defaultTurno: 1,
+    defaultVia: 'UMIDA',
   });
-  const [itemToDelete, setItemToDelete] = useState<ProductionItem | null>(null);
-  const [turnoToClear, setTurnoToClear] = useState<ProductionTurno | 'all' | null>(null);
-  const [showHeijunka, setShowHeijunka] = useState(false);
 
-  const isAdmin = userData?.email === ADMIN_EMAIL;
-  const isLeaderOrAdmin = isAdmin || userData?.role === 'leader' || userData?.role === 'supervisor';
-  const topBadgeBase = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border h-10';
+  const [deleteTarget, setDeleteTarget] = useState<ProductionItem | null>(null);
+  const [clearTurnoTarget, setClearTurnoTarget] = useState<ProductionTurno | null>(null);
+  const [heijunkaOpen, setHeijunkaOpen] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!userData || !isLeaderOrAdmin) {
-        toast.error('Acesso negado. Apenas líderes, supervisores e administradores podem ver esta página.');
-        router.push('/dashboard');
-      }
-    }
-  }, [authLoading, userData, isLeaderOrAdmin, router]);
+  // Filtros
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hideCompleted, setHideCompleted] = useState(false);
 
-  // Lista de Famílias únicas
-  const familiesAvailable = useMemo(() => {
-    const fromWip = getWipFamilies();
-    const fromItems = new Set<string>();
-    items.forEach((i) => {
-      if (i.familia) fromItems.add(i.familia.trim());
-    });
-    return Array.from(new Set([...fromWip, ...Array.from(fromItems)])).sort();
-  }, [items]);
+  const familiesAvailable = useMemo(() => getWipFamilies(), []);
 
-  // Totais Gerais compactos do topo
-  const totaisGerais = useMemo(() => {
-    const ordens = items.filter(i => i.tipo === 'ordem');
-    return {
-      real: ordens.reduce((acc, curr) => acc + curr.real, 0),
-      prog: ordens.reduce((acc, curr) => acc + curr.prog, 0),
-      qtd: ordens.length,
-    };
-  }, [items]);
-
-  const totaisPDPA = useMemo(() => {
-    const pdpaItems = items.filter(i => i.tipo === 'auto' || i.tipo === 'direta');
-    return {
-      real: pdpaItems.reduce((acc, curr) => acc + curr.real, 0),
-      prog: pdpaItems.reduce((acc, curr) => acc + curr.prog, 0),
-      qtd: pdpaItems.length,
-    };
-  }, [items]);
-
-  // Filtro de itens no quadro
+  // Filtragem de Itens
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      if (selectedFamily !== 'ALL') {
-        if (!item.familia || item.familia.trim().toUpperCase() !== selectedFamily.toUpperCase()) {
-          return false;
-        }
+      if (selectedFamily && item.tipo === 'ordem' && item.familia !== selectedFamily) {
+        return false;
+      }
+      if (hideCompleted && item.prog > 0 && item.real >= item.prog) {
+        return false;
       }
       if (searchQuery.trim()) {
-        const q = searchQuery.trim().toLowerCase();
-        const prodMatch = item.produto.toLowerCase().includes(q);
-        const codeMatch = item.codigoReceita?.toLowerCase().includes(q);
-        const famMatch = item.familia?.toLowerCase().includes(q);
-        if (!prodMatch && !codeMatch && !famMatch) return false;
+        const q = searchQuery.toLowerCase();
+        const matchProd = item.produto.toLowerCase().includes(q);
+        const matchCode = item.codigoReceita?.toLowerCase().includes(q);
+        const matchFam = item.familia?.toLowerCase().includes(q);
+        if (!matchProd && !matchCode && !matchFam) return false;
       }
       return true;
     });
-  }, [items, selectedFamily, searchQuery]);
+  }, [items, selectedFamily, hideCompleted, searchQuery]);
 
+  // Agrupamento por Turno
   const itemsByTurno = useMemo(() => {
-    const map: Record<ProductionTurno, ProductionItem[]> = { 1: [], 2: [], 3: [] };
-    filteredItems.forEach((item) => {
-      if (map[item.turno]) map[item.turno].push(item);
-    });
-    return map;
+    return {
+      1: filteredItems.filter((i) => i.turno === 1),
+      2: filteredItems.filter((i) => i.turno === 2),
+      3: filteredItems.filter((i) => i.turno === 3),
+    };
   }, [filteredItems]);
 
-  // Alternar visibilidade do turno
-  const toggleTurnoVisibility = (turno: ProductionTurno) => {
-    setVisibleTurnos((current) => {
-      if (current.includes(turno)) {
-        if (current.length === 1) {
-          toast('Pelo menos um turno deve permanecer visível.', { icon: 'ℹ️' });
-          return current;
-        }
-        return current.filter((t) => t !== turno);
-      } else {
-        return [...current, turno];
-      }
-    });
-  };
+  // Estatísticas do Dia e por Turno para os Cards de Resumo
+  const stats = useMemo(() => {
+    const calc = (turnItems: ProductionItem[]) => {
+      const ordens = turnItems.filter(i => i.tipo === 'ordem');
+      const real = ordens.reduce((a, c) => a + c.real, 0);
+      const prog = ordens.reduce((a, c) => a + c.prog, 0);
+      const pct = prog > 0 ? Math.min(100, Math.round((real / prog) * 100)) : 0;
+      return { real, prog, pct, count: ordens.length };
+    };
 
-  const selectOnlyTurno = (turno: ProductionTurno | 'all') => {
-    if (turno === 'all') {
-      setVisibleTurnos([3, 1, 2]);
-    } else {
-      setVisibleTurnos([turno]);
-    }
-  };
+    return {
+      total: calc(items),
+      t1: calc(items.filter(i => i.turno === 1)),
+      t2: calc(items.filter(i => i.turno === 2)),
+      t3: calc(items.filter(i => i.turno === 3)),
+    };
+  }, [items]);
 
-  const isExpandedView =
-    cardDetailMode === 'expanded' || (cardDetailMode === 'auto' && visibleTurnos.length < 3);
+  const handleMoveItem = async (
+    itemId: string,
+    destination: { turno: ProductionTurno; via?: ProductionVia }
+  ) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
 
-  const openCreateModal = (turno: ProductionTurno, tipo: ProductionTipo, via?: ProductionVia) => {
-    setModal({ open: true, mode: 'create', tipo, defaultTurno: turno, defaultVia: via, item: null });
-  };
-
-  const openEditModal = (item: ProductionItem) => {
-    setModal({ open: true, mode: 'edit', tipo: item.tipo, defaultTurno: item.turno, defaultVia: item.via, item });
-  };
-
-  const handleMove = async (itemId: string, destination: { turno: ProductionTurno; via?: ProductionVia }) => {
-    try {
-      const draggedItem = items.find((i) => i.id === itemId);
-
-      if (draggedItem?.splitParentId) {
-        const parentItem = items.find((i) => i.id === draggedItem.splitParentId);
-        if (parentItem && parentItem.turno === destination.turno && parentItem.via === destination.via) {
-          await mergeSplitProductionItem(parentItem.id, draggedItem.id);
-          toast.success('Ordem mesclada de volta ao turno de origem!');
+    if (item.splitChildId || item.splitParentId) {
+      if (item.splitParentId && destination.turno !== item.turno) {
+        try {
+          await mergeSplitProductionItem(item.id, item.splitParentId);
+          toast.success('Itens mesclados novamente com sucesso!');
+          return;
+        } catch (err) {
+          toast.error('Falha ao mesclar item dividido.');
           return;
         }
       }
+    }
 
+    try {
       await moveProductionItem(itemId, destination);
-    } catch (error: any) {
-      console.error('Erro ao mover item:', error);
-      toast.error(error.message || 'Erro ao mover o item');
+      toast.success('Item movido com sucesso');
+    } catch (err) {
+      toast.error('Erro ao mover item');
     }
   };
 
-  if (authLoading || !userData || !isLeaderOrAdmin) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
+  return (
+    <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
+      {/* App Rail */}
+      <Sidebar />
+
+      {/* Conteúdo Principal com Topbar */}
+      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <Topbar />
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" id="producao-print-root">
+          {/* Cabeçalho da Página */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-1 select-none">
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">
+                Painel de Produção
+              </h1>
+              <p className="text-xs text-[var(--text-3)] mt-0.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
+                Acompanhamento e nivelamento de ordens da pesagem em tempo real
+              </p>
+            </div>
+
+            {/* Ações do Topo */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setHideCompleted(!hideCompleted)}
+                className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                {hideCompleted ? <Eye size={13} /> : <EyeOff size={13} />}
+                <span>{hideCompleted ? "Mostrar Concluídas" : "Ocultar Concluídas"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHeijunkaOpen(true)}
+                className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <TrendingUp size={13} className="text-[var(--accent)]" />
+                <span>Heijunka</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={printPanel}
+                className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer size={13} />
+                <span>Imprimir</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Cards de Resumo dos 3 Turnos + Total do Dia */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-xs select-none">
+            {/* Bloco 1: Total do Dia */}
+            <div className="p-3.5 border-r border-b lg:border-b-0 border-[var(--border)] bg-[var(--surface-2)]">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <b className="font-semibold text-[var(--text)]">Total do Dia</b>
+                <span className="text-[11px] font-mono text-[var(--text-3)]">Meta diária</span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <strong className="text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
+                  {stats.total.pct}%
+                </strong>
+                <span className="text-xs text-[var(--text-3)] font-mono">
+                  {stats.total.real} de {stats.total.prog} OPs
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[var(--accent)] rounded-full transition-all duration-300"
+                  style={{ width: `${stats.total.pct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Bloco 2: 1º Turno */}
+            <div className="p-3.5 border-r border-b lg:border-b-0 border-[var(--border)]">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <b className="font-semibold text-[var(--text)]">1º Turno</b>
+                <span className="text-[11px] font-mono text-[var(--text-3)]">06:00 – 14:00</span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <strong className="text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
+                  {stats.t1.pct}%
+                </strong>
+                <span className="text-xs text-[var(--text-3)] font-mono">
+                  {stats.t1.real}/{stats.t1.prog} OPs
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-300", stats.t1.pct >= 100 ? "bg-[var(--green)]" : "bg-[var(--accent)]")}
+                  style={{ width: `${stats.t1.pct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Bloco 3: 2º Turno */}
+            <div className="p-3.5 border-r border-b lg:border-b-0 border-[var(--border)]">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <b className="font-semibold text-[var(--text)]">2º Turno</b>
+                <span className="text-[11px] font-mono text-[var(--text-3)]">14:00 – 22:00</span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <strong className="text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
+                  {stats.t2.pct}%
+                </strong>
+                <span className="text-xs text-[var(--text-3)] font-mono">
+                  {stats.t2.real}/{stats.t2.prog} OPs
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-300", stats.t2.pct >= 100 ? "bg-[var(--green)]" : "bg-[var(--accent)]")}
+                  style={{ width: `${stats.t2.pct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Bloco 4: 3º Turno */}
+            <div className="p-3.5">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <b className="font-semibold text-[var(--text)]">3º Turno</b>
+                <span className="text-[11px] font-mono text-[var(--text-3)]">22:00 – 06:00</span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <strong className="text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
+                  {stats.t3.pct}%
+                </strong>
+                <span className="text-xs text-[var(--text-3)] font-mono">
+                  {stats.t3.real}/{stats.t3.prog} OPs
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-300", stats.t3.pct >= 100 ? "bg-[var(--green)]" : "bg-[var(--accent)]")}
+                  style={{ width: `${stats.t3.pct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Add Rotas / Receitas */}
+          <RotasQuickAdd
+            defaultTurno={1}
+          />
+
+          {/* Grid Kanban dos 3 Turnos */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[500px]">
+            {([1, 2, 3] as ProductionTurno[]).map((turno) => (
+              <TurnoColumn
+                key={turno}
+                turno={turno}
+                items={itemsByTurno[turno]}
+                onItemClick={(item) => {
+                  setModalState({
+                    open: true,
+                    mode: 'edit',
+                    tipo: item.tipo,
+                    item,
+                    defaultTurno: item.turno,
+                    defaultVia: item.via,
+                  });
+                }}
+                onCreateClick={(tipo, via) => {
+                  setModalState({
+                    open: true,
+                    mode: 'create',
+                    tipo,
+                    item: null,
+                    defaultTurno: turno,
+                    defaultVia: via || 'UMIDA',
+                  });
+                }}
+                onMove={handleMoveItem}
+              />
+            ))}
+          </div>
+        </main>
       </div>
-    );
-  }
 
-  const gridColumnsClass =
-    visibleTurnos.length === 1
-      ? 'grid-cols-1'
-      : visibleTurnos.length === 2
-      ? 'grid-cols-1 md:grid-cols-2'
-      : 'grid-cols-1 lg:grid-cols-3';
+      {/* Modais */}
+      {modalState.open && (
+        <ProductionItemModal
+          open={modalState.open}
+          onOpenChange={(open) => setModalState((prev) => ({ ...prev, open }))}
+          mode={modalState.mode}
+          tipo={modalState.tipo}
+          item={modalState.item || undefined}
+          defaultTurno={modalState.defaultTurno}
+          defaultVia={modalState.defaultVia}
+        />
+      )}
 
+      {deleteTarget && (
+        <ProductionDeleteDialog
+          item={deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+        />
+      )}
+
+      {clearTurnoTarget !== null && (
+        <ClearTurnoDialog
+          open={clearTurnoTarget !== null}
+          onOpenChange={(open) => !open && setClearTurnoTarget(null)}
+          turnoToClear={clearTurnoTarget}
+        />
+      )}
+
+      {heijunkaOpen && (
+        <HeijunkaDialog
+          open={heijunkaOpen}
+          onOpenChange={setHeijunkaOpen}
+          items={items}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function ProducaoPage() {
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen sm:h-screen bg-slate-100 dark:bg-gray-900">
-        <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 overflow-y-auto sm:overflow-hidden">
-          <Topbar />
-          <main className="flex-1 flex flex-col overflow-visible sm:overflow-hidden px-3 sm:px-5 pt-3 pb-3 sm:pb-2 gap-2">
-            {/* ── Topbar Compacto e Limpo ── */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shrink-0">
-                  <Factory className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground leading-tight">Painel de Produção</h1>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Programação por turno · Úmida & Seca
-                  </p>
-                </div>
-              </div>
-
-              {/* Indicadores Globais Limpos */}
-              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                <div className={cn(topBadgeBase, 'bg-white dark:bg-card border-blue-200 dark:border-blue-900/50')}>
-                  <span className="text-xs font-bold uppercase text-slate-500 mr-0.5">Ordens:</span>
-                  <span className="text-lg font-black text-blue-700 dark:text-blue-300 tabular-nums">{totaisGerais.real}</span>
-                  <span className="text-sm text-slate-400 font-bold">/{totaisGerais.prog}</span>
-                </div>
-
-                <div className={cn(topBadgeBase, 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50')}>
-                  <span className="text-xs font-bold uppercase text-sky-700 dark:text-sky-300 mr-0.5">PD/PA:</span>
-                  <span className="text-lg font-black text-sky-700 dark:text-sky-300 tabular-nums">{totaisPDPA.real}</span>
-                  <span className="text-sm text-sky-700/70 dark:text-sky-300/70 font-bold">/{totaisPDPA.prog}</span>
-                </div>
-
-                <div
-                  className={cn(
-                    'flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-md border h-8',
-                    connected
-                      ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50'
-                      : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                  )}
-                >
-                  {connected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                  {connected ? 'Ao vivo' : 'Conectando'}
-                </div>
-
-                <RotasQuickAdd defaultTurno={visibleTurnos[0] || 1} />
-
-                {/* <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8"
-                  onClick={printPanel}
-                  title="Imprimir painel"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  Imprimir
-                </Button> */}
-
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  className="gap-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground h-8"
-                  onClick={() => setShowHeijunka(true)}
-                  title="Fechar dia de produção e atualizar dashboard"
-                >
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  Lançar Heijunka
-                </Button>
-              </div>
-            </div>
-
-            {/* ── Barra Única de Controles de Exibição & Filtro ── */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2.5 bg-white dark:bg-card border border-slate-300 dark:border-border px-2.5 py-1.5 rounded-lg shrink-0">
-              {/* Seletor de Visibilidade dos Turnos */}
-              <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-2.5 px-2.5 sm:mx-0 sm:px-0">
-                <span className="text-[10px] font-bold uppercase text-slate-400 px-1 shrink-0 hidden sm:inline">Ocultar/Exibir Turnos:</span>
-                <button
-                  type="button"
-                  onClick={() => selectOnlyTurno('all')}
-                  className={cn(
-                    'px-2.5 py-1 rounded-md text-xs font-bold transition-all shrink-0 border',
-                    visibleTurnos.length === 3
-                      ? 'bg-blue-700 text-white border-blue-700'
-                      : 'text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  )}
-                >
-                  Todos
-                </button>
-
-                <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" />
-
-                {([3, 1, 2] as ProductionTurno[]).map((t) => {
-                  const isVisible = visibleTurnos.includes(t);
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => toggleTurnoVisibility(t)}
-                      className={cn(
-                        'px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 border shrink-0',
-                        isVisible
-                          ? 'bg-sky-700 dark:bg-sky-600 text-white border-sky-700 dark:border-sky-600'
-                          : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
-                      )}
-                    >
-                      {isVisible ? <Eye className="h-3 w-3 text-blue-100" /> : <EyeOff className="h-3 w-3 text-slate-400" />}
-                      {t}º Turno
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Filtros Rápido + Modo de Card */}
-              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
-                {/* Busca por texto */}
-                <div className="relative w-full sm:w-56">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Filtrar por produto ou SA..."
-                    className="pl-8 text-xs h-7 bg-slate-50 dark:bg-muted/40 border-slate-200 dark:border-border/80 rounded-lg"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Filtro de Família */}
-                <Select
-                  value={selectedFamily}
-                  onValueChange={(val) => setSelectedFamily(val)}
-                >
-                  <SelectTrigger className="h-7 text-xs flex-1 sm:flex-none min-w-[110px] sm:w-36 bg-slate-50 dark:bg-muted/40 border-slate-200 dark:border-border/80">
-                    <SelectValue placeholder="Todas as Famílias" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">Todas Famílias</SelectItem>
-                    {familiesAvailable.map((fam) => (
-                      <SelectItem key={fam} value={fam}>
-                        {fam}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Botão Densidade de Cards */}
-                <button
-                  type="button"
-                  onClick={() => setCardDetailMode(cardDetailMode === 'expanded' ? 'compact' : 'expanded')}
-                  className="px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-border/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 shrink-0"
-                  title="Alternar entre modo compacto e expandido dos cards"
-                >
-                  {isExpandedView ? <Minimize2 className="h-3 w-3 text-primary" /> : <Maximize2 className="h-3 w-3 text-primary" />}
-                  <span>{isExpandedView ? 'Expandido' : 'Compacto'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ── Grid Principal dos Quadro de Turnos ── */}
-            <div id="producao-print-root" className="flex-1 min-h-0 flex flex-col">
-              <div id="producao-print-header" className="hidden">
-                <div>
-                  <p className="text-lg font-bold" style={{ color: '#0066B3' }}>Painel de Produção</p>
-                  <p className="text-sm text-gray-500">Programação de pesagem por turno · Via Úmida e Via Seca</p>
-                </div>
-                <p className="text-xs text-gray-400" data-print-date>
-                  {new Date().toLocaleString('pt-BR')}
-                </p>
-              </div>
-
-              {loading ? (
-                <div className={cn('grid gap-3 flex-1 pb-2 print-grid', gridColumnsClass)}>
-                  {visibleTurnos.map((t) => (
-                    <div key={t} className="rounded-lg bg-card border border-border animate-pulse print-col min-h-[280px] sm:min-h-0" />
-                  ))}
-                </div>
-              ) : (
-                <div className={cn('grid gap-3 flex-1 min-h-0 pb-2 print-grid', gridColumnsClass)}>
-                  {visibleTurnos.map((turno) => (
-                    <div key={turno} className="print-col min-h-0 flex flex-col">
-                      <TurnoColumn
-                        turno={turno}
-                        items={itemsByTurno[turno]}
-                        onItemClick={openEditModal}
-                        onCreateClick={(tipo, via) => openCreateModal(turno, tipo, via)}
-                        onMove={handleMove}
-                        isExpandedView={isExpandedView}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </main>
-        </div>
-      </div>
-
-      <ProductionItemModal
-        open={modal.open}
-        onOpenChange={(open) => setModal((m) => ({ ...m, open }))}
-        mode={modal.mode}
-        tipo={modal.tipo}
-        item={modal.item}
-        defaultTurno={modal.defaultTurno}
-        defaultVia={modal.defaultVia}
-        onRequestDelete={(item) => {
-          setModal((m) => ({ ...m, open: false }));
-          setItemToDelete(item);
-        }}
-      />
-
-      <ProductionDeleteDialog
-        item={itemToDelete}
-        onOpenChange={(open) => {
-          if (!open) setItemToDelete(null);
-        }}
-      />
-
-      <ClearTurnoDialog 
-        open={turnoToClear !== null} 
-        onOpenChange={(open) => { if (!open) setTurnoToClear(null); }} 
-        turnoToClear={turnoToClear}
-      />
-
-      <HeijunkaDialog 
-        open={showHeijunka} 
-        onOpenChange={setShowHeijunka} 
-        items={items}
-      />
+      <ProducaoPageContent />
     </ProtectedRoute>
   );
 }

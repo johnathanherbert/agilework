@@ -155,122 +155,88 @@ export default function MaoDeObraPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-slate-100 dark:bg-slate-950">
+      <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300 overflow-hidden">
+        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
-            {/* Header */}
-            <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shrink-0">
-                  <Users className="h-5 w-5" />
+          <main className="flex-1 overflow-y-auto p-5 sm:p-6 min-w-0">
+            {/* Header da Página */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Mão de Obra & Escalas</h1>
+                  {connected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Ao vivo
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-mono">
+                      <WifiOff className="w-3 h-3" /> Conectando
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-black text-foreground tracking-tight">Mão de Obra</h1>
-                    {connected ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Ao Vivo
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-muted-foreground text-[10px]">
-                        <WifiOff className="w-3 h-3" /> Conectando
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Escala 4x1,4x2,5x1 2026 · Folgas flexíveis
-                  </p>
-                </div>
+                <p className="text-xs text-[var(--text-3)] mt-0.5">
+                  Escala 4x1 · 4x2 · 5x1 2026 · Gestão diária e banco de folgas flexíveis
+                </p>
               </div>
 
-              {/* Seletor de Turno + Ações */}
+              {/* Seletor de Turno + Ações Rápidas */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Seletor de Turno (Admin e Supervisor) */}
+                {/* Seletor de Turno */}
                 {canSelectTurno ? (
-                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
-                    <span className="text-[11px] font-bold text-muted-foreground px-1.5">Turno:</span>
+                  <div className="flex items-center border border-[var(--border-strong)] rounded-md overflow-hidden bg-[var(--surface)] p-0.5">
                     {(['ALL', 1, 2, 3] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
                         onClick={() => setSelectedTurno(t)}
                         className={cn(
-                          "h-7 px-2.5 rounded-lg text-[11px] font-bold transition-colors",
+                          "h-7 px-2.5 text-xs font-medium rounded transition-colors font-mono",
                           selectedTurno === t
-                            ? "bg-primary text-white shadow-xs"
-                            : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                            ? "bg-[var(--hover)] text-[var(--text)] font-semibold shadow-xs"
+                            : "text-[var(--text-3)] hover:text-[var(--text)]"
                         )}
                       >
-                        {t === 'ALL' ? 'Geral' : `T${t}`}
+                        {t === 'ALL' ? 'Todos 3' : `T${t}`}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  /* Líder: Badge do Turno fixo */
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl">
-                    <Star className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-md">
+                    <Star className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-xs font-medium text-amber-300 font-mono">
                       {TURNO_INFO[selectedTurno as number]?.label || `Turno ${selectedTurno}`}
                     </span>
                   </div>
                 )}
 
-
-                
-                {/* Ações Rápidas - não remover, mesmo que não usemos a importação de massa
-                <Button
-                  onClick={handleOpenImportarMassa}
-                  variant="outline"
-                  className="gap-1.5 font-bold h-9 rounded-xl text-xs border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 shadow-xs"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  Importar
-                </Button> */}
-
                 <Button
                   onClick={handleOpenNewOperator}
-                  className="gap-1.5 font-bold h-9 rounded-xl text-xs bg-primary shadow-xs"
+                  className="h-8 px-3 text-xs gap-1.5 font-medium bg-[var(--text)] text-[var(--bg)] hover:opacity-90 rounded-md"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Operador
+                  Novo Operador
                 </Button>
 
                 <Button
                   variant="outline"
                   onClick={() => handleOpenOcorrencia()}
-                  className="gap-1.5 font-bold h-9 rounded-xl text-xs shadow-xs"
+                  className="h-8 px-3 text-xs gap-1.5 font-medium border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] rounded-md"
                 >
-                  <ClipboardList className="w-3.5 h-3.5 text-primary" />
+                  <ClipboardList className="w-3.5 h-3.5 text-[var(--accent)]" />
                   Ocorrência
-                </Button>
-
-                {/* Bloquear com PIN */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsPinUnlocked(false);
-                    toast.success("Mão de Obra bloqueada.", { icon: "🔒" });
-                  }}
-                  variant="outline"
-                  className="gap-1.5 font-bold h-9 rounded-xl text-xs text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
-                  title="Bloquear acesso à Mão de Obra com PIN"
-                >
-                  <Lock className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-                  <span className="hidden sm:inline">Bloquear</span>
                 </Button>
               </div>
             </div>
 
             {/* Abas */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-4 h-10 p-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-xs gap-0.5 flex-wrap w-auto">
+              <TabsList className="mb-5 h-auto p-0 bg-transparent border-b border-[var(--border)] rounded-none w-full justify-start gap-1">
                 <TabsTrigger
                   value="quadro"
-                  className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
                   <Users className="w-3.5 h-3.5" />
                   Quadro do Dia
@@ -278,7 +244,7 @@ export default function MaoDeObraPage() {
 
                 <TabsTrigger
                   value="escala"
-                  className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   Calendário Escala
@@ -286,15 +252,15 @@ export default function MaoDeObraPage() {
 
                 <TabsTrigger
                   value="operadores"
-                  className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  Operadores ({operadoresFiltrados.length})
+                  Operadores <span className="font-mono text-[11px] text-[var(--text-3)]">({operadoresFiltrados.length})</span>
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="ocorrencias"
-                  className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
                   <CalendarDays className="w-3.5 h-3.5" />
                   Ocorrências
@@ -303,16 +269,16 @@ export default function MaoDeObraPage() {
                 {(isAdmin || isSupervisor) && (
                   <TabsTrigger
                     value="tratativas"
-                    className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+                    className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
                     Tratativas
                   </TabsTrigger>
                 )}
 
                 <TabsTrigger
                   value="absenteismo"
-                  className="gap-1.5 text-xs font-bold rounded-lg px-3 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
                   Absenteísmo

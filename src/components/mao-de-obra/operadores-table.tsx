@@ -151,61 +151,62 @@ export function OperadoresTable({
 
   return (
     <div className="space-y-4">
-      {/* Cards de Resumo Compactos */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs col-span-3 sm:col-span-2">
-          <p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p>
-          <p className="text-xl font-black text-foreground">{stats.total}</p>
-          <p className="text-[11px] text-muted-foreground">
+      {/* Resumo Industrial */}
+      <div className="grid grid-cols-2 sm:grid-cols-6 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden">
+        <div className="p-3.5 col-span-2">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
+            Total Cadastrado
+          </label>
+          <strong className="text-xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+            {stats.total}
+          </strong>
+          <p className="text-[11px] text-[var(--text-3)] mt-0.5">
             {stats.ativos} ativos{stats.ferias > 0 ? ` · ${stats.ferias} em férias` : ''}
           </p>
         </div>
         {(['A', 'B', 'C', 'D'] as OperatorTurma[]).map((t) => (
-          <div
-            key={t}
-            className="rounded-xl p-3 shadow-xs border"
-            style={{ borderColor: `${TURMAS_INFO[t].cor}40`, backgroundColor: `${TURMAS_INFO[t].cor}0a` }}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <div
-                className="w-4 h-4 rounded text-white text-[9px] font-black flex items-center justify-center"
-                style={{ backgroundColor: TURMAS_INFO[t].cor }}
-              >
-                {t}
-              </div>
-              <p className="text-[10px] uppercase font-bold" style={{ color: TURMAS_INFO[t].cor }}>Turma {t}</p>
-            </div>
-            <p className="text-xl font-black" style={{ color: TURMAS_INFO[t].cor }}>{stats.turmasCount[t]}</p>
+          <div key={t} className="p-3.5">
+            <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: TURMAS_INFO[t].cor }} />
+              Turma {t}
+            </label>
+            <strong className="text-xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+              {stats.turmasCount[t]}
+            </strong>
+            <p className="text-[11px] text-[var(--text-3)] mt-0.5">operadores</p>
           </div>
         ))}
       </div>
 
       {/* Tabela Principal */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+      <div className="bg-[var(--surface)] rounded-md border border-[var(--border)] overflow-hidden">
         {/* Toolbar */}
-        <div className="px-4 py-3 border-b border-border bg-slate-50/80 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h3 className="text-sm font-black text-foreground">
-            Operadores de Produção
-            <span className="ml-2 text-xs font-bold text-muted-foreground">({filteredOperators.length})</span>
-          </h3>
+        <div className="px-3.5 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--text)]">Operadores Cadastrados</span>
+            <span className="text-[11px] font-mono text-[var(--text-3)] bg-[var(--surface)] px-1.5 py-0.5 rounded border border-[var(--border)]">
+              {filteredOperators.length}
+            </span>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="h-3.5 w-3.5 text-[var(--text-3)] absolute left-2.5 top-1/2 -translate-y-1/2" />
               <Input
-                placeholder="Buscar..."
+                placeholder="Buscar nome, matrícula..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 text-xs bg-white dark:bg-slate-950 rounded-lg w-[170px]"
+                className="h-8 pl-8 pr-2.5 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[190px] text-[var(--text)] placeholder:text-[var(--text-3)]"
               />
             </div>
 
             <Select value={turmaFilter} onValueChange={(v: any) => setTurmaFilter(v)}>
-              <SelectTrigger className="h-8 text-xs bg-white dark:bg-slate-950 rounded-lg w-[100px]">
+              <SelectTrigger className="h-8 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[105px] text-[var(--text-2)]">
                 <SelectValue placeholder="Turma" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas</SelectItem>
+              <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
+                <SelectItem value="ALL">Todas Turmas</SelectItem>
                 <SelectItem value="A">Turma A</SelectItem>
                 <SelectItem value="B">Turma B</SelectItem>
                 <SelectItem value="C">Turma C</SelectItem>
@@ -214,11 +215,11 @@ export function OperadoresTable({
             </Select>
 
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-              <SelectTrigger className="h-8 text-xs bg-white dark:bg-slate-950 rounded-lg w-[100px]">
+              <SelectTrigger className="h-8 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[105px] text-[var(--text-2)]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos</SelectItem>
+              <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
+                <SelectItem value="ALL">Todos Status</SelectItem>
                 <SelectItem value="ativo">Ativos</SelectItem>
                 <SelectItem value="ferias">Em Férias</SelectItem>
                 <SelectItem value="afastado">Afastados</SelectItem>
@@ -226,22 +227,10 @@ export function OperadoresTable({
               </SelectContent>
             </Select>
 
-            {onOpenImportarMassa && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onOpenImportarMassa}
-                className="h-8 text-xs gap-1 font-bold rounded-lg border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 hover:bg-emerald-100"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                Importar
-              </Button>
-            )}
-
             <Button
               size="sm"
               onClick={onOpenNewOperator}
-              className="h-8 text-xs gap-1 font-bold rounded-lg bg-primary hover:bg-primary/90"
+              className="h-8 px-2.5 text-xs gap-1 font-medium rounded-md bg-[var(--text)] text-[var(--bg)] hover:opacity-90"
             >
               <Plus className="w-3.5 h-3.5" />
               Adicionar
@@ -252,97 +241,94 @@ export function OperadoresTable({
         {/* Tabela */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50/80 dark:bg-slate-900/80 text-muted-foreground uppercase font-bold text-[10px] tracking-wider border-b border-border">
+            <thead className="bg-[var(--surface-2)] text-[var(--text-3)] font-medium text-[11px] border-b border-[var(--border)]">
               <tr>
-                <th className="px-4 py-2.5">Operador</th>
-                <th className="px-4 py-2.5">Turno</th>
-                <th className="px-4 py-2.5 text-center">Turma</th>
-                <th className="px-4 py-2.5 text-center">Folgas Flex.</th>
-                <th className="px-4 py-2.5 text-center">Status</th>
-                <th className="px-4 py-2.5 text-right">Ações</th>
+                <th className="px-3.5 py-2">Operador</th>
+                <th className="px-3.5 py-2">Turno</th>
+                <th className="px-3.5 py-2 text-center">Turma</th>
+                <th className="px-3.5 py-2 text-right">Saldo Folga Flex.</th>
+                <th className="px-3.5 py-2 text-center">Status</th>
+                <th className="px-3.5 py-2 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-[var(--border)]">
               {filteredOperators.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
-                    Nenhum operador encontrado.
+                  <td colSpan={6} className="px-6 py-12 text-center text-xs text-[var(--text-3)]">
+                    Nenhum operador encontrado com os filtros selecionados.
                   </td>
                 </tr>
               ) : (
                 filteredOperators.map((op) => {
                   const turmaInfo = TURMAS_INFO[op.letra];
                   const turnoInfo = TURNO_LABELS[op.turno];
-                  const initials = op.nome.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'OP';
 
                   return (
-                    <tr key={op.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                    <tr key={op.id} className="hover:bg-[var(--hover)] transition-colors group">
                       {/* Operador */}
-                      <td className="px-4 py-3">
+                      <td className="px-3.5 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <div
-                            className="w-8 h-8 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs"
-                            style={{ backgroundColor: turmaInfo.cor }}
+                            className="w-6 h-6 rounded text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: turmaInfo?.cor || 'var(--accent)' }}
                           >
-                            {initials}
+                            {op.letra}
                           </div>
                           <div>
-                            <p className="font-bold text-foreground leading-tight">{op.nome}</p>
-                            <p className="text-muted-foreground font-mono text-[10px]">{op.matricula} · {op.cargo}</p>
+                            <p className="font-medium text-[var(--text)] leading-tight">{op.nome}</p>
+                            <p className="text-[var(--text-3)] font-mono text-[11px]">{op.matricula} · {op.cargo}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Turno */}
-                      <td className="px-4 py-3">
-                        <div className={cn("flex items-center gap-1 font-bold", turnoInfo.color)}>
-                          {turnoInfo.icon}
-                          <span className="text-[11px]">T{op.turno} · {turnoInfo.label}</span>
-                        </div>
+                      <td className="px-3.5 py-2.5">
+                        <span className="text-[11px] font-mono text-[var(--text-2)]">
+                          T{op.turno} ({turnoInfo?.label})
+                        </span>
                       </td>
 
                       {/* Turma */}
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-3.5 py-2.5 text-center">
                         <span
-                          className="inline-flex items-center px-2.5 py-1 rounded-lg text-white text-xs font-black shadow-xs"
-                          style={{ backgroundColor: turmaInfo.cor }}
+                          className="inline-flex items-center justify-center w-5 h-5 rounded border border-[var(--border-strong)] font-mono text-xs font-semibold"
+                          style={{ color: turmaInfo?.cor }}
                         >
                           {op.letra}
                         </span>
                       </td>
 
                       {/* Saldo de Folgas */}
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-3.5 py-2.5 text-right">
                         <button
                           type="button"
                           onClick={() => onOpenSaldoFolgas(op)}
                           className={cn(
-                            "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition-all hover:scale-105 cursor-pointer shadow-xs border",
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-xs font-medium transition-colors hover:bg-[var(--hover)] border",
                             op.saldoFolgasFlexiveis > 0
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                              ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
                               : op.saldoFolgasFlexiveis < 0
-                              ? "bg-red-50 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"
-                              : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                              ? "text-red-400 border-red-500/30 bg-red-500/10"
+                              : "text-[var(--text-3)] border-[var(--border)] bg-transparent"
                           )}
                           title="Ajustar saldo de folgas"
                         >
-                          <CalendarDays className="w-3 h-3" />
                           {op.saldoFolgasFlexiveis > 0 ? `+${op.saldoFolgasFlexiveis}` : op.saldoFolgasFlexiveis}d
                         </button>
                       </td>
 
-                      {/* Status Efetivo (Ativo vs Férias Vigentes) */}
-                      <td className="px-4 py-3 text-center">
+                      {/* Status Efetivo */}
+                      <td className="px-3.5 py-2.5 text-center">
                         <StatusBadge status={getEffectiveStatus(op)} />
                       </td>
 
                       {/* Ações */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-3.5 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
                             onClick={() => onOpenOcorrencia(op)}
-                            className="h-7 px-2 text-[11px] font-bold text-primary hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-colors"
+                            className="h-6 px-2 text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-weak)] rounded transition-colors"
                             title="Lançar ocorrência"
                           >
                             + Ocorrência
@@ -350,7 +336,7 @@ export function OperadoresTable({
                           <button
                             type="button"
                             onClick={() => onEditOperator(op)}
-                            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="h-6 w-6 flex items-center justify-center rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
                             title="Editar"
                           >
                             <Edit className="w-3.5 h-3.5" />
@@ -358,7 +344,7 @@ export function OperadoresTable({
                           <button
                             type="button"
                             onClick={() => setOperatorToDelete(op)}
-                            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            className="h-6 w-6 flex items-center justify-center rounded text-[var(--text-3)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
                             title="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

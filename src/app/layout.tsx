@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { FirebaseProvider } from '@/components/providers/firebase-provider';
@@ -7,9 +7,18 @@ import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { NotificationProvider } from '@/components/providers/notification-provider';
 import { AppUpdateManager } from '@/components/app-update-manager';
 import { Toaster } from 'react-hot-toast';
-import { TricolorFooter } from '@/components/layout/tricolor-footer';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -18,23 +27,20 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7fafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#111a2a' },
+    { media: '(prefers-color-scheme: light)', color: '#f6f7f9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e1013' },
   ],
-}
+};
 
 export const metadata: Metadata = {
-  title: 'NT Management App',
-  description: 'Sistema de Gerenciamento de Notas Técnicas e Inventário',
-  authors: [{ name: 'Agilework' }],
-  applicationName: 'NT Management',
+  title: 'AgileWork · Gestão de NTs & Produção',
+  description: 'Sistema Operacional e Nivelamento de Produção',
+  authors: [{ name: 'AgileWork' }],
+  applicationName: 'AgileWork',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
-    title: 'NT Management',
-  },
-  formatDetection: {
-    telephone: true,
+    statusBarStyle: 'black-translucent',
+    title: 'AgileWork',
   },
   manifest: '/manifest.json',
 };
@@ -45,11 +51,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen bg-app-bg text-app font-sans antialiased overflow-x-hidden">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
         >
           <FirebaseProvider>
@@ -57,8 +63,18 @@ export default function RootLayout({
               <NotificationProvider>
                 <AppUpdateManager />
                 {children}
-                <Toaster position="top-center" />
-                <TricolorFooter />
+                <Toaster 
+                  position="top-center"
+                  toastOptions={{
+                    style: {
+                      background: 'var(--surface)',
+                      color: 'var(--text)',
+                      border: '1px solid var(--border-strong)',
+                      fontSize: '12.5px',
+                      borderRadius: 'var(--radius)',
+                    }
+                  }}
+                />
               </NotificationProvider>
             </SupabaseProvider>
           </FirebaseProvider>

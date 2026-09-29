@@ -339,37 +339,90 @@ export default function AdminControlPanelPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
+        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
-          <main className="flex-1 p-4 sm:p-5 overflow-y-auto">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-md">
-                <Shield className="h-5 w-5 text-primary-foreground" />
-              </div>
+          <main className="flex-1 p-5 sm:p-6 overflow-y-auto min-w-0">
+            {/* Header da Página */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Painel de Controle Admin</h1>
-                <p className="text-sm text-muted-foreground font-medium">Gestão de usuários e manutenção do sistema</p>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Administração do Sistema</h1>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    Acesso Restrito
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-3)] mt-0.5">
+                  Gestão de usuários, concessão de acessos à mão de obra e manutenção do banco de dados
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-              <StatCard icon={<Users className="h-5 w-5" />} label="Total de Usuários" value={stats.total} tone="primary" />
-              <StatCard icon={<UserCheck className="h-5 w-5" />} label="Ativos" value={stats.ativos} tone="green" />
-              <StatCard icon={<ShieldAlert className="h-5 w-5" />} label="Pendentes" value={stats.pendentes} tone="amber" />
-              <StatCard icon={<Star className="h-5 w-5" />} label="Inativos" value={stats.inativos} tone="accent" />
+            {/* Faixa de Indicadores de Usuários */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden mb-5">
+              <div className="p-3.5">
+                <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
+                  Total de Usuários
+                </label>
+                <strong className="text-xl font-semibold tracking-tight text-[var(--text)] font-mono block">
+                  {stats.total}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-0.5">cadastrados</p>
+              </div>
+
+              <div className="p-3.5">
+                <label className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Aprovados & Ativos
+                </label>
+                <strong className="text-xl font-semibold tracking-tight text-emerald-400 font-mono block">
+                  {stats.ativos}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-0.5">com acesso liberado</p>
+              </div>
+
+              <div className="p-3.5">
+                <label className="flex items-center gap-1.5 text-[11px] text-amber-400 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Pendentes de Aprovação
+                </label>
+                <strong className="text-xl font-semibold tracking-tight text-amber-400 font-mono block">
+                  {stats.pendentes}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-0.5">aguardando liberação</p>
+              </div>
+
+              <div className="p-3.5">
+                <label className="flex items-center gap-1.5 text-[11px] text-purple-400 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                  Líderes & Supervisores
+                </label>
+                <strong className="text-xl font-semibold tracking-tight text-purple-400 font-mono block">
+                  {stats.lideres + stats.supervisores}
+                </strong>
+                <p className="text-[11px] text-[var(--text-3)] mt-0.5 font-mono">
+                  {stats.lideres} líd · {stats.supervisores} sup
+                </p>
+              </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'users' | 'maintenance')}>
-              <TabsList className="mb-4 h-9">
-                <TabsTrigger value="users" className="gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  Usuários
+              <TabsList className="mb-5 h-auto p-0 bg-transparent border-b border-[var(--border)] rounded-none w-full justify-start gap-1">
+                <TabsTrigger
+                  value="users"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Gestão de Usuários
                 </TabsTrigger>
-                <TabsTrigger value="maintenance" className="gap-2">
-                  <Database className="w-4 h-4" />
-                  Manutenção
+                <TabsTrigger
+                  value="maintenance"
+                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                >
+                  <Database className="w-3.5 h-3.5" />
+                  Manutenção do Banco
                 </TabsTrigger>
               </TabsList>
 

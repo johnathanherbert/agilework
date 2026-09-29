@@ -103,50 +103,47 @@ export default function SettingsPage() {
     }
   };
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col ml-[64px] transition-all duration-300">
+      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
         <Topbar />
-        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-          <div className="mb-5 rounded-2xl border border-border/80 bg-gradient-to-br from-[#003d6b] via-[#0b4f80] to-[#0e5f98] text-white shadow-lg p-5 sm:p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-xl font-black">
-                  {userInitial}
-                </div>
-                <div>
-                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white/85 mb-1.5">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Painel Pessoal
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Configurações</h1>
-                  <p className="text-sm text-white/85 mt-1">
-                    Ajuste perfil, notificações e comportamento da plataforma.
-                  </p>
-                </div>
+        <main className="flex-1 p-5 sm:p-6 overflow-y-auto min-w-0">
+          {/* Header da Página */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Configurações Gerais</h1>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--surface-2)] text-[var(--text-3)] border border-[var(--border)]">
+                  {userInitial} · {email || 'Local'}
+                </span>
               </div>
+              <p className="text-xs text-[var(--text-3)] mt-0.5">
+                Preferências de usuário, alertas sonoros e parâmetros operacionais
+              </p>
+            </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  className="bg-white/15 border border-white/25 text-white hover:bg-white/25"
-                  onClick={() => window.location.reload()}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Atualizar Tela
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="bg-red-600/90 hover:bg-red-600 text-white"
-                  onClick={async () => {
-                    await signOut();
-                    router.push('/login');
-                  }}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs font-medium border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] rounded-md"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                Recarregar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs font-medium border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-md"
+                onClick={async () => {
+                  await signOut();
+                  router.push('/login');
+                }}
+              >
+                <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                Encerrar Sessão
+              </Button>
             </div>
           </div>
 

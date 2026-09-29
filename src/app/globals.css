@@ -1,254 +1,182 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 210 36% 98%;
-    --foreground: 210 28% 16%;
- 
-    --card: 0 0% 100%;
-    --card-foreground: 210 28% 16%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 28% 16%;
- 
-    --primary: 206 100% 35%; /* EMS Blue #0066B3 */
-    --primary-foreground: 0 0% 100%;
- 
-    --secondary: 203 100% 44%; /* EMS Light Blue #00A3E0 */
-    --secondary-foreground: 0 0% 100%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 206 100% 35%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 206 100% 35%;
- 
-    --radius: 0.75rem;
+    /* Design System AgileWork 2026 - Tokens Globais */
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #fafbfc;
+    --hover: #f1f3f5;
+    --border: #e4e7eb;
+    --border-strong: #d3d8de;
+    --text: #14171b;
+    --text-2: #5b636e;
+    --text-3: #8a929c;
+    --accent: #2563eb;
+    --accent-weak: rgba(37, 99, 235, 0.08);
 
-    /* Cores específicas para status de NT */
+    /* Cores Semânticas Industriais */
+    --red: #e5484d;
+    --amber: #e2a336;
+    --green: #3fb68b;
+    --blue: #2563eb;
+    --purple: #8b5cf6;
+
+    /* Shadcn System Variable Mappings (Light Mode) */
+    --background: 210 20% 98%;
+    --foreground: 216 28% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 28% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 28% 12%;
+    --primary: 217 91% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 216 28% 12%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent-foreground: 217 91% 54%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 54%;
+    --radius: 6px;
+
+    /* Cores legadas para retrocompatibilidade */
     --green-50: #f0fdf4;
     --green-100: #dcfce7;
-    --green-200: #bbf7d0;
-    --green-300: #86efac;
-    --green-400: #4ade80;
     --green-500: #22c55e;
     --green-600: #16a34a;
-    --green-700: #15803d;
-    --green-800: #166534;
-    --green-900: #14532d;
-
     --red-50: #fef2f2;
     --red-100: #fee2e2;
-    --red-200: #fecaca;
-    --red-300: #fca5a5;
-    --red-400: #f87171;
     --red-500: #ef4444;
     --red-600: #dc2626;
-    --red-700: #b91c1c;
-    --red-800: #991b1b;
-    --red-900: #7f1d1d;
-
     --blue-50: #eff6ff;
     --blue-100: #dbeafe;
-    --blue-200: #bfdbfe;
-    --blue-300: #93c5fd;
-    --blue-400: #60a5fa;
     --blue-500: #3b82f6;
     --blue-600: #2563eb;
-    --blue-700: #1d4ed8;
-    --blue-800: #1e40af;
-    --blue-900: #1e3a8a;
-
     --yellow-50: #fefce8;
     --yellow-100: #fef9c3;
-    --yellow-200: #fef08a;
-    --yellow-300: #fde047;
-    --yellow-400: #facc15;
     --yellow-500: #eab308;
     --yellow-600: #ca8a04;
-    --yellow-700: #a16207;
-    --yellow-800: #854d0e;
-    --yellow-900: #713f12;
-
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
   }
- 
+
   .dark {
-    --background: 216 32% 10%;
-    --foreground: 210 40% 96%;
- 
-    --card: 216 30% 13%;
-    --card-foreground: 210 40% 96%;
- 
-    --popover: 216 30% 13%;
-    --popover-foreground: 210 40% 96%;
- 
-    --primary: 204 95% 58%;
-    --primary-foreground: 216 35% 11%;
- 
-    --secondary: 157 22% 24%;
-    --secondary-foreground: 210 40% 96%;
- 
-    --muted: 217 22% 20%;
-    --muted-foreground: 214 18% 72%;
- 
-    --accent: 154 56% 42%;
-    --accent-foreground: 216 35% 11%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217 18% 24%;
-    --input: 217 18% 24%;
-    --ring: 204 95% 58%;
+    /* Design System AgileWork 2026 - Dark Mode Nativo */
+    --bg: #0e1013;
+    --surface: #14171b;
+    --surface-2: #191c21;
+    --hover: #1d2127;
+    --border: #23272e;
+    --border-strong: #2e333b;
+    --text: #e6e8eb;
+    --text-2: #9aa1ab;
+    --text-3: #6b727c;
+    --accent: #4c8dff;
+    --accent-weak: rgba(76, 141, 255, 0.12);
+
+    /* Cores Semânticas Dark Mode */
+    --red: #e5484d;
+    --amber: #e2a336;
+    --green: #3fb68b;
+    --blue: #4c8dff;
+    --purple: #a855f7;
+
+    /* Shadcn System Variable Mappings (Dark Mode) */
+    --background: 220 18% 7%;
+    --foreground: 214 15% 92%;
+    --card: 217 19% 9%;
+    --card-foreground: 214 15% 92%;
+    --popover: 217 19% 9%;
+    --popover-foreground: 214 15% 92%;
+    --primary: 217 100% 65%;
+    --primary-foreground: 220 18% 7%;
+    --secondary: 216 14% 12%;
+    --secondary-foreground: 214 15% 92%;
+    --muted: 216 14% 14%;
+    --muted-foreground: 215 14% 60%;
+    --accent-foreground: 217 100% 65%;
+    --destructive: 358 75% 59%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 218 16% 18%;
+    --ring: 217 100% 65%;
   }
 }
- 
+
 @layer base {
   * {
-    @apply border-border;
+    box-sizing: border-box;
+    border-color: var(--border);
   }
+  
+  html, body {
+    height: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
-    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans), Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+    color: inherit;
   }
 }
 
-/* Status color indicators */
-.status-awaiting {
-  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500;
+/* Tipografia Monospace para dados, códigos e relógios */
+.font-mono, .mono {
+  font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-feature-settings: "tnum" 1;
 }
 
-.status-paid {
-  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500;
+/* Status Badges e Indicadores Industriais */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
 }
 
-.status-partial {
-  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500;
+.status-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.status-overdue {
-  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500;
-}
+.status-pill.late i { background-color: var(--red); }
+.status-pill.pending i { background-color: var(--amber); }
+.status-pill.progress i { background-color: var(--blue); }
+.status-pill.done i { background-color: var(--green); }
+.status-pill.special i { background-color: var(--purple); }
 
-.priority-item {
-  @apply bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-500;
-}
+/* Utility Classes do Design System */
+.bg-app-bg { background-color: var(--bg); }
+.bg-surface { background-color: var(--surface); }
+.bg-surface-2 { background-color: var(--surface-2); }
+.bg-hover { background-color: var(--hover); }
+.border-app { border-color: var(--border); }
+.border-app-strong { border-color: var(--border-strong); }
+.text-app { color: var(--text); }
+.text-app-2 { color: var(--text-2); }
+.text-app-3 { color: var(--text-3); }
+.text-accent { color: var(--accent); }
+.bg-accent-weak { background-color: var(--accent-weak); }
 
-/* Animation for real-time updates */
-@keyframes highlight {
-  0% {
-    background-color: rgba(255, 255, 0, 0.5);
-  }
-  100% {
-    background-color: transparent;
-  }
-}
-
-.highlight-update {
-  animation: highlight 2s ease-out;
-}
-
-@keyframes highlight-flash {
-  0%, 100% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: rgba(234, 179, 8, 0.3);
-  }
-}
-
-.animate-highlight {
-  animation: highlight-flash 1s ease-in-out;
-}
-
-/* Animações para os cards de NT */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 3s infinite;
-}
-
-/* Animações para o NTCard reduzido */
-@keyframes progress-circular {
-  0% {
-    stroke-dashoffset: 280;
-  }
-  100% {
-    stroke-dashoffset: var(--progress-value, 0);
-  }
-}
-
-@keyframes pulse-delayed {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
-}
-
-.animate-progress-circular {
-  animation: progress-circular 1.5s ease-out forwards;
-}
-
-.animate-pulse-delayed {
-  animation: pulse-delayed 2s infinite;
-}
-
-/* Efeitos de hover aprimorados */
-.hover-lift {
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-}
-
-.hover-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-}
-
-/* Scrollbar nativa discreta (macOS/Premium style) */
+/* Scrollbars Premium Compactos */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -259,81 +187,35 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #e2e8f0; /* slate-200 equiv */
-  border-radius: 10px;
+  background-color: var(--border-strong);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8; /* slate-400 equiv */
+  background-color: var(--text-3);
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background-color: #334155; /* slate-700 equiv */
+/* Animações e Transições */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.9); }
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #475569; /* slate-600 equiv */
+.animate-pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Base borders and components (Solid Theme Extracted) */
-.card-solid {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-.dark .card-solid {
-  background-color: #1e293b;
-  border: 1px solid #334155;
-}
-
-/* Desktop-optimized NT Card styles */
-@layer components {
-  .desktop-card-compact {
-    @apply max-w-none;
-    /* Optimize for desktop grid layouts */
-    min-height: fit-content;
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
   }
-  
-  .desktop-card-compact .card-header {
-    @apply py-2 px-3;
-  }
-  
-  .desktop-card-compact .card-content {
-    @apply py-2 px-3;
-  }
-  
-  /* Compact button styles for desktop */
-  .btn-compact {
-    @apply h-6 w-6 p-0 text-xs;
-  }
-  
-  /* Subtle hover effects optimized for mouse interaction */
-  .desktop-hover-subtle {
-    @apply transition-all duration-150 ease-out;
-  }
-  
-  .desktop-hover-subtle:hover {
-    @apply translate-y-[-1px] shadow-sm;
-  }
-  
-  /* Desktop-optimized status indicators */
-  .status-indicator-compact {
-    @apply w-4 h-4 rounded-full flex items-center justify-center;
-  }
-  
-  /* Progress bar optimized for desktop viewing */
-  .progress-compact {
-    @apply h-1.5 rounded-full transition-all duration-300;
-  }
-  
-  /* Desktop typography scaling */
-  .desktop-text-compact {
-    @apply text-xs leading-tight;
-  }
-  
-  .desktop-text-title {
-    @apply text-sm font-semibold leading-tight;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-
+.animate-fade-in {
+  animation: fadeInScale 0.15s ease-out forwards;
+}

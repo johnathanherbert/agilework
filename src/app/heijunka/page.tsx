@@ -408,11 +408,11 @@ export default function HeijunkaPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-slate-50 dark:bg-gray-900">
+      <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col ml-[64px] overflow-hidden">
+        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
-          <main className="flex-1 overflow-y-auto px-5 pt-5 pb-10">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
 
             {/* ── Cabeçalho Moderno Glassmorphic ──────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-2xs mb-5">

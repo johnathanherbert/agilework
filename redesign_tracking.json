@@ -1,0 +1,364 @@
+{
+  "project": "AgileWork Redesign 2026",
+  "version": "2.0.0",
+  "createdAt": "2026-09-29T17:10:00Z",
+  "lastUpdated": "2026-09-29T17:10:00Z",
+  "summary": {
+    "totalPhases": 6,
+    "totalTasks": 28,
+    "completedTasks": 28,
+    "progressPercentage": 100,
+    "currentPhase": "Concluído - Todas as fases implementadas"
+  },
+  "phases": [
+    {
+      "id": "phase-0",
+      "name": "Phase 0 - Fundação, Design Tokens e Layout Base",
+      "status": "completed",
+      "description": "Configuração dos tokens de design globais (cores, superfícies, tipografia Inter/JetBrains Mono, bordas), novo Shell da Aplicação (Rail Sidebar + Topbar com breadcrumbs, relógio de turno e status live).",
+      "tasks": [
+        {
+          "id": "TASK-001",
+          "title": "Configuração de Design Tokens Globais no globals.css e tailwind.config.js",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/globals.css",
+            "tailwind.config.js"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": ["CSS Variables", "Tailwind Theme Colors"],
+          "notes": "Tokens integrados com sucesso: --bg (#0e1013), --surface (#14171b), --surface-2 (#191c21), --hover (#1d2127), --border (#23272e), --border-strong (#2e333b), --text (#e6e8eb), --text-2 (#9aa1ab), --text-3 (#6b727c), --accent (#4c8dff), status semânticos e suporte dark/light nativo."
+        },
+        {
+          "id": "TASK-002",
+          "title": "Redesign do App Rail / Sidebar de Navegação",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/layout/sidebar.tsx"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": ["Sidebar Rail (52px)", "Active Indicator Strip", "Icon Tooltips", "Theme Switcher & User Avatar"],
+          "notes": "Sidebar convertida para rail minimalista de 52px com navegação precisa, tooltips, active accent strip e drawer de usuário."
+        },
+        {
+          "id": "TASK-003",
+          "title": "Redesign da Topbar e Header com Status Operacional e Relógio",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/layout/topbar.tsx",
+            "src/components/clock/header-clock.tsx",
+            "src/components/layout/online-users.tsx"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": ["Topbar (48px)", "Breadcrumbs", "Live Shift Badge", "Mono Clock", "Online Users Counter"],
+          "notes": "Topbar minimalista de 48px com breadcrumb por rota, relógio em tempo real com indicador de turno, online users e central de notificações."
+        },
+        {
+          "id": "TASK-004",
+          "title": "Ajuste do Layout Root e Componentes UI Base",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/layout.tsx",
+            "src/components/ui/button.tsx",
+            "src/components/ui/card.tsx",
+            "src/components/ui/badge.tsx",
+            "src/components/ui/input.tsx",
+            "src/components/ui/dialog.tsx"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": ["Root Layout", "Shadcn / Base UI Components"],
+          "notes": "Layout configurado com fontes Inter e JetBrains Mono, classes temáticas e toaster estilizado."
+        }
+      ]
+    },
+    {
+      "id": "phase-1",
+      "name": "Phase 1 - Autenticação e Entrada no Sistema",
+      "status": "completed",
+      "description": "Redesign das telas de Login, Registro e Recuperação de Senha com o visual de console industrial moderno.",
+      "tasks": [
+        {
+          "id": "TASK-101",
+          "title": "Redesign da Tela de Login e Layout de Autenticação",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/(auth)/login/page.tsx",
+            "src/components/auth/login-form.tsx"
+          ],
+          "conceptReference": "redesign_concept/login_redesign.html",
+          "components": ["Hero Brand Panel", "Live Clock & Shift Display", "Auth Form Card", "Quick User Fast-Switch"],
+          "notes": "Layout split-screen moderno implementado com telemetria em tempo real, acompanhamento do turno ativo e login rápido."
+        },
+        {
+          "id": "TASK-102",
+          "title": "Redesign da Tela de Registro e Recuperação de Senha",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/(auth)/register/page.tsx",
+            "src/components/auth/register-form.tsx",
+            "src/components/auth/reset-password-form.tsx"
+          ],
+          "conceptReference": "redesign_concept/login_redesign.html",
+          "components": ["Register Form", "Password Reset Form"],
+          "notes": "Formulários integrados na mesma interface fluida com validações Zod e feedback toast."
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Phase 2 - Almoxarifado e Notas Técnicas (NTs)",
+      "status": "completed",
+      "description": "Redesign da visualização e gerenciamento de NTs ativas e histórico de NTs concluídas.",
+      "tasks": [
+        {
+          "id": "TASK-201",
+          "title": "Redesign do Gerenciamento de NTs (Almoxarifado)",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/almoxarifado/nts/page.tsx",
+            "src/components/nt-manager/nt-stats.tsx",
+            "src/components/nt-manager/nt-filters.tsx",
+            "src/components/nt-manager/nt-list.tsx",
+            "src/components/nt-manager/nt-card.tsx",
+            "src/components/nt-manager/nt-item-row.tsx"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": [
+            "KPI Stats Bar (Total, Pendentes, Críticas, Concluídas)",
+            "Filters Toolbar (Search, Rota, Status, Aging)",
+            "NT Item Grid / Table View",
+            "NT Detail Drawer / Modal"
+          ],
+          "notes": "Layout de 3 colunas implementado: Rail 52px + Tabela Industrial de NTs com accordion e checkboxes + Inspector Lateral em Tempo Real."
+        },
+        {
+          "id": "TASK-202",
+          "title": "Redesign dos Modais de Criação, Edição e Itens de NT",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/nt-manager/add-nt-modal.tsx",
+            "src/components/nt-manager/edit-nt-modal.tsx",
+            "src/components/nt-manager/add-item-modal.tsx",
+            "src/components/nt-manager/edit-field-modal.tsx",
+            "src/components/nt-manager/robot-status-modal.tsx"
+          ],
+          "conceptReference": "redesign_concept/gerenciamento_nt_concept_redesign.html",
+          "components": ["Modal Dialogs", "Item Checkboxes", "Robot Integration Badges"],
+          "notes": "Modais atualizados e conectados à nova interface de tabela e ações."
+        },
+        {
+          "id": "TASK-203",
+          "title": "Redesign da Tela de NTs Concluídas e Histórico",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/almoxarifado/nts/page.tsx",
+            "src/components/nt-manager/paid-items-timeline.tsx",
+            "src/components/nt-manager/paid-items-timeline-firebase.tsx"
+          ],
+          "conceptReference": "redesign_concept/nts_concluidas_redesign.html",
+          "components": [
+            "Historical Timeline",
+            "Export Tools (Excel/PDF)",
+            "Search & Range Date Filter",
+            "Completed Order Drawer"
+          ],
+          "notes": "Aba de NTs concluídas integrada perfeitamente na visualização de histórico com KPIs atualizados."
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "Phase 3 - Produção e Heijunka (Nivelamento)",
+      "status": "completed",
+      "description": "Redesign do Painel de Produção por Turnos e da visualização de nivelamento Heijunka.",
+      "tasks": [
+        {
+          "id": "TASK-301",
+          "title": "Redesign do Painel de Produção por Turnos (1º, 2º e 3º Turno)",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/producao/page.tsx",
+            "src/components/producao/turno-column.tsx",
+            "src/components/producao/kpi-dashboard-bar.tsx",
+            "src/components/producao/rotas-quick-add.tsx"
+          ],
+          "conceptReference": "redesign_concept/painel_producao_redesign 2.html",
+          "components": [
+            "Header KPIs de Produção",
+            "Turno Columns (3 colunas dinâmicas)",
+            "Production Cards com status de pesagem",
+            "Quick Add Rotas Bar"
+          ],
+          "notes": "Painel de Produção por turnos com métricas do dia, kanban drag and drop responsivo e quick add de rotas."
+        },
+        {
+          "id": "TASK-302",
+          "title": "Redesign dos Modais de Produção e Exclusão",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/producao/production-item-modal.tsx",
+            "src/components/producao/production-delete-dialog.tsx",
+            "src/components/producao/clear-turno-dialog.tsx"
+          ],
+          "conceptReference": "redesign_concept/painel_producao_redesign 2.html",
+          "components": ["Production Modal", "Batch Action Dialogs"],
+          "notes": "Modais de confirmação e criação de ordens integrados."
+        },
+        {
+          "id": "TASK-303",
+          "title": "Redesign da Tela e Nivelamento Heijunka",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/heijunka/page.tsx",
+            "src/components/producao/heijunka-dialog.tsx",
+            "src/components/producao/heijunka-details-modal.tsx"
+          ],
+          "conceptReference": "redesign_concept/heijunka_redesign.html",
+          "components": [
+            "Heijunka Matrix Box",
+            "Capacidade vs Carga por Horário / Linha",
+            "Gargalo Alert System",
+            "Heijunka Detail Inspector"
+          ],
+          "notes": "Interface Heijunka alinhada com layout rail 52px, KPIs diários, gráficos e detalhamento de volume manual vs PD/PA."
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "Phase 4 - Gestão de Mão de Obra e Escalas",
+      "status": "completed",
+      "description": "Redesign completo do módulo de RH operacional, absenteísmo, escala diária, ocorrências e tratativas.",
+      "tasks": [
+        {
+          "id": "TASK-401",
+          "title": "Redesign do Hub de Mão de Obra e Quadro Diário",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/mao-de-obra/page.tsx",
+            "src/components/mao-de-obra/quadro-diario.tsx",
+            "src/components/mao-de-obra/absenteismo-dashboard.tsx"
+          ],
+          "conceptReference": "redesign_concept/mao_de_obra_redesign.html",
+          "components": [
+            "Daily Headcount & Attendance Bar",
+            "Turno Allocation Grid",
+            "Absenteísmo Rate Gauge",
+            "Substituição Rápida de Posto"
+          ],
+          "notes": "Quadro operacional em tempo real de operadores presentes, faltantes, folgas e realocações."
+        },
+        {
+          "id": "TASK-402",
+          "title": "Redesign das Abas de Operadores, Ocorrências e Tratativas",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/mao-de-obra/operadores-table.tsx",
+            "src/components/mao-de-obra/ocorrencias-tab.tsx",
+            "src/components/mao-de-obra/tratativas-tab.tsx",
+            "src/components/mao-de-obra/tratativas-hub.tsx"
+          ],
+          "conceptReference": "redesign_concept/mao_de_obra_redesign.html",
+          "components": [
+            "Operadores Data Table",
+            "Ocorrências Stream",
+            "Tratativas Kanban / Action List"
+          ],
+          "notes": "Tabelas interativas com status badges, filtros avançados por cargo/turno e busca instantânea."
+        },
+        {
+          "id": "TASK-403",
+          "title": "Redesign da Escala Calendário, Férias e Modais de Operador",
+          "status": "completed",
+          "targetFiles": [
+            "src/components/mao-de-obra/escala-calendario-tab.tsx",
+            "src/components/mao-de-obra/ferias-conflitos-tab.tsx",
+            "src/components/mao-de-obra/operador-modal.tsx",
+            "src/components/mao-de-obra/operador-dossie-modal.tsx",
+            "src/components/mao-de-obra/ocorrencia-modal.tsx",
+            "src/components/mao-de-obra/tratativa-modal.tsx"
+          ],
+          "conceptReference": "redesign_concept/mao_de_obra_redesign.html",
+          "components": [
+            "Calendar Matrix",
+            "Conflict Warning System",
+            "Operador Dossier Drawer / Modal",
+            "Ocorrência / Tratativa Modal"
+          ],
+          "notes": "Dossiê completo do colaborador com histórico de atestados, advertências, férias e banco de horas."
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "Phase 5 - Solicitações, Dashboard Executivo e Administração",
+      "status": "completed",
+      "description": "Redesign dos módulos de Solicitações de Materiais, Dashboard/Analytics e Painel de Configurações/Administração.",
+      "tasks": [
+        {
+          "id": "TASK-501",
+          "title": "Redesign do Módulo de Solicitações de Materiais",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/solicitacoes/page.tsx",
+            "src/components/solicitacoes/TabelaPrincipal.tsx",
+            "src/components/solicitacoes/PullProductionDialog.tsx",
+            "src/components/solicitacoes/Sap.tsx"
+          ],
+          "conceptReference": "redesign_concept/solicitacoes_redesign.html",
+          "components": [
+            "Aside Orders Panel (300px)",
+            "Auto OP increment toggle",
+            "Summary KPI 4-Block Grid",
+            "Segmented Toolbar with Keyboard Shortcut (/)",
+            "High-density Material Table with Accordion Expansion",
+            "Inline Editable Saldo Input",
+            "Single & Batch SAP Stock Synchronizers",
+            "Interactive KPI & Audit Modals"
+          ],
+          "notes": "Redesign concluído com 100% de fidelidade a solicitacoes_redesign.html, integrando todas as funções de produção (Firestore real-time NTs, busca SAP, estado salvo em PostgreSQL, puxar produção e edição de pesagem)."
+        },
+        {
+          "id": "TASK-502",
+          "title": "Redesign do Dashboard Operacional e Analytics",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/dashboard/page.tsx",
+            "src/app/analytics/page.tsx",
+            "src/components/analytics/analytics-modal.tsx"
+          ],
+          "conceptReference": "redesign_concept/dashboard_operacional_redesign.html",
+          "components": [
+            "Overall OEE & Throughput Widgets",
+            "Bottleneck Chart",
+            "Shift Performance Comparison",
+            "Live Alert Feed"
+          ],
+          "notes": "Visão executiva consolidadora com gráficos minimalistas e métricas operacionais chave."
+        },
+        {
+          "id": "TASK-503",
+          "title": "Redesign do Painel de Administração e Configurações",
+          "status": "completed",
+          "targetFiles": [
+            "src/app/settings/page.tsx",
+            "src/app/settings/users/page.tsx",
+            "src/components/settings/routes-management-card.tsx",
+            "src/components/settings/sound-configuration-card.tsx",
+            "src/components/settings/app-update-card.tsx",
+            "src/components/settings/nt-cleanup-card.tsx",
+            "src/components/users/user-manage-modal.tsx"
+          ],
+          "conceptReference": "redesign_concept/admin_redesign.html",
+          "components": [
+            "Settings Navigation Sidebar",
+            "User & Role Management Table",
+            "System Integrations & Maintenance",
+            "Sound & Alert Preferences"
+          ],
+          "notes": "Painel de controle central para administradores configurarem rotas, usuários, permissões e parâmetros do sistema."
+        }
+      ]
+    }
+  ]
+}

@@ -1,208 +1,702 @@
-   "use client";
+"use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirebase } from '@/components/providers/firebase-provider';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle, AlertCircle, Sparkles, User, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 
-const formSchema = z.object({
-  email: z.string().email({ message: 'Email inválido.' }),
-  password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
+const loginSchema = z.object({
+  email: z.string().email({ message: 'E-mail corporativo inválido.' }),
+  password: z.string().min(6, { message: 'A senha deve conter no mínimo 6 caracteres.' }),
 });
 
-type FormData = z.infer<typeof formSchema>;
+const registerSchema = z.object({
+  name: z.string().min(3, { message: 'Informe seu nome completo.' }),
+  email: z.string().email({ message: 'E-mail corporativo inválido.' }),
+  password: z.string().min(6, { message: 'A senha deve ter no mínimo 6 caracteres.' }),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
+
+type AuthMode = 'login' | 'pin' | 'forgot' | 'register';
 
 export const LoginForm = () => {
   const router = useRouter();
-  const { signIn, resetPassword } = useFirebase();
+  const searchParams = useSearchParams();
+  const { signIn, signUp, resetPassword, user } = useFirebase();
+  const { theme, setTheme } = useTheme();
+
+  const [mode, setMode] = useState<AuthMode>('login');
+  const [loginMethod, setLoginMethod] = useState<'password' | 'pin'>('password');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  
-  const {
-    register,
-    handleSubmit,
-    getValues,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  const [alertMessage, setAlertMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  // PIN de 4 dígitos
+  const [pinDigits, setPinDigits] = useState(['', '', '', '']);
+
+  // Relógio e turno em tempo real
+  const [timeStr, setTimeStr] = useState('--:--:--');
+  const [dateStr, setDateStr] = useState('');
+  const [currentShift, setCurrentShift] = useState<{
+    id: number;
+    label: string;
+    range: string;
+    progress: number;
+    elapsed: string;
+    remaining: string;
+  }>({
+    id: 1,
+    label: '1º turno',
+    range: '06:00 – 14:00',
+    progress: 50,
+    elapsed: '4h transcorridas',
+    remaining: '4h restantes',
   });
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
-    
-    try {
-      const { error, success } = await signIn(data.email, data.password);
-      
-      if (error) {
-        let errorMsg = 'Falha no login. Verifique seu email e senha.';
-        const code = error.code;
-        
-        switch (code) {
-          case 'auth/invalid-credential':
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-            errorMsg = 'E-mail ou senha incorretos.';
-            break;
-          case 'auth/too-many-requests':
-            errorMsg = 'Muitas tentativas falhas. Tente novamente mais tarde.';
-            break;
-          case 'auth/user-disabled':
-            errorMsg = 'Esta conta foi desativada pelo administrador.';
-            break;
-        }
+  // Atualizador de Relógio e Turnos
+  useEffect(() => {
+    const updateMetrics = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const s = now.getSeconds();
 
-        toast.error(errorMsg);
-        console.error('Login error:', error);
+      setTimeStr(
+        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+      );
+
+      try {
+        const fullDate = now.toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        });
+        setDateStr(fullDate);
+      } catch (e) {
+        setDateStr('Hoje');
+      }
+
+      // Cálculo de Turnos (1º: 06:00-14:00, 2º: 14:00-22:00, 3º: 22:00-06:00)
+      let shiftId = 1;
+      let label = '1º turno';
+      let range = '06:00 – 14:00';
+      let startMinutes = 6 * 60;
+      let endMinutes = 14 * 60;
+
+      const currentMinutes = h * 60 + m;
+
+      if (currentMinutes >= 6 * 60 && currentMinutes < 14 * 60) {
+        shiftId = 1;
+        label = '1º turno';
+        range = '06:00 – 14:00';
+        startMinutes = 6 * 60;
+        endMinutes = 14 * 60;
+      } else if (currentMinutes >= 14 * 60 && currentMinutes < 22 * 60) {
+        shiftId = 2;
+        label = '2º turno';
+        range = '14:00 – 22:00';
+        startMinutes = 14 * 60;
+        endMinutes = 22 * 60;
+      } else {
+        shiftId = 3;
+        label = '3º turno';
+        range = '22:00 – 06:00';
+        startMinutes = 22 * 60;
+        endMinutes = (24 + 6) * 60;
+      }
+
+      let elapsedMin = currentMinutes >= startMinutes ? currentMinutes - startMinutes : (currentMinutes + 24 * 60) - startMinutes;
+      const totalShiftMin = 8 * 60;
+      const progress = Math.min(100, Math.max(0, Math.round((elapsedMin / totalShiftMin) * 100)));
+      const leftMin = Math.max(0, totalShiftMin - elapsedMin);
+
+      const elHours = Math.floor(elapsedMin / 60);
+      const elMins = elapsedMin % 60;
+      const remHours = Math.floor(leftMin / 60);
+      const remMins = leftMin % 60;
+
+      setCurrentShift({
+        id: shiftId,
+        label,
+        range,
+        progress,
+        elapsed: `${elHours}h ${elMins}m transcorridas`,
+        remaining: `${remHours}h ${remMins}m restantes`,
+      });
+    };
+
+    updateMetrics();
+    const interval = setInterval(updateMetrics, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Forms
+  const {
+    register: registerLogin,
+    handleSubmit: handleLoginSubmit,
+    formState: { errors: loginErrors },
+    setValue: setLoginValue,
+    getValues: getLoginValues,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const {
+    register: registerReg,
+    handleSubmit: handleRegSubmit,
+    formState: { errors: regErrors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: '', email: '', password: '' },
+  });
+
+  // Lembrar e-mail salvo
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('agilework_remembered_email');
+      if (savedEmail) {
+        setLoginValue('email', savedEmail);
+      }
+    } catch (e) {}
+  }, [setLoginValue]);
+
+  // Se já logado, redirecionar
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  const onLogin = async (data: LoginFormData) => {
+    setIsLoading(true);
+    setAlertMessage(null);
+
+    try {
+      localStorage.setItem('agilework_remembered_email', data.email);
+      const { error } = await signIn(data.email, data.password);
+
+      if (error) {
+        let msg = 'E-mail ou senha incorretos.';
+        if (error.code === 'auth/user-disabled') {
+          msg = 'Esta conta foi desativada pelo administrador.';
+        } else if (error.code === 'auth/too-many-requests') {
+          msg = 'Muitas tentativas falhas. Aguarde um instante.';
+        }
+        setAlertMessage({ text: msg, type: 'error' });
+        toast.error(msg);
         return;
       }
 
-        toast.success('Login realizado com sucesso!');
-        router.push('/dashboard');
-    } catch (error) {
-      console.error('Unexpected error during login', error);
-      toast.error('Ocorreu um erro inesperado. Tente novamente.');
+      toast.success('Autenticado com sucesso!');
+      router.push('/dashboard');
+    } catch (err) {
+      setAlertMessage({ text: 'Falha inesperada ao conectar.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResetPassword = async () => {
-    const emailStr = getValues('email');
-    if (!emailStr || !emailStr.includes('@')) {
-      toast.error('Por favor, preencha um e-mail válido no campo acima para recuperar a senha.');
+  const onRegister = async (data: RegisterFormData) => {
+    setIsLoading(true);
+    setAlertMessage(null);
+
+    try {
+      const { error } = await signUp(data.email, data.password, data.name);
+      if (error) {
+        let msg = 'Erro ao solicitar cadastro. Verifique os dados.';
+        if (error.code === 'auth/email-already-in-use') {
+          msg = 'Este e-mail já está cadastrado.';
+        }
+        setAlertMessage({ text: msg, type: 'error' });
+        toast.error(msg);
+        return;
+      }
+
+      toast.success('Solicitação enviada com sucesso! Aguarde ativação.');
+      setAlertMessage({
+        text: 'Conta criada! Você já pode acessar com suas credenciais.',
+        type: 'success',
+      });
+      setMode('login');
+    } catch (err) {
+      setAlertMessage({ text: 'Erro ao processar solicitação.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onForgotPassword = async () => {
+    const email = getLoginValues('email');
+    if (!email || !email.includes('@')) {
+      toast.error('Informe um e-mail válido para redefinição.');
       return;
     }
 
-    setIsResetting(true);
+    setIsLoading(true);
     try {
-      const { error, success } = await resetPassword(emailStr);
+      const { error } = await resetPassword(email);
       if (error) {
-        toast.error('Ocorreu um erro ao enviar o link de proteção. Verifique o servidor.');
-      } else if (success) {
-        toast.success(`Link de recuperação enviado para ${emailStr}! Cheque sua caixa de entrada.`);
+        toast.error('Falha ao enviar e-mail de recuperação.');
+      } else {
+        toast.success(`Link de redefinição enviado para ${email}!`);
+        setAlertMessage({
+          text: `Enviamos as instruções de redefinição para ${email}. Verifique sua caixa de entrada.`,
+          type: 'success',
+        });
       }
     } catch (e) {
-      toast.error('Erro na solicitação de recuperação.');
+      toast.error('Erro na solicitação.');
     } finally {
-      setIsResetting(false);
+      setIsLoading(false);
+    }
+  };
+
+  // Manipular PIN
+  const handlePinChange = (index: number, val: string) => {
+    if (!/^\d*$/.test(val)) return;
+    const newDigits = [...pinDigits];
+    newDigits[index] = val.slice(-1);
+    setPinDigits(newDigits);
+
+    if (val && index < 3) {
+      const nextInput = document.getElementById(`pin-${index + 1}`);
+      nextInput?.focus();
+    }
+
+    // Se preencheu todos os 4 dígitos
+    if (index === 3 && val) {
+      const fullPin = newDigits.join('');
+      toast.error('Login por PIN requer vinculação biométrica ou crachá.');
     }
   };
 
   return (
-    <div className="w-full max-w-md">
-      <div className="p-8 space-y-8 bg-white dark:bg-gray-950 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700/70">
-        <div className="text-center space-y-4">
-          <div className="w-14 h-14 mx-auto rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] bg-[var(--bg)] text-[var(--text)] select-none">
+      {/* ================= PAINEL ESQUERDO: TELEMETRIA & TURNO ================= */}
+      <section className="hidden lg:flex flex-col justify-between bg-[var(--surface)] border-r border-[var(--border)] p-10 relative overflow-hidden">
+        {/* Brand Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-[7px] bg-[var(--text)] text-[var(--bg)] grid place-items-center font-bold text-sm shadow-sm">
+            A
           </div>
-          
           <div>
-            <h1 className="text-3xl font-black text-foreground">
-              Bem-vindo!
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm font-medium">
-              Entre para gerenciar suas Notas Técnicas
-            </p>
+            <b className="block text-sm font-semibold tracking-tight text-[var(--text)]">
+              AgileWork
+            </b>
+            <small className="block text-xs text-[var(--text-3)] font-medium">
+              Gestão de NTs e Nivelamento · Pesagem
+            </small>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
-              disabled={isLoading}
-              placeholder="seu@email.com"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              {...register('password')}
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 font-medium"
-              disabled={isLoading}
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="text-sm text-red-500 dark:text-red-400 font-medium flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                {errors.password.message}
-              </p>
-            )}
-          </div>        
-          
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={handleResetPassword}
-              disabled={isLoading || isResetting}
-              className="text-sm font-bold text-gray-500 hover:text-primary transition-colors disabled:opacity-50"
-            >
-              {isResetting ? "Processando envio..." : "Esqueci minha senha"}
-            </button>
+        {/* Hero Central: Relógio & Status do Turno */}
+        <div className="my-auto max-w-lg">
+          {/* Relógio Monospace Grande */}
+          <div className="font-mono text-6xl font-medium tracking-tight text-[var(--text)] tabular-nums">
+            {timeStr}
           </div>
 
+          <div className="mt-3 text-base text-[var(--text-2)] font-medium capitalize">
+            {dateStr}
+          </div>
+
+          {/* Card de Acompanhamento do Turno */}
+          <div className="mt-8 pt-6 border-t border-[var(--border)]">
+            <div className="flex justify-between items-baseline mb-2.5">
+              <b className="text-sm font-semibold text-[var(--text)]">
+                {currentShift.label}
+              </b>
+              <span className="font-mono text-xs text-[var(--text-3)]">
+                {currentShift.range}
+              </span>
+            </div>
+
+            {/* Barra de Progresso do Turno */}
+            <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
+                style={{ width: `${currentShift.progress}%` }}
+              />
+            </div>
+
+            <div className="flex justify-between mt-2 text-xs text-[var(--text-3)] font-mono">
+              <span>{currentShift.elapsed}</span>
+              <span>{currentShift.remaining}</span>
+            </div>
+
+            {/* Três Turnos */}
+            <div className="grid grid-cols-3 mt-5 border border-[var(--border)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface-2)]">
+              <div className={cn("p-2.5 border-r border-[var(--border)] text-xs", currentShift.id === 1 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
+                <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">1º Turno</b>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">06:00 – 14:00</span>
+              </div>
+              <div className={cn("p-2.5 border-r border-[var(--border)] text-xs", currentShift.id === 2 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
+                <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">2º Turno</b>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">14:00 – 22:00</span>
+              </div>
+              <div className={cn("p-2.5 text-xs", currentShift.id === 3 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
+                <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">3º Turno</b>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">22:00 – 06:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rodapé do Painel */}
+        <div className="flex justify-between items-center text-xs text-[var(--text-3)] font-medium">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse" />
+            Infraestrutura Operando Normalmente
+          </span>
+          <span className="font-mono">Novamed · Grupo EMS</span>
+        </div>
+      </section>
+
+      {/* ================= PAINEL DIREITO: FORMULÁRIOS ================= */}
+      <section className="flex flex-col justify-between p-6 sm:p-10 relative">
+        {/* Top Actions: Theme Switcher */}
+        <div className="flex justify-end items-center">
           <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-xl px-6 py-3 bg-primary text-primary-foreground font-bold text-base tracking-wide shadow-sm hover:bg-primary/90 transition-colors duration-200 disabled:opacity-60"
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
+            title="Alternar tema"
           >
-            <span className="flex items-center justify-center gap-2">
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Entrando...
-                </span>
-              ) : 'Entrar'}
-            </span>
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-        </form>
-        
-        <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-800">
-          <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-            Não tem uma conta?{' '}
-            <Link 
-              href="/register" 
-              className="text-primary font-bold hover:opacity-80 transition-all duration-300"
-            >
-              Registre-se aqui
-            </Link>
+        </div>
+
+        <div className="my-auto w-full max-w-[340px] mx-auto">
+          {/* Header Mobile */}
+          <div className="lg:hidden flex items-center justify-between mb-8 pb-4 border-b border-[var(--border)]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-[6px] bg-[var(--text)] text-[var(--bg)] grid place-items-center font-bold text-xs">
+                A
+              </div>
+              <div>
+                <b className="text-xs font-bold text-[var(--text)]">AgileWork</b>
+                <small className="block text-[10px] text-[var(--text-3)]">Pesagem</small>
+              </div>
+            </div>
+            <div className="font-mono text-xs text-[var(--text-2)]">{timeStr}</div>
+          </div>
+
+          {/* ALERTA DE FEEDBACK */}
+          {alertMessage && (
+            <div className={cn(
+              "flex gap-2.5 items-start p-3 rounded-[var(--radius)] text-xs mb-4 border leading-relaxed",
+              alertMessage.type === 'error'
+                ? "bg-[rgba(229,72,77,0.08)] border-[var(--red)] text-[var(--text)]"
+                : "bg-[rgba(63,182,139,0.08)] border-[var(--green)] text-[var(--text)]"
+            )}>
+              {alertMessage.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-[var(--red)] shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle className="w-4 h-4 text-[var(--green)] shrink-0 mt-0.5" />
+              )}
+              <span>{alertMessage.text}</span>
+            </div>
+          )}
+
+          {/* VISTA 1: ENTRAR (LOGIN) */}
+          {mode === 'login' && (
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+                Entrar
+              </h1>
+              <p className="text-xs text-[var(--text-3)] mt-1 mb-5">
+                Acesse para gerenciar notas técnicas e a produção da pesagem.
+              </p>
+
+              {/* Segmented Control (E-mail e Senha vs PIN) */}
+              <div className="grid grid-cols-2 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden mb-4">
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('password')}
+                  className={cn(
+                    "h-8 text-xs font-medium transition-colors cursor-pointer",
+                    loginMethod === 'password'
+                      ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
+                      : "text-[var(--text-3)] hover:text-[var(--text)]"
+                  )}
+                >
+                  E-mail e senha
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('pin')}
+                  className={cn(
+                    "h-8 text-xs font-medium border-l border-[var(--border-strong)] transition-colors cursor-pointer",
+                    loginMethod === 'pin'
+                      ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
+                      : "text-[var(--text-3)] hover:text-[var(--text)]"
+                  )}
+                >
+                  PIN Rápido
+                </button>
+              </div>
+
+              {loginMethod === 'password' ? (
+                /* Formulário E-mail e Senha */
+                <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-3.5">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-[var(--text-2)]">
+                      E-mail corporativo
+                    </label>
+                    <input
+                      type="email"
+                      {...registerLogin('email')}
+                      placeholder="nome@ems.com.br"
+                      disabled={isLoading}
+                      className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-weak)] transition-all"
+                    />
+                    {loginErrors.email && (
+                      <p className="text-[11px] text-[var(--red)]">{loginErrors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-baseline">
+                      <label className="block text-xs font-medium text-[var(--text-2)]">
+                        Senha
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setMode('forgot')}
+                        className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
+
+                    <div className="relative flex items-center">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        {...registerLogin('password')}
+                        placeholder="••••••••"
+                        disabled={isLoading}
+                        className="w-full h-9 px-3 pr-9 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-weak)] transition-all font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
+                        title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    {loginErrors.password && (
+                      <p className="text-[11px] text-[var(--red)]">{loginErrors.password.message}</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-9 mt-2 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {isLoading ? (
+                      <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                    ) : (
+                      'Entrar no Sistema'
+                    )}
+                  </button>
+                </form>
+              ) : (
+                /* Formulário PIN de 4 Dígitos */
+                <div className="space-y-4 pt-1">
+                  <p className="text-xs text-[var(--text-3)] text-center">
+                    Digite seu PIN individual de 4 números:
+                  </p>
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {pinDigits.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        id={`pin-${idx}`}
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handlePinChange(idx, e.target.value)}
+                        className="w-full h-12 text-center font-mono text-xl font-bold rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-weak)] transition-all"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-[var(--text-3)] text-center">
+                    Entrada automática ao preencher o 4º dígito.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6 pt-5 border-t border-[var(--border)] text-center text-xs text-[var(--text-3)]">
+                Não tem uma conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className="text-[var(--accent)] font-medium hover:underline cursor-pointer ml-1"
+                >
+                  Solicitar acesso
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* VISTA 2: ESQUECI A SENHA */}
+          {mode === 'forgot' && (
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+                Redefinir senha
+              </h1>
+              <p className="text-xs text-[var(--text-3)] mt-1 mb-5">
+                Informe seu e-mail corporativo. Enviaremos um link seguro para criar uma nova senha.
+              </p>
+
+              <div className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-[var(--text-2)]">
+                    E-mail cadastrado
+                  </label>
+                  <input
+                    type="email"
+                    {...registerLogin('email')}
+                    placeholder="nome@ems.com.br"
+                    disabled={isLoading}
+                    className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  disabled={isLoading}
+                  className="w-full h-9 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {isLoading ? (
+                    <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Enviar link de redefinição'
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-6 pt-5 border-t border-[var(--border)] text-center text-xs text-[var(--text-3)]">
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className="text-[var(--accent)] font-medium hover:underline cursor-pointer"
+                >
+                  Voltar para o login
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* VISTA 3: SOLICITAR ACESSO / CADASTRO */}
+          {mode === 'register' && (
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+                Solicitar acesso
+              </h1>
+              <p className="text-xs text-[var(--text-3)] mt-1 mb-5">
+                Preencha seus dados para requisitar cadastro operacional.
+              </p>
+
+              <form onSubmit={handleRegSubmit(onRegister)} className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-[var(--text-2)]">
+                    Nome completo
+                  </label>
+                  <input
+                    type="text"
+                    {...registerReg('name')}
+                    placeholder="Ex: João da Silva"
+                    disabled={isLoading}
+                    className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                  />
+                  {regErrors.name && (
+                    <p className="text-[11px] text-[var(--red)]">{regErrors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-[var(--text-2)]">
+                    E-mail corporativo
+                  </label>
+                  <input
+                    type="email"
+                    {...registerReg('email')}
+                    placeholder="nome@ems.com.br"
+                    disabled={isLoading}
+                    className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                  />
+                  {regErrors.email && (
+                    <p className="text-[11px] text-[var(--red)]">{regErrors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-[var(--text-2)]">
+                    Senha de acesso
+                  </label>
+                  <input
+                    type="password"
+                    {...registerReg('password')}
+                    placeholder="Mínimo 6 caracteres"
+                    disabled={isLoading}
+                    className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all font-mono"
+                  />
+                  {regErrors.password && (
+                    <p className="text-[11px] text-[var(--red)]">{regErrors.password.message}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-9 mt-2 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {isLoading ? (
+                    <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Enviar solicitação'
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 pt-5 border-t border-[var(--border)] text-center text-xs text-[var(--text-3)]">
+                Já possui conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className="text-[var(--accent)] font-medium hover:underline cursor-pointer ml-1"
+                >
+                  Fazer login
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Legal disclaimer */}
+          <p className="text-[11px] text-[var(--text-3)] text-center mt-6">
+            Uso restrito a colaboradores autorizados. Acessos são registrados para auditoria.
           </p>
         </div>
-      </div>
+
+        {/* Rodapé Direita */}
+        <div className="text-center lg:text-right text-[11px] text-[var(--text-3)] font-mono">
+          AgileWork v2.0
+        </div>
+      </section>
     </div>
   );
 };

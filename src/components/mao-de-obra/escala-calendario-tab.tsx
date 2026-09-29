@@ -201,30 +201,30 @@ export function EscalaCalendarioTab({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         {/* Navegação de Mês */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="flex items-center bg-[var(--surface)] border border-[var(--border-strong)] rounded-md overflow-hidden">
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="h-9 w-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="h-8 w-8 flex items-center justify-center hover:bg-[var(--hover)] text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
             >
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="px-4 text-sm font-black text-foreground min-w-[140px] text-center">
+            <span className="px-4 text-xs font-semibold text-[var(--text)] min-w-[130px] text-center font-mono">
               {MONTH_NAMES[currentMonth - 1]} {currentYear}
             </span>
             <button
               type="button"
               onClick={handleNextMonth}
-              className="h-9 w-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="h-8 w-8 flex items-center justify-center hover:bg-[var(--hover)] text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
             >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => setCurrentMonth(today.getMonth() + 1)}
-            className="h-9 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs"
+            className="h-8 px-3 text-xs font-medium bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)] rounded-md hover:bg-[var(--hover)] transition-colors"
           >
             Mês Atual
           </button>
@@ -232,11 +232,11 @@ export function EscalaCalendarioTab({
 
         {/* Legenda */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Turmas — apenas badges coloridos */}
+          {/* Turmas */}
           {turmas.map((t) => (
             <div key={t} className="flex items-center gap-1">
               <div
-                className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shadow-xs"
+                className="w-4 h-4 rounded text-white font-mono text-[10px] font-bold flex items-center justify-center"
                 style={{ backgroundColor: TURMAS_INFO[t].cor }}
               >
                 {t}
@@ -244,10 +244,10 @@ export function EscalaCalendarioTab({
             </div>
           ))}
 
-          <div className="w-px h-4 bg-border mx-1" />
+          <div className="w-px h-3 bg-[var(--border)] mx-1" />
 
           {/* Tipos de ocorrência */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)]">
             <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
             <span className="text-[11px] text-muted-foreground font-medium">Falta</span>
           </div>

@@ -3,16 +3,15 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { NT, NTFilters as NTFiltersType, NTItem } from '@/types';
-import { PlusCircle, FileSearch, Filter, RefreshCw, Search } from 'lucide-react';
-import { getNTs, subscribeToNTs } from '@/lib/firestore-helpers';
-import { Input } from '@/components/ui/input';
+import { NT, NTFilters as NTFiltersType } from '@/types';
+import { Plus, Layers, RefreshCw } from 'lucide-react';
+import { getNTs, subscribeToNTs, deleteNT } from '@/lib/firestore-helpers';
+import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { NTList } from '@/components/nt-manager/nt-list';
+import { NTStats } from '@/components/nt-manager/nt-stats';
 import { NTFilters } from '@/components/nt-manager/nt-filters';
 import { AddNTModal } from '@/components/nt-manager/add-nt-modal';
 import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
@@ -24,12 +23,12 @@ function NTManagerContent() {
   const [nts, setNts] = useState<NT[]>([]);
   const [filteredNts, setFilteredNts] = useState<NT[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
   const [autoExpandedNTs, setAutoExpandedNTs] = useState<string[]>([]);
@@ -37,7 +36,8 @@ function NTManagerContent() {
   const { user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
-    // Default filters
+
+  // Filtros
   const [filters, setFilters] = useState<NTFiltersType>({
     search: '',
     status: [],
@@ -46,69 +46,76 @@ function NTManagerContent() {
     overdueOnly: false,
     hideOldNts: false,
     priorityOnly: false,
-    isCompletedView: false
+    isCompletedView: false,
   });
-  
-  // Redirect if not authenticated
+
+  // Autenticação
   useEffect(() => {
     if (!user) {
       router.push('/login');
     }
   }, [user, router]);
 
-  // Fetch NTs data
+  // Checar se a URL veio com status=concluida
+  useEffect(() => {
+    const statusParam = searchParams?.get('status');
+    if (statusParam === 'concluida') {
+      setFilters(prev => ({ ...prev, isCompletedView: true }));
+    }
+  }, [searchParams]);
+
+  // Carregar NTs
   const fetchNTs = useCallback(async () => {
     setLoading(true);
-    
     try {
       const data = await getNTs();
-      
-      // Filtrar NTs para mostrar apenas dos últimos 2 dias
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      
+
       const recentNTs = data.filter((nt: NT) => {
         if (!nt.created_date) return false;
-        // Parse created_date format "DD/MM/YYYY"
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const ntDate = new Date(year, month - 1, day);
-        return ntDate >= twoDaysAgo;
+        try {
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const ntDate = new Date(year, month - 1, day);
+          return ntDate >= twoDaysAgo;
+        } catch (e) {
+          return true;
+        }
       });
-      
+      setNts(recentNTs);
       return recentNTs;
     } catch (error) {
-      console.error('Error fetching NTs:', error);
       toast.error('Erro ao carregar as NTs');
       return [];
     } finally {
       setLoading(false);
     }
-  }, []); // Sem dependências - função pura
+  }, []);
 
+  // Inscrição em tempo real Firestore
   useEffect(() => {
     if (!user) return;
-    
-    // Subscribe to real-time changes in Firestore
+
     const unsubscribe = subscribeToNTs(
       (ntsData) => {
-        console.log('Real-time update received:', ntsData.length, 'NTs');
-        
-        // Filtrar NTs para mostrar apenas dos últimos 2 dias
         const twoDaysAgo = new Date();
         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-        
+
         const recentNTs = ntsData.filter((nt: NT) => {
           if (!nt.created_date) return false;
-          const [day, month, year] = nt.created_date.split('/').map(Number);
-          const ntDate = new Date(year, month - 1, day);
-          return ntDate >= twoDaysAgo;
+          try {
+            const [day, month, year] = nt.created_date.split('/').map(Number);
+            const ntDate = new Date(year, month - 1, day);
+            return ntDate >= twoDaysAgo;
+          } catch (e) {
+            return true;
+          }
         });
-        
+
         setNts(recentNTs);
         setLoading(false);
       },
-      (error) => {
-        console.error('Error in real-time subscription:', error);
+      () => {
         toast.error('Erro na atualização em tempo real');
       }
     );
@@ -116,558 +123,293 @@ function NTManagerContent() {
     return () => {
       unsubscribe();
     };
-  }, [user]); // Apenas user como dependência
-  
-  // Aplicar filtros sempre que filters ou nts mudarem
+  }, [user]);
+
+  // Aplicar filtros
   useEffect(() => {
     let filtered = [...nts];
     const searchTerm = filters.search?.toLowerCase().trim();
-    let ntsWithMatchingItems: Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}> = [];
-    let shouldAutoExpand = false;
-    
-    // Date range filter (aplicar ANTES da busca)
+
     if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
       filtered = filtered.filter(nt => {
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const createdDate = new Date(year, month - 1, day);
-        const fromDate = new Date(filters.dateRange!.from);
-        const toDate = new Date(filters.dateRange!.to);
-        return createdDate >= fromDate && createdDate <= toDate;
+        try {
+          const [day, month, year] = nt.created_date.split('/').map(Number);
+          const createdDate = new Date(year, month - 1, day);
+          const fromDate = new Date(filters.dateRange!.from);
+          const toDate = new Date(filters.dateRange!.to);
+          return createdDate >= fromDate && createdDate <= toDate;
+        } catch (e) {
+          return true;
+        }
       });
     }
-    
-    // Shift filter (aplicado em TODAS as NTs, incluindo concluídas)
+
     if (filters.shift !== null) {
       filtered = filtered.filter(nt => {
-        const createdTime = nt.created_time;
+        const createdTime = nt.created_time || '';
         const hour = parseInt(createdTime.split(':')[0], 10);
-        
         if (filters.shift === 1) return hour >= 6 && hour < 14;
         if (filters.shift === 2) return hour >= 14 && hour < 22;
         if (filters.shift === 3) return hour >= 22 || hour < 6;
         return true;
       });
     }
-    
-    // Filtrar NTs concluídas ou não concluídas com base na vista
-    // (aplicado DEPOIS do filtro de turno para garantir que funcione)
-    if (filters.isCompletedView === true) {
+
+    if (filters.isCompletedView) {
       filtered = filtered.filter(nt => {
         if (!nt.items || nt.items.length === 0) return false;
         return nt.items.every(item => item.status === 'Pago');
       });
-    } else if (filters.isCompletedView === false) {
-      filtered = filtered.filter(nt => {
-        if (!nt.items || nt.items.length === 0) return true;
-        return nt.items.some(item => item.status !== 'Pago');
-      });
-    }
-    
-    // Status filter (aplicado apenas se houver status selecionados)
-    if (filters.status && filters.status.length > 0) {
-      filtered = filtered.filter(nt => 
-        filters.status!.includes(nt.status)
-      );
-    }
-    
-    // Hide old NTs (older than 3 days)
-    if (filters.hideOldNts) {
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      
-      filtered = filtered.filter(nt => {
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const ntDate = new Date(year, month - 1, day);
-        return ntDate >= threeDaysAgo;
-      });
-    }
-    
-    // Filter for priority items
-    if (filters.priorityOnly) {
-      filtered = filtered.filter(nt => 
-        nt.items && nt.items.some(item => item.priority === true)
-      );
-    }
-    
-    // Filter for overdue items
-    if (filters.overdueOnly) {
+    } else if (filters.status && filters.status.length > 0) {
       filtered = filtered.filter(nt => {
         if (!nt.items || nt.items.length === 0) return false;
+        return nt.items.some(item => filters.status.includes(item.status));
+      });
+    }
+
+    if (filters.overdueOnly) {
+      const twoHoursInMs = 2 * 60 * 60 * 1000;
+      filtered = filtered.filter(nt => {
+        if (!nt.items) return false;
         return nt.items.some(item => {
           if (item.status === 'Pago') return false;
-          const [day, month, year] = nt.created_date.split('/').map(Number);
-          const [hour, minute] = nt.created_time.split(':').map(Number);
-          const createdDate = new Date(year, month - 1, day, hour, minute);
-          const now = new Date();
-          const diffHours = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
-          return diffHours > 2;
+          try {
+            const [year, month, day] = item.created_date.split('-').map(Number);
+            const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
+            const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
+            return Date.now() - creationDate.getTime() > twoHoursInMs;
+          } catch (e) {
+            return false;
+          }
         });
       });
     }
-    
-    // Search by NT number OR material name/code (aplicar POR ÚLTIMO)
+
     if (searchTerm) {
-      // First, filter by NT number
-      const ntsByNumber = filtered.filter(nt => 
-        nt.nt_number.toLowerCase().includes(searchTerm)
-      );
-      
-      // Then search within items for matching code or description
-      const ntsWithItems = filtered.map(nt => {
-        if (!nt.items || nt.items.length === 0) return null;
-        
-        const matchedItemIds = nt.items
-          .filter(item => 
-            item.description?.toLowerCase().includes(searchTerm) ||
-            item.code?.toLowerCase().includes(searchTerm)
-          )
-          .map(item => item.id);
-        
-        if (matchedItemIds.length > 0) {
-          // Create datetime for sorting (oldest first)
-          const [day, month, year] = nt.created_date.split('/').map(Number);
-          const [hour, minute] = nt.created_time.split(':').map(Number);
-          const createdDateTime = new Date(year, month - 1, day, hour, minute).getTime();
-          
-          return { nt, matchedItemIds, createdDateTime };
-        }
-        return null;
-      }).filter(Boolean) as Array<{nt: NT, matchedItemIds: string[], createdDateTime: number}>;
-      
-      // If we found items matching the search, use those NTs
-      if (ntsWithItems.length > 0) {
-        // Sort by creation date/time (oldest first)
-        ntsWithMatchingItems = ntsWithItems.sort((a, b) => a.createdDateTime - b.createdDateTime);
-        filtered = ntsWithMatchingItems.map(item => item.nt);
-        shouldAutoExpand = true;
-      } else if (ntsByNumber.length > 0) {
-        // If no items match but NT number matches, use those
-        filtered = ntsByNumber;
-        setAutoExpandedNTs([]);
-        setHighlightedItems([]);
-      } else {
-        // No matches found
-        filtered = [];
-        setAutoExpandedNTs([]);
-        setHighlightedItems([]);
-      }
-    } else {
-      // Clear auto-expansion when search is cleared
-      setAutoExpandedNTs([]);
-      setHighlightedItems([]);
-    }
-    
-    // Status filter
-    if (filters.status && filters.status.length > 0) {
-      filtered = filtered.filter(nt => 
-        filters.status!.includes(nt.status)
-      );
-    }
-    
-    // Date range filter
-    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
       filtered = filtered.filter(nt => {
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const createdDate = new Date(year, month - 1, day);
-        const fromDate = new Date(filters.dateRange!.from);
-        const toDate = new Date(filters.dateRange!.to);
-        return createdDate >= fromDate && createdDate <= toDate;
+        const matchesNT = nt.nt_number?.toLowerCase().includes(searchTerm);
+        const matchesItems = nt.items?.some(item =>
+          item.code?.toLowerCase().includes(searchTerm) ||
+          item.description?.toLowerCase().includes(searchTerm) ||
+          item.batch?.toLowerCase().includes(searchTerm)
+        );
+
+        return matchesNT || matchesItems;
       });
     }
-    
-    // Shift filter
-    if (filters.shift !== null) {
-      filtered = filtered.filter(nt => {
-        const createdTime = nt.created_time;
-        const hour = parseInt(createdTime.split(':')[0], 10);
-        
-        if (filters.shift === 1) return hour >= 6 && hour < 14;
-        if (filters.shift === 2) return hour >= 14 && hour < 22;
-        if (filters.shift === 3) return hour >= 22 || hour < 6;
-        return true;
-      });
-    }
-    
-    // Hide old NTs (older than 3 days)
-    if (filters.hideOldNts) {
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      
-      filtered = filtered.filter(nt => {
-        const [day, month, year] = nt.created_date.split('/').map(Number);
-        const createdDate = new Date(year, month - 1, day);
-        return createdDate >= threeDaysAgo;
-      });
-    }
-    
-    // Filter for priority items
-    if (filters.priorityOnly) {
-      filtered = filtered.filter(nt => 
-        nt.items?.some(item => item.priority === true)
-      );
-    }
-    
-    // Filter for overdue items
-    if (filters.overdueOnly) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      filtered = filtered.filter(nt => {
-        const createdDate = new Date(nt.created_date);
-        createdDate.setHours(0, 0, 0, 0);
-        
-        const isOverdue = nt.items?.some(item => {
-          const itemDate = new Date(item.created_date);
-          itemDate.setHours(0, 0, 0, 0);
-          const daysSinceCreation = Math.floor((today.getTime() - itemDate.getTime()) / (1000 * 3600 * 24));
-          return daysSinceCreation > 1 && item.status === 'Ag. Pagamento';
-        });
-        
-        return isOverdue;
-      });
-    }
-    
+
     setFilteredNts(filtered);
-    
-    // Apply auto-expand and highlight AFTER setting filtered NTs
-    if (shouldAutoExpand && ntsWithMatchingItems.length > 0) {
-      const firstNTId = ntsWithMatchingItems[0].nt.id;
-      const allMatchedItemIds = ntsWithMatchingItems.flatMap(item => item.matchedItemIds);
-      
-      // Auto-expand after a small delay to ensure rendering
-      setTimeout(() => {
-        setAutoExpandedNTs([firstNTId]);
-        setHighlightedItems(allMatchedItemIds);
-        
-        // Remove highlight after 1 second
-        setTimeout(() => {
-          setHighlightedItems([]);
-        }, 1000);
-      }, 100);
+  }, [nts, filters]);
+
+  // Deletar NT confirmada
+  const handleDeleteNTConfirm = async () => {
+    if (!ntToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteNT(ntToDelete);
+      toast.success('Nota Técnica excluída com sucesso');
+      setShowDeleteModal(false);
+      setNtToDelete(null);
+      fetchNTs();
+    } catch (err) {
+      toast.error('Erro ao excluir Nota Técnica');
+    } finally {
+      setIsDeleting(false);
     }
-  }, [filters, nts]);
-  
-  // Handle filter changes
-  const handleFilterChange = (newFilters: Partial<NTFiltersType>) => {
-    const updatedFilters = {
-      ...filters,
-      ...newFilters,
-    };
-    setFilters(updatedFilters);
-    // O useEffect vai aplicar os filtros automaticamente
-  };
-  
-  // Handle search input change
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFilterChange({ search: e.target.value });
-  };
-  
-  // Handle NT edit
-  const handleEditNT = (nt: NT) => {
-    setSelectedNT(nt);
-    setShowEditModal(true);
-  };
-  
-  // Handle NT delete
-  const handleDeleteNT = (ntId: string) => {
-    setNtToDelete(ntId);
-    setShowDeleteModal(true);
   };
 
-  const handleConfirmDeleteNT = () => {
-    setShowDeleteModal(false);
-    setNtToDelete(null);
-    // Não precisa chamar fetchNTs - o real-time listener atualiza automaticamente
+  // Contagens para os filtros
+  const counts = {
+    all: nts.length,
+    pending: nts.filter(n => n.items?.some(i => i.status === 'Ag. Pagamento')).length,
+    paid: nts.filter(n => n.items && n.items.length > 0 && n.items.every(i => i.status === 'Pago')).length,
+    delayed: nts.filter(n => {
+      const twoHoursInMs = 2 * 60 * 60 * 1000;
+      return n.items?.some(item => {
+        if (item.status === 'Pago') return false;
+        try {
+          const [year, month, day] = item.created_date.split('-').map(Number);
+          const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
+          const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
+          return Date.now() - creationDate.getTime() > twoHoursInMs;
+        } catch (e) {
+          return false;
+        }
+      });
+    }).length,
   };
-  
-  // Função para refresh manual (apenas força re-render, dados já estão atualizados pelo real-time)
-  const handleRefresh = () => {
-    // O real-time listener já mantém os dados atualizados
-    // Esta função existe apenas para feedback visual
-    toast.success('Dados atualizados!');
-  };
-    // Processar parâmetros de URL
-  useEffect(() => {
-    const statusParam = searchParams?.get('status');
-    
-    // Resetar os filtros primeiro
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      isCompletedView: false,
-      hideOldNts: true // valor padrão
-    }));
 
-    // Então aplicar os filtros específicos baseados no parâmetro status
-    if (statusParam === 'concluida') {
-      setFilters(prevFilters => ({
-        ...prevFilters,
-        isCompletedView: true,
-        hideOldNts: false // Não esconder NTs antigas na vista de concluídas
-      }));
-    } else if (statusParam === 'todas') {
-      setFilters(prevFilters => ({
-        ...prevFilters,
-        hideOldNts: false // Não esconder NTs antigas no histórico
-      }));
-    }
-  }, [searchParams]);
-  
-  // NT skeleton loader component
-  const NTSkeleton = () => (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 animate-pulse transition-all">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl h-10 w-10 bg-gray-200 dark:bg-gray-700"></div>
-          <div>
-            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
-            <div className="h-2 w-48 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            <div className="h-1.5 w-40 bg-gray-200 dark:bg-gray-700 rounded-full mt-2"></div>
-            <div className="flex gap-1 mt-2">
-              <div className="h-3 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-              <div className="h-3 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-              <div className="h-3 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-          <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-          <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-        </div>
-      </div>
-    </div>
-  );
-  
-  if (!user) {
-    return null;
-  }
-  
+  if (!user) return null;
+
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
+      {/* App Rail 52px */}
       <Sidebar />
-      <div className="flex-1 flex ml-[64px] transition-all duration-300">
-        {/* Main content area - responsive width */}
-        <div className={`flex-1 flex flex-col transition-all duration-300 ${
-          nts.length === 0 || timelineCollapsed ? 'w-full' : 'w-4/5 lg:w-4/5 xl:w-4/5'
-        }`}>
-          <Topbar />
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-2xs mb-6">
+
+      {/* Conteúdo Principal com Topbar 48px */}
+      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <Topbar />
+
+        {/* Layout de 2 colunas: Lista Principal + Inspector Lateral */}
+        <div className="flex-1 flex min-h-0 overflow-hidden">
+          {/* Coluna Central: Lista de NTs */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+            {/* Header da Página com Ações Rápidas */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-1 select-none">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center">
-                  {filters.isCompletedView 
-                    ? "Notas Técnicas Concluídas" 
-                    : "Gerenciamento de NTs"}
-                  <span className="ml-2.5 text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-full">
-                    {filteredNts.length} {filteredNts.length === 1 ? 'NT' : 'NTs'}
-                  </span>
+                <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">
+                  {filters.isCompletedView ? "Notas Técnicas Concluídas" : "Notas Técnicas"}
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                <p className="text-xs text-[var(--text-3)] mt-0.5">
                   {filters.isCompletedView
-                    ? "Histórico de Notas Técnicas 100% concluídas"
-                    : "Visualize e gerencie suas Notas Técnicas ativas"}
+                    ? "Histórico e auditoria de NTs 100% finalizadas"
+                    : "Acompanhamento das NTs abertas para pesagem"}
                 </p>
               </div>
-              
-              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                <div className="relative flex-1 md:flex-none md:min-w-[260px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 text-slate-400 -translate-y-1/2" />
-                  <Input
-                    placeholder="Buscar NT, código ou material..."
-                    value={filters.search}
-                    onChange={handleSearch}
-                    className="pl-9 h-9 text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 focus:bg-white dark:focus:bg-slate-900"
-                  />
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowFilters(!showFilters)} 
-                  className="relative flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+
+              {/* Botões de Ação */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchNTs()}
+                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Filter className="h-3.5 w-3.5" />
-                  Filtros
-                  {Object.values(filters).some(v => 
-                    (Array.isArray(v) && v.length > 0) || 
-                    (typeof v === 'boolean' && v === true) || 
-                    (v !== null && v !== '')
-                  ) && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-600 border-2 border-white dark:border-slate-900"></span>
-                  )}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  className="flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  <RefreshCw size={13} className={cn(loading && "animate-spin")} />
+                  <span>Atualizar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBulkAddModal(true)}
+                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
-                
-                <Button 
-                  size="sm" 
+                  <Layers size={13} />
+                  <span>Lote em Massa</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1.5 h-9 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
+                  className="h-8 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
-                  <PlusCircle className="h-3.5 w-3.5" />
+                  <Plus size={14} />
                   <span>Nova NT</span>
-                </Button>
+                </button>
               </div>
             </div>
-              {/* Filters panel */}
-            {showFilters && (
-              <Card className="mb-6 relative overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900">
-                <CardContent className="pt-6 pb-6 relative z-10">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      Filtros Avançados
-                    </h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">
-                      Refine sua busca por status, data, turno e outras opções
-                    </p>
-                  </div>
-                  <NTFilters 
-                    filters={filters} 
-                    onChange={handleFilterChange} 
-                  />
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* NT List */}
-            <div className="space-y-5">
-              {loading ? (
-                // Skeleton loaders while loading
-                <div className="space-y-5">
-                  <NTSkeleton />
-                  <NTSkeleton />
-                  <NTSkeleton />
+
+            {/* Sumário de KPIs em 4 blocos */}
+            <NTStats nts={nts} />
+
+            {/* Barra de Filtros com Abas Segmentadas */}
+            <NTFilters
+              filters={filters}
+              onChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
+              counts={counts}
+            />
+
+            {/* Cabeçalho da Tabela */}
+            <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-xs">
+              <div className="grid grid-cols-[28px_1.3fr_1fr_0.7fr_1.3fr_1fr_0.9fr_100px] items-center px-3 py-2 bg-[var(--surface-2)] text-[11px] font-medium text-[var(--text-3)] border-b border-[var(--border)] gap-2 select-none">
+                <div></div>
+                <div>NT / Identificador</div>
+                <div>Destino</div>
+                <div>Turno</div>
+                <div>Progresso</div>
+                <div>Criada em</div>
+                <div>Status</div>
+                <div className="text-right">Ações</div>
+              </div>
+
+              {/* Lista / Tabela de NTs */}
+              {loading && nts.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[var(--text-3)]">
+                  Carregando Notas Técnicas...
                 </div>
-              ) : filteredNts.length > 0 ? (
-                <NTList
-                  nts={filteredNts}
-                  onEdit={handleEditNT}
-                  onDelete={handleDeleteNT}
-                  onRefresh={handleRefresh}
-                  autoExpandedNTs={autoExpandedNTs}
-                  highlightedItems={highlightedItems}
-                />
+              ) : filteredNts.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[var(--text-3)] space-y-1">
+                  <p className="font-semibold text-[var(--text-2)]">Nenhuma NT encontrada</p>
+                  <p>Tente ajustar os filtros ou a busca acima.</p>
+                </div>
               ) : (
-                <div className="relative p-12 text-center bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="relative inline-block mb-4">
-                      <FileSearch className="h-16 w-16 mx-auto text-gray-400 dark:text-gray-500" />
-                    </div>
-                    
-                    <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                      Nenhuma NT encontrada
-                    </h3>
-                    
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto font-medium">
-                      {filters.search ? 
-                        `Não encontramos NTs com "${filters.search}" ou com os filtros aplicados.` : 
-                        'Não encontramos NTs com os filtros aplicados.'}
-                    </p>
-                    
-                    <Button 
-                      onClick={() => {
-                        setFilters({
-                          search: '',
-                          status: [],
-                          dateRange: null,
-                          shift: null,
-                          overdueOnly: false,
-                          hideOldNts: false,
-                          priorityOnly: false
-                        });
-                      }} 
-                      variant="outline" 
-                      size="sm"
-                      className="border-gray-300 dark:border-gray-600 font-bold"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Limpar filtros
-                    </Button>
-                  </div>
+                <div className="divide-y divide-[var(--border)]">
+                  <NTList
+                    nts={filteredNts}
+                    onEdit={(nt) => {
+                      setSelectedNT(nt);
+                      setShowEditModal(true);
+                    }}
+                    onDelete={(ntId) => {
+                      setNtToDelete(ntId);
+                      setShowDeleteModal(true);
+                    }}
+                    onRefresh={fetchNTs}
+                    autoExpandedNTs={autoExpandedNTs}
+                    highlightedItems={highlightedItems}
+                  />
                 </div>
               )}
             </div>
           </main>
-        </div>
 
-        {/* Timeline sidebar - enhanced dark mode support */}
-        {nts.length > 0 && (
-          <div className={`
-            border-l border-gray-200 dark:border-gray-700/80 
-            bg-white dark:bg-gray-900/40
-            transition-all duration-300 flex flex-col
-            shadow-lg dark:shadow-gray-900/20
-            ${timelineCollapsed ? 'w-16' : 'w-1/5 lg:w-1/5 xl:w-1/5 min-w-[280px]'}
-          `}>            {/* Timeline header spacer with enhanced dark mode */}
-            <div className="h-16 border-b border-[#003d6b]/20 flex items-center justify-center px-4 bg-[#003d6b] relative overflow-hidden">
-              {!timelineCollapsed && (
-                <h2 className="text-sm font-bold text-white tracking-wide">Timeline Ativa</h2>
-              )}
-            </div>
-            {/* Timeline content with enhanced spacing */}
-            <div className="flex-1 p-4 overflow-hidden flex flex-col">
-              {/* Timeline component */}
-              <div className="flex-1 min-h-0">
-                <PaidItemsTimelineFirebase 
-                  isCollapsed={timelineCollapsed}
-                  onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+          {/* Coluna Direita: Inspector em Tempo Real */}
+          <PaidItemsTimelineFirebase
+            collapsed={timelineCollapsed}
+            onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
+          />
+        </div>
       </div>
 
-      {/* Modals */}
-      <AddNTModal 
-        open={showAddModal} 
-        onOpenChange={setShowAddModal} 
-        onSuccess={handleRefresh}
-      />
-      
-      <AddBulkNTModal
-        open={showBulkAddModal}
-        onOpenChange={setShowBulkAddModal}
-        onSuccess={handleRefresh}
-      />
-      
-      <EditNTModal 
-        open={showEditModal}
-        onOpenChange={setShowEditModal}
-        onSuccess={handleRefresh}
-        nt={selectedNT}
-      />
-      
-      <DeleteConfirmationModal
-        open={showDeleteModal}
-        onOpenChange={setShowDeleteModal}
-        onConfirm={handleConfirmDeleteNT}
-        title="Confirmar exclusão da NT"
-        description="Tem certeza que deseja excluir esta NT? Esta ação é irreversível e excluirá todos os itens relacionados."
-        isDeleting={false}
-        entityType="nt"
-        entityId={ntToDelete || ''}
-      />
+      {/* Modais */}
+      {showAddModal && (
+        <AddNTModal
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          onSuccess={fetchNTs}
+        />
+      )}
+
+      {showBulkAddModal && (
+        <AddBulkNTModal
+          open={showBulkAddModal}
+          onOpenChange={setShowBulkAddModal}
+          onSuccess={fetchNTs}
+        />
+      )}
+
+      {showEditModal && selectedNT && (
+        <EditNTModal
+          open={showEditModal}
+          onOpenChange={(open) => {
+            setShowEditModal(open);
+            if (!open) setSelectedNT(null);
+          }}
+          nt={selectedNT}
+          onSuccess={fetchNTs}
+        />
+      )}
+
+      {showDeleteModal && ntToDelete && (
+        <DeleteConfirmationModal
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          onConfirm={handleDeleteNTConfirm}
+          title="Excluir Nota Técnica"
+          description={`Tem certeza que deseja excluir esta NT #${ntToDelete}? Esta ação não pode ser desfeita.`}
+          isDeleting={isDeleting}
+          entityType="nt"
+          entityId={ntToDelete}
+        />
+      )}
     </div>
   );
 }
 
-export default function NTManager() {
+export default function NTManagerPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Carregando...</p>
-        </div>
+      <div className="h-screen flex items-center justify-center bg-[var(--bg)] text-xs text-[var(--text-3)]">
+        Carregando gerenciador de NTs...
       </div>
     }>
       <NTManagerContent />

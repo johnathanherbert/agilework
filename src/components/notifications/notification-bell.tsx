@@ -144,19 +144,18 @@ export const NotificationBell = () => {
     <div className="relative">
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative text-white/90 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 h-10 w-10 shadow-xs active:scale-95"
+          <button
+            type="button"
+            className="relative w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
             title="Central de Notificações"
           >
-            <Bell size={20} className={cn("transition-transform duration-300", isOpen && "rotate-12 scale-110")} />
+            <Bell size={15} className={cn("transition-transform duration-200", isOpen && "rotate-12")} />
             {notificationsEnabled && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black border-2 border-[#003d6b] animate-pulse shadow-md z-50">
+              <span className="absolute -top-1 -right-1 bg-[var(--red)] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold shadow-xs z-50">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
-          </Button>
+          </button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent 

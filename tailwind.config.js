@@ -1,4 +1,4 @@
-   /** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -10,23 +10,36 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
       colors: {
-        ems: {
-          blue: {
-            DEFAULT: "#0066B3",
-            dark: "#004d8a",
-            light: "#00A3E0",
-            bg: "rgba(0, 102, 179, 0.06)",
-          },
-          green: "#009B3A",
-          yellow: "#FEDF00",
+        // Tokens de Superfície e Fundo
+        app: {
+          bg: "var(--bg)",
+          surface: "var(--surface)",
+          "surface-2": "var(--surface-2)",
+          hover: "var(--hover)",
+          border: "var(--border)",
+          "border-strong": "var(--border-strong)",
+          text: "var(--text)",
+          "text-2": "var(--text-2)",
+          "text-3": "var(--text-3)",
+          accent: "var(--accent)",
+          "accent-weak": "var(--accent-weak)",
         },
+        // Cores Semânticas
+        industrial: {
+          red: "var(--red)",
+          amber: "var(--amber)",
+          green: "var(--green)",
+          blue: "var(--blue)",
+          purple: "var(--purple)",
+        },
+        // Shadcn UI Variables
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -49,8 +62,8 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "hsl(var(--accent-foreground))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -61,16 +74,16 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+      fontFamily: {
+        sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
-      boxShadow: {
-        'sm': '0 2px 10px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-        'md': '0 6px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)',
-        'lg': '0 10px 24px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08)',
-        'soft': '0 4px 20px rgba(0, 0, 0, 0.05)',
+      borderRadius: {
+        DEFAULT: "var(--radius)",
+        sm: "calc(var(--radius) - 2px)",
+        md: "var(--radius)",
+        lg: "calc(var(--radius) + 2px)",
+        xl: "calc(var(--radius) + 4px)",
       },
       keyframes: {
         "accordion-down": {
@@ -81,30 +94,15 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
-        "fadeIn": {
-          from: { opacity: 0, transform: "translateY(-10px)" },
+        "fade-in": {
+          from: { opacity: 0, transform: "translateY(-4px)" },
           to: { opacity: 1, transform: "translateY(0)" },
-        },
-        "pulse-slow": {
-          "0%, 100%": { opacity: 1 },
-          "50%": { opacity: 0.7 },
-        },
-        "borderPulse": {
-          "0%, 100%": { borderColor: "rgb(249 115 22 / 0.5)" }, // orange-500 with opacity
-          "50%": { borderColor: "rgb(249 115 22)" }, // orange-500
-        },
-        "shake": {
-          "0%, 100%": { transform: "translateX(0)" },
-          "20%, 60%": { transform: "translateX(-8px)" },
-          "40%, 80%": { transform: "translateX(8px)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fadeIn": "fadeIn 0.3s ease-out forwards",
-        "pulse-slow": "pulse-slow 3s infinite",
-        "shake": "shake 0.4s ease-in-out",
+        "fade-in": "fade-in 0.2s ease-out forwards",
       },
     },
   },
