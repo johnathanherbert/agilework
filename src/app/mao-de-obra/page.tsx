@@ -39,7 +39,6 @@ import {
 import { QuadroDiario } from '@/components/mao-de-obra/quadro-diario';
 import { OperadoresTable } from '@/components/mao-de-obra/operadores-table';
 import { OcorrenciasTab } from '@/components/mao-de-obra/ocorrencias-tab';
-import { TratativasTab } from '@/components/mao-de-obra/tratativas-tab';
 import { EscalaCalendarioTab } from '@/components/mao-de-obra/escala-calendario-tab';
 import { AbsenteismoDashboard } from '@/components/mao-de-obra/absenteismo-dashboard';
 import { OperadorModal } from '@/components/mao-de-obra/operador-modal';
@@ -160,25 +159,17 @@ export default function MaoDeObraPage() {
         <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <main className="flex-1 overflow-y-auto p-5 sm:p-6 min-w-0">
+          <main className={cn(
+            "flex-1 overflow-y-auto p-5 sm:p-6 min-w-0 transition-all duration-300",
+            !isPinUnlocked && "filter blur-[6px] select-none pointer-events-none opacity-40"
+          )}>
             {/* Header da Página */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Mão de Obra & Escalas</h1>
-                  {connected ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Ao vivo
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-mono">
-                      <WifiOff className="w-3 h-3" /> Conectando
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-[var(--text-3)] mt-0.5">
-                  Escala 4x1 · 4x2 · 5x1 2026 · Gestão diária e banco de folgas flexíveis
+                <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Mão de obra</h1>
+                <p className="text-xs text-[var(--text-3)] mt-0.5 flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse inline-block mr-1.5 shrink-0" />
+                  Escala 4×1 · 4×2 · 5×1 · 2026 · folgas flexíveis
                 </p>
               </div>
 
@@ -186,25 +177,25 @@ export default function MaoDeObraPage() {
               <div className="flex flex-wrap items-center gap-2">
                 {/* Seletor de Turno */}
                 {canSelectTurno ? (
-                  <div className="flex items-center border border-[var(--border-strong)] rounded-md overflow-hidden bg-[var(--surface)] p-0.5">
+                  <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface)]">
                     {(['ALL', 1, 2, 3] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
                         onClick={() => setSelectedTurno(t)}
                         className={cn(
-                          "h-7 px-2.5 text-xs font-medium rounded transition-colors font-mono",
+                          "h-[30px] px-3 text-xs font-medium border-r border-[var(--border-strong)] last:border-r-0 transition-colors",
                           selectedTurno === t
-                            ? "bg-[var(--hover)] text-[var(--text)] font-semibold shadow-xs"
+                            ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
                             : "text-[var(--text-3)] hover:text-[var(--text)]"
                         )}
                       >
-                        {t === 'ALL' ? 'Todos 3' : `T${t}`}
+                        {t === 'ALL' ? 'Geral' : `T${t}`}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-md">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius)]">
                     <Star className="w-3.5 h-3.5 text-amber-400" />
                     <span className="text-xs font-medium text-amber-300 font-mono">
                       {TURNO_INFO[selectedTurno as number]?.label || `Turno ${selectedTurno}`}
@@ -212,22 +203,41 @@ export default function MaoDeObraPage() {
                   </div>
                 )}
 
-                <Button
+                {/* Botão de Bloqueio de Edição / PIN */}
+                <button
+                  type="button"
+                  onClick={() => setIsPinUnlocked((prev) => !prev)}
+                  className={cn(
+                    "h-8 px-3 rounded-[var(--radius)] border text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+                    !isPinUnlocked
+                      ? "border-[var(--amber)] text-[var(--amber)] bg-[var(--surface)]"
+                      : "border-[var(--border-strong)] text-[var(--text-2)] bg-[var(--surface)] hover:text-[var(--text)] hover:border-[var(--text-3)]"
+                  )}
+                  title={isPinUnlocked ? "Edição liberada (Clique para bloquear)" : "Edição bloqueada (Clique para desbloquear via PIN)"}
+                >
+                  <Lock className={cn("w-3.5 h-3.5", !isPinUnlocked ? "text-[var(--amber)]" : "text-[var(--text-3)]")} />
+                  <span>{!isPinUnlocked ? 'Bloqueado' : 'Bloquear'}</span>
+                </button>
+
+                {/* Botão Ocorrência */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenOcorrencia()}
+                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[var(--text-3)]" />
+                  <span>Ocorrência</span>
+                </button>
+
+                {/* Botão Operador */}
+                <button
+                  type="button"
                   onClick={handleOpenNewOperator}
-                  className="h-8 px-3 text-xs gap-1.5 font-medium bg-[var(--text)] text-[var(--bg)] hover:opacity-90 rounded-md"
+                  className="h-8 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] border border-[var(--text)] text-xs font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Novo Operador
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => handleOpenOcorrencia()}
-                  className="h-8 px-3 text-xs gap-1.5 font-medium border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] rounded-md"
-                >
-                  <ClipboardList className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  Ocorrência
-                </Button>
+                  <span>Operador</span>
+                </button>
               </div>
             </div>
 
@@ -236,51 +246,36 @@ export default function MaoDeObraPage() {
               <TabsList className="mb-5 h-auto p-0 bg-transparent border-b border-[var(--border)] rounded-none w-full justify-start gap-1">
                 <TabsTrigger
                   value="quadro"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                  className="gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
-                  <Users className="w-3.5 h-3.5" />
-                  Quadro do Dia
+                  Quadro do dia
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="escala"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                  className="gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
-                  Calendário Escala
+                  Calendário
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="operadores"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                  className="gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
-                  <Users className="w-3.5 h-3.5" />
-                  Operadores <span className="font-mono text-[11px] text-[var(--text-3)]">({operadoresFiltrados.length})</span>
+                  Operadores <span className="font-mono text-[11px] text-[var(--text-3)] ml-0.5">{operadoresFiltrados.length}</span>
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="ocorrencias"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                  className="gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  Ocorrências
+                  Ocorrências <span className="font-mono text-[11px] text-[var(--text-3)] ml-0.5">{occurrences.filter((o) => selectedTurno === 'ALL' || o.turno === selectedTurno).length}</span>
                 </TabsTrigger>
-
-                {(isAdmin || isSupervisor) && (
-                  <TabsTrigger
-                    value="tratativas"
-                    className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
-                    Tratativas
-                  </TabsTrigger>
-                )}
 
                 <TabsTrigger
                   value="absenteismo"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
+                  className="gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
                 >
-                  <BarChart3 className="w-3.5 h-3.5" />
                   Absenteísmo
                 </TabsTrigger>
               </TabsList>
@@ -335,18 +330,7 @@ export default function MaoDeObraPage() {
                 />
               </TabsContent>
 
-              {/* Aba 5: Tratativas da Supervisão (Apenas Adm/Supervisão) */}
-              {(isAdmin || isSupervisor) && (
-                <TabsContent value="tratativas" className="focus-visible:outline-none">
-                  <TratativasTab
-                    occurrences={occurrences}
-                    operators={operators}
-                    selectedTurno={selectedTurno}
-                  />
-                </TabsContent>
-              )}
-
-              {/* Aba 6: Absenteísmo */}
+              {/* Aba 5: Absenteísmo */}
               <TabsContent value="absenteismo" className="focus-visible:outline-none">
                 <AbsenteismoDashboard
                   operators={operators}

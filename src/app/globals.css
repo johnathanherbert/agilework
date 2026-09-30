@@ -267,4 +267,57 @@ body.capture .pl-\[52px\] {
   padding-left: 0 !important;
 }
 
+/* Industrial Form Elements (Redesign Concept) */
+.search-industrial {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-3);
+  transition: border-color 0.15s;
+}
+.search-industrial:focus-within {
+  border-color: var(--accent);
+}
+.search-industrial input {
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+.search-industrial input::placeholder {
+  color: var(--text-3);
+}
+
+.select-industrial {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b727c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center/12px;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: 0;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.15s;
+}
+.select-industrial:focus {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.select-industrial option {
+  background: var(--surface);
+  color: var(--text);
+}
+
 

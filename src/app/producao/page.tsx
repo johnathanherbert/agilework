@@ -607,7 +607,7 @@ function ProducaoPageContent() {
                       "h-7 px-2.5 rounded-full border border-[var(--border-strong)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
                       isActive
                         ? "bg-[var(--hover)] text-[var(--text)]"
-                        : "text-[var(--text-3)] hover:text-[var(--text)]"
+                        : "text-[v1ar(--text-3)] hover:text-[var(--text)]"
                     )}
                   >
                     <span

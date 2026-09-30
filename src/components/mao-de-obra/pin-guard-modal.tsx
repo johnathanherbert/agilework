@@ -143,68 +143,66 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
   return (
     <Dialog open={!isUnlocked} onOpenChange={() => {}}>
       <DialogContent
+        overlayClassName="bg-black/75 backdrop-blur-md"
         className={cn(
-          "max-w-md p-0 gap-0 rounded-3xl border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden bg-white dark:bg-slate-950",
+          "max-w-[420px] p-0 rounded-lg bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-2xl overflow-hidden",
           isShaking && "animate-shake"
         )}
         // Previne fechar clicando fora ou com ESC
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Header Visual Gradiente */}
-        <div className="bg-gradient-to-br from-violet-600 via-indigo-600 to-slate-900 text-white p-6 text-center relative overflow-hidden">
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center mx-auto mb-3 shadow-lg backdrop-blur-xs">
-            {needsCreation ? (
-              <KeyRound className="w-7 h-7 text-violet-200 animate-pulse" />
-            ) : (
-              <Lock className="w-7 h-7 text-violet-200" />
-            )}
+        {/* Header Industrial */}
+        <div className="flex items-start justify-between p-5 border-b border-[var(--border)]">
+          <div>
+            <div className="flex items-center gap-2">
+              {needsCreation ? (
+                <KeyRound className="w-4 h-4 text-[var(--accent)]" />
+              ) : (
+                <Lock className="w-4 h-4 text-[var(--amber)]" />
+              )}
+              <h2 className="text-[15px] font-semibold text-[var(--text)]">
+                {needsCreation ? "Criar PIN de Segurança" : "Acesso Protegido por PIN"}
+              </h2>
+            </div>
+            <p className="text-xs text-[var(--text-3)] mt-1">
+              {needsCreation
+                ? `Olá, ${userData?.name || "Colaborador"}! Defina um PIN de 4 a 6 dígitos para o módulo de Mão de Obra.`
+                : `Módulo protegido. Digite seu PIN de 4 a 6 dígitos para continuar.`}
+            </p>
           </div>
-
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-xl font-black text-white text-center">
-              {needsCreation ? "Criar PIN de Segurança" : "Acesso Protegido por PIN"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <p className="text-xs text-violet-200/90 font-medium mt-1 max-w-xs mx-auto">
-            {needsCreation
-              ? `Olá, ${userData?.name || "Colaborador"}! Defina um PIN de 4 a 6 dígitos para o módulo de Mão de Obra.`
-              : `Módulo de Mão de Obra protegido. Digite seu PIN de 4 a 6 dígitos para continuar.`}
-          </p>
         </div>
 
         {/* Corpo do Formulário */}
-        <div className="p-6 space-y-5">
+        <div className="p-5 space-y-4">
           {needsCreation ? (
             /* Fluxo 1: Criação de Novo PIN */
             <form onSubmit={handleCreatePin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                <label className="text-xs text-[var(--text-3)] block">
                   Novo PIN (4 a 6 dígitos numéricos)
                 </label>
                 <div className="relative">
-                  <Input
+                  <input
                     ref={inputRef}
                     type={showPin ? "text" : "password"}
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={6}
-                    placeholder="Ex: 1234"
+                    placeholder="••••"
                     value={newPin}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, "");
                       setNewPin(val);
                       setErrorMsg("");
                     }}
-                    className="h-12 text-center text-xl font-black tracking-widest bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 pr-10"
+                    className="h-10 w-full text-center font-mono text-xl font-bold tracking-[0.3em] bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)] pr-9"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={() => setShowPin(!showPin)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
                     tabIndex={-1}
                   >
                     {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -213,10 +211,10 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                <label className="text-xs text-[var(--text-3)] block">
                   Confirmar Novo PIN
                 </label>
-                <Input
+                <input
                   type={showPin ? "text" : "password"}
                   inputMode="numeric"
                   pattern="[0-9]*"
@@ -228,21 +226,21 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
                     setConfirmPin(val);
                     setErrorMsg("");
                   }}
-                  className="h-12 text-center text-xl font-black tracking-widest bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                  className="h-10 w-full text-center font-mono text-xl font-bold tracking-[0.3em] bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               {errorMsg && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs font-bold text-red-600 dark:text-red-400">
+                <div className="p-2.5 rounded-[var(--radius)] bg-[var(--red)]/10 border border-[var(--red)]/30 flex items-center gap-2 text-xs font-medium text-[var(--red)]">
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={saving || !newPin || newPin.length < 4}
-                className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-black text-sm rounded-xl gap-2 shadow-lg shadow-violet-500/20"
+                className="w-full h-9 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <>
@@ -255,17 +253,17 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
                     Cadastrar PIN & Acessar
                   </>
                 )}
-              </Button>
+              </button>
             </form>
           ) : (
             /* Fluxo 2: Digitação do PIN Cadastrado */
             <form onSubmit={handleVerifyPin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-muted-foreground block text-center uppercase tracking-wider">
+                <label className="text-xs text-[var(--text-3)] block text-center">
                   Digite seu PIN de 4 a 6 dígitos
                 </label>
                 <div className="relative">
-                  <Input
+                  <input
                     ref={inputRef}
                     type={showPin ? "text" : "password"}
                     inputMode="numeric"
@@ -278,13 +276,13 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
                       setPinInput(val);
                       setErrorMsg("");
                     }}
-                    className="h-14 text-center text-2xl font-black tracking-widest bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 pr-10"
+                    className="h-12 w-full text-center font-mono text-2xl font-bold tracking-[0.35em] bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)] pr-9"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={() => setShowPin(!showPin)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
                     tabIndex={-1}
                   >
                     {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -293,56 +291,52 @@ export function PinGuardModal({ onUnlock, isUnlocked }: PinGuardModalProps) {
               </div>
 
               {errorMsg && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs font-bold text-red-600 dark:text-red-400">
+                <div className="p-2.5 rounded-[var(--radius)] bg-[var(--red)]/10 border border-[var(--red)]/30 flex items-center gap-2 text-xs font-medium text-[var(--red)]">
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={!pinInput || pinInput.length < 4}
-                className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-black text-sm rounded-xl gap-2 shadow-lg shadow-violet-500/20"
+                className="w-full h-9 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                Desbloquear Mão de Obra
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+                <span>Desbloquear Mão de Obra</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
 
               {/* Dica sobre esquecimento do PIN */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center">
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Esqueceu seu PIN? Solicite o reset ao <strong className="text-foreground">Administrador</strong> na aba de Acessos para cadastrar um novo.
+              <div className="p-3 rounded-[var(--radius)] bg-[var(--surface-2)] border border-[var(--border)] text-center">
+                <p className="text-[11px] text-[var(--text-3)] leading-relaxed">
+                  Esqueceu seu PIN? Solicite o reset ao <strong className="text-[var(--text)]">Administrador</strong> na aba de Usuários para cadastrar um novo.
                 </p>
               </div>
             </form>
           )}
+        </div>
 
-          {/* Ações Secundárias */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-            <Button
+        {/* Rodapé Industrial */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-2)]">
+          <button
+            type="button"
+            onClick={handleExit}
+            className="h-7 px-2.5 rounded-[var(--radius)] text-xs text-[var(--text-3)] hover:text-[var(--text)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sair para Dashboard
+          </button>
+
+          {isAdmin && !needsCreation && (
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleExit}
-              className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+              onClick={handleBypassAdmin}
+              className="h-7 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Sair para Dashboard
-            </Button>
-
-            {isAdmin && !needsCreation && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleBypassAdmin}
-                className="text-xs text-violet-600 dark:text-violet-400 font-bold hover:bg-violet-50 dark:hover:bg-violet-950/40 gap-1.5"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Acesso Admin
-              </Button>
-            )}
-          </div>
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Acesso Admin
+            </button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

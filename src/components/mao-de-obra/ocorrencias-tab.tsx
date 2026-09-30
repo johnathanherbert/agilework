@@ -205,186 +205,240 @@ export function OcorrenciasTab({
   return (
     <div className="space-y-4">
       {/* Cards de Resumo Industrial */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden">
-        {[
-          { label: 'Faltas Inj.', value: stats.faltasInj, color: 'text-red-400', dot: 'bg-red-500' },
-          { label: 'Atestados', value: stats.atestados, color: 'text-rose-400', dot: 'bg-rose-500' },
-          { label: 'Folgas Flex.', value: stats.folgas, color: 'text-sky-400', dot: 'bg-sky-500' },
-          { label: 'Em Férias (Hoje)', value: stats.ferias, color: 'text-purple-400', dot: 'bg-purple-500' },
-          { label: 'Atrasos', value: stats.atrasos, color: 'text-amber-400', dot: 'bg-amber-500' },
-        ].map((item) => (
-          <div key={item.label} className="p-3.5">
-            <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
-              <span className={cn("w-1.5 h-1.5 rounded-full", item.dot)} />
-              {item.label}
-            </label>
-            <strong className={cn("text-xl font-semibold tracking-tight font-mono block", item.color)}>
-              {item.value}
-            </strong>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-5 border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden">
+        <div className={cn("p-3.5", stats.faltasInj > 0 && "bg-red-500/5")}>
+          <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
+            Faltas injustificadas
+          </label>
+          <strong className={cn("text-xl font-semibold tracking-tight font-mono block", stats.faltasInj > 0 ? "text-[var(--red)]" : "text-[var(--text)]")}>
+            {stats.faltasInj}
+          </strong>
+        </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
+            Atestados
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-[var(--text)]">
+            {stats.atestados}
+          </strong>
+        </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)]" />
+            Folgas flexíveis
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-[var(--text)]">
+            {stats.folgas}
+          </strong>
+        </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)]" />
+            Em férias hoje
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-[var(--text)]">
+            {stats.ferias}
+          </strong>
+        </div>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
+            Atrasos
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-[var(--text)]">
+            {stats.atrasos}
+          </strong>
+        </div>
       </div>
 
       {/* Tabela de Ocorrências */}
-      <div className="bg-[var(--surface)] rounded-md border border-[var(--border)] overflow-hidden">
+      <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
         {/* Toolbar */}
         <div className="px-3.5 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[var(--text)]">Histórico de Ocorrências</span>
+            <span className="text-xs font-semibold text-[var(--text)]">Ocorrências</span>
             <span className="text-[11px] font-mono text-[var(--text-3)] bg-[var(--surface)] px-1.5 py-0.5 rounded border border-[var(--border)]">
               {filteredOccurrences.length}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="h-3.5 w-3.5 text-[var(--text-3)] absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="Buscar operador..."
+            {/* Busca Industrial */}
+            <label className="search-industrial w-[200px] cursor-text">
+              <Search className="h-3.5 w-3.5 shrink-0" />
+              <input
+                placeholder="Buscar colaborador"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 pr-2.5 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[170px] text-[var(--text)] placeholder:text-[var(--text-3)]"
               />
-            </div>
+            </label>
 
-            <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
-              <SelectTrigger className="h-8 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[140px] text-[var(--text-2)]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
-                <SelectItem value="ALL">Todos os Tipos</SelectItem>
-                <SelectItem value="falta_injustificada">Falta Injustificada</SelectItem>
-                <SelectItem value="atestado">Atestado Médico</SelectItem>
-                <SelectItem value="falta_justificada">Falta Justificada</SelectItem>
-                <SelectItem value="folga_flexivel">Folga Flexível</SelectItem>
-                <SelectItem value="ferias">Férias</SelectItem>
-                <SelectItem value="atraso">Atraso</SelectItem>
-                <SelectItem value="hora_extra">Hora Extra</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Tipo Industrial */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as any)}
+              className="select-industrial"
+            >
+              <option value="ALL">Todos os tipos</option>
+              <option value="falta_injustificada">Falta Injustificada</option>
+              <option value="atestado">Atestado Médico</option>
+              <option value="falta_justificada">Falta Justificada</option>
+              <option value="folga_flexivel">Folga Flexível</option>
+              <option value="ferias">Férias</option>
+              <option value="atraso">Atraso</option>
+              <option value="hora_extra">Hora Extra</option>
+            </select>
 
-            <Select value={periodoFilter} onValueChange={(v: any) => setPeriodoFilter(v)}>
-              <SelectTrigger className="h-8 text-xs bg-[var(--surface)] border-[var(--border-strong)] rounded-md w-[120px] text-[var(--text-2)]">
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text)]">
-                <SelectItem value="mes_atual">Mês Atual</SelectItem>
-                <SelectItem value="ano_2026">Ano 2026</SelectItem>
-                <SelectItem value="todos">Todo Histórico</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Período Industrial */}
+            <select
+              value={periodoFilter}
+              onChange={(e) => setPeriodoFilter(e.target.value as any)}
+              className="select-industrial"
+            >
+              <option value="mes_atual">Mês atual</option>
+              <option value="ano_2026">Ano 2026</option>
+              <option value="todos">Todo o período</option>
+            </select>
 
             <Button
               size="sm"
               onClick={onOpenOcorrencia}
-              className="h-8 px-2.5 text-xs gap-1 font-medium rounded-md bg-[var(--text)] text-[var(--bg)] hover:opacity-90"
+              className="h-8 px-2.5 text-xs gap-1 font-medium rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] hover:opacity-90 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Nova
+              Ocorrência
             </Button>
           </div>
         </div>
 
-        {/* Cabeçalho da tabela */}
-        {filteredOccurrences.length > 0 && (
-          <div className="hidden md:grid md:grid-cols-[1fr_140px_130px_70px_80px] px-3.5 py-2 border-b border-[var(--border)] bg-[var(--surface-2)] text-[11px] font-medium text-[var(--text-3)]">
-            <span>Colaborador</span>
-            <span className="text-center">Tipo</span>
-            <span className="text-center">Período</span>
-            <span className="text-center">Dias</span>
-            <span className="text-right">Ações</span>
-          </div>
-        )}
+        {/* Tabela Formatada */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead className="bg-[var(--surface-2)] text-[var(--text-3)] font-medium text-xs border-b border-[var(--border)]">
+              <tr>
+                <th className="px-4 py-2.5">Colaborador</th>
+                <th className="px-4 py-2.5 text-center">Turma</th>
+                <th className="px-4 py-2.5">Tipo</th>
+                <th className="px-4 py-2.5 text-center">Período</th>
+                <th className="px-4 py-2.5 text-right">Dias</th>
+                <th className="px-4 py-2.5">Observação</th>
+                <th className="px-4 py-2.5 text-right w-[90px]"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filteredOccurrences.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-xs text-[var(--text-3)]">
+                    Nenhuma ocorrência encontrada para os filtros aplicados.
+                  </td>
+                </tr>
+              ) : (
+                filteredOccurrences.map((occ) => {
+                  const meta = OCC_META[occ.tipo] || OCC_META.falta_injustificada;
+                  const turmaInfo = TURMAS_INFO[occ.operadorLetra];
+                  const hasObsSupervisao = Boolean(occ.obsSupervisao);
 
-        {/* Linhas */}
-        <div className="divide-y divide-[var(--border)]">
-          {filteredOccurrences.length === 0 ? (
-            <div className="py-14 text-center text-xs text-[var(--text-3)]">
-              Nenhuma ocorrência encontrada para os filtros aplicados.
-            </div>
-          ) : (
-            filteredOccurrences.map((occ) => {
-              const meta = OCC_META[occ.tipo] || OCC_META.falta_injustificada;
-              const turmaInfo = TURMAS_INFO[occ.operadorLetra];
-              const hasObsSupervisao = Boolean(occ.obsSupervisao);
+                  const dataInicioFmt = new Date(occ.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                  const dataFimFmt = occ.dataFim && occ.dataFim !== occ.dataInicio
+                    ? new Date(occ.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                    : null;
 
-              const dataInicioFmt = new Date(occ.dataInicio + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-              const dataFimFmt = occ.dataFim && occ.dataFim !== occ.dataInicio
-                ? new Date(occ.dataFim + 'T12:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-                : null;
-              const anoInicio = new Date(occ.dataInicio + 'T12:00:00Z').getFullYear();
-
-              return (
-                <div
-                  key={occ.id}
-                  className="group flex items-center gap-3 px-3.5 py-2.5 hover:bg-[var(--hover)] transition-colors cursor-pointer md:grid md:grid-cols-[1fr_140px_130px_70px_80px] md:gap-0 md:items-center"
-                  onClick={() => setOccToView(occ)}
-                >
-                  {/* Operador */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className="w-6 h-6 rounded text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: turmaInfo?.cor || 'var(--accent)' }}
+                  return (
+                    <tr
+                      key={occ.id}
+                      onClick={() => setOccToView(occ)}
+                      className="hover:bg-[var(--hover)] transition-colors cursor-pointer group"
                     >
-                      {occ.operadorLetra}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-xs font-medium text-[var(--text)] truncate">{occ.operadorNome}</p>
-                        {isSupervisorOrAdmin && hasObsSupervisao && (
-                          <span title="Tratativas registradas pela supervisão">
-                            <ShieldCheck className="w-3.5 h-3.5 text-violet-400 shrink-0" />
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-[var(--text-3)] font-mono truncate">
-                        {occ.operadorCargo} · T{occ.turno}
-                      </p>
-                    </div>
-                  </div>
+                      {/* Colaborador */}
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-[var(--text)] leading-tight">{occ.operadorNome}</p>
+                          {isSupervisorOrAdmin && hasObsSupervisao && (
+                            <span title="Tratativa da supervisão registrada">
+                              <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[var(--text-3)] font-mono">{occ.operadorCargo} · T{occ.turno}</p>
+                      </td>
 
-                  {/* Tipo */}
-                  <div className="hidden sm:flex items-center justify-center">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-2)]">
-                      <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
-                      <span className="truncate">{meta.shortLabel}</span>
-                    </span>
-                  </div>
+                      {/* Turma */}
+                      <td className="px-4 py-2.5 text-center">
+                        <span
+                          className="inline-grid place-items-center w-5 h-5 rounded-[4px] font-mono text-[11px] font-bold border"
+                          style={{
+                            backgroundColor: turmaInfo ? `${turmaInfo.cor}22` : 'var(--surface-2)',
+                            color: turmaInfo?.cor || 'var(--text)',
+                            borderColor: turmaInfo ? `${turmaInfo.cor}55` : 'var(--border-strong)',
+                          }}
+                        >
+                          {occ.operadorLetra}
+                        </span>
+                      </td>
 
-                  {/* Período */}
-                  <div className="hidden md:flex flex-col items-center">
-                    <p className="text-xs font-mono text-[var(--text)] tabular-nums">
-                      {dataInicioFmt}
-                      {dataFimFmt && (
-                        <span className="text-[var(--text-3)]"> → {dataFimFmt}</span>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-3)] font-mono">{anoInicio}</p>
-                  </div>
+                      {/* Tipo */}
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-2)] whitespace-nowrap">
+                          <i
+                            className="w-1.5 h-1.5 rounded-full inline-block shrink-0"
+                            style={{
+                              backgroundColor:
+                                occ.tipo === 'atestado' ? 'var(--amber)' :
+                                occ.tipo === 'falta_injustificada' ? 'var(--red)' :
+                                occ.tipo === 'falta_justificada' ? 'var(--amber)' :
+                                occ.tipo === 'folga_flexivel' ? 'var(--blue)' :
+                                occ.tipo === 'ferias' ? 'var(--violet)' : 'var(--text-3)'
+                            }}
+                          />
+                          <span>{meta.shortLabel}</span>
+                        </span>
+                      </td>
 
-                  {/* Dias */}
-                  <div className="hidden md:flex justify-center">
-                    <span className="font-mono text-xs font-semibold text-[var(--text)] bg-[var(--surface-2)] px-2 py-0.5 rounded border border-[var(--border)]">
-                      {occ.dias || 1}d
-                    </span>
-                  </div>
+                      {/* Período */}
+                      <td className="px-4 py-2.5 text-center font-mono text-xs text-[var(--text)] whitespace-nowrap">
+                        {dataInicioFmt}
+                        {dataFimFmt && <span className="text-[var(--text-3)]"> → {dataFimFmt}</span>}
+                      </td>
 
-                  {/* Ações */}
-                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => setOccToDelete(occ)}
-                      className="h-6 w-6 flex items-center justify-center rounded text-[var(--text-3)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      title="Excluir ocorrência"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <ChevronRight className="w-3.5 h-3.5 text-[var(--text-3)] group-hover:text-[var(--text)] transition-colors" />
-                  </div>
-                </div>
-              );
-            })
-          )}
+                      {/* Dias */}
+                      <td className="px-4 py-2.5 text-right font-mono text-xs text-[var(--text-2)]">
+                        {occ.dias || 1}
+                      </td>
+
+                      {/* Observação */}
+                      <td className="px-4 py-2.5 text-[var(--text-3)] text-xs max-w-[240px] truncate">
+                        {occ.motivo || occ.queixas || occ.cid || '—'}
+                      </td>
+
+                      {/* Ações */}
+                      <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => setOccToView(occ)}
+                            className="h-6 w-6 rounded-[var(--radius)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] transition-colors cursor-pointer"
+                            title="Ver detalhes"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setOccToDelete(occ)}
+                            className="h-6 w-6 rounded-[var(--radius)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--border)] transition-colors cursor-pointer"
+                            title="Excluir ocorrência"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

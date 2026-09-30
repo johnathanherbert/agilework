@@ -231,65 +231,43 @@ export function EscalaCalendarioTab({
         </div>
 
         {/* Legenda */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Turmas */}
-          {turmas.map((t) => (
-            <div key={t} className="flex items-center gap-1">
-              <div
-                className="w-4 h-4 rounded text-white font-mono text-[10px] font-bold flex items-center justify-center"
-                style={{ backgroundColor: TURMAS_INFO[t].cor }}
-              >
-                {t}
-              </div>
-            </div>
-          ))}
-
-          <div className="w-px h-3 bg-[var(--border)] mx-1" />
-
-          {/* Tipos de ocorrência */}
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)]">
-            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-            <span className="text-[11px] text-muted-foreground font-medium">Falta</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
-            <span className="text-[11px] text-muted-foreground font-medium">Atestado</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-            <span className="text-[11px] text-muted-foreground font-medium">Folga</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-            <span className="text-[11px] text-muted-foreground font-medium">Férias</span>
-          </div>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <div className="flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] text-muted-foreground font-medium">Feriado</span>
-          </div>
+        <div className="flex items-center gap-3 flex-wrap text-xs text-[var(--text-3)]">
+          <span className="flex items-center gap-1.5">
+            <i className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
+            Falta
+          </span>
+          <span className="flex items-center gap-1.5">
+            <i className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
+            Atestado
+          </span>
+          <span className="flex items-center gap-1.5">
+            <i className="w-1.5 h-1.5 rounded-full bg-[var(--blue)]" />
+            Folga flex.
+          </span>
+          <span className="flex items-center gap-1.5">
+            <i className="w-1.5 h-1.5 rounded-full bg-[var(--violet)]" />
+            Férias
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-grid place-items-center w-4 h-4 rounded-[3px] border border-[var(--border-strong)] font-mono text-[10px] text-[var(--text-2)] bg-[var(--surface-2)]">
+              D
+            </span>
+            Turma de folga
+          </span>
         </div>
       </div>
 
       {/* Grid do Calendário + Painel Lateral */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Calendário */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+        <div className="flex-1 bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
           {/* Cabeçalho com dias da semana */}
-          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-7 border-b border-[var(--border)] bg-[var(--surface-2)]">
             {WEEK_DAYS.map((day) => {
-              const isWeekend = day === 'Dom' || day === 'Sáb';
               return (
                 <div
                   key={day}
-                  className={cn(
-                    "py-3 text-center text-[11px] font-bold uppercase tracking-wider",
-                    isWeekend
-                      ? "bg-slate-50/80 dark:bg-slate-950/40 text-slate-400 dark:text-slate-600"
-                      : "text-muted-foreground"
-                  )}
+                  className="py-2.5 text-center text-xs font-medium text-[var(--text-3)]"
                 >
                   {day}
                 </div>
@@ -303,7 +281,7 @@ export function EscalaCalendarioTab({
             {Array.from({ length: firstDayOfWeek }).map((_, i) => (
               <div
                 key={`blank-${i}`}
-                className="min-h-[88px] border-b border-r border-slate-100 dark:border-slate-800/60 bg-slate-50/30 dark:bg-slate-950/20"
+                className="min-h-[96px] border-b border-r border-[var(--border)] bg-[var(--bg)]"
               />
             ))}
 
@@ -316,274 +294,210 @@ export function EscalaCalendarioTab({
               const turmaInfo = TURMAS_INFO[d.turma_escalada];
               const isSelected = selectedDay?.escala.data === d.data;
 
-              // Agrupa ocorrências do dia por tipo para os dots
-              const hasFolga = occs.some((o) => o.tipo === 'folga_flexivel');
-              const hasFerias = occs.some((o) => o.tipo === 'ferias');
-              const hasFalta = occs.some((o) => o.tipo === 'falta_injustificada' || o.tipo === 'falta_justificada');
-              const hasAtestado = occs.some((o) => o.tipo === 'atestado');
-
               // Coluna do dia (0-6, 0=Dom)
               const col = (firstDayOfWeek + idx) % 7;
               const isLastInRow = col === 6;
               const isLastRow = Math.floor((firstDayOfWeek + idx) / 7) === rows - 1;
 
-              // Ring de prioridade de ocorrência
-              const ringClass = hasFalta
-                ? 'ring-1 ring-inset ring-red-400/40'
-                : hasAtestado
-                ? 'ring-1 ring-inset ring-rose-400/40'
-                : hasFolga
-                ? 'ring-1 ring-inset ring-sky-400/40'
-                : hasFerias
-                ? 'ring-1 ring-inset ring-indigo-400/40'
-                : '';
+              return (
+                <button
+                  key={d.data}
+                  type="button"
+                  onClick={() => handleDayClick(d)}
+                  className={cn(
+                    "min-h-[96px] p-2 text-left flex flex-col gap-1 transition-colors relative cursor-pointer",
+                    !isLastInRow && "border-r border-[var(--border)]",
+                    !isLastRow && "border-b border-[var(--border)]",
+                    isSelected
+                      ? "bg-[var(--accent-weak)] shadow-[inset_0_0_0_1px_var(--accent)]"
+                      : "hover:bg-[var(--hover)]"
+                  )}
+                >
+                  {/* Topo da célula: dia e turma de folga */}
+                  <div className="flex items-center justify-between w-full">
+                    <span
+                      className={cn(
+                        "font-mono text-xs font-medium w-[22px] h-[22px] flex items-center justify-center rounded-full",
+                        isToday
+                          ? "bg-[var(--text)] text-[var(--bg)]"
+                          : isSunOrSat
+                          ? "text-[var(--text-3)]"
+                          : "text-[var(--text)]"
+                      )}
+                    >
+                      {d.dia}
+                    </span>
 
-                return (
-                  <button
-                    key={d.data}
-                    type="button"
-                    onClick={() => handleDayClick(d)}
-                    className={cn(
-                      "min-h-[88px] p-2 text-left flex flex-col gap-1 transition-colors relative",
-                      !isLastInRow && "border-r border-slate-100 dark:border-slate-800/60",
-                      !isLastRow && "border-b border-slate-100 dark:border-slate-800/60",
-                      isFeriado && "bg-amber-50/40 dark:bg-amber-950/10",
-                      isSelected
-                        ? "bg-primary/5 ring-1 ring-inset ring-primary/40"
-                        : isSunOrSat
-                        ? "bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/30"
-                        : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30",
-                      !isSelected && ringClass
-                    )}
-                  >
-                    {/* Número do dia e indicador de hoje */}
-                    <div className="flex items-center justify-between">
+                    {/* Folga turma */}
+                    <span className="text-[10.5px] text-[var(--text-3)] flex items-center gap-1">
+                      folga
                       <span
-                        className={cn(
-                          "text-sm font-black w-7 h-7 flex items-center justify-center rounded-full",
-                          isToday
-                            ? "bg-primary text-white shadow-sm"
-                            : isSunOrSat
-                            ? "text-slate-400 dark:text-slate-600"
-                            : "text-foreground"
-                        )}
+                        className="inline-flex items-center justify-center w-4 h-4 rounded font-mono text-[10px] font-bold"
+                        style={{
+                          backgroundColor: turmaInfo?.cor ? `${turmaInfo.cor}22` : 'var(--accent-weak)',
+                          color: turmaInfo?.cor || 'var(--accent)',
+                          border: `1px solid ${turmaInfo?.cor ? `${turmaInfo.cor}55` : 'var(--border-strong)'}`
+                        }}
                       >
-                        {d.dia}
+                        {d.turma_escalada}
                       </span>
+                    </span>
+                  </div>
 
-                      {/* Indicador de feriado */}
-                      {isFeriado && (
-                        <span title={d.feriado_nome || 'Feriado'}>
-                          <Flame className="w-3 h-3 text-amber-500 shrink-0" />
+                  {/* Feriado */}
+                  {isFeriado && (
+                    <div className="text-[10.5px] text-[var(--amber)] truncate w-full" title={d.feriado_nome || 'Feriado'}>
+                      {d.feriado_nome}
+                    </div>
+                  )}
+
+                  {/* Ocorrências com dot */}
+                  {occs.length > 0 && (
+                    <div className="flex flex-col gap-0.5 w-full overflow-hidden mt-0.5">
+                      {occs.slice(0, 3).map((occ, oIdx) => {
+                        const shortName = formatOperatorShortName(occ.operadorNome);
+                        const dotColor = getDotColor(occ.tipo);
+
+                        return (
+                          <div
+                            key={`${occ.id}-${oIdx}`}
+                            className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-2)] truncate"
+                            title={`${occ.operadorNome} (${getSimpleTypeLabel(occ.tipo)})`}
+                          >
+                            <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />
+                            <span className="truncate">{shortName}</span>
+                          </div>
+                        );
+                      })}
+                      {occs.length > 3 && (
+                        <span className="text-[11px] text-[var(--text-3)]">
+                          +{occs.length - 3} mais
                         </span>
                       )}
                     </div>
-
-                    {/* Badge de Turma de Folga — pill arredondado */}
-                    <div
-                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white text-[9px] font-black w-fit shadow-xs tracking-wide"
-                      style={{ backgroundColor: turmaInfo.cor }}
-                    >
-                      {d.turma_escalada}
-                    </div>
-
-                    {/* Nome dos operadores e ocorrência no canto inferior direito */}
-                    {occs.length > 0 && (
-                      <div className="mt-auto self-end flex flex-col items-end gap-0.5 text-right w-full overflow-hidden">
-                        {occs.slice(0, 2).map((occ, oIdx) => {
-                          const shortName = formatOperatorShortName(occ.operadorNome);
-                          const typeLabel = getSimpleTypeLabel(occ.tipo);
-                          const dotColor = getDotColor(occ.tipo);
-
-                          return (
-                            <div
-                              key={`${occ.id}-${oIdx}`}
-                              className="text-[9.5px] leading-tight font-medium text-slate-700 dark:text-slate-300 truncate max-w-full flex items-center justify-end gap-1"
-                              title={`${occ.operadorNome} (${typeLabel}) - ${occ.operadorCargo} · Turma ${occ.operadorLetra}`}
-                            >
-                              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />
-                              <span className="truncate">{shortName}</span>
-                              <span className="text-[8.5px] text-muted-foreground font-normal shrink-0">({typeLabel})</span>
-                            </div>
-                          );
-                        })}
-                        {occs.length > 2 && (
-                          <span className="text-[8.5px] font-bold text-muted-foreground">
-                            +{occs.length - 2} mais
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </button>
-                );
+                  )}
+                </button>
+              );
             })}
           </div>
         </div>
 
-        {/* Painel lateral do dia selecionado + Sumário do Mês */}
-        <div className="w-full lg:w-72 space-y-3">
-          {/* Sumário do Mês */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4">
-            <p className="text-xs font-black text-foreground mb-3 uppercase tracking-wide">
-              Sumário — {MONTH_NAMES[currentMonth - 1]}
-            </p>
-
-            {/* Grid 2x2 de mini-cards */}
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                {
-                  label: 'Folgas',
-                  value: monthStats.folgasFlexiveis,
-                  bg: 'bg-sky-50 dark:bg-sky-950/30',
-                  border: 'border-sky-100 dark:border-sky-900/40',
-                  valueColor: 'text-sky-600 dark:text-sky-400',
-                  dot: 'bg-sky-400',
-                },
-                {
-                  label: 'Férias no Mês',
-                  value: monthStats.ferias,
-                  bg: 'bg-indigo-50 dark:bg-indigo-950/30',
-                  border: 'border-indigo-100 dark:border-indigo-900/40',
-                  valueColor: 'text-indigo-600 dark:text-indigo-400',
-                  dot: 'bg-indigo-500',
-                },
-                {
-                  label: 'Faltas',
-                  value: monthStats.faltas,
-                  bg: 'bg-red-50 dark:bg-red-950/30',
-                  border: 'border-red-100 dark:border-red-900/40',
-                  valueColor: 'text-red-600 dark:text-red-400',
-                  dot: 'bg-red-500',
-                },
-                {
-                  label: 'Atestados',
-                  value: monthStats.atestados,
-                  bg: 'bg-rose-50 dark:bg-rose-950/30',
-                  border: 'border-rose-100 dark:border-rose-900/40',
-                  valueColor: 'text-rose-600 dark:text-rose-400',
-                  dot: 'bg-rose-400',
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={cn(
-                    "flex flex-col gap-1 p-2.5 rounded-xl border",
-                    item.bg,
-                    item.border
-                  )}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn("w-2 h-2 rounded-full shrink-0", item.dot)} />
-                    <span className="text-[10px] text-muted-foreground font-semibold leading-tight">{item.label}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className={cn("text-xl font-black leading-none", item.valueColor)}>{item.value}</span>
-                    <span className="text-[9px] text-muted-foreground font-semibold">op.</span>
-                  </div>
+        {/* Painel lateral: Detalhe do Dia + Resumo do Mês */}
+        <div className="w-full lg:w-[300px] space-y-4">
+          {/* Card Detalhe do Dia Selecionado */}
+          <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
+            {selectedDay ? (
+              <div>
+                <div className="flex items-center justify-between p-3.5 border-b border-[var(--border)]">
+                  <h2 className="text-xs font-semibold text-[var(--text)]">
+                    {selectedDay.escala.dia_semana_curto}, {String(selectedDay.escala.dia).padStart(2, '0')}/{String(selectedDay.escala.mes).padStart(2, '0')}
+                  </h2>
+                  <span className="text-xs text-[var(--text-3)]">
+                    folga turma {selectedDay.escala.turma_escalada}
+                  </span>
                 </div>
-              ))}
-            </div>
 
-            {/* Feriados do mês */}
-            {monthDays.filter((d) => d.e_feriado).length > 0 && (
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">Feriados</p>
-                {monthDays.filter((d) => d.e_feriado).map((d) => (
-                  <div key={d.data} className="flex items-center gap-1.5 mb-1">
-                    <Flame className="w-3 h-3 text-amber-500 shrink-0" />
-                    <div>
-                      <p className="text-[11px] font-bold text-foreground">{d.feriado_nome}</p>
-                      <p className="text-[10px] text-muted-foreground">Dia {d.dia}/{currentMonth}</p>
-                    </div>
+                {selectedDay.escala.e_feriado && (
+                  <div className="px-4 py-2 border-b border-[var(--border)] flex justify-between items-center text-xs">
+                    <b className="text-[var(--amber)]">{selectedDay.escala.feriado_nome}</b>
+                    <span className="text-[var(--text-3)]">Feriado</span>
                   </div>
-                ))}
+                )}
+
+                {selectedDay.occsDodia.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[var(--text-3)]">
+                    Nenhuma ocorrência neste dia.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[var(--border)] max-h-56 overflow-y-auto">
+                    {selectedDay.occsDodia.map((occ) => {
+                      const op = operators.find((o) => o.id === occ.operadorId);
+                      const turma = op?.letra as OperatorTurma | undefined;
+                      const dotColor = getDotColor(occ.tipo);
+
+                      return (
+                        <div key={occ.id} className="p-3 flex flex-col gap-0.5">
+                          <div className="flex items-center justify-between">
+                            <b className="text-xs font-medium text-[var(--text)]">{occ.operadorNome}</b>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-2)]">
+                              <span className={cn("w-1.5 h-1.5 rounded-full", dotColor)} />
+                              {getSimpleTypeLabel(occ.tipo)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-[var(--text-3)] font-mono">
+                            T{occ.turno} · Turma {turma || occ.operadorLetra}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-6 text-center text-xs text-[var(--text-3)]">
+                Clique em um dia no calendário para ver os detalhes.
               </div>
             )}
           </div>
 
-          {/* Detalhes do Dia Selecionado */}
-          {selectedDay ? (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-xs font-black text-foreground">
-                    {selectedDay.escala.dia_semana_curto},{' '}
-                    {String(selectedDay.escala.dia).padStart(2, '0')}/{String(selectedDay.escala.mes).padStart(2, '0')}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div
-                      className="w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
-                      style={{ backgroundColor: TURMAS_INFO[selectedDay.escala.turma_escalada].cor }}
-                    >
-                      {selectedDay.escala.turma_escalada}
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      Turma {selectedDay.escala.turma_escalada} de folga
-                    </span>
-                  </div>
-                </div>
+          {/* Card Resumo do Mês */}
+          <div className="bg-[var(--surface)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
+            <div className="flex items-center justify-between p-3.5 border-b border-[var(--border)]">
+              <h2 className="text-xs font-semibold text-[var(--text)]">
+                Resumo de {MONTH_NAMES[currentMonth - 1].toLowerCase()}
+              </h2>
+              <span className="text-xs text-[var(--text-3)]">operadores</span>
+            </div>
 
-                {onOpenOcorrencia && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenOcorrencia(undefined, undefined, selectedDay.escala.data)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors shrink-0"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Ocorrência
-                  </button>
-                )}
+            <div className="divide-y divide-[var(--border)]">
+              <div className="flex items-center justify-between p-3">
+                <span className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)]" />
+                  Folga flexível
+                </span>
+                <strong className="font-mono text-xs text-[var(--text)]">{monthStats.folgasFlexiveis}</strong>
               </div>
 
-              {selectedDay.escala.e_feriado && (
-                <div className="flex items-center gap-1.5 mb-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
-                  <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <p className="text-[11px] text-amber-800 dark:text-amber-300 font-bold">{selectedDay.escala.feriado_nome}</p>
-                </div>
-              )}
+              <div className="flex items-center justify-between p-3">
+                <span className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)]" />
+                  Férias
+                </span>
+                <strong className="font-mono text-xs text-[var(--text)]">{monthStats.ferias}</strong>
+              </div>
 
-              {selectedDay.occsDodia.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">
-                  Sem ocorrências neste dia
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">Ocorrências</p>
-                  {selectedDay.occsDodia.map((occ) => {
-                    const op = operators.find((o) => o.id === occ.operadorId);
-                    const turma = op?.letra as OperatorTurma | undefined;
-                    const avatarColor = turma ? TURMAS_INFO[turma]?.cor : '#94a3b8';
-                    const avatarLetter = op?.nome?.charAt(0)?.toUpperCase() ?? '?';
+              <div className="flex items-center justify-between p-3">
+                <span className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
+                  Falta injustificada
+                </span>
+                <strong className="font-mono text-xs text-[var(--text)]">{monthStats.faltas}</strong>
+              </div>
 
-                    return (
-                      <div
-                        key={occ.id}
-                        className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default"
-                      >
-                        {/* Avatar colorido do operador */}
-                        <div
-                          className="w-6 h-6 rounded-full text-white text-[10px] font-black flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: avatarColor }}
-                        >
-                          {avatarLetter}
-                        </div>
-                        <OccurrenceIcon tipo={occ.tipo} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">{occ.operadorNome}</p>
-                          <p className="text-[10px] text-muted-foreground">{OCC_LABELS[occ.tipo]}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex items-center justify-between p-3">
+                <span className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
+                  Atestado
+                </span>
+                <strong className="font-mono text-xs text-[var(--text)]">{monthStats.atestados}</strong>
+              </div>
+
+              {/* Feriados no Mês */}
+              {monthDays.filter((d) => d.e_feriado).length > 0 && (
+                <>
+                  <div className="p-2.5 bg-[var(--surface-2)]">
+                    <span className="text-[11px] text-[var(--text-3)]">Feriados</span>
+                  </div>
+                  {monthDays.filter((d) => d.e_feriado).map((d) => (
+                    <div key={d.data} className="flex items-center justify-between p-3">
+                      <span className="text-xs text-[var(--text-2)]">{d.feriado_nome}</span>
+                      <strong className="font-mono text-xs text-[var(--text-3)]">{String(d.dia).padStart(2, '0')}/{String(currentMonth).padStart(2, '0')}</strong>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
-          ) : (
-            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center">
-              <CalendarDays className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">Clique em um dia para ver os detalhes</p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 

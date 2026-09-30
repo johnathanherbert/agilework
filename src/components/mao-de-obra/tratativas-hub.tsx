@@ -389,65 +389,35 @@ export function TratativasHub({
       )}
 
       {/* Métricas e Sumário Superior */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        <div className="p-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 shadow-2xs">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-300 tracking-wider">
-              Pendentes
-            </span>
-            <Clock className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-          <p className="text-xl font-black text-amber-800 dark:text-amber-200 tabular-nums">
+      <div className="grid grid-cols-3 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-[var(--border)] overflow-hidden">
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Pendentes de ação
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-amber-400">
             {stats.pendentes}
-          </p>
+          </strong>
         </div>
 
-        <div className="p-3 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 shadow-2xs">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300 tracking-wider">
-              Em Andamento
-            </span>
-            <Flame className="w-3.5 h-3.5 text-blue-500" />
-          </div>
-          <p className="text-xl font-black text-blue-800 dark:text-blue-200 tabular-nums">
-            {stats.emAndamento}
-          </p>
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Em andamento / RH
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-blue-400">
+            {stats.emAndamento + stats.encaminhados}
+          </strong>
         </div>
 
-        <div className="p-3 rounded-2xl border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20 shadow-2xs">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] uppercase font-bold text-purple-700 dark:text-purple-300 tracking-wider">
-              RH / Medicina
-            </span>
-            <Building2 className="w-3.5 h-3.5 text-purple-500" />
-          </div>
-          <p className="text-xl font-black text-purple-800 dark:text-purple-200 tabular-nums">
-            {stats.encaminhados}
-          </p>
-        </div>
-
-        <div className="p-3 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-2xs">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300 tracking-wider">
-              Concluídos
-            </span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          </div>
-          <p className="text-xl font-black text-emerald-800 dark:text-emerald-200 tabular-nums">
+        <div className="p-3.5">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Concluídas
+          </label>
+          <strong className="text-xl font-semibold tracking-tight font-mono block text-emerald-400">
             {stats.concluidos}
-          </p>
-        </div>
-
-        <div className="col-span-2 sm:col-span-1 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-              Reincidentes
-            </span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-          <p className="text-xl font-black text-foreground tabular-nums">
-            {reincidentesList.filter((r) => r.occurrences.length > 1).length}
-          </p>
+          </strong>
         </div>
       </div>
 

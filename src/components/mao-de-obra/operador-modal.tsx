@@ -175,292 +175,210 @@ export function OperadorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl">
+      <DialogContent className="max-w-[560px] p-0 rounded-lg bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-2xl overflow-hidden">
         <form onSubmit={handleSubmit}>
           {/* Header */}
-          <div className="p-5 border-b border-border bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white rounded-t-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2.5 text-white">
-                <div className="p-2 rounded-xl bg-white/20 border border-white/30">
-                  <User className="h-5 w-5" />
-                </div>
-                {isEditing ? 'Editar Operador de Produção' : 'Novo Operador de Produção'}
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-xs text-blue-100 mt-1">
-              Cadastre e gerencie as informações do colaborador, turma de revezamento e saldo de folgas.
-            </p>
+          <div className="flex items-start justify-between p-5 border-b border-[var(--border)]">
+            <div>
+              <h2 className="text-[15px] font-semibold text-[var(--text)]">
+                {isEditing ? 'Editar operador' : 'Novo operador'}
+              </h2>
+              <p className="text-xs text-[var(--text-3)] mt-0.5">
+                {isEditing ? 'Atualize os dados do colaborador na escala.' : 'Cadastre um novo colaborador na escala 2026.'}
+              </p>
+            </div>
           </div>
 
-          <div className="p-5 space-y-4">
+          <div className="p-5 space-y-4 max-h-[72vh] overflow-y-auto">
             {/* Nome e Matrícula */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="nome" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Nome Completo *
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="nome"
-                    required
-                    placeholder="Ex: Carlos Eduardo Silva"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    className="pl-9 font-medium"
-                  />
-                </div>
+                <label className="text-xs text-[var(--text-3)]">Nome completo *</label>
+                <input
+                  required
+                  placeholder="Ex: Carlos Eduardo Silva"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="h-8.5 w-full px-3 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="matricula" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Matrícula / ID *
-                </Label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="matricula"
-                    required
-                    placeholder="Ex: 75420"
-                    value={matricula}
-                    onChange={(e) => setMatricula(e.target.value)}
-                    className="pl-9 font-mono font-bold"
-                  />
-                </div>
+                <label className="text-xs text-[var(--text-3)]">Matrícula *</label>
+                <input
+                  required
+                  placeholder="Ex: 75420"
+                  value={matricula}
+                  onChange={(e) => setMatricula(e.target.value)}
+                  className="h-8.5 w-full px-3 text-xs font-mono font-medium bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
               </div>
             </div>
 
-            {/* Cargo e Função */}
+            {/* Cargo */}
             <div className="space-y-1.5">
-              <Label htmlFor="cargo" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Cargo / Função na Linha *
-              </Label>
-              <Select value={cargo} onValueChange={handleCargoChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o cargo..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {CARGOS_SUGERIDOS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="custom" className="font-semibold text-primary">
-                    + Outro Cargo Personalizado...
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-xs text-[var(--text-3)]">Cargo / Função *</label>
+              <select
+                value={cargo}
+                onChange={(e) => handleCargoChange(e.target.value)}
+                className="h-8.5 w-full px-3 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              >
+                {CARGOS_SUGERIDOS.map((c) => (
+                  <option key={c} value={c} className="bg-[var(--surface)] text-[var(--text)]">
+                    {c}
+                  </option>
+                ))}
+                <option value="custom" className="bg-[var(--surface)] text-[var(--accent)]">
+                  + Outro Cargo Personalizado...
+                </option>
+              </select>
 
               {isCustomCargo && (
                 <div className="mt-2">
-                  <Input
+                  <input
                     placeholder="Digite o cargo customizado..."
                     value={cargoCustom}
                     onChange={(e) => setCargoCustom(e.target.value)}
-                    className="font-medium"
+                    className="h-8.5 w-full px-3 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
                     autoFocus
                   />
                 </div>
               )}
             </div>
 
-            {/* Turma / Letra da Escala (A, B, C, D) */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Turma / Letra da Escala 2026 *
-              </Label>
-              <div className="grid grid-cols-4 gap-2">
-                {turmasList.map((t) => {
-                  const info = TURMAS_INFO[t];
-                  const selected = letra === t;
-                  return (
+            {/* Turno e Turma */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Turno */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-[var(--text-3)]">Turno de trabalho *</label>
+                <div className="grid grid-cols-3 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)]">
+                  {([1, 2, 3] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setLetra(t)}
+                      onClick={() => setTurno(t)}
                       className={cn(
-                        "p-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer",
-                        selected
-                          ? "ring-2 ring-offset-2 ring-primary shadow-md border-transparent text-white"
-                          : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+                        "h-8 text-xs font-medium border-r border-[var(--border-strong)] last:border-r-0 transition-colors font-mono",
+                        turno === t
+                          ? "bg-[var(--hover)] text-[var(--text)] font-semibold shadow-xs"
+                          : "text-[var(--text-3)] hover:text-[var(--text)]"
                       )}
-                      style={{
-                        backgroundColor: selected ? info.cor : undefined,
-                      }}
                     >
-                      <span className={cn("text-base font-black", selected ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                        Turma {t}
-                      </span>
-                      <span
-                        className={cn(
-                          "w-2.5 h-2.5 rounded-full",
-                          selected ? "bg-white" : ""
-                        )}
-                        style={{ backgroundColor: !selected ? info.cor : undefined }}
-                      />
+                      T{t}
                     </button>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                A letra vincula os dias de plantão e folgas automáticas segundo a rotação do escala.json.
-              </p>
-            </div>
-
-            {/* Turno e Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="turno" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Turno de Trabalho *
-                </Label>
-                <Select value={String(turno)} onValueChange={(v) => setTurno(Number(v) as ProductionTurno)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Turno 1 (Manhã)</SelectItem>
-                    <SelectItem value="2">Turno 2 (Tarde)</SelectItem>
-                    <SelectItem value="3">Turno 3 (Noite)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  ))}
+                </div>
               </div>
 
+              {/* Turma */}
               <div className="space-y-1.5">
-                <Label htmlFor="status" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Status Operacional *
-                </Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as OperatorStatus)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo (Em Operação)</SelectItem>
-                    <SelectItem value="ferias">Em Férias</SelectItem>
-                    <SelectItem value="afastado">Afastado (INSS/Médico)</SelectItem>
-                    <SelectItem value="inativo">Inativo / Desligado</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-xs text-[var(--text-3)]">Turma de escala *</label>
+                <div className="grid grid-cols-4 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)]">
+                  {turmasList.map((t) => {
+                    const info = TURMAS_INFO[t];
+                    const isSel = letra === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setLetra(t)}
+                        className={cn(
+                          "h-8 text-xs font-bold border-r border-[var(--border-strong)] last:border-r-0 transition-colors font-mono",
+                          isSel
+                            ? "bg-[var(--hover)] text-[var(--text)]"
+                            : "text-[var(--text-3)] hover:text-[var(--text)]"
+                        )}
+                        style={isSel && info ? { color: info.cor } : {}}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             {/* Saldo de Folgas Flexíveis */}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="saldoFolgas" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                    Saldo de Folgas Flexíveis (Dias)
-                  </Label>
-                  <p className="text-[11px] text-muted-foreground">
-                    Banco de folgas acumuladas por horas/plantões extras.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-lg"
-                    onClick={() => setSaldoFolgas((prev) => Math.max(-10, prev - 1))}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    id="saldoFolgas"
-                    type="number"
-                    value={saldoFolgas}
-                    onChange={(e) => setSaldoFolgas(Number(e.target.value) || 0)}
-                    className="w-16 h-8 text-center font-mono font-bold"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-lg"
-                    onClick={() => setSaldoFolgas((prev) => prev + 1)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="flex items-center justify-between p-3 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-2)]">
+              <div>
+                <span className="text-xs font-medium text-[var(--text)] block">Saldo de folgas flexíveis</span>
+                <span className="text-[11px] text-[var(--text-3)]">Dias acumulados para gozo flexível</span>
+              </div>
+              <div className="flex items-center border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] h-7.5 overflow-hidden">
+                <button
+                  type="button"
+                  className="w-7 h-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
+                  onClick={() => setSaldoFolgas((prev) => Math.max(-10, prev - 1))}
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <input
+                  type="number"
+                  value={saldoFolgas}
+                  onChange={(e) => setSaldoFolgas(Number(e.target.value) || 0)}
+                  className="w-12 h-full text-center font-mono text-xs font-bold bg-transparent border-0 outline-none text-[var(--text)]"
+                />
+                <button
+                  type="button"
+                  className="w-7 h-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
+                  onClick={() => setSaldoFolgas((prev) => prev + 1)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
 
-            {/* Data de Admissão e Telefone */}
+            {/* Contato e Observação */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="dataAdmissao" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Data de Admissão (Opcional)
-                </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="dataAdmissao"
-                    type="date"
-                    value={dataAdmissao}
-                    onChange={(e) => setDataAdmissao(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+                <label className="text-xs text-[var(--text-3)]">Telefone (Opcional)</label>
+                <input
+                  placeholder="(92) 99999-9999"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  className="h-8.5 w-full px-3 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="telefone" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                  Telefone / Contato (Opcional)
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="telefone"
-                    placeholder="(92) 99999-9999"
-                    value={telefone}
-                    onChange={(e) => setTelefone(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+                <label className="text-xs text-[var(--text-3)]">Data de admissão (Opcional)</label>
+                <input
+                  type="date"
+                  value={dataAdmissao}
+                  onChange={(e) => setDataAdmissao(e.target.value)}
+                  className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
               </div>
             </div>
 
-            {/* Observações */}
             <div className="space-y-1.5">
-              <Label htmlFor="observacoes" className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                Observações / Habilidades
-              </Label>
-              <Input
-                id="observacoes"
-                placeholder="Ex: Treinado em pesagem de matéria-prima e NR-11 (Empilhadeira)"
+              <label className="text-xs text-[var(--text-3)]">Observações</label>
+              <input
+                placeholder="Ex: Treinado em pesagem e empilhadeira"
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
+                className="h-8.5 w-full px-3 text-xs bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-2 rounded-b-2xl">
-            <Button
+          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[var(--border)] bg-[var(--surface-2)]">
+            <button
               type="button"
-              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={saving}
+              className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={saving}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold"
+              className="h-8 px-3.5 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5"
             >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  {isEditing ? 'Atualizar Operador' : 'Cadastrar Operador'}
-                </>
-              )}
-            </Button>
+              {saving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Cadastrar operador'}
+            </button>
           </div>
         </form>
       </DialogContent>
