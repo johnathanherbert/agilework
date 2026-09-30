@@ -6,27 +6,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createNT, createNTItem } from '@/lib/firestore-helpers';
 import { toast } from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { formatDate, formatTime } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
+import { formatDate, formatTime, cn } from '@/lib/utils';
 import { useNotifications } from '@/components/providers/notification-provider';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Check, Copy } from 'lucide-react';
 
 interface AddNTModalProps {
   open: boolean;
@@ -131,6 +119,7 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
       // End batch operation
       endBatchOperation(batchId);
       
+      toast.success(`NT #${data.nt_number} criada com sucesso!`);
       form.reset();
       setParsedItems([]);
       onOpenChange(false);
@@ -146,120 +135,170 @@ export function AddNTModal({ open, onOpenChange, onSuccess }: AddNTModalProps) {
     }
   }
 
+  const ntNumberValue = form.watch('nt_number');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] border border-border/80 shadow-lg bg-card p-0 overflow-hidden">
-        <DialogHeader className="relative p-8 pb-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-md">
-              <FileText className="w-7 h-7 text-primary-foreground" />
+      <DialogContent
+        className="sm:max-w-[620px] max-h-[88vh] p-0 overflow-hidden flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl text-[var(--text)]"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            form.handleSubmit(onSubmit)();
+          }
+        }}
+      >
+        {/* Cabeçalho do Modal */}
+        <DialogHeader className="px-5 py-4 border-b border-[var(--border)] flex flex-row items-start justify-between bg-[var(--surface)] shrink-0">
+          <div>
+            <DialogTitle className="text-[15px] font-semibold text-[var(--text)] tracking-tight">
+              Adicionar Nota Técnica
+            </DialogTitle>
+            <p className="text-xs text-[var(--text-3)] mt-1">
+              Almoxarifado · Pesagem · Criação rápida com importação de itens
+            </p>
+          </div>
+        </DialogHeader>
+
+        {/* Formulário */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+          <div className="overflow-y-auto px-5 py-2 space-y-4">
+            {/* 1. SEÇÃO IDENTIFICAÇÃO DA NT */}
+            <div className="pt-2 pb-3 border-b border-[var(--border)]">
+              <div className="flex justify-between items-baseline mb-2.5">
+                <span className="text-xs font-semibold text-[var(--text-2)]">Identificação</span>
+                <span className="text-[11.5px] text-[var(--text-3)]">número único da NT</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-[var(--text-3)] block font-medium">Número da NT</label>
+                <div className="relative">
+                  <input
+                    {...form.register('nt_number')}
+                    placeholder="Ex.: 606349"
+                    disabled={isSubmitting}
+                    className={cn(
+                      "h-[34px] w-full px-3 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] font-mono text-xs text-[var(--text)] placeholder:text-[var(--text-3)] focus:border-[var(--accent)] outline-none transition-colors",
+                      form.formState.errors.nt_number && "border-[var(--red)]"
+                    )}
+                  />
+                  {ntNumberValue && (
+                    <span className="absolute right-2.5 top-2 text-[11.5px] text-[var(--green)] font-medium flex items-center gap-1">
+                      <Check size={12} strokeWidth={3} /> Válido
+                    </span>
+                  )}
+                </div>
+                {form.formState.errors.nt_number && (
+                  <span className="text-[11.5px] text-[var(--red)]">
+                    {form.formState.errors.nt_number.message}
+                  </span>
+                )}
+              </div>
             </div>
-            
-            <div>
-              <DialogTitle className="text-2xl font-bold text-foreground">
-                Nova Nota Técnica
-              </DialogTitle>
-              <p className="text-sm font-medium text-muted-foreground mt-1">
-                Criação rápida com itens
-              </p>
+
+            {/* 2. SEÇÃO DADOS DO SAP (ITENS) */}
+            <div className="pt-1 pb-3 border-b border-[var(--border)]">
+              <div className="flex justify-between items-baseline mb-2.5">
+                <span className="text-xs font-semibold text-[var(--text-2)]">Itens do SAP</span>
+                <span className="text-[11.5px] text-[var(--text-3)]">código, descrição e quantidade tabulados</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-[var(--text-3)] block font-medium">Dados tabulados do SAP</label>
+                <textarea
+                  placeholder={"Exemplo:\n011105\tSINVASTATINA (MICRONIZADA)\t30\n010071\tCELULOSE MIC (TIPO200)\t49"}
+                  disabled={isSubmitting}
+                  className="w-full min-h-[140px] p-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] font-mono text-xs text-[var(--text)] placeholder:text-[var(--text-3)] focus:border-[var(--accent)] outline-none transition-colors resize-y leading-relaxed"
+                  onChange={(e) => {
+                    const value = handleItemsDataChange(e.target.value);
+                    form.setValue('items_data', value);
+                  }}
+                  value={form.watch('items_data')}
+                />
+                <span className="text-[11.5px] text-[var(--text-3)] block">
+                  Cole diretamente a tabela do SAP com Ctrl+V. Os lotes podem ser adicionados posteriormente.
+                </span>
+              </div>
+            </div>
+
+            {/* 3. SEÇÃO PRÉVIA DOS ITENS */}
+            <div className="pt-1 pb-2">
+              <div className="flex justify-between items-baseline mb-2">
+                <span className="text-xs font-semibold text-[var(--text-2)]">
+                  Prévia dos Itens
+                </span>
+                <span className="text-[11.5px] text-[var(--text-3)] font-mono">
+                  {parsedItems.length} {parsedItems.length === 1 ? 'item detectado' : 'itens detectados'}
+                </span>
+              </div>
+
+              <div className="border border-[var(--border)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)]">
+                <div className="flex justify-between items-center px-3 py-1.5 bg-[var(--surface-2)] border-b border-[var(--border)] text-[11.5px] text-[var(--text-3)]">
+                  <span className="font-semibold text-[var(--text-2)]">Lista de Materiais</span>
+                  <span>Status inicial: Aguardando Pagamento</span>
+                </div>
+
+                {parsedItems.length > 0 ? (
+                  <div className="max-h-[160px] overflow-y-auto divide-y divide-[var(--border)]">
+                    {parsedItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-[30px_75px_1fr_60px] items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--hover)] transition-colors"
+                      >
+                        <span className="font-mono text-[11px] text-[var(--text-3)]">#{index + 1}</span>
+                        <span className="font-mono font-medium text-[var(--text)]">{item.code}</span>
+                        <span className="text-[var(--text-2)] truncate" title={item.description}>
+                          {item.description}
+                        </span>
+                        <span className="text-right font-mono font-semibold text-[var(--text)]">
+                          {item.quantity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 px-4 text-center text-xs text-[var(--text-3)]">
+                    Nenhum item colado ainda. Digite ou cole os dados acima para visualizar a prévia.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium pl-[72px]">
-            Cole os dados dos itens diretamente do SAP. O formato esperado é: <span className="font-bold text-gray-900 dark:text-gray-100">código, descrição e quantidade</span>, separados por tabulações. Os lotes podem ser adicionados posteriormente.
-          </p>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-8 pb-8">
-            <FormField
-              control={form.control}
-              name="nt_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                    Número da NT
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: 606349"
-                      disabled={isSubmitting}
-                      className="border-2 border-gray-200 dark:border-gray-700 rounded-xl h-12 text-base font-medium focus:border-primary dark:focus:border-primary transition-all duration-200 bg-white dark:bg-gray-800"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs font-semibold" />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="items_data"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                    Dados dos Itens
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Exemplo:
-011105	SINVASTATINA (MICRONIZADA)	30
-010071	CELULOSE MIC (TIPO200)	49"
-                      disabled={isSubmitting}
-                      className="font-mono text-sm min-h-[180px] border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-primary dark:focus:border-primary transition-all duration-200 bg-white dark:bg-gray-800 resize-none"
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        const value = handleItemsDataChange(e.target.value);
-                        field.onChange(value);
-                      }}
-                      value={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs font-semibold" />
-                  {parsedItems.length > 0 && (
-                    <div className="flex items-center gap-2 mt-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-300/30 dark:border-green-700/30">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-sm font-bold text-green-700 dark:text-green-400">
-                        {parsedItems.length} item(ns) detectado(s) e pronto(s) para criação
-                      </span>
-                    </div>
-                  )}
-                </FormItem>
+          {/* Rodapé do Modal com Atalhos e Ações */}
+          <div className="flex items-center gap-2 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface)] shrink-0">
+            <span className="flex-1 text-[11.5px] text-[var(--text-3)]">
+              <kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Ctrl</kbd>+<kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Enter</kbd> salva · <kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Esc</kbd> fecha
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-8 px-4 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Criando NT...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Criar NT</span>
+                </>
               )}
-            />
-            
-            <DialogFooter className="gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-                className="rounded-xl h-12 font-bold border-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="rounded-xl h-12 px-8 font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all duration-200 disabled:opacity-50"
-              >
-                <span className="flex items-center gap-2">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Criando NT...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-5 h-5" />
-                      Criar NT
-                    </>
-                  )}
-                </span>
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            </button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

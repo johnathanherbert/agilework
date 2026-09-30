@@ -196,6 +196,23 @@
 }
 
 /* Animações e Transições */
+@keyframes bump {
+  40% { transform: scale(1.35); }
+}
+
+.animate-bump {
+  animation: bump 0.5s ease;
+}
+
+@keyframes blink-dot {
+  0%, 60%, 100% { opacity: 0.25; }
+  30% { opacity: 1; }
+}
+
+.animate-blink-1 { animation: blink-dot 1.2s infinite; }
+.animate-blink-2 { animation: blink-dot 1.2s infinite 0.2s; }
+.animate-blink-3 { animation: blink-dot 1.2s infinite 0.4s; }
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.35; transform: scale(0.9); }
@@ -219,3 +236,35 @@
 .animate-fade-in {
   animation: fadeInScale 0.15s ease-out forwards;
 }
+
+@keyframes flash-highlight {
+  0%, 40% {
+    background-color: var(--accent-weak);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-highlight {
+  animation: flash-highlight 1.8s ease-out;
+}
+
+/* Modo Captura de Tela / Impressão */
+body.capture .app-sidebar,
+body.capture .app-topbar,
+body.capture .no-print,
+body.capture .actions-panel,
+body.capture .toolbar-container {
+  display: none !important;
+}
+
+body.capture .main-content-area {
+  padding: 16px 20px !important;
+}
+
+body.capture .pl-\[52px\] {
+  padding-left: 0 !important;
+}
+
+

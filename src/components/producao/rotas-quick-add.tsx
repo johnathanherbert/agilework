@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, Droplets, Wind, Layers, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, Plus, Sparkles, Droplets, Wind, Layers } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   Dialog,
@@ -10,19 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { searchWipRecipes, getAllWipRecipes, WipRecipe } from '@/lib/wip-recipes';
 import { createProductionItem } from '@/lib/production-helpers';
-import { ProductionTurno, ProductionVia } from '@/types';
+import { ProductionTurno } from '@/types';
+import { SHIFT_SCHEDULES } from '@/lib/production-schedule';
 import { cn } from '@/lib/utils';
 
 interface RotasQuickAddProps {
@@ -37,12 +28,10 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
   const [selectedTurno, setSelectedTurno] = useState<ProductionTurno>(defaultTurno);
   const [progQty, setProgQty] = useState<number>(1);
   const [addingCode, setAddingCode] = useState<string | null>(null);
-  const badgeBase = 'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-bold leading-none';
 
-  // Lista de resultados filtrados de rotas.json
+  // Lista de resultados filtrados de rotas
   const results = useMemo(() => {
     if (!query || query.trim().length < 2) {
-      // Exibe os primeiros 20 itens como sugestão inicial
       return getAllWipRecipes().slice(0, 15);
     }
     return searchWipRecipes(query, 25);
@@ -63,8 +52,7 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
       });
 
       toast.success(
-        `Ordem "${recipe.codigo} - ${recipe.produto}" adicionada ao ${selectedTurno}º Turno!`,
-        { icon: '✨' }
+        `Ordem "${recipe.codigo} - ${recipe.produto}" adicionada ao ${selectedTurno}º Turno!`
       );
       if (onItemCreated) onItemCreated();
     } catch (err: any) {
@@ -79,94 +67,85 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {triggerButton || (
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs rounded-xl"
+            className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Pesquisar Rotas
-          </Button>
+            <Sparkles size={13} className="text-[var(--accent)]" />
+            <span>Pesquisar rotas</span>
+          </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-2xl backdrop-blur-md">
-        <DialogHeader className="p-5 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#002e52] to-[#00477a] flex items-center justify-center text-white shadow-sm shrink-0">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                Pesquisa Inteligente de Rotas
-              </DialogTitle>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Busque por código SA, nome do produto ou família para programar no quadro de produção.
-              </p>
-            </div>
+      <DialogContent className="sm:max-w-[580px] max-h-[85vh] p-0 overflow-hidden flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl text-[var(--text)]">
+        <DialogHeader className="px-5 py-4 border-b border-[var(--border)] flex flex-row items-center justify-between bg-[var(--surface)] shrink-0">
+          <div>
+            <DialogTitle className="text-[15px] font-semibold tracking-tight text-[var(--text)] flex items-center gap-2">
+              <Sparkles size={15} className="text-[var(--accent)]" />
+              Pesquisar Rotas / Receitas
+            </DialogTitle>
+            <p className="text-xs text-[var(--text-3)] mt-0.5">
+              Busque por código, produto ou família para adicionar diretamente ao quadro.
+            </p>
           </div>
         </DialogHeader>
 
-        {/* ── Controles superiores: Busca + Turno + Qtd ── */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          {/* Campo de Busca */}
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
+        {/* Controles: Busca + Turno + Qtd */}
+        <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-2)] flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-3)] pointer-events-none" />
+            <input
+              type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Digite o código (ex: 700236), produto ou família..."
-              className="pl-10 text-xs h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 rounded-xl shadow-2xs font-medium"
+              placeholder="Código (ex: 700236), produto ou máquina..."
+              className="h-8 w-full pl-8 pr-3 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] text-xs text-[var(--text)] placeholder:text-[var(--text-3)] focus:border-[var(--accent)] outline-none transition-colors"
               autoFocus
             />
           </div>
 
-          {/* Seleção do Turno & Qtd */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Turno:</span>
-              <Select
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-3)]">
+              <span>Turno:</span>
+              <select
                 value={String(selectedTurno)}
-                onValueChange={(val) => setSelectedTurno(Number(val) as ProductionTurno)}
+                onChange={(e) => setSelectedTurno(Number(e.target.value) as ProductionTurno)}
+                className="h-8 px-2 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--bg)] text-xs text-[var(--text-2)] outline-none cursor-pointer"
               >
-                <SelectTrigger className="h-10 text-xs w-28 font-bold rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="1">1º Turno</SelectItem>
-                  <SelectItem value="2">2º Turno</SelectItem>
-                  <SelectItem value="3">3º Turno</SelectItem>
-                </SelectContent>
-              </Select>
+                {SHIFT_SCHEDULES.map((s) => (
+                  <option key={s.n} value={String(s.n)}>
+                    {s.l}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Qtd:</span>
-              <Input
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-3)]">
+              <span>Qtd:</span>
+              <input
                 type="number"
                 min={1}
                 value={progQty}
                 onChange={(e) => setProgQty(Math.max(1, Number(e.target.value)))}
-                className="h-10 w-16 text-xs font-mono font-extrabold text-center rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="h-8 w-14 text-center font-mono text-xs font-semibold rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)] outline-none"
               />
             </div>
           </div>
         </div>
 
-        {/* ── Lista de Resultados ── */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2.5 min-h-0 bg-slate-50/40 dark:bg-slate-950/20">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1 pb-1">
+        {/* Lista de Resultados */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 bg-[var(--surface)]">
+          <div className="flex items-center justify-between text-xs text-[var(--text-3)] px-1 pb-1">
             <span>
               {query.trim().length >= 2
-                ? `${results.length} resultados encontrados`
+                ? `${results.length} resultado(s) encontrado(s)`
                 : 'Sugestões de receitas'}
             </span>
-            <span className="text-[11px] font-medium text-slate-400">Clique em + Programar para lançar</span>
+            <span className="text-[11px]">Clique em + Adicionar para lançar</span>
           </div>
 
           {results.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs space-y-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6">
-              <p className="font-bold text-slate-700 dark:text-slate-300">Nenhuma receita encontrada para "{query}"</p>
+            <div className="py-12 text-center text-xs text-[var(--text-3)] space-y-1 bg-[var(--surface-2)] rounded-[var(--radius)] border border-[var(--border)] p-6">
+              <p className="font-semibold text-[var(--text-2)]">Nenhuma receita encontrada para "{query}"</p>
               <p className="text-[11px]">Tente buscar pelo código numérico ou parte do nome do produto.</p>
             </div>
           ) : (
@@ -177,50 +156,49 @@ export function RotasQuickAdd({ defaultTurno = 1, onItemCreated, triggerButton }
               return (
                 <div
                   key={`${recipe.codigo}-${recipe.produto}`}
-                  className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-primary/50 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all duration-150 flex items-center justify-between gap-3 group backdrop-blur-md"
+                  className="bg-[var(--surface-2)] border border-[var(--border)] hover:border-[var(--border-strong)] rounded-[var(--radius)] p-3 transition-colors flex items-center justify-between gap-3 group"
                 >
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="shrink-0 font-mono font-black text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="shrink-0 font-mono font-semibold text-xs px-2 py-0.5 rounded border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)]">
                         {recipe.codigo}
                       </span>
 
                       {recipe.familia && (
-                        <span className="shrink-0 font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 flex items-center gap-1">
-                          <Layers className="h-3 w-3 text-slate-400" />
+                        <span className="shrink-0 font-mono text-[11px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] flex items-center gap-1">
+                          <Layers size={11} className="text-[var(--text-3)]" />
                           {recipe.familia}
                         </span>
                       )}
 
                       {recipe.via && (
-                        <span className="shrink-0 font-bold text-[10px] px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 flex items-center gap-1">
-                          {isUmida ? <Droplets className="h-3 w-3 text-blue-500" /> : <Wind className="h-3 w-3 text-cyan-500" />}
+                        <span className="shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] flex items-center gap-1">
+                          {isUmida ? <Droplets size={11} className="text-[var(--accent)]" /> : <Wind size={11} className="text-[var(--text-3)]" />}
                           Via {isUmida ? 'Úmida' : 'Seca'}
                         </span>
                       )}
                     </div>
 
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-snug">
+                    <h4 className="text-xs font-medium text-[var(--text)] truncate leading-snug">
                       {recipe.produto}
                     </h4>
                   </div>
 
-                  <Button
+                  <button
                     type="button"
-                    size="sm"
                     disabled={isAdding}
                     onClick={() => handleQuickAdd(recipe)}
-                    className="gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 shadow-2xs rounded-xl h-9 px-3.5"
+                    className="h-7 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-opacity text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
                   >
                     {isAdding ? (
-                      <span className="text-[10px]">Adicionando...</span>
+                      <span className="text-[11px]">Adicionando...</span>
                     ) : (
                       <>
-                        <Plus className="h-3.5 w-3.5" />
-                        Programar ({progQty})
+                        <Plus size={12} />
+                        <span>Adicionar ({progQty})</span>
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               );
             })

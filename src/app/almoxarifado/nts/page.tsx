@@ -278,14 +278,14 @@ function NTManagerContent() {
                   <span>Atualizar</span>
                 </button>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={() => setShowBulkAddModal(true)}
                   className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Layers size={13} />
                   <span>Lote em Massa</span>
-                </button>
+                </button> */}
 
                 <button
                   type="button"

@@ -205,12 +205,12 @@ export const NTCard = ({
               <table className="w-full text-xs text-left">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[11px] font-medium text-[var(--text-3)]">
-                    <th className="py-1.5 px-2">Status</th>
                     <th className="py-1.5 px-2">Código</th>
                     <th className="py-1.5 px-2">Descrição do Material</th>
                     <th className="py-1.5 px-2">Lote</th>
                     <th className="py-1.5 px-2 text-right">Qtd</th>
                     <th className="py-1.5 px-2">Horário Pagamento</th>
+                    <th className="py-1.5 px-2">Status</th>
                     <th className="py-1.5 px-2 text-right">Ações</th>
                   </tr>
                 </thead>

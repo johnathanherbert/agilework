@@ -1,32 +1,40 @@
-import { useNotifications, Notification, NotificationMessagePart } from '@/components/providers/notification-provider';
-import { 
-  Bell, 
-  CheckCheck, 
-  Trash2, 
-  Clock, 
-  CheckCircle, 
-  ExternalLink, 
-  Factory, 
-  FilePlus2, 
-  CircleDollarSign, 
-  Settings,
-  BellOff,
-  Sparkles,
-  Inbox
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useState, useMemo } from 'react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+"use client";
 
-type NotificationFilterTab = 'all' | 'unread' | 'nt' | 'production';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useNotifications, Notification } from '@/components/providers/notification-provider';
+import { toast } from 'react-hot-toast';
+import { cn } from '@/lib/utils';
+
+type NotificationTab = 'all' | 'unread' | 'nt' | 'production';
+
+const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+function pad(n: number) {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+
+function formatHM(date: Date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatTimeRelative(date: Date) {
+  const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+  if (date.toDateString() === now.toDateString()) {
+    return formatHM(date);
+  }
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'ontem';
+  }
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  if (diffDays < 7) {
+    return DIAS[date.getDay()];
+  }
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+}
 
 export const NotificationBell = () => {
   const { 
@@ -39,41 +47,92 @@ export const NotificationBell = () => {
     notificationsEnabled 
   } = useNotifications();
   const router = useRouter();
+
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<NotificationFilterTab>('all');
+  const [activeTab, setActiveTab] = useState<NotificationTab>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isBumping, setIsBumping] = useState(false);
 
-  const formatTime = (date: Date) => {
-    try {
-      return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
-    } catch (error) {
-      return 'agora';
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const prevUnreadRef = useRef(unreadCount);
+
+  // Efeito de animação bump quando surge nova notificação não lida
+  useEffect(() => {
+    if (unreadCount > prevUnreadRef.current) {
+      setIsBumping(true);
+      const timer = setTimeout(() => setIsBumping(false), 500);
+      return () => clearTimeout(timer);
     }
-  };
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount]);
 
+  // Fechar ao clicar fora
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Fechar com tecla Esc
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Filtragem e busca
   const filteredNotifications = useMemo(() => {
-    switch (activeTab) {
-      case 'unread':
-        return notifications.filter((n) => !n.read);
-      case 'nt':
-        return notifications.filter((n) => 
-          n.type === 'nt_created' || n.type === 'nt_updated' || n.type === 'nt_deleted' || n.type === 'item_paid'
-        );
-      case 'production':
-        return notifications.filter((n) => n.type === 'production_updated');
-      case 'all':
-      default:
-        return notifications;
+    let list = notifications;
+
+    if (activeTab === 'unread') {
+      list = list.filter((n) => !n.read);
+    } else if (activeTab === 'nt') {
+      list = list.filter((n) => 
+        n.type === 'nt_created' || n.type === 'nt_updated' || n.type === 'nt_deleted' || n.type === 'item_paid'
+      );
+    } else if (activeTab === 'production') {
+      list = list.filter((n) => n.type === 'production_updated');
     }
-  }, [notifications, activeTab]);
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(n => 
+        n.title.toLowerCase().includes(q) || 
+        n.message.toLowerCase().includes(q) ||
+        (n.entityId && n.entityId.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [notifications, activeTab, searchQuery]);
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsRead(notification.id);
     }
     
-    // Navegar para a entidade relacionada, se houver
     if (notification.type === 'nt_created' && notification.entityId) {
-      router.push(`/almoxarifado/nts?nt=${notification.entityId}`);
+      router.push(`/almoxarifado/nts?search=${notification.entityId}`);
+    } else if (notification.type === 'item_paid') {
+      router.push('/almoxarifado/nts');
     } else if (notification.type === 'production_updated') {
       router.push('/producao');
     }
@@ -81,341 +140,406 @@ export const NotificationBell = () => {
     setIsOpen(false);
   };
 
-  const handleRemoveNotification = (e: React.MouseEvent, id: string) => {
+  const handleRemove = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     removeNotification(id);
+    toast.success('Notificação removida');
   };
 
-  // Classes de destaque para cada tipo de informação distinta na mensagem
-  const partVariantClasses: Record<NonNullable<NotificationMessagePart['variant']>, string> = {
-    actor: 'font-bold text-blue-600 dark:text-blue-400',
-    entity: 'font-semibold text-purple-600 dark:text-purple-400',
-    'status-success': 'font-semibold text-emerald-600 dark:text-emerald-400',
-    'status-warning': 'font-semibold text-amber-600 dark:text-amber-400',
-    accent: 'font-bold text-sky-600 dark:text-sky-400',
-    muted: 'text-slate-400 dark:text-slate-500 font-normal',
-  };
+  // Renderização do corpo da notificação com chips interativos de NT
+  const renderMessageContent = (notification: Notification) => {
+    if (notification.parts && notification.parts.length > 0) {
+      return (
+        <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">
+          {notification.parts.map((part, idx) => {
+            const isEntity = part.variant === 'entity';
+            const isActor = part.variant === 'actor';
+            const isSuccess = part.variant === 'status-success';
+            const isWarning = part.variant === 'status-warning';
+            const isAccent = part.variant === 'accent';
 
-  const renderMessage = (notification: Notification) => {
-    if (!notification.parts || notification.parts.length === 0) {
-      return notification.message;
+            if (isEntity && /\d{6,10}/.test(part.text)) {
+              const code = part.text.replace(/[^0-9]/g, '');
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(code);
+                    toast.success(`NT ${code} copiada!`, { icon: '📋' });
+                  }}
+                  title="Copiar NT"
+                  className="inline-flex items-center font-mono text-[11.5px] px-1 py-0.2 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                >
+                  {part.text}
+                </button>
+              );
+            }
+
+            return (
+              <span
+                key={idx}
+                className={cn(
+                  isActor && "font-semibold text-[var(--text)]",
+                  isEntity && "font-medium text-[var(--accent)]",
+                  isSuccess && "font-medium text-[var(--green)]",
+                  isWarning && "font-medium text-[var(--amber)]",
+                  isAccent && "font-bold text-[var(--accent)]",
+                  part.variant === 'muted' && "text-[var(--text-3)]"
+                )}
+              >
+                {part.text}
+              </span>
+            );
+          })}
+        </span>
+      );
     }
 
-    return notification.parts.map((part, index) => (
-      <span key={index} className={part.variant ? partVariantClasses[part.variant] : undefined}>
-        {part.text}
-      </span>
-    ));
+    return <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">{notification.message}</span>;
   };
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'nt_created':
-        return <FilePlus2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="12" y1="18" x2="12" y2="12" />
+            <line x1="9" y1="15" x2="15" y2="15" />
+          </svg>
+        );
       case 'nt_updated':
-        return <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        );
       case 'item_paid':
-        return <CircleDollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        );
       case 'production_updated':
-        return <Factory className="h-4 w-4 text-sky-600 dark:text-sky-400" />;
-      case 'system':
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+            <path d="M17 18h1" />
+            <path d="M12 18h1" />
+            <path d="M7 18h1" />
+          </svg>
+        );
+      case 'chat_mention':
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        );
       default:
-        return <CheckCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />;
+        return (
+          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        );
     }
   };
 
-  const getNotificationIconBg = (type: Notification['type']) => {
+  const getNotificationColorClass = (type: Notification['type']) => {
     switch (type) {
       case 'nt_created':
-        return 'bg-blue-100/80 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50';
+        return 'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent-weak)]';
       case 'nt_updated':
-        return 'bg-amber-100/80 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50';
+        return 'text-[var(--amber)] border-[var(--amber)]/30 bg-[var(--amber)]/10';
       case 'item_paid':
-        return 'bg-emerald-100/80 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/50';
+        return 'text-[var(--green)] border-[var(--green)]/30 bg-[var(--green)]/10';
       case 'production_updated':
-        return 'bg-sky-100/80 dark:bg-sky-900/40 border border-sky-200 dark:border-sky-800/50';
-      case 'system':
+        return 'text-[var(--accent)] border-[var(--border)] bg-[var(--surface-2)]';
+      case 'chat_mention':
+        return 'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent-weak)]';
       default:
-        return 'bg-purple-100/80 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-800/50';
+        return 'text-[var(--text-3)] border-[var(--border)] bg-[var(--surface-2)]';
     }
   };
 
   return (
-    <div className="relative">
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="relative w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
-            title="Central de Notificações"
-          >
-            <Bell size={15} className={cn("transition-transform duration-200", isOpen && "rotate-12")} />
-            {notificationsEnabled && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[var(--red)] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold shadow-xs z-50">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-        </DropdownMenuTrigger>
+    <div className="relative inline-block select-none">
+      {/* Botão de Gatilho na Topbar */}
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsOpen(prev => !prev)}
+        className={cn(
+          "w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer relative",
+          isOpen && "bg-[var(--hover)] text-[var(--text)]"
+        )}
+        title="Notificações"
+      >
+        <svg className="w-4 h-4 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+          <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+          <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+        </svg>
 
-        <DropdownMenuContent 
-          align="end" 
-          className="w-[420px] sm:w-[450px] p-0 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl bg-white dark:bg-slate-950 flex flex-col overflow-hidden"
-          style={{ maxHeight: 'min(80vh, var(--radix-dropdown-menu-content-available-height, 560px))' }}
+        {notificationsEnabled && unreadCount > 0 && (
+          <span
+            className={cn(
+              "absolute -top-1 -right-1 min-w-[15px] h-[15px] px-[3px] rounded-[8px] bg-[var(--red)] text-white text-[9.5px] font-semibold grid place-items-center border-2 border-[var(--surface)] shadow-xs",
+              isBumping && "animate-bump"
+            )}
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* PAINEL DE NOTIFICAÇÕES (.cc style) */}
+      {isOpen && (
+        <section
+          ref={panelRef}
+          role="dialog"
+          aria-label="Notificações"
+          className="fixed sm:absolute top-12 right-2 sm:right-0 w-[calc(100vw-16px)] sm:w-[400px] h-[min(580px,calc(100vh-60px))] flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-[8px] shadow-[0_16px_40px_rgba(0,0,0,0.45)] z-50 overflow-hidden animate-fade-in"
         >
-          {/* Header Superior */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/50 shrink-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary">
-                  <Bell size={16} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none flex items-center gap-2">
-                    Notificações
-                    {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {unreadCount} {unreadCount === 1 ? 'nova' : 'novas'}
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Acompanhe atualizações em tempo real
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                {unreadCount > 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 px-2.5 text-[11px] font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                    onClick={markAllAsRead}
-                    title="Marcar todas como lidas"
-                  >
-                    <CheckCheck className="h-3.5 w-3.5 mr-1 text-blue-600 dark:text-blue-400" />
-                    Lidas
-                  </Button>
-                )}
-                
-                {notifications.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-7 w-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                    onClick={clearNotifications}
-                    title="Limpar todas as notificações"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+          {/* Cabeçalho do Painel */}
+          <div className="flex items-center gap-2.5 px-3.5 pt-3 pb-1 shrink-0">
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--text)] leading-tight">
+                Notificações
+              </h2>
+              <div className="text-xs text-[var(--text-3)] flex items-center gap-1.5 mt-0.5">
+                <i className={cn("w-1.5 h-1.5 rounded-full", unreadCount > 0 ? "bg-[var(--accent)] animate-pulse-dot" : "bg-[var(--green)]")} />
+                <span>
+                  {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Todas as notificações lidas'}
+                </span>
               </div>
             </div>
 
-            {/* Abas de Filtro Segmentado */}
-            {notifications.length > 0 && (
-              <div className="flex items-center gap-1 mt-3 pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
+            <div className="ml-auto flex items-center gap-1">
+              {unreadCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => setActiveTab('all')}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] font-bold rounded-md transition-all",
-                    activeTab === 'all'
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
-                  )}
+                  onClick={markAllAsRead}
+                  className="h-6 px-2 text-[11.5px] font-medium text-[var(--accent)] hover:bg-[var(--hover)] rounded-[4px] transition-colors cursor-pointer"
+                  title="Marcar todas como lidas"
                 >
-                  Todas ({notifications.length})
+                  Lidas
                 </button>
+              )}
+
+              {notifications.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setActiveTab('unread')}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] font-bold rounded-md transition-all flex items-center gap-1",
-                    activeTab === 'unread'
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
-                  )}
+                  onClick={clearNotifications}
+                  className="w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
+                  title="Limpar todas as notificações"
                 >
-                  Não lidas
-                  {unreadCount > 0 && (
-                    <span className={cn(
-                      "w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-black",
-                      activeTab === 'unread' ? "bg-white text-primary" : "bg-blue-500 text-white"
-                    )}>
-                      {unreadCount}
-                    </span>
-                  )}
+                  <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('nt')}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] font-bold rounded-md transition-all",
-                    activeTab === 'nt'
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
-                  )}
-                >
-                  NTs
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('production')}
-                  className={cn(
-                    "px-2.5 py-1 text-[11px] font-bold rounded-md transition-all",
-                    activeTab === 'production'
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
-                  )}
-                >
-                  Produção
-                </button>
-              </div>
-            )}
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
+                title="Fechar (Esc)"
+              >
+                <svg className="w-4 h-4 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
           </div>
-          
-          {/* Conteúdo Principal com Lista Scrollável */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white dark:bg-slate-950">
-            {filteredNotifications.length > 0 ? (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {filteredNotifications.map((notification) => (
-                  <div 
-                    key={notification.id}
+
+          {/* Abas (.cc-tabs) */}
+          <div className="flex gap-1 px-3 pt-2 border-b border-[var(--border)] shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('all');
+                setSearchQuery('');
+              }}
+              className={cn(
+                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                activeTab === 'all'
+                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <span>Todas</span>
+              <span className="font-mono text-[10.5px] text-[var(--text-3)]">
+                {notifications.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('unread');
+                setSearchQuery('');
+              }}
+              className={cn(
+                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                activeTab === 'unread'
+                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <span>Não lidas</span>
+              {unreadCount > 0 && (
+                <span className="font-mono text-[10.5px] text-[var(--red)] font-semibold">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('nt');
+                setSearchQuery('');
+              }}
+              className={cn(
+                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                activeTab === 'nt'
+                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <span>NTs</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('production');
+                setSearchQuery('');
+              }}
+              className={cn(
+                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                activeTab === 'production'
+                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <span>Produção</span>
+            </button>
+          </div>
+
+          {/* Campo de Busca (.cc-search) */}
+          <div className="p-3 pb-1.5 shrink-0">
+            <div className="flex items-center gap-2 h-[30px] px-2.5 rounded-[6px] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text-3)] focus-within:border-[var(--accent)] transition-colors">
+              <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar notificação ou NT..."
+                className="bg-transparent border-0 outline-none text-[12.5px] text-[var(--text)] flex-1 min-w-0 placeholder:text-[var(--text-3)]"
+              />
+            </div>
+          </div>
+
+          {/* Lista de Notificações */}
+          <div className="flex-1 overflow-y-auto pb-2">
+            {filteredNotifications.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[var(--text-3)] leading-relaxed">
+                {searchQuery ? (
+                  `Nenhuma notificação encontrada com "${searchQuery}".`
+                ) : activeTab === 'unread' ? (
+                  'Tudo em dia! Você não tem notificações não lidas.'
+                ) : (
+                  'Nenhuma notificação recente por aqui.'
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--border)]">
+                {filteredNotifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
                     className={cn(
-                      "p-3.5 cursor-pointer transition-all duration-200 relative group",
-                      !notification.read 
-                        ? "bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/30 border-l-4 border-l-primary" 
-                        : "hover:bg-slate-50 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
+                      "grid grid-cols-[28px_1fr_auto] gap-2.5 items-start px-3.5 py-2.5 hover:bg-[var(--hover)] transition-colors cursor-pointer group relative",
+                      !n.read && "bg-[var(--accent-weak)]/30"
                     )}
-                    onClick={() => handleNotificationClick(notification)}
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Ícone com background estilizado */}
-                      <div className={cn(
-                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs transition-transform duration-200 group-hover:scale-105",
-                        getNotificationIconBg(notification.type)
-                      )}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      
-                      {/* Informações da Notificação */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className={cn(
-                            "text-xs leading-tight font-bold truncate",
-                            !notification.read ? "text-slate-900 dark:text-slate-100" : "text-slate-700 dark:text-slate-300"
-                          )}>
-                            {notification.title}
-                          </h4>
-                          
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                              <Clock size={10} className="opacity-70" />
-                              {formatTime(notification.createdAt)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveNotification(e, notification.id)}
-                              className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover:opacity-100 transition-all"
-                              aria-label="Remover notificação"
-                              title="Remover"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <p className={cn(
-                          "text-xs mt-1 leading-relaxed",
-                          !notification.read ? "text-slate-800 dark:text-slate-200 font-medium" : "text-slate-600 dark:text-slate-400"
-                        )}>
-                          {renderMessage(notification)}
-                        </p>
-                        
-                        {notification.entityId && (
-                          <div className="mt-2 flex justify-end">
-                            <span className="inline-flex items-center text-[11px] font-bold text-primary hover:underline group-hover:translate-x-0.5 transition-transform">
-                              Ver detalhes
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </span>
-                          </div>
+                    {/* Ícone de Categoria */}
+                    <span
+                      className={cn(
+                        "w-7 h-7 rounded-[6px] border grid place-items-center shrink-0 mt-0.5",
+                        getNotificationColorClass(n.type)
+                      )}
+                    >
+                      {getNotificationIcon(n.type)}
+                    </span>
+
+                    {/* Texto da Notificação */}
+                    <div className="min-w-0">
+                      <div className="flex items-baseline gap-1.5">
+                        <b className={cn("text-[13px] truncate", !n.read ? "font-semibold text-[var(--text)]" : "font-medium text-[var(--text-2)]")}>
+                          {n.title}
+                        </b>
+                        {!n.read && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" />
                         )}
                       </div>
+
+                      <div className="mt-0.5">
+                        {renderMessageContent(n)}
+                      </div>
+                    </div>
+
+                    {/* Hora e Ações no Hover */}
+                    <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
+                      <time className="font-mono text-[11px] text-[var(--text-3)]">
+                        {formatTimeRelative(n.createdAt)}
+                      </time>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemove(e, n.id)}
+                        className="w-5 h-5 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--surface-2)] opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                        title="Remover notificação"
+                      >
+                        <svg className="w-3 h-3 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+                          <path d="M18 6 6 18M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              /* Estado Vazio Refinado */
-              <div className="py-12 px-4 text-center flex flex-col items-center justify-center">
-                {!notificationsEnabled ? (
-                  <>
-                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
-                      <BellOff className="h-6 w-6" />
-                    </div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Notificações Desativadas</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px] mt-1">
-                      As notificações estão desabilitadas nas configurações do sistema.
-                    </p>
-                  </>
-                ) : activeTab !== 'all' ? (
-                  <>
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-900 text-slate-400 flex items-center justify-center mb-3">
-                      <Inbox className="h-6 w-6" />
-                    </div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Nenhum item encontrado</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px] mt-1">
-                      Não há notificações nesta categoria no momento.
-                    </p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setActiveTab('all')} 
-                      className="mt-3 text-xs font-bold text-primary"
-                    >
-                      Ver todas as notificações
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-primary flex items-center justify-center mb-3">
-                      <Sparkles className="h-6 w-6" />
-                    </div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Tudo em dia por aqui!</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[250px] mt-1">
-                      Você não tem nenhuma notificação no momento. Novas mensagens aparecerão aqui.
-                    </p>
-                  </>
-                )}
-              </div>
             )}
           </div>
 
-          {/* Rodapé com Atalho para Configurações */}
-          <div className="p-2.5 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200/80 dark:border-slate-800 shrink-0 flex items-center justify-between text-xs">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pl-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          {/* Rodapé (.cc style) */}
+          <div className="p-2.5 px-3 bg-[var(--surface-2)] border-t border-[var(--border)] shrink-0 flex items-center justify-between text-xs">
+            <span className="text-[11px] text-[var(--text-3)] flex items-center gap-1.5">
+              <i className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
               Notificações ativas
             </span>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-lg gap-1.5"
+            <button
+              type="button"
               onClick={() => {
                 setIsOpen(false);
                 router.push('/settings');
               }}
+              className="text-[11px] font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
-              <Settings className="h-3.5 w-3.5 text-slate-500" />
-              Configurar Som & Alertas
-            </Button>
+              Configurações →
+            </button>
           </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </section>
+      )}
     </div>
   );
 };
-
