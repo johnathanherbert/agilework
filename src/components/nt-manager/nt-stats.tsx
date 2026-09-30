@@ -1,7 +1,7 @@
 "use client";
 
 import { NT } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, parseDateTime, isItemDelayed } from '@/lib/utils';
 
 interface NTStatsProps {
   nts: NT[];
@@ -23,21 +23,22 @@ export function NTStats({ nts, className }: NTStatsProps) {
       totalItems++;
       if (item.status === 'Ag. Pagamento') {
         pendingItems++;
-        const twoHoursInMs = 2 * 60 * 60 * 1000;
         try {
-          const [year, month, day] = item.created_date.split('-').map(Number);
-          const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
-          const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
-          
-          if (!isNaN(creationDate.getTime())) {
-            const elapsed = Date.now() - creationDate.getTime();
-            if (elapsed > twoHoursInMs) {
+          const { creationDate } = parseDateTime(
+            item.created_date || nt.created_date,
+            item.created_time || nt.created_time
+          );
+          if (creationDate && !isNaN(creationDate.getTime())) {
+            if (isItemDelayed(creationDate, item.code)) {
               delayedItems++;
             }
           }
         } catch (error) {}
       } else if (item.status === 'Pago') {
         paidItems++;
+      } else if (item.status === 'Pago Parcial') {
+        // Tratar parcial se houver
+        pendingItems++;
       }
     });
   });

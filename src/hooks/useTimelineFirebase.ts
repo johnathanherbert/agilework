@@ -54,8 +54,18 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
   // Calcular tempo decorrido entre criação e pagamento
   const calculateElapsedTime = (createdDate: string, createdTime: string, paymentTime: string): string => {
     try {
-      // Parse created datetime
-      const [day, month, year] = createdDate.split('/').map(Number);
+      // Parse created datetime supporting DD/MM/YYYY and YYYY-MM-DD
+      let day = 1, month = 1, year = 1970;
+      if (createdDate.includes('/')) {
+        [day, month, year] = createdDate.split('/').map(Number);
+      } else if (createdDate.includes('-')) {
+        const parts = createdDate.split('-').map(Number);
+        if (parts[0] > 1000) {
+          [year, month, day] = parts;
+        } else {
+          [day, month, year] = parts;
+        }
+      }
       const [createdHours, createdMinutes] = createdTime.split(':').map(Number);
       const created = new Date(year, month - 1, day, createdHours, createdMinutes);
 
@@ -215,9 +225,19 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
 
           // Determinar data de pagamento
           let paidAt: Date;
-          if (data.payment_time) {
-            const [day, month, year] = data.created_date.split('/').map(Number);
-            const [hours, minutes] = data.payment_time.split(':').map(Number);
+          if (data.payment_time && data.created_date) {
+            let day = 1, month = 1, year = 1970;
+            if (data.created_date.includes('/')) {
+              [day, month, year] = data.created_date.split('/').map(Number);
+            } else if (data.created_date.includes('-')) {
+              const parts = data.created_date.split('-').map(Number);
+              if (parts[0] > 1000) {
+                [year, month, day] = parts;
+              } else {
+                [day, month, year] = parts;
+              }
+            }
+            const [hours = 0, minutes = 0] = data.payment_time.split(':').map(Number);
             paidAt = new Date(year, month - 1, day, hours, minutes);
           } else if (data.updated_at && data.updated_at.toDate) {
             paidAt = data.updated_at.toDate();

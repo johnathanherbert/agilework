@@ -580,9 +580,28 @@ export function parseDateTime(dateStr: string, timeStr: string, paymentTimeStr?:
   paymentDate: Date | null;
 } {
   try {
-    // Parse creation date
-    const [day, month, year] = dateStr.split('/').map(Number);
-    const [hours, minutes, seconds = 0] = timeStr.split(':').map(Number);
+    // Parse creation date supporting DD/MM/YYYY, YYYY-MM-DD or standard formats
+    let day = 1, month = 1, year = 1970;
+    if (dateStr.includes('/')) {
+      [day, month, year] = dateStr.split('/').map(Number);
+    } else if (dateStr.includes('-')) {
+      const parts = dateStr.split('-').map(Number);
+      if (parts[0] > 1000) {
+        // YYYY-MM-DD
+        [year, month, day] = parts;
+      } else {
+        // DD-MM-YYYY
+        [day, month, year] = parts;
+      }
+    } else {
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        day = parsed.getDate();
+        month = parsed.getMonth() + 1;
+        year = parsed.getFullYear();
+      }
+    }
+    const [hours = 0, minutes = 0, seconds = 0] = (timeStr || '00:00:00').split(':').map(Number);
     
     // Create creation date - JS month is 0-indexed (January = 0)
     const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);

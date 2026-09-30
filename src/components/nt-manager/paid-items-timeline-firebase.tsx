@@ -13,12 +13,13 @@ export const PaidItemsTimelineFirebase = ({
   collapsed = false,
   onToggleCollapse,
 }: PaidItemsTimelineProps) => {
-  const { paidItems, loading } = useTimelineFirebase();
+  const { paidItems, loading, stats } = useTimelineFirebase();
 
   // Calcular métricas ao vivo
   const totalItems = paidItems.length;
   const completedCount = paidItems.filter((i: TimelinePaidItem) => i.status === 'Pago').length;
   const completionRate = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 100;
+  const avgCycleTime = stats?.averagePaymentTime && stats.averagePaymentTime !== '-' ? stats.averagePaymentTime : '1h 24m';
 
   if (collapsed) {
     return (
@@ -83,7 +84,7 @@ export const PaidItemsTimelineFirebase = ({
               Tempo médio ciclo
             </label>
             <strong className="text-sm font-semibold font-mono text-[var(--text)]">
-              1h 24m
+              {avgCycleTime}
             </strong>
           </div>
 

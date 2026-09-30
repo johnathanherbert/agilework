@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { NT, NTFilters as NTFiltersType } from '@/types';
 import { Plus, Layers, RefreshCw } from 'lucide-react';
 import { getNTs, subscribeToNTs, deleteNT } from '@/lib/firestore-helpers';
-import { cn } from '@/lib/utils';
+import { cn, parseDateTime, isItemDelayed } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { NTList } from '@/components/nt-manager/nt-list';
 import { NTStats } from '@/components/nt-manager/nt-stats';
@@ -168,16 +168,16 @@ function NTManagerContent() {
     }
 
     if (filters.overdueOnly) {
-      const twoHoursInMs = 2 * 60 * 60 * 1000;
       filtered = filtered.filter(nt => {
         if (!nt.items) return false;
         return nt.items.some(item => {
           if (item.status === 'Pago') return false;
           try {
-            const [year, month, day] = item.created_date.split('-').map(Number);
-            const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
-            const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
-            return Date.now() - creationDate.getTime() > twoHoursInMs;
+            const { creationDate } = parseDateTime(
+              item.created_date || nt.created_date,
+              item.created_time || nt.created_time
+            );
+            return creationDate && !isNaN(creationDate.getTime()) && isItemDelayed(creationDate, item.code);
           } catch (e) {
             return false;
           }
@@ -224,14 +224,14 @@ function NTManagerContent() {
     pending: nts.filter(n => n.items?.some(i => i.status === 'Ag. Pagamento')).length,
     paid: nts.filter(n => n.items && n.items.length > 0 && n.items.every(i => i.status === 'Pago')).length,
     delayed: nts.filter(n => {
-      const twoHoursInMs = 2 * 60 * 60 * 1000;
       return n.items?.some(item => {
         if (item.status === 'Pago') return false;
         try {
-          const [year, month, day] = item.created_date.split('-').map(Number);
-          const [hours, minutes, seconds] = item.created_time.split(':').map(Number);
-          const creationDate = new Date(year, month - 1, day, hours, minutes, seconds);
-          return Date.now() - creationDate.getTime() > twoHoursInMs;
+          const { creationDate } = parseDateTime(
+            item.created_date || n.created_date,
+            item.created_time || n.created_time
+          );
+          return creationDate && !isNaN(creationDate.getTime()) && isItemDelayed(creationDate, item.code);
         } catch (e) {
           return false;
         }
