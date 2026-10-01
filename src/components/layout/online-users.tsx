@@ -683,8 +683,10 @@ export function OnlineUsers() {
 
       const targetIdsArray = Array.from(targetUserIds);
 
+      // Criar mensagens e obter ID do documento gerado
+      let createdMsgId = '';
       if (activeChat.type === 'ch') {
-        await addDoc(collection(db, 'chat_messages'), {
+        const docRef = await addDoc(collection(db, 'chat_messages'), {
           channelId: activeChat.channel.id,
           userId: user.uid,
           senderId: user.uid,
@@ -694,8 +696,9 @@ export function OnlineUsers() {
           timestamp: serverTimestamp(),
           createdAt: new Date().toISOString()
         });
+        createdMsgId = docRef.id;
       } else {
-        await addDoc(collection(db, 'private_messages'), {
+        const docRef = await addDoc(collection(db, 'private_messages'), {
           senderId: user.uid,
           senderName,
           receiverId: activeChat.user.id,
@@ -706,9 +709,10 @@ export function OnlineUsers() {
           createdAt: new Date().toISOString(),
           read: false
         });
+        createdMsgId = docRef.id;
       }
 
-      // Criar notificações para menções
+      // Criar notificações para menções com referência à mensagem
       for (const targetId of targetIdsArray) {
         addDoc(collection(db, 'notifications'), {
           user_id: targetId,
@@ -718,6 +722,7 @@ export function OnlineUsers() {
           sender_name: senderName,
           chat_type: activeChat.type,
           channel_id: activeChat.type === 'ch' ? activeChat.channel.id : null,
+          message_id: createdMsgId,
           created_at: serverTimestamp(),
           createdAt: new Date().toISOString(),
           read: false,
@@ -738,12 +743,25 @@ export function OnlineUsers() {
     }
   };
 
-  // Excluir mensagem individual
+  // Excluir mensagem individual e limpar eventuais notificações orfãs
   const handleDeleteMessage = async (msgId: string) => {
     if (!user || !activeChat) return;
     try {
       const colName = activeChat.type === 'ch' ? 'chat_messages' : 'private_messages';
       await deleteDoc(doc(db, colName, msgId));
+
+      // Limpar notificações associadas a essa mensagem
+      try {
+        const notifsQuery = query(
+          collection(db, 'notifications'),
+          where('message_id', '==', msgId)
+        );
+        const notifsSnap = await getDocs(notifsQuery);
+        notifsSnap.forEach(d => deleteDoc(doc(db, 'notifications', d.id)).catch(console.error));
+      } catch (e) {
+        console.warn('Erro ao limpar notificações da mensagem excluída:', e);
+      }
+
       toast.success('Mensagem excluída.');
       setDeleteConfirmMsg(null);
     } catch (err) {
@@ -764,7 +782,19 @@ export function OnlineUsers() {
 
     try {
       const colName = activeChat.type === 'ch' ? 'chat_messages' : 'private_messages';
-      await Promise.all(myMessages.map(m => deleteDoc(doc(db, colName, m.id))));
+      await Promise.all(
+        myMessages.map(async (m) => {
+          await deleteDoc(doc(db, colName, m.id));
+          try {
+            const notifsQuery = query(
+              collection(db, 'notifications'),
+              where('message_id', '==', m.id)
+            );
+            const notifsSnap = await getDocs(notifsQuery);
+            notifsSnap.forEach(d => deleteDoc(doc(db, 'notifications', d.id)).catch(console.error));
+          } catch (e) {}
+        })
+      );
       toast.success(`${myMessages.length} mensagens excluídas.`);
     } catch (err) {
       console.error('Erro ao limpar mensagens:', err);

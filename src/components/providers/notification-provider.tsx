@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useFirebase, ADMIN_EMAIL } from './firebase-provider';
 import { useAudioNotification, AudioConfig, SoundType, NotificationEventType, DEFAULT_EVENT_SOUNDS } from '@/hooks/useAudioNotification';
@@ -431,6 +431,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     console.log('🔔 Configurando listener de notificações pessoais Firestore para:', user.uid);
 
+    const listenerStartTime = Date.now();
+
     const notifQuery = query(
       collection(db, 'notifications'),
       where('user_id', '==', user.uid)
@@ -440,10 +442,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       notifQuery,
       (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const data = change.doc.data();
-            const notifId = change.doc.id;
+          const data = change.doc.data();
+          const notifId = change.doc.id;
 
+          if (change.type === 'removed') {
+            setNotifications(prev => prev.filter(n => n.id !== notifId));
+            return;
+          }
+
+          if (change.type === 'modified') {
+            setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: data.read ?? n.read } : n));
+            return;
+          }
+
+          if (change.type === 'added') {
             setNotifications(prev => {
               if (prev.some(n => n.id === notifId)) return prev;
 
@@ -453,7 +465,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               
               const secondsSinceCreation = (Date.now() - createdAtDate.getTime()) / 1000;
 
-              if (secondsSinceCreation <= 15 && !data.read) {
+              // Tocar som e toast apenas para mensagens NOVAS criadas após o listener iniciar (últimos 15s) e não lidas
+              if (createdAtDate.getTime() >= listenerStartTime - 10000 && secondsSinceCreation <= 15 && !data.read) {
                 playNotificationSound('chat_mention');
                 toast(data.title ? `${data.title}: ${data.message}` : data.message, {
                   icon: '💬',
@@ -584,6 +597,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notif.id === id ? { ...notif, read: true } : notif
       )
     );
+
+    // Sincronizar com Firestore se for uma notificação persistida
+    try {
+      updateDoc(doc(db, 'notifications', id), { read: true }).catch(() => {});
+    } catch (e) {}
   };
 
   // Marcar todas as notificações como lidas
@@ -591,16 +609,45 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setNotifications(prev =>
       prev.map(notif => ({ ...notif, read: true }))
     );
+
+    // Sincronizar com Firestore para o usuário
+    if (user) {
+      try {
+        const notifsQuery = query(collection(db, 'notifications'), where('user_id', '==', user.uid), where('read', '==', false));
+        getDocs(notifsQuery).then((snap) => {
+          snap.forEach((d) => {
+            updateDoc(doc(db, 'notifications', d.id), { read: true }).catch(() => {});
+          });
+        }).catch(() => {});
+      } catch (e) {}
+    }
   };
 
   // Remover uma notificação individual
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(notif => notif.id !== id));
+
+    // Excluir também do Firestore se existir
+    try {
+      deleteDoc(doc(db, 'notifications', id)).catch(() => {});
+    } catch (e) {}
   };
 
   // Limpar todas as notificações
   const clearNotifications = () => {
     setNotifications([]);
+
+    // Excluir do Firestore para o usuário
+    if (user) {
+      try {
+        const notifsQuery = query(collection(db, 'notifications'), where('user_id', '==', user.uid));
+        getDocs(notifsQuery).then((snap) => {
+          snap.forEach((d) => {
+            deleteDoc(doc(db, 'notifications', d.id)).catch(() => {});
+          });
+        }).catch(() => {});
+      } catch (e) {}
+    }
   };
 
   // Atualizar configuração de áudio com feedback

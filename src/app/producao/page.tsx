@@ -95,18 +95,19 @@ function ProducaoPageContent() {
     return () => clearInterval(timer);
   }, []);
 
-  // Modo de Visualização ('side' = Lado a lado, 'list' = Detalhado)
-  const [viewMode, setViewMode] = useState<'side' | 'list'>('side');
+  // Modo de Visualização ('side' = Lado a lado (temporariamente desabilitado), 'list' = Detalhado)
+  const [viewMode, setViewMode] = useState<'side' | 'list'>('list');
   useEffect(() => {
     try {
       const saved = localStorage.getItem('pp_mode');
-      if (saved === 'side' || saved === 'list') {
+      if (saved === 'list') {
         setViewMode(saved);
       }
     } catch {}
   }, []);
 
   const handleSetViewMode = (mode: 'side' | 'list') => {
+    if (mode === 'side') return; // Temporariamente desabilitado
     setViewMode(mode);
     try {
       localStorage.setItem('pp_mode', mode);
@@ -543,17 +544,13 @@ function ProducaoPageContent() {
 
           {/* Toolbar de Filtros e Modos */}
           <div className="flex items-center gap-2 flex-wrap no-print toolbar-container text-xs">
-            {/* Seletor de Modo: Lado a Lado | Detalhado */}
+            {/* Seletor de Modo: Lado a Lado (Desabilitado) | Detalhado */}
             <div className="inline-flex border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-2xs">
               <button
                 type="button"
-                onClick={() => handleSetViewMode('side')}
-                className={cn(
-                  "h-7 px-3 font-medium transition-colors cursor-pointer border-r border-[var(--border-strong)]",
-                  viewMode === 'side'
-                    ? "bg-[var(--hover)] text-[var(--text)]"
-                    : "text-[var(--text-3)] hover:text-[var(--text)]"
-                )}
+                disabled
+                title="Modo Lado a Lado temporariamente desabilitado"
+                className="h-7 px-3 font-medium border-r border-[var(--border-strong)] opacity-40 text-[var(--text-3)] cursor-not-allowed bg-transparent select-none"
               >
                 Lado a lado
               </button>
@@ -563,7 +560,7 @@ function ProducaoPageContent() {
                 className={cn(
                   "h-7 px-3 font-medium transition-colors cursor-pointer",
                   viewMode === 'list'
-                    ? "bg-[var(--hover)] text-[var(--text)]"
+                    ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
                     : "text-[var(--text-3)] hover:text-[var(--text)]"
                 )}
               >
