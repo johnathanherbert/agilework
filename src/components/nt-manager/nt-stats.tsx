@@ -45,27 +45,28 @@ export function NTStats({ nts, className }: NTStatsProps) {
 
   return (
     <section className={cn(
-      "grid grid-cols-2 md:grid-cols-4 border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] shadow-xs select-none",
+      "grid grid-cols-2 md:grid-cols-4 border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] select-none divide-y md:divide-y-0 md:divide-x divide-[var(--border)]",
       className
     )}>
       {/* Bloco 1: NTs abertas */}
-      <div className="p-3 md:p-3.5 border-r border-b md:border-b-0 border-[var(--border)]">
-        <label className="block text-[11px] font-medium text-[var(--text-3)] mb-1 uppercase tracking-wider">
+      <div className="p-3 md:p-3.5">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
           NTs abertas
         </label>
         <div className="flex items-baseline gap-2">
           <strong className="text-xl md:text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
             {totalNTs}
           </strong>
-          <small className="text-[11px] text-[var(--text-3)]">
+          <small className="text-xs text-[var(--text-3)] font-normal">
             {totalItems} itens
           </small>
         </div>
       </div>
 
-      {/* Bloco 2: Em atraso (> 2h) */}
-      <div className="p-3 md:p-3.5 border-b md:border-b-0 md:border-r border-[var(--border)]">
-        <label className="block text-[11px] font-medium text-[var(--text-3)] mb-1 uppercase tracking-wider">
+      {/* Bloco 2: Em atraso */}
+      <div className={cn("p-3 md:p-3.5", delayedItems > 0 && "text-[var(--red)]")}>
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)] inline-block shrink-0" />
           Em atraso
         </label>
         <div className="flex items-baseline gap-2">
@@ -75,38 +76,40 @@ export function NTStats({ nts, className }: NTStatsProps) {
           )}>
             {delayedItems}
           </strong>
-          <small className="text-[11px] text-[var(--text-3)]">
-            &gt; 2h sem início
+          <small className="text-xs text-[var(--text-3)] font-normal">
+            &gt; 2h abertas
           </small>
         </div>
       </div>
 
       {/* Bloco 3: Itens pendentes */}
-      <div className="p-3 md:p-3.5 border-r border-[var(--border)]">
-        <label className="block text-[11px] font-medium text-[var(--text-3)] mb-1 uppercase tracking-wider">
+      <div className="p-3 md:p-3.5">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)] inline-block shrink-0" />
           Itens pendentes
         </label>
         <div className="flex items-baseline gap-2">
-          <strong className="text-xl md:text-2xl font-semibold font-mono tracking-tight text-[var(--amber)]">
+          <strong className="text-xl md:text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
             {pendingItems}
           </strong>
-          <small className="text-[11px] text-[var(--text-3)]">
+          <small className="text-xs text-[var(--text-3)] font-normal">
             aguardando pesagem
           </small>
         </div>
       </div>
 
-      {/* Bloco 4: Pagos / Concluídos */}
+      {/* Bloco 4: Pagos / Concluídos hoje */}
       <div className="p-3 md:p-3.5">
-        <label className="block text-[11px] font-medium text-[var(--text-3)] mb-1 uppercase tracking-wider">
-          Pagos / Concluídos
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-3)] mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] inline-block shrink-0" />
+          Concluídas / Pagos
         </label>
         <div className="flex items-baseline gap-2">
-          <strong className="text-xl md:text-2xl font-semibold font-mono tracking-tight text-[var(--green)]">
+          <strong className="text-xl md:text-2xl font-semibold font-mono tracking-tight text-[var(--text)]">
             {paidItems}
           </strong>
-          <small className="text-[11px] text-[var(--text-3)]">
-            {totalItems > 0 ? `${Math.round((paidItems / totalItems) * 100)}%` : '0%'} concluído
+          <small className="text-xs text-[var(--text-3)] font-normal">
+            {totalItems > 0 ? `${Math.round((paidItems / totalItems) * 100)}%` : '0%'} pagos
           </small>
         </div>
       </div>

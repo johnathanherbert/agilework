@@ -67,21 +67,21 @@ export const PaidItemsTimelineFirebase = ({
         </div>
       </div>
 
-      {/* 2x2 Mini KPIs da Pesagem */}
+      {/* 2x2 Mini KPIs da Pesagem (.akpis) */}
       <div className="p-3">
         <div className="grid grid-cols-2 border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface-2)] overflow-hidden">
           <div className="p-2.5 border-r border-b border-[var(--border)]">
-            <label className="block text-[10px] font-medium text-[var(--text-3)] mb-0.5">
-              Taxa de conclusão
+            <label className="block text-[11px] font-normal text-[var(--text-3)] mb-0.5">
+              Pagos hoje
             </label>
             <strong className="text-sm font-semibold font-mono text-[var(--text)]">
-              {completionRate}%
+              {completedCount}
             </strong>
           </div>
 
           <div className="p-2.5 border-b border-[var(--border)]">
-            <label className="block text-[10px] font-medium text-[var(--text-3)] mb-0.5">
-              Tempo médio ciclo
+            <label className="block text-[11px] font-normal text-[var(--text-3)] mb-0.5">
+              Tempo médio
             </label>
             <strong className="text-sm font-semibold font-mono text-[var(--text)]">
               {avgCycleTime}
@@ -89,20 +89,20 @@ export const PaidItemsTimelineFirebase = ({
           </div>
 
           <div className="p-2.5 border-r border-[var(--border)]">
-            <label className="block text-[10px] font-medium text-[var(--text-3)] mb-0.5">
-              Robôs online
+            <label className="block text-[11px] font-normal text-[var(--text-3)] mb-0.5">
+              Conclusão
             </label>
             <strong className="text-sm font-semibold font-mono text-[var(--green)]">
-              2 / 2
+              {completionRate}%
             </strong>
           </div>
 
           <div className="p-2.5">
-            <label className="block text-[10px] font-medium text-[var(--text-3)] mb-0.5">
-              Divergências
+            <label className="block text-[11px] font-normal text-[var(--text-3)] mb-0.5">
+              Total pesagens
             </label>
-            <strong className="text-sm font-semibold font-mono text-[var(--text-3)]">
-              0
+            <strong className="text-sm font-semibold font-mono text-[var(--text-2)]">
+              {totalItems}
             </strong>
           </div>
         </div>

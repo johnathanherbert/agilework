@@ -2,22 +2,27 @@
 
 import { NT } from '@/types';
 import { useState } from 'react';
+import Link from 'next/link';
 import { 
   ChevronRight, 
   Copy, 
   Check, 
   Edit, 
   Trash2, 
-  Plus, 
-  AlertTriangle, 
-  Bot
+  Plus
 } from 'lucide-react';
 import { NTItemRow } from './nt-item-row';
 import { AddItemModal } from './add-item-modal';
-import { RobotStatusModal } from './robot-status-modal';
-import { parseDateTime, getDelayInfo } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { parseDateTime, isItemDelayed, cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
+
+function dur(min: number): string {
+  min = Math.max(0, Math.round(min));
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h ${m < 10 ? '0' : ''}${m}m`;
+}
 
 interface NTCardProps {
   nt: NT;
@@ -39,7 +44,6 @@ export const NTCard = ({
   highlightedItems = []
 }: NTCardProps) => {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
-  const [showRobotModal, setShowRobotModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Copiar número da NT
@@ -59,66 +63,83 @@ export const NTCard = ({
   const progress = totalItems > 0 ? Math.round((paidItems / totalItems) * 100) : 0;
   const isComplete = totalItems > 0 && paidItems === totalItems;
 
-  // Informações de atraso
+  // Cálculo de aging e atraso da NT
   let isDelayed = false;
-  let formattedTime = nt.created_time || '';
-  try {
-    const { creationDate } = parseDateTime(nt.created_date, nt.created_time);
-    const delayInfo = getDelayInfo(creationDate);
-    isDelayed = delayInfo.isDelayed && !isComplete;
-  } catch (e) {}
+  let ageText = '';
+  if (!isComplete && nt.created_date) {
+    try {
+      const { creationDate } = parseDateTime(nt.created_date, nt.created_time || '');
+      if (creationDate && !isNaN(creationDate.getTime())) {
+        const diffMinutes = Math.max(0, Math.floor((Date.now() - creationDate.getTime()) / 60000));
+        ageText = dur(diffMinutes);
+        // NT com mais de 120 minutos (2 horas) aberta é atrasada
+        isDelayed = isItemDelayed(creationDate, items[0]?.code || '');
+      }
+    } catch (e) {}
+  }
 
   return (
-    <div className={cn(
-      "border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden transition-all duration-150 select-none",
-      isExpanded && "border-[var(--border-strong)] shadow-sm"
-    )}>
-      {/* Linha Principal da NT */}
-      <div 
+    <article
+      className={cn(
+        "ntb-card group select-none",
+        isDelayed && "is-delayed",
+        !isDelayed && !isComplete && paidItems > 0 && "is-progress",
+        isComplete && "is-complete opacity-90"
+      )}
+    >
+      {/* Cabeçalho da NT (.ntb-h) */}
+      <header
         onClick={onToggle}
         className={cn(
-          "grid grid-cols-[28px_1.3fr_1fr_0.7fr_1.3fr_1fr_0.9fr_100px] items-center px-3 py-2.5 min-h-[44px] cursor-pointer hover:bg-[var(--hover)] transition-colors gap-2 text-xs",
+          "grid grid-cols-[minmax(160px,auto)_minmax(0,1fr)_140px_110px_110px] items-center gap-3 px-3.5 py-2.5 bg-[var(--surface-2)] border-b border-[var(--border)] cursor-pointer text-xs transition-colors hover:bg-[var(--hover)]",
           isExpanded && "bg-[var(--hover)]"
         )}
       >
-        {/* Chevron */}
-        <div className="flex items-center justify-center text-[var(--text-3)]">
-          <ChevronRight 
-            size={15} 
-            className={cn("transition-transform duration-150", isExpanded && "rotate-90 text-[var(--text)]")} 
-          />
-        </div>
-
-        {/* NT Number & Badge */}
+        {/* 1. Identificador: Chevron + NT # + Copy */}
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-mono font-medium text-xs text-[var(--text)] tracking-tight truncate">
-            {nt.nt_number}
+          <ChevronRight 
+            size={14} 
+            className={cn(
+              "text-[var(--text-3)] transition-transform duration-150 shrink-0", 
+              isExpanded && "rotate-90 text-[var(--text)]"
+            )} 
+          />
+          <span className="font-mono font-bold text-sm tracking-tight text-[var(--text)] truncate">
+            NT #{nt.nt_number}
           </span>
           <button
             type="button"
             onClick={handleCopyNT}
-            className="p-1 rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
-            title="Copiar NT"
+            className="p-1 rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--surface)] transition-colors cursor-pointer shrink-0"
+            title="Copiar número da NT"
           >
             {copied ? <Check size={12} className="text-[var(--green)]" /> : <Copy size={12} />}
           </button>
         </div>
 
-        {/* Rota / Destino */}
-        <div className="text-[var(--text-2)] font-medium truncate">
-          <span className="px-1.5 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] font-mono text-[11px]">
-            Pesagem
+        {/* 2. Informações Contextuais: Rota · Turno · Criada em · Aging */}
+        <div className="text-xs text-[var(--text-3)] truncate flex items-center gap-1">
+          <span>Pesagem</span>
+          <span>·</span>
+          <span className="font-mono text-[var(--text-2)]">T1</span>
+          <span>·</span>
+          <span>
+            criada <b className="font-mono font-medium text-[var(--text-2)]">{nt.created_date}</b>
+            {nt.created_time ? ` às ${nt.created_time}` : ''}
           </span>
+          {ageText && !isComplete && (
+            <>
+              <span>·</span>
+              <span className={cn(isDelayed ? "text-[var(--red)] font-semibold" : "text-[var(--text-3)]")}>
+                há {ageText}
+              </span>
+            </>
+          )}
         </div>
 
-        {/* Turno */}
-        <div className="text-[var(--text-3)] font-mono text-[11px]">
-          T1
-        </div>
-
-        {/* Progresso de Pesagem */}
+        {/* 3. Barra de Progresso Compacta */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 max-w-[100px] h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
             <div 
               className={cn(
                 "h-full transition-all duration-300 rounded-full",
@@ -127,111 +148,94 @@ export const NTCard = ({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <span className="font-mono text-[11px] text-[var(--text-2)] tabular-nums">
-            {paidItems}/{totalItems} ({progress}%)
+          <span className="font-mono text-[11px] text-[var(--text-2)] tabular-nums shrink-0">
+            {paidItems}/{totalItems} itens
           </span>
         </div>
 
-        {/* Horário / Aging */}
-        <div className={cn(
-          "font-mono text-[11px] truncate flex items-center gap-1",
-          isDelayed ? "text-[var(--red)] font-semibold" : "text-[var(--text-3)]"
-        )}>
-          {isDelayed && <AlertTriangle size={11} className="shrink-0" />}
-          <span>{nt.created_date} {formattedTime}</span>
-        </div>
-
-        {/* Status Pill */}
+        {/* 4. Status Geral da NT */}
         <div>
-          <span className={cn(
-            "status-pill",
-            isComplete ? "done" : isDelayed ? "late" : pendingItems > 0 ? "pending" : "progress"
-          )}>
-            <i />
-            <span>
-              {isComplete ? "Concluída" : isDelayed ? "Em Atraso" : "Aguardando"}
-            </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] font-mono text-[11px] font-medium border",
+              isComplete
+                ? "bg-[var(--green)]/10 text-[var(--green)] border-[var(--green)]/30"
+                : isDelayed
+                ? "bg-[var(--red)]/10 text-[var(--red)] border-[var(--red)]/30"
+                : paidItems > 0
+                ? "bg-[var(--amber)]/10 text-[var(--amber)] border-[var(--amber)]/30"
+                : "bg-[var(--surface)] text-[var(--text-3)] border-[var(--border)]"
+            )}
+          >
+            <i
+              className={cn(
+                "w-1.5 h-1.5 rounded-full inline-block",
+                isComplete
+                  ? "bg-[var(--green)]"
+                  : isDelayed
+                  ? "bg-[var(--red)]"
+                  : paidItems > 0
+                  ? "bg-[var(--amber)]"
+                  : "bg-[var(--text-3)]"
+              )}
+            />
+            {isComplete
+              ? "Concluída"
+              : isDelayed
+              ? "Em atraso"
+              : paidItems > 0
+              ? "Em andamento"
+              : "Aguardando"}
           </span>
         </div>
 
-        {/* Ações da Linha */}
+        {/* 5. Ações Rápidas (.nacts) */}
         <div 
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-end gap-1"
+          className="nacts"
         >
           <button
             type="button"
             onClick={() => setShowAddItemModal(true)}
-            className="w-6 h-6 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
-            title="Adicionar item"
+            title="Adicionar item à NT"
           >
-            <Plus size={13} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowRobotModal(true)}
-            className="w-6 h-6 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
-            title="Status dos robôs"
-          >
-            <Bot size={13} />
+            <Plus size={14} />
           </button>
 
           <button
             type="button"
             onClick={onEdit}
-            className="w-6 h-6 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
             title="Editar NT"
           >
-            <Edit size={13} />
+            <Edit size={14} />
           </button>
 
           <button
             type="button"
             onClick={onDelete}
-            className="w-6 h-6 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+            className="del"
             title="Excluir NT"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Itens da NT (Accordion Detail Expandido) */}
+      {/* Linha do Tempo dos Itens (.items) */}
       {isExpanded && (
-        <div className="border-t border-[var(--border)] bg-[var(--surface-2)] p-3">
+        <div className="items-timeline p-2.5 space-y-1">
           {items.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="border-b border-[var(--border)] text-[11px] font-medium text-[var(--text-3)]">
-                    <th className="py-1.5 px-2">Código</th>
-                    <th className="py-1.5 px-2">Descrição do Material</th>
-                    <th className="py-1.5 px-2">Lote</th>
-                    <th className="py-1.5 px-2 text-right">Qtd</th>
-                    <th className="py-1.5 px-2">Horário Pagamento</th>
-                    <th className="py-1.5 px-2">Status</th>
-                    <th className="py-1.5 px-2 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {items.map((item) => (
-                    <NTItemRow
-                      key={item.id}
-                      item={item}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      onToggleStatus={() => {}}
-                      onSuccess={onRefresh}
-                      isHighlighted={highlightedItems.includes(item.id)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            items.map((item) => (
+              <NTItemRow
+                key={item.id}
+                item={item}
+                nt={nt}
+                onSuccess={onRefresh}
+              />
+            ))
           ) : (
             <div className="py-6 text-center text-xs text-[var(--text-3)]">
-              Nenhum item adicionado nesta Nota Técnica.
+              Nenhum item cadastrado nesta Nota Técnica.
             </div>
           )}
         </div>
@@ -249,15 +253,8 @@ export const NTCard = ({
           }}
         />
       )}
-
-      {/* Modal Status do Robô */}
-      {showRobotModal && (
-        <RobotStatusModal
-          open={showRobotModal}
-          onOpenChange={setShowRobotModal}
-          alerts={[]}
-        />
-      )}
-    </div>
+    </article>
   );
 };
+
+export default NTCard;

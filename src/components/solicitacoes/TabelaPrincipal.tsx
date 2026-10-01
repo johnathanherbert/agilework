@@ -12,12 +12,29 @@ import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, cn, parseDateTime, isItemDelayed } from "@/lib/utils";
 import { ExcipienteNTInfo, PendingNTItemDetail } from "@/types/solicitacao";
 import { ItemStatus, NTItem } from "@/types";
-import { StatusSwitch } from "@/components/ui/status-switch";
 import { updateNTItem } from "@/lib/firestore-helpers";
 import toast from "react-hot-toast";
+import { NTCardGroup } from "./NTCardGroup";
+import { Check, ExternalLink } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 const EXCIPIENTES_ESPECIAIS = [
   "LACTOSE (200)",
@@ -786,61 +803,27 @@ export const TabelaPrincipal: React.FC<TabelaPrincipalProps> = ({
                         </div>
 
                         {ntInfo.items.length > 0 ? (
-                          <table className="w-full border-collapse text-xs">
-                            <thead>
-                              <tr className="text-[var(--text-3)] border-b border-[var(--border)]">
-                                <th className="text-left font-medium py-1.5 px-2 w-[110px]">NT</th>
-                                <th className="text-left font-medium py-1.5 px-2">Material</th>
-                                <th className="text-right font-medium py-1.5 px-2 w-[120px]">Qtd. solicitada</th>
-                                <th className="text-center font-medium py-1.5 px-2 w-[100px]">Lote</th>
-                                <th className="text-center font-medium py-1.5 px-2 w-[130px]">Solicitado em</th>
-                                <th className="text-center font-medium py-1.5 px-2 w-[130px]">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--border)]">
-                              {ntInfo.items.map((item, idx) => (
-                                <tr key={`${item.ntId}_${item.itemId}_${idx}`} className="text-[var(--text-2)] hover:bg-[var(--hover)]">
-                                  <td className="py-1.5 px-2 font-mono font-medium">
-                                    <Link
-                                      href={`/almoxarifado/nts?search=${encodeURIComponent(item.ntNumber)}`}
-                                      className="text-[var(--accent)] hover:underline"
-                                      onClick={(e) => e.stopPropagation()}
-                                      title="Abrir nota técnica no almoxarifado"
-                                    >
-                                      {item.ntNumber}
-                                    </Link>
-                                  </td>
-                                  <td className="py-1.5 px-2 text-[var(--text)]">
-                                    <div>{item.description}</div>
-                                    {item.code && (
-                                      <div className="font-mono text-[10px] text-[var(--text-3)]">
-                                        Cód: {item.code}
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td className="py-1.5 px-2 text-right font-mono font-medium text-[var(--text)]">
-                                    {formatNumber(item.quantity, 3)} kg
-                                  </td>
-                                  <td className="py-1.5 px-2 text-center text-[var(--text-3)] font-mono text-[11px]">
-                                    {item.batch || "—"}
-                                  </td>
-                                  <td className="py-1.5 px-2 text-center text-[var(--text-3)] text-[11px]">
-                                    {item.createdDate} {item.createdTime ? `às ${item.createdTime}` : ""}
-                                  </td>
-                                  <td className="py-1.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                                    <div className="min-w-[120px] inline-block">
-                                      <StatusSwitch
-                                        value={(item.status as ItemStatus) || "Ag. Pagamento"}
-                                        onValueChange={(newStatus) => handleNTItemStatusChange(item.itemId, newStatus)}
-                                        disabled={updatingNTItemId === item.itemId}
-                                        size="sm"
-                                      />
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <div className="space-y-2.5">
+                            {(() => {
+                              // Agrupar itens por número da NT
+                              const grouped: Record<string, typeof ntInfo.items> = {};
+                              ntInfo.items.forEach((item) => {
+                                const key = item.ntNumber || "Sem NT";
+                                if (!grouped[key]) grouped[key] = [];
+                                grouped[key].push(item);
+                              });
+
+                              return Object.entries(grouped).map(([ntNum, groupItems]) => (
+                                <NTCardGroup
+                                  key={ntNum}
+                                  ntNumber={ntNum}
+                                  items={groupItems}
+                                  onStatusChange={handleNTItemStatusChange}
+                                  isUpdatingItemId={updatingNTItemId}
+                                />
+                              ));
+                            })()}
+                          </div>
                         ) : (
                           <div className="p-3 bg-[var(--surface)] rounded border border-[var(--border)] text-center text-[var(--text-3)] text-xs">
                             Nenhuma NT pendente localizada para esta matéria-prima.
@@ -928,10 +911,12 @@ export const TabelaPrincipal: React.FC<TabelaPrincipalProps> = ({
                           <td className="py-2 px-2.5 font-mono font-medium">
                             <Link
                               href={`/almoxarifado/nts?search=${encodeURIComponent(item.ntNumber)}`}
-                              className="text-[var(--accent)] hover:underline"
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
                               target="_blank"
+                              title="Abrir no Notas Técnicas"
                             >
-                              {item.ntNumber}
+                              <span>{item.ntNumber}</span>
+                              <ExternalLink size={11} className="opacity-70" />
                             </Link>
                           </td>
                           <td className="py-2 px-2.5 font-mono text-[var(--text-3)]">
@@ -952,14 +937,89 @@ export const TabelaPrincipal: React.FC<TabelaPrincipalProps> = ({
                             {item.createdDate} {item.createdTime ? `às ${item.createdTime}` : ""}
                           </td>
                           <td className="py-2 px-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                            <div className="min-w-[120px] inline-block">
-                              <StatusSwitch
-                                value={(item.status as ItemStatus) || "Ag. Pagamento"}
-                                onValueChange={(newStatus) => handleNTItemStatusChange(item.itemId, newStatus)}
-                                disabled={updatingNTItemId === item.itemId}
-                                size="sm"
-                              />
-                            </div>
+                            {(() => {
+                              const isPaid = item.status === "Pago";
+                              const isPartial = item.status === "Pago Parcial";
+                              const isPending = !isPaid && !isPartial;
+                              const isUpdating = updatingNTItemId === item.itemId;
+
+                              let isDelayed = false;
+                              if (!isPaid && item.createdDate) {
+                                try {
+                                  const { creationDate } = parseDateTime(item.createdDate, item.createdTime || "");
+                                  if (creationDate && !isNaN(creationDate.getTime())) {
+                                    isDelayed = isItemDelayed(creationDate, item.code || "");
+                                  }
+                                } catch (e) {}
+                              }
+
+                              return (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      disabled={isUpdating}
+                                      className={cn(
+                                        "status-pill cursor-pointer transition-all hover:ring-1 hover:ring-[var(--border-strong)]",
+                                        isPaid ? "done" : isPartial ? "progress" : isDelayed ? "late" : "pending"
+                                      )}
+                                      title="Clique para alterar status"
+                                    >
+                                      <i />
+                                      <span>
+                                        {isUpdating
+                                          ? "Salvando..."
+                                          : isPaid
+                                          ? "Pago"
+                                          : isPartial
+                                          ? "Parcial"
+                                          : isDelayed
+                                          ? "Atrasado"
+                                          : "Pendente"}
+                                      </span>
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuLabel className="text-[11px] font-semibold text-[var(--text-3)]">
+                                      Alterar Status
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleNTItemStatusChange(item.itemId, "Pago")}
+                                      className="text-xs flex items-center justify-between cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <i className="w-2 h-2 rounded-full bg-[var(--green)] inline-block" />
+                                        <span>Pago</span>
+                                      </span>
+                                      {isPaid && <Check size={13} className="text-[var(--green)]" />}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => handleNTItemStatusChange(item.itemId, "Ag. Pagamento")}
+                                      className="text-xs flex items-center justify-between cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block" />
+                                        <span>Ag. Pagamento</span>
+                                      </span>
+                                      {isPending && <Check size={13} className="text-[var(--amber)]" />}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => handleNTItemStatusChange(item.itemId, "Pago Parcial")}
+                                      className="text-xs flex items-center justify-between cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <i className="w-2 h-2 rounded-full bg-[var(--blue-500)] inline-block" />
+                                        <span>Pago Parcial</span>
+                                      </span>
+                                      {isPartial && <Check size={13} className="text-[var(--blue-500)]" />}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))

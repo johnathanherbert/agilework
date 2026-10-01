@@ -28,7 +28,7 @@ export const NTList = ({ nts, onEdit, onDelete, onRefresh, autoExpandedNTs = [],
   };
   
   return (
-    <div className="space-y-5">
+    <div className="space-y-2.5">
       {nts.map((nt) => (
         <NTCard 
           key={nt.id}

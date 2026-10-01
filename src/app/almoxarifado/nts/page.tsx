@@ -1,27 +1,85 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { NT, NTFilters as NTFiltersType } from '@/types';
-import { Plus, Layers, RefreshCw } from 'lucide-react';
+import { NT, NTItem } from '@/types';
+import { RefreshCw, Plus, Layers, Search } from 'lucide-react';
 import { getNTs, subscribeToNTs, deleteNT } from '@/lib/firestore-helpers';
 import { cn, parseDateTime, isItemDelayed } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { NTList } from '@/components/nt-manager/nt-list';
-import { NTStats } from '@/components/nt-manager/nt-stats';
-import { NTFilters } from '@/components/nt-manager/nt-filters';
+import { NTCardExpanded } from '@/components/nt-manager/nt-card-expanded';
+import { NTSummary } from '@/components/nt-manager/nt-summary';
+import { NTAsidePanel } from '@/components/nt-manager/nt-aside-panel';
 import { AddNTModal } from '@/components/nt-manager/add-nt-modal';
 import { AddBulkNTModal } from '@/components/nt-manager/add-bulk-nt-modal';
 import { EditNTModal } from '@/components/nt-manager/edit-nt-modal';
 import { DeleteConfirmationModal } from '@/components/nt-manager/delete-confirmation-modal';
-import { PaidItemsTimelineFirebase } from '@/components/nt-manager/paid-items-timeline-firebase';
 
+/* ── helpers ────────────────────────────────────────── */
+const LATE_MIN = 120; // NT aberta > 2h = em atraso
+
+function dur(min: number): string {
+  min = Math.max(0, Math.round(min));
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h ${m < 10 ? '0' : ''}${m}m`;
+}
+
+function pad(n: number) { return (n < 10 ? '0' : '') + n; }
+function hm(d: Date) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function dm(d: Date) { return pad(d.getDate()) + '/' + pad(d.getMonth() + 1); }
+
+function ntCreatedDate(nt: NT): Date | null {
+  try {
+    const [day, month, year] = nt.created_date.split('/').map(Number);
+    const timeParts = nt.created_time?.split(':').map(Number) || [0, 0];
+    return new Date(year, month - 1, day, timeParts[0] || 0, timeParts[1] || 0);
+  } catch { return null; }
+}
+
+function ageMin(nt: NT): number {
+  const d = ntCreatedDate(nt);
+  return d ? Math.max(0, (Date.now() - d.getTime()) / 60000) : 0;
+}
+
+function paidN(nt: NT): number {
+  return (nt.items || []).filter(i => i.status === 'Pago').length;
+}
+
+function isDone(nt: NT): boolean {
+  const items = nt.items || [];
+  return items.length > 0 && items.every(i => i.status === 'Pago');
+}
+
+type StKey = 'wait' | 'prog' | 'late' | 'done';
+function stOpen(nt: NT): { k: StKey; l: string } {
+  const p = paidN(nt);
+  if (ageMin(nt) > LATE_MIN) return { k: 'late', l: 'Em atraso' };
+  return p > 0 ? { k: 'prog', l: 'Em andamento' } : { k: 'wait', l: 'Aguardando' };
+}
+
+function shiftOf(nt: NT): number {
+  const d = ntCreatedDate(nt);
+  if (!d) return 1;
+  const t = d.getHours() * 60 + d.getMinutes();
+  const shifts = [
+    { n: 3, a: 23 * 60 + 45, b: 7 * 60 + 20 },
+    { n: 1, a: 7 * 60 + 20, b: 15 * 60 + 50 },
+    { n: 2, a: 15 * 60 + 50, b: 23 * 60 + 45 },
+  ];
+  for (const s of shifts) {
+    if (((t - s.a + 1440) % 1440) < ((s.b - s.a + 1440) % 1440)) return s.n;
+  }
+  return 1;
+}
+
+/* ── Component ──────────────────────────────────────── */
 function NTManagerContent() {
   const [nts, setNts] = useState<NT[]>([]);
-  const [filteredNts, setFilteredNts] = useState<NT[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
@@ -30,178 +88,157 @@ function NTManagerContent() {
   const [ntToDelete, setNtToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedNT, setSelectedNT] = useState<NT | null>(null);
-  const [timelineCollapsed, setTimelineCollapsed] = useState(false);
-  const [autoExpandedNTs, setAutoExpandedNTs] = useState<string[]>([]);
-  const [highlightedItems, setHighlightedItems] = useState<string[]>([]);
+  const [spinning, setSpinning] = useState(false);
   const { user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Filtros
-  const [filters, setFilters] = useState<NTFiltersType>({
-    search: '',
-    status: [],
-    dateRange: null,
-    shift: null,
-    overdueOnly: false,
-    hideOldNts: false,
-    priorityOnly: false,
-    isCompletedView: false,
-  });
+  // State matching the concept
+  const [tab, setTab] = useState<'open' | 'done'>('open');
+  const [fOpen, setFOpen] = useState<'all' | 'wait' | 'prog' | 'late'>('all');
+  const [fDone, setFDone] = useState<'today' | '7d' | '30d' | 'all'>('today');
+  const [q, setQ] = useState('');
+  const [sortOpen, setSortOpen] = useState('new');
+  const [sortDone, setSortDone] = useState('recent');
+  const [hidePaid, setHidePaid] = useState(false);
+  const qRef = useRef<HTMLInputElement>(null);
 
-  // Autenticação
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
+  // Auth
+  useEffect(() => { if (!user) router.push('/login'); }, [user, router]);
 
-  // Checar se a URL veio com status=concluida
+  // URL check
   useEffect(() => {
-    const statusParam = searchParams?.get('status');
-    if (statusParam === 'concluida') {
-      setFilters(prev => ({ ...prev, isCompletedView: true }));
-    }
+    if (searchParams?.get('status') === 'concluida') setTab('done');
   }, [searchParams]);
 
-  // Carregar NTs
+  // Load NTs
   const fetchNTs = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getNTs();
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-      const recentNTs = data.filter((nt: NT) => {
+      const recent = data.filter((nt: NT) => {
         if (!nt.created_date) return false;
         try {
-          const [day, month, year] = nt.created_date.split('/').map(Number);
-          const ntDate = new Date(year, month - 1, day);
-          return ntDate >= twoDaysAgo;
-        } catch (e) {
-          return true;
-        }
+          const [d, m, y] = nt.created_date.split('/').map(Number);
+          return new Date(y, m - 1, d) >= twoDaysAgo;
+        } catch { return true; }
       });
-      setNts(recentNTs);
-      return recentNTs;
-    } catch (error) {
-      toast.error('Erro ao carregar as NTs');
-      return [];
-    } finally {
-      setLoading(false);
-    }
+      setNts(recent);
+    } catch { toast.error('Erro ao carregar as NTs'); }
+    finally { setLoading(false); }
   }, []);
 
-  // Inscrição em tempo real Firestore
+  // Realtime subscription
   useEffect(() => {
     if (!user) return;
-
-    const unsubscribe = subscribeToNTs(
-      (ntsData) => {
+    const unsub = subscribeToNTs(
+      (data) => {
         const twoDaysAgo = new Date();
         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-        const recentNTs = ntsData.filter((nt: NT) => {
+        const recent = data.filter((nt: NT) => {
           if (!nt.created_date) return false;
           try {
-            const [day, month, year] = nt.created_date.split('/').map(Number);
-            const ntDate = new Date(year, month - 1, day);
-            return ntDate >= twoDaysAgo;
-          } catch (e) {
-            return true;
-          }
+            const [d, m, y] = nt.created_date.split('/').map(Number);
+            return new Date(y, m - 1, d) >= twoDaysAgo;
+          } catch { return true; }
         });
-
-        setNts(recentNTs);
+        setNts(recent);
         setLoading(false);
       },
-      () => {
-        toast.error('Erro na atualização em tempo real');
-      }
+      () => toast.error('Erro na atualização em tempo real')
     );
-
-    return () => {
-      unsubscribe();
-    };
+    return () => unsub();
   }, [user]);
 
-  // Aplicar filtros
+  // Keyboard shortcuts
   useEffect(() => {
-    let filtered = [...nts];
-    const searchTerm = filters.search?.toLowerCase().trim();
+    const handler = (e: KeyboardEvent) => {
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (/INPUT|SELECT|TEXTAREA/.test(tag || '')) {
+        if (e.key === 'Escape') (document.activeElement as HTMLElement)?.blur();
+        return;
+      }
+      if (e.key === '/') { e.preventDefault(); qRef.current?.focus(); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
-    if (filters.dateRange && filters.dateRange.from && filters.dateRange.to) {
-      filtered = filtered.filter(nt => {
-        try {
-          const [day, month, year] = nt.created_date.split('/').map(Number);
-          const createdDate = new Date(year, month - 1, day);
-          const fromDate = new Date(filters.dateRange!.from);
-          const toDate = new Date(filters.dateRange!.to);
-          return createdDate >= fromDate && createdDate <= toDate;
-        } catch (e) {
-          return true;
-        }
-      });
-    }
-
-    if (filters.shift !== null) {
-      filtered = filtered.filter(nt => {
-        const createdTime = nt.created_time || '';
-        const hour = parseInt(createdTime.split(':')[0], 10);
-        if (filters.shift === 1) return hour >= 6 && hour < 14;
-        if (filters.shift === 2) return hour >= 14 && hour < 22;
-        if (filters.shift === 3) return hour >= 22 || hour < 6;
-        return true;
-      });
-    }
-
-    if (filters.isCompletedView) {
-      filtered = filtered.filter(nt => {
-        if (!nt.items || nt.items.length === 0) return false;
-        return nt.items.every(item => item.status === 'Pago');
-      });
-    } else if (filters.status && filters.status.length > 0) {
-      filtered = filtered.filter(nt => {
-        if (!nt.items || nt.items.length === 0) return false;
-        return nt.items.some(item => filters.status.includes(item.status));
-      });
-    }
-
-    if (filters.overdueOnly) {
-      filtered = filtered.filter(nt => {
-        if (!nt.items) return false;
-        return nt.items.some(item => {
-          if (item.status === 'Pago') return false;
-          try {
-            const { creationDate } = parseDateTime(
-              item.created_date || nt.created_date,
-              item.created_time || nt.created_time
-            );
-            return creationDate && !isNaN(creationDate.getTime()) && isItemDelayed(creationDate, item.code);
-          } catch (e) {
-            return false;
-          }
+  // Derived / filtered list
+  const filtered = useMemo(() => {
+    let L: NT[];
+    if (tab === 'open') {
+      L = nts.filter(n => !isDone(n) && (fOpen === 'all' || stOpen(n).k === fOpen));
+    } else {
+      L = nts.filter(n => isDone(n));
+      // period filter for done tab
+      if (fDone !== 'all') {
+        const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+        L = L.filter(n => {
+          const cd = ntCreatedDate(n);
+          if (!cd) return false;
+          if (fDone === 'today') return cd >= t0;
+          const days = fDone === '7d' ? 6 : 29;
+          return cd >= new Date(t0.getTime() - days * 86400000);
         });
-      });
+      }
     }
-
-    if (searchTerm) {
-      filtered = filtered.filter(nt => {
-        const matchesNT = nt.nt_number?.toLowerCase().includes(searchTerm);
-        const matchesItems = nt.items?.some(item =>
-          item.code?.toLowerCase().includes(searchTerm) ||
-          item.description?.toLowerCase().includes(searchTerm) ||
-          item.batch?.toLowerCase().includes(searchTerm)
+    // search
+    if (q) {
+      const s = q.toLowerCase();
+      L = L.filter(n => {
+        if (n.nt_number?.toLowerCase().includes(s)) return true;
+        return (n.items || []).some(it =>
+          it.code?.toLowerCase().includes(s) || it.description?.toLowerCase().includes(s)
         );
-
-        return matchesNT || matchesItems;
       });
     }
+    // sort
+    L = [...L];
+    if (tab === 'open') {
+      if (sortOpen === 'old') L.sort((a, b) => (ntCreatedDate(a)?.getTime() || 0) - (ntCreatedDate(b)?.getTime() || 0));
+      else if (sortOpen === 'pend') L.sort((a, b) => ((b.items?.length || 0) - paidN(b)) - ((a.items?.length || 0) - paidN(a)));
+      else L.sort((a, b) => (ntCreatedDate(b)?.getTime() || 0) - (ntCreatedDate(a)?.getTime() || 0));
+    } else {
+      if (sortDone === 'nt') L.sort((a, b) => (b.nt_number || '').localeCompare(a.nt_number || ''));
+      else L.sort((a, b) => (ntCreatedDate(b)?.getTime() || 0) - (ntCreatedDate(a)?.getTime() || 0));
+    }
+    return L;
+  }, [nts, tab, fOpen, fDone, q, sortOpen, sortDone]);
 
-    setFilteredNts(filtered);
-  }, [nts, filters]);
+  // Counts for summary
+  const counts = useMemo(() => {
+    const open = nts.filter(n => !isDone(n));
+    const late = open.filter(n => stOpen(n).k === 'late');
+    let openItems = 0, pend = 0;
+    open.forEach(n => { openItems += (n.items?.length || 0); pend += (n.items?.length || 0) - paidN(n); });
+    const doneToday = nts.filter(n => {
+      if (!isDone(n)) return false;
+      const cd = ntCreatedDate(n);
+      if (!cd) return false;
+      const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+      return cd >= t0;
+    }).length;
+    let paidToday = 0;
+    nts.forEach(n => (n.items || []).forEach(i => {
+      if (i.status === 'Pago' && i.payment_time) paidToday++;
+    }));
+    return { open: open.length, openItems, late: late.length, pend, doneToday, paidToday };
+  }, [nts]);
 
-  // Deletar NT confirmada
+  // Filter counts for segmented buttons
+  const filterCounts = useMemo(() => {
+    if (tab === 'open') {
+      const c: Record<string, number> = { all: 0, wait: 0, prog: 0, late: 0 };
+      nts.forEach(n => { if (!isDone(n)) { c.all++; c[stOpen(n).k] = (c[stOpen(n).k] || 0) + 1; } });
+      return c;
+    }
+    return null;
+  }, [nts, tab]);
+
+  // Delete handler
   const handleDeleteNTConfirm = async () => {
     if (!ntToDelete) return;
     setIsDeleting(true);
@@ -211,184 +248,221 @@ function NTManagerContent() {
       setShowDeleteModal(false);
       setNtToDelete(null);
       fetchNTs();
-    } catch (err) {
-      toast.error('Erro ao excluir Nota Técnica');
-    } finally {
-      setIsDeleting(false);
-    }
+    } catch { toast.error('Erro ao excluir Nota Técnica'); }
+    finally { setIsDeleting(false); }
   };
 
-  // Contagens para os filtros
-  const counts = {
-    all: nts.length,
-    pending: nts.filter(n => n.items?.some(i => i.status === 'Ag. Pagamento')).length,
-    paid: nts.filter(n => n.items && n.items.length > 0 && n.items.every(i => i.status === 'Pago')).length,
-    delayed: nts.filter(n => {
-      return n.items?.some(item => {
-        if (item.status === 'Pago') return false;
-        try {
-          const { creationDate } = parseDateTime(
-            item.created_date || n.created_date,
-            item.created_time || n.created_time
-          );
-          return creationDate && !isNaN(creationDate.getTime()) && isItemDelayed(creationDate, item.code);
-        } catch (e) {
-          return false;
-        }
-      });
-    }).length,
+  // Refresh with spin
+  const handleRefresh = () => {
+    setSpinning(true);
+    fetchNTs();
+    setTimeout(() => setSpinning(false), 600);
   };
+
+  // Items count in current page
+  const itemsCount = filtered.reduce((s, n) => s + (n.items?.length || 0), 0);
 
   if (!user) return null;
 
   return (
     <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
-      {/* App Rail 52px */}
       <Sidebar />
 
-      {/* Conteúdo Principal com Topbar 48px */}
       <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
         <Topbar />
 
-        {/* Layout de 2 colunas: Lista Principal + Inspector Lateral */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
-          {/* Coluna Central: Lista de NTs */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-            {/* Header da Página com Ações Rápidas */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-1 select-none">
+          {/* Main content area */}
+          <main className="flex-1 overflow-auto" style={{ padding: '24px 28px 48px' }}>
+            {/* ── .page-head ── */}
+            <div className="page-head">
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">
-                  {filters.isCompletedView ? "Notas Técnicas Concluídas" : "Notas Técnicas"}
-                </h1>
-                <p className="text-xs text-[var(--text-3)] mt-0.5">
-                  {filters.isCompletedView
-                    ? "Histórico e auditoria de NTs 100% finalizadas"
-                    : "Acompanhamento das NTs abertas para pesagem"}
+                <h1>{tab === 'done' ? 'Notas técnicas' : 'Notas técnicas'}</h1>
+                <p className="subtitle" style={{ fontSize: 13 }}>
+                  NTs da pesagem com seus itens · clique em &ldquo;Pagar&rdquo; no item para dar baixa
                 </p>
               </div>
-
-              {/* Botões de Ação */}
-              <div className="flex items-center gap-2">
+              <div className="nt-actions">
                 <button
                   type="button"
-                  onClick={() => fetchNTs()}
-                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className={cn("btn-nt", spinning && "spin")}
+                  onClick={handleRefresh}
                 >
-                  <RefreshCw size={13} className={cn(loading && "animate-spin")} />
-                  <span>Atualizar</span>
+                  <RefreshCw size={14} />
+                  Atualizar
                 </button>
-
-                {/* <button
-                  type="button"
-                  onClick={() => setShowBulkAddModal(true)}
-                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Layers size={13} />
-                  <span>Lote em Massa</span>
-                </button> */}
-
                 <button
                   type="button"
+                  className="btn-nt"
+                  onClick={() => setShowBulkAddModal(true)}
+                >
+                  <Layers size={14} />
+                  Lote em massa
+                </button>
+                <button
+                  type="button"
+                  className="btn-nt primary"
                   onClick={() => setShowAddModal(true)}
-                  className="h-8 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Plus size={14} />
-                  <span>Nova NT</span>
+                  Nova NT
                 </button>
               </div>
             </div>
 
-            {/* Sumário de KPIs em 4 blocos */}
-            <NTStats nts={nts} />
+            {/* ── .summary (4 KPIs) ── */}
+            <NTSummary counts={counts} />
 
-            {/* Barra de Filtros com Abas Segmentadas */}
-            <NTFilters
-              filters={filters}
-              onChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
-              counts={counts}
-            />
+            {/* ── .tabs ── */}
+            <div className="tabs">
+              <button
+                type="button"
+                className={cn("tab", tab === 'open' && "on")}
+                onClick={() => { setTab('open'); }}
+              >
+                Abertas <span className="n">{counts.open}</span>
+              </button>
+              <button
+                type="button"
+                className={cn("tab", tab === 'done' && "on")}
+                onClick={() => { setTab('done'); }}
+              >
+                Concluídas <span className="n">{nts.filter(n => isDone(n)).length}</span>
+              </button>
+            </div>
 
-            {/* Cabeçalho da Tabela */}
-            <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-xs">
-              <div className="grid grid-cols-[28px_1.3fr_1fr_0.7fr_1.3fr_1fr_0.9fr_100px] items-center px-3 py-2 bg-[var(--surface-2)] text-[11px] font-medium text-[var(--text-3)] border-b border-[var(--border)] gap-2 select-none">
-                <div></div>
-                <div>NT / Identificador</div>
-                <div>Destino</div>
-                <div>Turno</div>
-                <div>Progresso</div>
-                <div>Criada em</div>
-                <div>Status</div>
-                <div className="text-right">Ações</div>
+            {/* ── .toolbar ── */}
+            <div className="toolbar">
+              {/* Segmented filter */}
+              <div className="seg">
+                {tab === 'open' ? (
+                  <>
+                    <button type="button" className={cn(fOpen === 'all' && 'on')} onClick={() => setFOpen('all')}>
+                      Todas <span className="n">{filterCounts?.all}</span>
+                    </button>
+                    <button type="button" className={cn(fOpen === 'wait' && 'on')} onClick={() => setFOpen('wait')}>
+                      <i style={{ border: '1.5px solid var(--text-3)' }} /> Aguardando <span className="n">{filterCounts?.wait}</span>
+                    </button>
+                    <button type="button" className={cn(fOpen === 'prog' && 'on')} onClick={() => setFOpen('prog')}>
+                      <i style={{ background: 'var(--amber)' }} /> Em andamento <span className="n">{filterCounts?.prog}</span>
+                    </button>
+                    <button type="button" className={cn(fOpen === 'late' && 'on')} onClick={() => setFOpen('late')}>
+                      <i style={{ background: 'var(--red)' }} /> Em atraso <span className="n">{filterCounts?.late}</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className={cn(fDone === 'today' && 'on')} onClick={() => setFDone('today')}>Hoje</button>
+                    <button type="button" className={cn(fDone === '7d' && 'on')} onClick={() => setFDone('7d')}>7 dias</button>
+                    <button type="button" className={cn(fDone === '30d' && 'on')} onClick={() => setFDone('30d')}>30 dias</button>
+                    <button type="button" className={cn(fDone === 'all' && 'on')} onClick={() => setFDone('all')}>Todas</button>
+                  </>
+                )}
               </div>
 
-              {/* Lista / Tabela de NTs */}
+              {/* Search */}
+              <label className="search-nt">
+                <Search size={14} />
+                <input
+                  ref={qRef}
+                  placeholder="Buscar NT, código ou material"
+                  value={q}
+                  onChange={e => setQ(e.target.value)}
+                />
+                <kbd>/</kbd>
+              </label>
+
+              <div className="grow" />
+
+              {/* Hide paid checkbox */}
+              {tab === 'open' && (
+                <label className="check-nt">
+                  <input
+                    type="checkbox"
+                    checked={hidePaid}
+                    onChange={e => setHidePaid(e.target.checked)}
+                  />
+                  Ocultar itens pagos
+                </label>
+              )}
+
+              {/* Sort select */}
+              <select
+                className="select-nt"
+                value={tab === 'open' ? sortOpen : sortDone}
+                onChange={e => tab === 'open' ? setSortOpen(e.target.value) : setSortDone(e.target.value)}
+              >
+                {tab === 'open' ? (
+                  <>
+                    <option value="new">Mais recentes</option>
+                    <option value="old">Mais antigas</option>
+                    <option value="pend">Mais itens pendentes</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="recent">Concluídas recentes</option>
+                    <option value="lead">Maior lead time</option>
+                    <option value="nt">Número da NT</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            {/* ── .list-top ── */}
+            <div className="list-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {filtered.length > 0
+                    ? `${filtered.length} NT${filtered.length > 1 ? 's' : ''} · ${itemsCount} itens nesta página`
+                    : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* ── NT List ── */}
+            <div>
               {loading && nts.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[var(--text-3)]">
-                  Carregando Notas Técnicas...
-                </div>
-              ) : filteredNts.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[var(--text-3)] space-y-1">
-                  <p className="font-semibold text-[var(--text-2)]">Nenhuma NT encontrada</p>
-                  <p>Tente ajustar os filtros ou a busca acima.</p>
+                <div className="empty">Carregando Notas Técnicas...</div>
+              ) : filtered.length === 0 ? (
+                <div className="empty">
+                  {q ? `Nenhuma NT com "${q}".` : tab === 'open' ? 'Nenhuma NT aberta neste filtro.' : 'Nenhuma NT concluída no período.'}
                 </div>
               ) : (
-                <div className="divide-y divide-[var(--border)]">
-                  <NTList
-                    nts={filteredNts}
-                    onEdit={(nt) => {
-                      setSelectedNT(nt);
-                      setShowEditModal(true);
-                    }}
-                    onDelete={(ntId) => {
-                      setNtToDelete(ntId);
-                      setShowDeleteModal(true);
-                    }}
+                filtered.map(nt => (
+                  <NTCardExpanded
+                    key={nt.id}
+                    nt={nt}
+                    hidePaid={hidePaid && tab === 'open'}
+                    searchQuery={q}
+                    onEdit={() => { setSelectedNT(nt); setShowEditModal(true); }}
+                    onDelete={() => { setNtToDelete(nt.id); setShowDeleteModal(true); }}
                     onRefresh={fetchNTs}
-                    autoExpandedNTs={autoExpandedNTs}
-                    highlightedItems={highlightedItems}
                   />
-                </div>
+                ))
               )}
             </div>
           </main>
 
-          {/* Coluna Direita: Inspector em Tempo Real */}
-          <PaidItemsTimelineFirebase
-            collapsed={timelineCollapsed}
-            onToggleCollapse={() => setTimelineCollapsed(!timelineCollapsed)}
-          />
+          {/* ── Aside Panel ── */}
+          <NTAsidePanel nts={nts} />
         </div>
       </div>
 
-      {/* Modais */}
+      {/* Modals */}
       {showAddModal && (
-        <AddNTModal
-          open={showAddModal}
-          onOpenChange={setShowAddModal}
-          onSuccess={fetchNTs}
-        />
+        <AddNTModal open={showAddModal} onOpenChange={setShowAddModal} onSuccess={fetchNTs} />
       )}
-
       {showBulkAddModal && (
-        <AddBulkNTModal
-          open={showBulkAddModal}
-          onOpenChange={setShowBulkAddModal}
-          onSuccess={fetchNTs}
-        />
+        <AddBulkNTModal open={showBulkAddModal} onOpenChange={setShowBulkAddModal} onSuccess={fetchNTs} />
       )}
-
       {showEditModal && selectedNT && (
         <EditNTModal
           open={showEditModal}
-          onOpenChange={(open) => {
-            setShowEditModal(open);
-            if (!open) setSelectedNT(null);
-          }}
+          onOpenChange={(open) => { setShowEditModal(open); if (!open) setSelectedNT(null); }}
           nt={selectedNT}
           onSuccess={fetchNTs}
         />
       )}
-
       {showDeleteModal && ntToDelete && (
         <DeleteConfirmationModal
           open={showDeleteModal}

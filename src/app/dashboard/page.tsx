@@ -383,7 +383,7 @@ export default function Dashboard() {
                 <strong className="text-2xl font-semibold tracking-tight text-[var(--text)] font-mono block">
                   {loading ? "--" : stats.totalItems}
                 </strong>
-                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">fracionados</p>
+                <p className="text-[11px] text-[var(--text-3)] mt-1 font-mono">pagos</p>
               </div>
 
               <div className="p-4">
