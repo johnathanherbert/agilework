@@ -1,9 +1,9 @@
 import { ProductionItem, ProductionTurno } from '@/types';
 
 export const SHIFT_SCHEDULES = [
-  { n: 3 as ProductionTurno, l: '3º Turno', ini: [-1, 23, 45], fim: [0, 7, 20], label: '3º Turno', short: '3º' },
+  { n: 3 as ProductionTurno, l: '3º Turno', ini: [-1, 23, 50], fim: [0, 7, 20], label: '3º Turno', short: '3º' },
   { n: 1 as ProductionTurno, l: '1º Turno', ini: [0, 7, 20], fim: [0, 15, 50], label: '1º Turno', short: '1º' },
-  { n: 2 as ProductionTurno, l: '2º Turno', ini: [0, 15, 50], fim: [0, 23, 45], label: '2º Turno', short: '2º' },
+  { n: 2 as ProductionTurno, l: '2º Turno', ini: [0, 15, 50], fim: [0, 23, 50], label: '2º Turno', short: '2º' },
 ] as const;
 
 export const RITMO_TOLERANCIA_PCT = 15; // Pontos % abaixo do tempo decorrido para alertar ritmo

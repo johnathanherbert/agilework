@@ -46,10 +46,18 @@ interface SoundProfile {
 }
 
 const SOUND_PROFILES: SoundProfile[] = [
-  { id: 'notification', label: 'Moderno', desc: '3 notas suaves harmônicas · 1,2 s', isDefault: true, bars: [6, 10, 14, 9, 12] },
+  { id: 'chime_rise', label: 'Nova NT', desc: 'Arpejo ascendente e luminoso · 0,8 s', isDefault: true, bars: [6, 10, 14, 16, 18] },
+  { id: 'coin_crystal', label: 'Pagamento', desc: 'Moeda metálica cristalina · 0,65 s', bars: [12, 16, 10, 18, 14] },
+  { id: 'sync_blip', label: 'NT Atualizada', desc: 'Toque duplo ágil de status · 0,35 s', bars: [8, 14, 4, 12, 6] },
+  { id: 'tech_pulse', label: 'Produção', desc: 'Pulso tecnológico industrial · 0,45 s', bars: [14, 12, 8, 16, 10] },
+  { id: 'bubble_pop', label: 'Chat (Bolha)', desc: 'Pop orgânico super suave · 0,22 s', bars: [4, 10, 14, 6, 2] },
+  { id: 'ping_alert', label: 'Menções @', desc: 'Ping duplo de alta atenção · 0,55 s', bars: [10, 16, 8, 18, 12] },
+  { id: 'notification', label: 'Moderno', desc: '3 notas suaves harmônicas · 1,2 s', bars: [6, 10, 14, 9, 12] },
   { id: 'subtle', label: 'Discreto', desc: 'Leve e sutil para ações secundárias · 0,6 s', bars: [4, 8, 5, 3, 2] },
   { id: 'classic', label: 'Clássico', desc: 'Harmonia elegante e refinada · 0,8 s', bars: [8, 12, 10, 8, 6] },
-  { id: 'impact', label: 'Industrial', desc: 'Impacto dramático marcante para ruído · 1,5 s', bars: [14, 4, 14, 4, 16] },
+  { id: 'alert', label: 'Alerta', desc: 'Dois tons de atenção imediata · 1,0 s', bars: [16, 6, 16, 6, 16] },
+  { id: 'triumph', label: 'Triunfo', desc: 'Fanfarra triunfal comemorativa · 2,5 s', bars: [8, 12, 16, 18, 20] },
+  { id: 'impact', label: 'Industrial', desc: 'Impacto dramático marcante · 1,5 s', bars: [14, 4, 14, 4, 16] },
 ];
 
 interface NotificationEventConfig {
@@ -125,8 +133,8 @@ export default function SettingsPage() {
   const [initialRepeatAlert, setInitialRepeatAlert] = useState('2');
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
   const [initialQuietHoursEnabled, setInitialQuietHoursEnabled] = useState(false);
-  const [quietStart, setQuietStart] = useState('23:45');
-  const [quietEnd, setQuietEnd] = useState('06:00');
+  const [quietStart, setQuietStart] = useState('23:50');
+  const [quietEnd, setQuietEnd] = useState('07:20');
 
   // Controle de carregamento e salvamento
   const [saving, setSaving] = useState(false);

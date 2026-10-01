@@ -24,6 +24,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { getCurrentActiveShift, getShiftPhase, SHIFT_SCHEDULES } from '@/lib/production-schedule';
+import { useNotifications } from '@/components/providers/notification-provider';
 
 // Tipagens
 interface UserContact {
@@ -164,6 +165,7 @@ function playBeepSound() {
 export function OnlineUsers() {
   const router = useRouter();
   const { user, userData } = useFirebase();
+  const { playNotificationSound } = useNotifications();
 
   // Estados principais
   const [isOpen, setIsOpen] = useState(false);
@@ -424,7 +426,12 @@ export function OnlineUsers() {
           if (lastMsg.senderId !== user.uid) {
             const isMuted = activeChat.type === 'ch' && mutedChannels.includes(activeChat.channel.id);
             if (!isMuted && soundEnabled) {
-              playBeepSound();
+              const isMentioned = Array.isArray(lastMsg.mentions) && lastMsg.mentions.includes(user.uid);
+              if (isMentioned) {
+                playNotificationSound('chat_mention');
+              } else {
+                playNotificationSound('chat_message');
+              }
             }
             setIsBumping(true);
             setTimeout(() => setIsBumping(false), 500);

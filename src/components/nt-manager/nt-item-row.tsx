@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NT, NTItem, ItemStatus } from '@/types';
-import { Edit, Trash2, Check } from 'lucide-react';
+import { Edit, Trash2, Check, RotateCcw } from 'lucide-react';
 import { cn, formatNumber, parseDateTime, isItemDelayed } from '@/lib/utils';
 import { EditItemModal } from './edit-item-modal';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
@@ -14,14 +14,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const LATE_MIN = 120;
 
@@ -184,70 +176,28 @@ export const NTItemRow = ({
             {/* 6. When (.when) */}
             <span className="when">{whenHtml}</span>
 
-            {/* 7. Actions (.iacts) com status pill contextual e botões rápidos */}
+            {/* 7. Actions (.iacts) com botão direto para pagar e botões rápidos */}
             <div className="iacts" onClick={e => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={isUpdating}
-                    className={cn(
-                      "status-pill cursor-pointer transition-all hover:ring-1 hover:ring-[var(--border-strong)] text-[11px] py-0.5 px-2",
-                      isPaid ? "done" : isPartial ? "progress" : isLate ? "late" : "pending"
-                    )}
-                    title="Clique para alterar status do material"
-                  >
-                    <i />
-                    <span>
-                      {isUpdating
-                        ? "Salvando..."
-                        : isPaid
-                        ? "Pago"
-                        : isPartial
-                        ? "Parcial"
-                        : isLate
-                        ? "Atrasado"
-                        : "Pendente"}
-                    </span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-[var(--surface)] border-[var(--border-strong)]">
-                  <DropdownMenuLabel className="text-[11px] font-semibold text-[var(--text-3)]">
-                    Status da Pesagem
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleSetStatus('Pago')}
-                    className="text-xs flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <i className="w-2 h-2 rounded-full bg-[var(--green)] inline-block" />
-                      <span>Pago</span>
-                    </span>
-                    {isPaid && <Check size={13} className="text-[var(--green)]" />}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleSetStatus('Ag. Pagamento')}
-                    className="text-xs flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block" />
-                      <span>Ag. Pagamento</span>
-                    </span>
-                    {!isPaid && !isPartial && <Check size={13} className="text-[var(--amber)]" />}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleSetStatus('Pago Parcial')}
-                    className="text-xs flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <i className="w-2 h-2 rounded-full bg-[var(--blue,var(--violet))] inline-block" />
-                      <span>Pago Parcial</span>
-                    </span>
-                    {isPartial && <Check size={13} className="text-[var(--blue,var(--violet))]" />}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isPaid ? (
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={() => handleSetStatus('Ag. Pagamento')}
+                  title="Estornar pagamento (voltar para pendente)"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="pay"
+                  disabled={isUpdating}
+                  onClick={() => handleSetStatus('Pago')}
+                  title="Pagar diretamente (marcar como pago)"
+                >
+                  {isUpdating ? "Salvando..." : "Pagar"}
+                </button>
+              )}
 
               <button
                 type="button"
@@ -268,60 +218,100 @@ export const NTItemRow = ({
           </div>
         </ContextMenuTrigger>
 
-        {/* Right-click Context Menu */}
-        <ContextMenuContent className="w-56 bg-[var(--surface)] border-[var(--border-strong)]">
-          <ContextMenuLabel className="text-[11px] font-semibold text-[var(--text-3)]">
-            Status do Item
+        {/* Right-click Context Menu - Novo Design System */}
+        <ContextMenuContent className="w-60 p-1 bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-[0_16px_40px_rgba(0,0,0,0.35)] rounded-[8px] overflow-hidden animate-fade-in">
+          {/* Header do Item no Context Menu */}
+          <div className="px-2.5 py-2 border-b border-[var(--border)] mb-1 bg-[var(--surface-2)]/60 rounded-t-[7px]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-mono font-bold text-[var(--text)] truncate">
+                {item.code}
+              </span>
+              <span className="text-[10px] text-[var(--text-3)] font-mono">
+                {parsedQty} kg
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--text-2)] truncate mt-0.5" title={cleanDescription}>
+              {cleanDescription}
+            </p>
+          </div>
+
+          <ContextMenuLabel className="px-2 py-1 text-[10px] uppercase tracking-wider font-semibold text-[var(--text-3)] font-mono">
+            Alterar Status
           </ContextMenuLabel>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onClick={() => handleSetStatus('Pago')}
-            className="text-xs flex items-center justify-between cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <i className="w-2 h-2 rounded-full bg-[var(--green)] inline-block" />
-              <span>Marcar como Pago</span>
-            </span>
-            {isPaid && <Check size={13} className="text-[var(--green)]" />}
-          </ContextMenuItem>
-          <ContextMenuItem
-            onClick={() => handleSetStatus('Ag. Pagamento')}
-            className="text-xs flex items-center justify-between cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block" />
-              <span>Ag. Pagamento</span>
-            </span>
-            {!isPaid && !isPartial && <Check size={13} className="text-[var(--amber)]" />}
-          </ContextMenuItem>
-          <ContextMenuItem
-            onClick={() => handleSetStatus('Pago Parcial')}
-            className="text-xs flex items-center justify-between cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <i className="w-2 h-2 rounded-full bg-[var(--blue,var(--violet))] inline-block" />
-              <span>Pago Parcial</span>
-            </span>
-            {isPartial && <Check size={13} className="text-[var(--blue,var(--violet))]" />}
-          </ContextMenuItem>
 
-          <ContextMenuSeparator />
+          <div className="space-y-0.5">
+            <ContextMenuItem
+              onClick={() => handleSetStatus('Pago')}
+              className={cn(
+                "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
+                isPaid ? "bg-[var(--accent-weak)] text-[var(--text)] font-semibold" : "text-[var(--text)] hover:bg-[var(--hover)]"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <i className="w-2 h-2 rounded-full bg-[var(--green)] inline-block shrink-0 shadow-xs" />
+                <span>Marcar como Pago</span>
+              </span>
+              {isPaid && <Check size={13} className="text-[var(--green)] stroke-[2.5]" />}
+            </ContextMenuItem>
 
-          <ContextMenuItem
-            onClick={() => setShowEditItemModal(true)}
-            className="text-xs flex items-center gap-2 cursor-pointer font-medium text-[var(--text)]"
-          >
-            <Edit size={13} />
-            <span>Editar Material</span>
-          </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleSetStatus('Ag. Pagamento')}
+              className={cn(
+                "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
+                (!isPaid && !isPartial) ? "bg-[var(--accent-weak)] text-[var(--text)] font-semibold" : "text-[var(--text)] hover:bg-[var(--hover)]"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block shrink-0 shadow-xs" />
+                <span>Ag. Pagamento</span>
+              </span>
+              {!isPaid && !isPartial && <Check size={13} className="text-[var(--amber)] stroke-[2.5]" />}
+            </ContextMenuItem>
 
-          <ContextMenuItem
-            onClick={() => setShowDeleteModal(true)}
-            className="text-xs text-[var(--red)] focus:text-[var(--red)] flex items-center gap-2 cursor-pointer"
-          >
-            <Trash2 size={13} />
-            <span>Excluir Item</span>
-          </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleSetStatus('Pago Parcial')}
+              className={cn(
+                "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
+                isPartial ? "bg-[var(--accent-weak)] text-[var(--text)] font-semibold" : "text-[var(--text)] hover:bg-[var(--hover)]"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <i className="w-2 h-2 rounded-full bg-[var(--blue,var(--accent))] inline-block shrink-0 shadow-xs" />
+                <span>Pago Parcial</span>
+              </span>
+              {isPartial && <Check size={13} className="text-[var(--blue,var(--accent))] stroke-[2.5]" />}
+            </ContextMenuItem>
+          </div>
+
+          <ContextMenuSeparator className="my-1 bg-[var(--border)]" />
+
+          <div className="space-y-0.5">
+            <ContextMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setTimeout(() => {
+                  setShowEditItemModal(true);
+                }, 60);
+              }}
+              className="text-xs py-1.5 px-2 rounded-[5px] flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] hover:bg-[var(--hover)] transition-colors group"
+            >
+              <Edit size={13} className="text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors" />
+              <span>Editar Material</span>
+            </ContextMenuItem>
+
+            <ContextMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setTimeout(() => {
+                  setShowDeleteModal(true);
+                }, 60);
+              }}
+              className="text-xs py-1.5 px-2 rounded-[5px] text-[var(--red)] hover:bg-[var(--red)]/10 focus:bg-[var(--red)]/10 flex items-center gap-2 cursor-pointer font-medium transition-colors group"
+            >
+              <Trash2 size={13} className="transition-transform group-hover:scale-110" />
+              <span>Excluir Item</span>
+            </ContextMenuItem>
+          </div>
         </ContextMenuContent>
       </ContextMenu>
 
@@ -329,7 +319,12 @@ export const NTItemRow = ({
       {showEditItemModal && (
         <EditItemModal
           open={showEditItemModal}
-          onOpenChange={setShowEditItemModal}
+          onOpenChange={(open) => {
+            setShowEditItemModal(open);
+            if (!open) {
+              document.body.style.pointerEvents = '';
+            }
+          }}
           item={item}
           onSuccess={onSuccess}
         />
@@ -339,7 +334,12 @@ export const NTItemRow = ({
       {showDeleteModal && (
         <DeleteConfirmationModal
           open={showDeleteModal}
-          onOpenChange={setShowDeleteModal}
+          onOpenChange={(open) => {
+            setShowDeleteModal(open);
+            if (!open) {
+              document.body.style.pointerEvents = '';
+            }
+          }}
           onConfirm={handleDeleteItem}
           title="Excluir item de NT"
           description={`Tem certeza que deseja excluir o item ${item.code} - ${cleanDescription}?`}

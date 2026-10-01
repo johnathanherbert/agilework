@@ -6,23 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { updateNT } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { FileText, Loader2, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { NT } from '@/types';
 
 interface EditNTModalProps {
@@ -36,7 +27,6 @@ const formSchema = z.object({
   nt_number: z
     .string()
     .min(1, { message: 'Número da NT é obrigatório' }),
-  status: z.string(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -48,31 +38,37 @@ export function EditNTModal({ open, onOpenChange, onSuccess, nt }: EditNTModalPr
     resolver: zodResolver(formSchema),
     defaultValues: {
       nt_number: '',
-      status: '',
     },
   });
-  
+
+  useEffect(() => {
+    return () => {
+      document.body.style.pointerEvents = '';
+    };
+  }, []);
+
   // Update form values when NT changes
   useEffect(() => {
-    if (nt) {
+    if (open && nt) {
       form.reset({
         nt_number: nt.nt_number,
-        status: nt.status,
       });
     }
-  }, [nt, form]);
+  }, [open, nt, form]);
+
+  const ntNumberValue = form.watch('nt_number');
 
   async function onSubmit(data: FormData) {
     if (!nt) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      await updateNT(nt.id, data.nt_number);
-      
-      toast.success('NT atualizada com sucesso!');
+      await updateNT(nt.id, data.nt_number.trim());
+
+      toast.success('Nota Técnica atualizada com sucesso!');
       onOpenChange(false);
-      
+
       if (onSuccess) {
         onSuccess();
       }
@@ -85,75 +81,108 @@ export function EditNTModal({ open, onOpenChange, onSuccess, nt }: EditNTModalPr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-6 bg-white dark:bg-gray-800 border-0 shadow-lg rounded-xl">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-50">Editar Nota Técnica</DialogTitle>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) {
+          document.body.style.pointerEvents = '';
+        }
+        onOpenChange(val);
+      }}
+    >
+      <DialogContent
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          document.body.style.pointerEvents = '';
+        }}
+        className="sm:max-w-[480px] p-0 overflow-hidden flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl text-[var(--text)]"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            form.handleSubmit(onSubmit)();
+          }
+        }}
+      >
+        {/* Cabeçalho do Modal */}
+        <DialogHeader className="px-5 py-4 border-b border-[var(--border)] flex flex-row items-start justify-between bg-[var(--surface)] shrink-0">
+          <div>
+            <DialogTitle className="text-[15px] font-semibold text-[var(--text)] tracking-tight flex items-center gap-2">
+              <span>Editar Nota Técnica</span>
+              {nt?.nt_number && (
+                <span className="font-mono text-xs text-[var(--text-3)] font-normal">
+                  (#{nt.nt_number})
+                </span>
+              )}
+            </DialogTitle>
+            <p className="text-xs text-[var(--text-3)] mt-1">
+              Almoxarifado · Pesagem · Alteração de identificação da NT
+            </p>
+          </div>
         </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nt_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Número da NT</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: NT-2025-001"
-                      disabled={isSubmitting}
-                      className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs text-red-500" />
-                </FormItem>
+
+        {/* Formulário */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1">
+          <div className="px-5 py-4 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs text-[var(--text-3)] block font-medium">Número da NT</label>
+              <div className="relative">
+                <input
+                  {...form.register('nt_number')}
+                  placeholder="Ex.: 606349"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "h-[34px] w-full px-3 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] font-mono text-xs text-[var(--text)] placeholder:text-[var(--text-3)] focus:border-[var(--accent)] outline-none transition-colors",
+                    form.formState.errors.nt_number && "border-[var(--red)]"
+                  )}
+                />
+                {ntNumberValue && (
+                  <span className="absolute right-2.5 top-2 text-[11.5px] text-[var(--green)] font-medium flex items-center gap-1">
+                    <Check size={12} strokeWidth={3} /> Válido
+                  </span>
+                )}
+              </div>
+              {form.formState.errors.nt_number && (
+                <span className="text-[11.5px] text-[var(--red)]">
+                  {form.formState.errors.nt_number.message}
+                </span>
               )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-200"
-                      disabled={isSubmitting}
-                      {...field}
-                    >
-                      <option value="Ativa">Ativa</option>
-                      <option value="Concluída">Concluída</option>
-                      <option value="Cancelada">Cancelada</option>
-                    </select>
-                  </FormControl>
-                  <FormMessage className="text-xs text-red-500" />
-                </FormItem>
+            </div>
+          </div>
+
+          {/* Rodapé do Modal */}
+          <div className="flex items-center gap-2 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface)] shrink-0">
+            <span className="flex-1 text-[11.5px] text-[var(--text-3)]">
+              <kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Ctrl</kbd>+<kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Enter</kbd> salva · <kbd className="font-mono text-[10.5px] border border-[var(--border-strong)] rounded px-1.5 py-0.5 text-[var(--text-2)]">Esc</kbd> fecha
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-8 px-4 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Salvar Alterações</span>
+                </>
               )}
-            />
-            
-            <DialogFooter className="mt-6 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-                className="border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
-              >
-                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            </button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

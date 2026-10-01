@@ -58,6 +58,12 @@ export function EditItemModal({
   });
 
   useEffect(() => {
+    return () => {
+      document.body.style.pointerEvents = '';
+    };
+  }, []);
+
+  useEffect(() => {
     if (open && item) {
       form.reset({
         code: item.code || '',
@@ -110,8 +116,20 @@ export function EditItemModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) {
+          document.body.style.pointerEvents = '';
+        }
+        onOpenChange(val);
+      }}
+    >
       <DialogContent
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          document.body.style.pointerEvents = '';
+        }}
         className="sm:max-w-[560px] max-h-[88vh] p-0 overflow-hidden flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl text-[var(--text)]"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {

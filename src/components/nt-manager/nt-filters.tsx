@@ -225,9 +225,9 @@ export const NTFilters = ({ filters, onChange, counts }: NTFiltersProps) => {
                 </SelectTrigger>
                 <SelectContent className="bg-[var(--surface)] border-[var(--border-strong)] text-xs">
                   <SelectItem value="all">Todos os turnos</SelectItem>
-                  <SelectItem value="1">1º Turno (06:00 – 14:00)</SelectItem>
-                  <SelectItem value="2">2º Turno (14:00 – 22:00)</SelectItem>
-                  <SelectItem value="3">3º Turno (22:00 – 06:00)</SelectItem>
+                  <SelectItem value="1">1º Turno (07:20 – 15:50)</SelectItem>
+                  <SelectItem value="2">2º Turno (15:50 – 23:50)</SelectItem>
+                  <SelectItem value="3">3º Turno (23:50 – 07:20)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

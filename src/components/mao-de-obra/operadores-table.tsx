@@ -48,8 +48,8 @@ import { cn } from '@/lib/utils';
 
 const TURNO_LABELS: Record<number, { label: string; color: string; icon: React.ReactNode }> = {
   1: { label: '07:20–15:50', color: 'text-amber-600 dark:text-amber-400', icon: <Sun className="w-3 h-3" /> },
-  2: { label: '15:50–23:45', color: 'text-orange-600 dark:text-orange-400', icon: <Sunset className="w-3 h-3" /> },
-  3: { label: '23:45–07:20', color: 'text-blue-600 dark:text-blue-400', icon: <Moon className="w-3 h-3" /> },
+  2: { label: '15:50–23:50', color: 'text-orange-600 dark:text-orange-400', icon: <Sunset className="w-3 h-3" /> },
+  3: { label: '23:50–07:20', color: 'text-blue-600 dark:text-blue-400', icon: <Moon className="w-3 h-3" /> },
 };
 
 interface OperadoresTableProps {

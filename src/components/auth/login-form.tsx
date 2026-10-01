@@ -25,22 +25,23 @@ const registerSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-type AuthMode = 'login' | 'pin' | 'forgot' | 'register';
+type AuthMode = 'login' | 'forgot' | 'register';
 
 export const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, signUp, resetPassword, user } = useFirebase();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [mode, setMode] = useState<AuthMode>('login');
-  const [loginMethod, setLoginMethod] = useState<'password' | 'pin'>('password');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
-
-  // PIN de 4 dígitos
-  const [pinDigits, setPinDigits] = useState(['', '', '', '']);
 
   // Relógio e turno em tempo real
   const [timeStr, setTimeStr] = useState('--:--:--');
@@ -55,7 +56,7 @@ export const LoginForm = () => {
   }>({
     id: 1,
     label: '1º turno',
-    range: '06:00 – 14:00',
+    range: '07:20 – 15:50',
     progress: 50,
     elapsed: '4h transcorridas',
     remaining: '4h restantes',
@@ -84,37 +85,35 @@ export const LoginForm = () => {
         setDateStr('Hoje');
       }
 
-      // Cálculo de Turnos (1º: 06:00-14:00, 2º: 14:00-22:00, 3º: 22:00-06:00)
+      // Cálculo de Turnos (1º: 07:20-15:50, 2º: 15:50-23:50, 3º: 23:50-07:20)
+      const currentMinutes = h * 60 + m;
       let shiftId = 1;
       let label = '1º turno';
-      let range = '06:00 – 14:00';
-      let startMinutes = 6 * 60;
-      let endMinutes = 14 * 60;
+      let range = '07:20 – 15:50';
+      let startMinutes = 7 * 60 + 20; // 440
+      let totalShiftMin = 510; // 8h30m = 510 min
 
-      const currentMinutes = h * 60 + m;
-
-      if (currentMinutes >= 6 * 60 && currentMinutes < 14 * 60) {
+      if (currentMinutes >= 7 * 60 + 20 && currentMinutes < 15 * 60 + 50) {
         shiftId = 1;
         label = '1º turno';
-        range = '06:00 – 14:00';
-        startMinutes = 6 * 60;
-        endMinutes = 14 * 60;
-      } else if (currentMinutes >= 14 * 60 && currentMinutes < 22 * 60) {
+        range = '07:20 – 15:50';
+        startMinutes = 7 * 60 + 20;
+        totalShiftMin = 510;
+      } else if (currentMinutes >= 15 * 60 + 50 && currentMinutes < 23 * 60 + 50) {
         shiftId = 2;
         label = '2º turno';
-        range = '14:00 – 22:00';
-        startMinutes = 14 * 60;
-        endMinutes = 22 * 60;
+        range = '15:50 – 23:50';
+        startMinutes = 15 * 60 + 50;
+        totalShiftMin = 480; // 8h = 480 min
       } else {
         shiftId = 3;
         label = '3º turno';
-        range = '22:00 – 06:00';
-        startMinutes = 22 * 60;
-        endMinutes = (24 + 6) * 60;
+        range = '23:50 – 07:20';
+        startMinutes = 23 * 60 + 50;
+        totalShiftMin = 450; // 7h30m = 450 min
       }
 
       let elapsedMin = currentMinutes >= startMinutes ? currentMinutes - startMinutes : (currentMinutes + 24 * 60) - startMinutes;
-      const totalShiftMin = 8 * 60;
       const progress = Math.min(100, Math.max(0, Math.round((elapsedMin / totalShiftMin) * 100)));
       const leftMin = Math.max(0, totalShiftMin - elapsedMin);
 
@@ -260,24 +259,6 @@ export const LoginForm = () => {
     }
   };
 
-  // Manipular PIN
-  const handlePinChange = (index: number, val: string) => {
-    if (!/^\d*$/.test(val)) return;
-    const newDigits = [...pinDigits];
-    newDigits[index] = val.slice(-1);
-    setPinDigits(newDigits);
-
-    if (val && index < 3) {
-      const nextInput = document.getElementById(`pin-${index + 1}`);
-      nextInput?.focus();
-    }
-
-    // Se preencheu todos os 4 dígitos
-    if (index === 3 && val) {
-      const fullPin = newDigits.join('');
-      toast.error('Login por PIN requer vinculação biométrica ou crachá.');
-    }
-  };
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] bg-[var(--bg)] text-[var(--text)] select-none">
@@ -337,15 +318,15 @@ export const LoginForm = () => {
             <div className="grid grid-cols-3 mt-5 border border-[var(--border)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface-2)]">
               <div className={cn("p-2.5 border-r border-[var(--border)] text-xs", currentShift.id === 1 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
                 <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">1º Turno</b>
-                <span className="text-[10px] text-[var(--text-3)] font-mono">06:00 – 14:00</span>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">07:20 – 15:50</span>
               </div>
               <div className={cn("p-2.5 border-r border-[var(--border)] text-xs", currentShift.id === 2 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
                 <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">2º Turno</b>
-                <span className="text-[10px] text-[var(--text-3)] font-mono">14:00 – 22:00</span>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">15:50 – 23:50</span>
               </div>
               <div className={cn("p-2.5 text-xs", currentShift.id === 3 && "bg-[var(--accent-weak)] text-[var(--text)] font-semibold")}>
                 <b className="block text-[11px] font-medium text-[var(--text-2)] mb-0.5">3º Turno</b>
-                <span className="text-[10px] text-[var(--text-3)] font-mono">22:00 – 06:00</span>
+                <span className="text-[10px] text-[var(--text-3)] font-mono">23:50 – 07:20</span>
               </div>
             </div>
           </div>
@@ -371,7 +352,11 @@ export const LoginForm = () => {
             className="w-8 h-8 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
             title="Alternar tema"
           >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {mounted ? (
+              theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />
+            ) : (
+              <span className="w-4 h-4 block" />
+            )}
           </button>
         </div>
 
@@ -417,36 +402,6 @@ export const LoginForm = () => {
                 Acesse para gerenciar notas técnicas e a produção da pesagem.
               </p>
 
-              {/* Segmented Control (E-mail e Senha vs PIN) */}
-              <div className="grid grid-cols-2 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden mb-4">
-                <button
-                  type="button"
-                  onClick={() => setLoginMethod('password')}
-                  className={cn(
-                    "h-8 text-xs font-medium transition-colors cursor-pointer",
-                    loginMethod === 'password'
-                      ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
-                      : "text-[var(--text-3)] hover:text-[var(--text)]"
-                  )}
-                >
-                  E-mail e senha
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLoginMethod('pin')}
-                  className={cn(
-                    "h-8 text-xs font-medium border-l border-[var(--border-strong)] transition-colors cursor-pointer",
-                    loginMethod === 'pin'
-                      ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
-                      : "text-[var(--text-3)] hover:text-[var(--text)]"
-                  )}
-                >
-                  PIN Rápido
-                </button>
-              </div>
-
-              {loginMethod === 'password' ? (
-                /* Formulário E-mail e Senha */
                 <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-3.5">
                   <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-[var(--text-2)]">
@@ -512,31 +467,6 @@ export const LoginForm = () => {
                     )}
                   </button>
                 </form>
-              ) : (
-                /* Formulário PIN de 4 Dígitos */
-                <div className="space-y-4 pt-1">
-                  <p className="text-xs text-[var(--text-3)] text-center">
-                    Digite seu PIN individual de 4 números:
-                  </p>
-                  <div className="grid grid-cols-4 gap-2.5">
-                    {pinDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        id={`pin-${idx}`}
-                        type="password"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handlePinChange(idx, e.target.value)}
-                        className="w-full h-12 text-center font-mono text-xl font-bold rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-weak)] transition-all"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-[var(--text-3)] text-center">
-                    Entrada automática ao preencher o 4º dígito.
-                  </p>
-                </div>
-              )}
 
               <div className="mt-6 pt-5 border-t border-[var(--border)] text-center text-xs text-[var(--text-3)]">
                 Não tem uma conta?{' '}
@@ -694,7 +624,7 @@ export const LoginForm = () => {
 
         {/* Rodapé Direita */}
         <div className="text-center lg:text-right text-[11px] text-[var(--text-3)] font-mono">
-          AgileWork v2.0
+          AgileWork v3.0
         </div>
       </section>
     </div>

@@ -1413,8 +1413,8 @@ export default function AdminControlPanelPage() {
                         onChange={(e) => setDrawerTurno(Number(e.target.value) as ProductionTurno)}
                       >
                         <option value={1}>1º turno (07:20 - 15:50)</option>
-                        <option value={2}>2º turno (15:50 - 23:45)</option>
-                        <option value={3}>3º turno (23:45 - 07:20)</option>
+                        <option value={2}>2º turno (15:50 - 23:50)</option>
+                        <option value={3}>3º turno (23:50 - 07:20)</option>
                       </select>
                     </div>
                   )}

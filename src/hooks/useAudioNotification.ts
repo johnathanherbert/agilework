@@ -2,18 +2,53 @@
 
 import { useCallback, useRef } from 'react';
 
-export type SoundType = 'notification' | 'subtle' | 'impact' | 'triumph' | 'alert' | 'fanfare' | 'power' | 'classic';
+export type SoundType = 
+  | 'notification' 
+  | 'subtle' 
+  | 'impact' 
+  | 'triumph' 
+  | 'alert' 
+  | 'fanfare' 
+  | 'power' 
+  | 'classic'
+  | 'chime_rise'
+  | 'coin_crystal'
+  | 'sync_blip'
+  | 'tech_pulse'
+  | 'bubble_pop'
+  | 'ping_alert';
+
+export type NotificationEventType = 
+  | 'nt_created' 
+  | 'nt_updated' 
+  | 'item_paid' 
+  | 'production_updated' 
+  | 'chat_message' 
+  | 'chat_mention' 
+  | 'system_alert';
+
+export const DEFAULT_EVENT_SOUNDS: Record<NotificationEventType, SoundType> = {
+  nt_created: 'chime_rise',
+  nt_updated: 'sync_blip',
+  item_paid: 'coin_crystal',
+  production_updated: 'tech_pulse',
+  chat_message: 'bubble_pop',
+  chat_mention: 'ping_alert',
+  system_alert: 'alert',
+};
 
 export interface AudioConfig {
   enabled: boolean;
   volume: number; // 0 to 1
   soundType: SoundType;
+  eventSounds?: Partial<Record<NotificationEventType, SoundType>>;
 }
 
 const DEFAULT_AUDIO_CONFIG: AudioConfig = {
   enabled: true,
-  volume: 1.0, // Volume máximo para máximo impacto
-  soundType: 'notification' // Som moderno e agradável como padrão
+  volume: 1.0, // Volume máximo para clareza
+  soundType: 'chime_rise', // Novo som moderno padrão
+  eventSounds: DEFAULT_EVENT_SOUNDS,
 };
 
 export const useAudioNotification = () => {
@@ -112,8 +147,22 @@ export const useAudioNotification = () => {
     playSound(config);
   }, [playSound]);
 
+  // Tocar som direto por tipo de evento
+  const playEvent = useCallback((eventType: NotificationEventType, config?: AudioConfig) => {
+    const activeConfig = config || DEFAULT_AUDIO_CONFIG;
+    if (!activeConfig.enabled) return;
+
+    // Obter o som mapeado para este evento ou o default
+    const mappedSound = activeConfig.eventSounds?.[eventType] || DEFAULT_EVENT_SOUNDS[eventType] || activeConfig.soundType;
+    playSound({
+      ...activeConfig,
+      soundType: mappedSound,
+    });
+  }, [playSound]);
+
   return {
     playSound,
+    playEvent,
     testSound,
     loadAudioConfig,
     saveAudioConfig,
@@ -124,6 +173,18 @@ export const useAudioNotification = () => {
 // Helper function to get number of sound layers
 const getLayerCount = (soundType: SoundType): number => {
   switch (soundType) {
+    case 'chime_rise':
+      return 3; // 3 notas escalonadas ascendentes
+    case 'coin_crystal':
+      return 2; // Duas frequências metálicas cristalinas
+    case 'sync_blip':
+      return 2; // Dois pulsos rápidos e suaves
+    case 'tech_pulse':
+      return 2; // Pulso com sub-bass e modulação
+    case 'bubble_pop':
+      return 1; // Pop senoidal puro e rápido
+    case 'ping_alert':
+      return 2; // Duplo ping harmônico
     case 'notification':
       return 3; // Som moderno com 3 camadas harmônicas
     case 'subtle':
@@ -146,7 +207,20 @@ const getLayerCount = (soundType: SoundType): number => {
 };
 
 // Helper function to get sound duration
-const getSoundDuration = (soundType: SoundType): number => {  switch (soundType) {
+const getSoundDuration = (soundType: SoundType): number => {
+  switch (soundType) {
+    case 'chime_rise':
+      return 0.8; // Chime ascendente ágil e agradável
+    case 'coin_crystal':
+      return 0.65; // Som metálico brilhante de pagamento
+    case 'sync_blip':
+      return 0.35; // Blip rápido de atualização
+    case 'tech_pulse':
+      return 0.45; // Pulso industrial de produção
+    case 'bubble_pop':
+      return 0.22; // Pop orgânico super rápido para chat
+    case 'ping_alert':
+      return 0.55; // Pingo duplo de atenção/menção
     case 'notification':
       return 1.2; // Som curto e agradável
     case 'subtle':
@@ -164,7 +238,7 @@ const getSoundDuration = (soundType: SoundType): number => {  switch (soundType)
     case 'classic':
       return 0.8; // Som clássico melhorado
     default:
-      return 1.5;
+      return 1.0;
   }
 };
 
@@ -178,7 +252,163 @@ const configureAdvancedSoundType = (
   duration: number,
   layerIndex: number
 ) => {
-  switch (soundType) {    
+  switch (soundType) {
+    case 'chime_rise':
+      // Arpejo ascendente harmônico e luminoso: ideal para Nova NT
+      if (layerIndex === 0) {
+        // Nota base (C5 -> E5 -> G5)
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(523.25, startTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, startTime + 0.12); // E5
+        oscillator.frequency.setValueAtTime(783.99, startTime + 0.24); // G5
+        oscillator.frequency.exponentialRampToValueAtTime(1046.50, startTime + 0.40); // C6 brilho final
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(4500, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.7, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      } else if (layerIndex === 1) {
+        // Harmônico agudo reluzente (oitava superior com leve delay)
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(1046.50, startTime + 0.06); // C6
+        oscillator.frequency.setValueAtTime(1318.51, startTime + 0.18); // E6
+        oscillator.frequency.setValueAtTime(1567.98, startTime + 0.30); // G6
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3200, startTime);
+        filter.Q.setValueAtTime(2, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.35, startTime + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      } else {
+        // Fundo quente suave
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(261.63, startTime); // C4
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.3, startTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.1);
+      }
+      break;
+
+    case 'coin_crystal':
+      // Som metálico e cristalino de confirmação/pagamento (registro de caixa/moeda brilhante)
+      if (layerIndex === 0) {
+        // Ping de alta ressonância (C6 -> G6)
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1046.50, startTime); // C6
+        oscillator.frequency.setValueAtTime(1567.98, startTime + 0.08); // G6
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(900, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.8, startTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      } else {
+        // Brilho harmônico metálico de alta frequência
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(2093.00, startTime + 0.08); // C7
+        oscillator.frequency.exponentialRampToValueAtTime(3135.96, startTime + 0.18); // G7
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(4000, startTime);
+        filter.Q.setValueAtTime(4, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.03);
+      }
+      break;
+
+    case 'sync_blip':
+      // Toque duplo suave de transição/status para NT Atualizada
+      if (layerIndex === 0) {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, startTime); // A4
+        oscillator.frequency.setValueAtTime(587.33, startTime + 0.12); // D5
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2400, startTime);
+        filter.Q.setValueAtTime(1.2, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.55, startTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.05, startTime + 0.11);
+        gain.gain.linearRampToValueAtTime(0.5, startTime + 0.135);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.02);
+      } else {
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(880, startTime);
+        oscillator.frequency.setValueAtTime(1174.66, startTime + 0.12);
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1800, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.03);
+      }
+      break;
+
+    case 'tech_pulse':
+      // Pulso industrial/tecnológico moderno para o Painel de Produção
+      if (layerIndex === 0) {
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(320, startTime);
+        oscillator.frequency.exponentialRampToValueAtTime(480, startTime + 0.15);
+        oscillator.frequency.exponentialRampToValueAtTime(240, startTime + duration);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1600, startTime);
+        filter.frequency.exponentialRampToValueAtTime(600, startTime + duration);
+        filter.Q.setValueAtTime(3, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.65, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.04);
+      } else {
+        // Sub-bass de impacto tecnológico
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(110, startTime);
+        oscillator.frequency.linearRampToValueAtTime(146.83, startTime + 0.1);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      }
+      break;
+
+    case 'bubble_pop':
+      // Pop orgânico suave tipo gota d'água para mensagens normais do Chat
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(850, startTime);
+      oscillator.frequency.exponentialRampToValueAtTime(380, startTime + duration);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(3000, startTime);
+      filter.frequency.exponentialRampToValueAtTime(1200, startTime + duration);
+      filter.Q.setValueAtTime(1.5, startTime);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.5, startTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.02);
+      break;
+
+    case 'ping_alert':
+      // Pingo duplo cristalino para menções no Chat (@) e alertas diretos
+      if (layerIndex === 0) {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, startTime); // A5
+        oscillator.frequency.setValueAtTime(1174.66, startTime + 0.16); // D6
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2200, startTime);
+        filter.Q.setValueAtTime(2, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.65, startTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.08, startTime + 0.15);
+        gain.gain.linearRampToValueAtTime(0.65, startTime + 0.175);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+      } else {
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(1760, startTime + 0.16); // A6
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1200, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.3, startTime + 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.03);
+      }
+      break;
+
     case 'notification':
       // Som moderno, agradável e profissional tipo "pop" suave
       if (layerIndex === 0) {
@@ -527,13 +757,19 @@ const configureSoundType = (
 };
 
 // Sound type descriptions for UI
-export const SOUND_DESCRIPTIONS = {
-  notification: 'Notificação Moderna - som agradável e profissional (PADRÃO)',
-  subtle: 'Discreto - notificação leve e sutil para ações secundárias',
-  impact: 'Impacto Dramático MÁXIMO - som ultra poderoso e dominante',
-  triumph: 'Triunfo Épico - fanfarra majestosa de vitória',
-  alert: 'Alerta Urgente - som chamativo e imediato',
-  fanfare: 'Fanfarra Completa - celebração épica prolongada',
+export const SOUND_DESCRIPTIONS: Record<SoundType, string> = {
+  chime_rise: 'Chime Dourado (Nova NT) - arpejo ascendente e luminoso',
+  coin_crystal: 'Moeda de Cristal (Pagamento) - chime metálico brilhante de alta ressonância',
+  sync_blip: 'Sincronização / Blip (NT Atualizada) - toque duplo ágil e suave',
+  tech_pulse: 'Pulso Tecnológico (Produção) - pulso moderno de linha operacional',
+  bubble_pop: 'Bolha / Pop (Chat) - gota orgânica suave, perfeita para mensagens rápidas',
+  ping_alert: 'Ping Duplo (Menções @) - pingo de alta atenção e prioridade',
+  notification: 'Notificação Moderna - som equilibrado e profissional',
+  subtle: 'Discreto - notificação leve e rápida para ações secundárias',
+  impact: 'Impacto Dramático - som marcante com graves presentes',
+  triumph: 'Triunfo Épico - fanfarra triunfal de celebração',
+  alert: 'Alerta Urgente - dois tons de atenção imediata',
+  fanfare: 'Fanfarra Completa - orquestração estendida',
   power: 'Poder Absoluto - som grave e dominante',
-  classic: 'Clássico Refinado - elegante e sofisticado'
-} as const;
+  classic: 'Clássico Refinado - harmonia elegante e sofisticada'
+};

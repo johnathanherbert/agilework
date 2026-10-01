@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useFirebase, ADMIN_EMAIL } from './firebase-provider';
-import { useAudioNotification, AudioConfig, SoundType } from '@/hooks/useAudioNotification';
+import { useAudioNotification, AudioConfig, SoundType, NotificationEventType, DEFAULT_EVENT_SOUNDS } from '@/hooks/useAudioNotification';
 import { useAutoNTCleanup } from '@/hooks/useAutoNTCleanup';
 import { PRODUCTION_COLLECTION } from '@/lib/production-helpers';
 import toast from 'react-hot-toast';
@@ -71,11 +71,14 @@ type NotificationContextType = {
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
   soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;  // Audio configuration
+  setSoundEnabled: (enabled: boolean) => void;
+  // Audio configuration
   audioConfig: AudioConfig;
   setAudioConfig: (config: AudioConfig) => void;
   updateAudioConfig: (config: Partial<AudioConfig>) => void;
-  testSound: () => void;
+  playNotificationSound: (soundOrEvent?: SoundType | NotificationEventType) => void;
+  playEventSound: (eventType: NotificationEventType) => void;
+  testSound: (specificSound?: SoundType) => void;
   // Batch operation tracking
   startBatchOperation: (type: BatchOperation['type'], entityId: string, itemCount?: number) => string;
   endBatchOperation: (operationId: string) => void;
@@ -168,21 +171,35 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setSoundEnabled(audioConfig.enabled);
   }, [audioConfig.enabled]);
 
-  // Função para tocar som de notificação
-  const playNotificationSound = (soundType?: 'notification' | 'subtle') => {
+  // Função para tocar som por tipo de evento do sistema
+  const playEventSound = (eventType: NotificationEventType) => {
+    if (!soundEnabled || !audioConfig.enabled) return;
+    const targetSound = audioConfig.eventSounds?.[eventType] || DEFAULT_EVENT_SOUNDS[eventType] || audioConfig.soundType;
+    playSound({ ...audioConfig, soundType: targetSound });
+  };
+
+  // Função para tocar som de notificação (aceita SoundType ou NotificationEventType)
+  const playNotificationSound = (soundOrEvent?: SoundType | NotificationEventType) => {
     if (!soundEnabled || !audioConfig.enabled) return;
     
-    // Se um tipo específico foi passado, use-o temporariamente
-    if (soundType) {
-      playSound({ ...audioConfig, soundType });
+    if (soundOrEvent) {
+      if (soundOrEvent in DEFAULT_EVENT_SOUNDS) {
+        playEventSound(soundOrEvent as NotificationEventType);
+      } else {
+        playSound({ ...audioConfig, soundType: soundOrEvent as SoundType });
+      }
     } else {
       playSound(audioConfig);
     }
   };
 
   // Função de teste de som
-  const testSound = () => {
-    testAudioSound(audioConfig);
+  const testSound = (specificSound?: SoundType) => {
+    if (specificSound) {
+      testAudioSound({ ...audioConfig, soundType: specificSound });
+    } else {
+      testAudioSound(audioConfig);
+    }
   };
 
   // Firebase real-time listeners for notifications
@@ -244,7 +261,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             type: 'nt_created',
             entityId: ntId,
           });
-          playNotificationSound();
+          playNotificationSound('nt_created');
         }
         
         // Notificar sobre NT editada (número alterado)
@@ -272,7 +289,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             type: 'nt_updated',
             entityId: ntId,
           });
-          playNotificationSound();
+          playNotificationSound('nt_updated');
         }
         
         // Não notificamos sobre NTs deletadas para evitar excesso de notificações
@@ -336,7 +353,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             type: 'item_paid',
             entityId: itemId,
           });
-          playNotificationSound('subtle'); // Som discreto para itens pagos
+          playNotificationSound('item_paid'); // Som cristalino de pagamento
         }
       });
     });
@@ -396,7 +413,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           type: 'production_updated',
           entityId: itemId,
         });
-        playNotificationSound('subtle');
+        playNotificationSound('production_updated');
       });
     });
 
@@ -437,7 +454,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               const secondsSinceCreation = (Date.now() - createdAtDate.getTime()) / 1000;
 
               if (secondsSinceCreation <= 15 && !data.read) {
-                playNotificationSound('notification');
+                playNotificationSound('chat_mention');
                 toast(data.title ? `${data.title}: ${data.message}` : data.message, {
                   icon: '💬',
                   duration: 4000
@@ -612,7 +629,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
   // Helper para obter nome amigável do tipo de som
   const getSoundTypeName = (soundType: SoundType): string => {
-    const names = {
+    const names: Record<SoundType, string> = {
+      chime_rise: '📋 Chime Dourado (Nova NT)',
+      coin_crystal: '💰 Moeda de Cristal (Pagamento)',
+      sync_blip: '🔄 Sincronização / Blip (NT Atualizada)',
+      tech_pulse: '⚙️ Pulso Tecnológico (Produção)',
+      bubble_pop: '💬 Bolha / Pop (Chat)',
+      ping_alert: '🏷️ Ping Duplo (Menções @)',
       notification: '🔔 Notificação Moderna',
       subtle: '🔕 Discreto',
       impact: '💥 Impacto Dramático',
@@ -639,6 +662,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     audioConfig,
     setAudioConfig,
     updateAudioConfig,
+    playNotificationSound,
+    playEventSound,
     testSound,
     startBatchOperation,
     endBatchOperation,

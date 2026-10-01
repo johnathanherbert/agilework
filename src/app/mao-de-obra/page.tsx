@@ -50,8 +50,8 @@ import { cn } from '@/lib/utils';
 
 const TURNO_INFO: Record<number, { label: string; icon: React.ReactNode }> = {
   1: { label: 'Turno 1 · 07:20–15:50', icon: <Sun className="w-3.5 h-3.5" /> },
-  2: { label: 'Turno 2 · 15:50–23:45', icon: <Sunset className="w-3.5 h-3.5" /> },
-  3: { label: 'Turno 3 · 23:45–07:20', icon: <Moon className="w-3.5 h-3.5" /> },
+  2: { label: 'Turno 2 · 15:50–23:50', icon: <Sunset className="w-3.5 h-3.5" /> },
+  3: { label: 'Turno 3 · 23:50–07:20', icon: <Moon className="w-3.5 h-3.5" /> },
 };
 
 export default function MaoDeObraPage() {

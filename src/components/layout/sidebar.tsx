@@ -15,7 +15,10 @@ import {
   Sun,
   LogOut,
   User,
-  Info
+  Info,
+  ShieldCheck,
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -46,7 +49,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: Home, requiredRole: 'all' },
   { label: 'Notas Técnicas', href: '/almoxarifado/nts', icon: FileText, requiredRole: 'all' },
-  { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
+  // { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
   { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'solicitacoes' },
   { label: 'Painel de Produção', href: '/producao', icon: Factory, requiredRole: 'leader' },
   { label: 'Heijunka', href: '/heijunka', icon: TrendingUp, requiredRole: 'leader' },
@@ -180,61 +183,107 @@ export const Sidebar = () => {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="w-7 h-7 rounded-full bg-[var(--surface-2)] border border-[var(--border-strong)] text-[var(--text)] grid place-items-center font-bold text-[11px] cursor-pointer hover:border-[var(--accent)] transition-colors"
+                className="w-7 h-7 rounded-full bg-[var(--surface-2)] border border-[var(--border-strong)] text-[var(--text)] grid place-items-center font-bold text-[11px] cursor-pointer hover:border-[var(--accent)] hover:scale-105 active:scale-95 transition-all shadow-xs"
                 title={userData?.name || user?.email || 'Usuário'}
               >
                 {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end" sideOffset={12} className="w-56 p-1.5 bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-xl rounded-[6px]">
-              <div className="px-2.5 py-2 border-b border-[var(--border)] mb-1">
-                <p className="text-xs font-semibold text-[var(--text)] truncate">
-                  {userData?.name || 'Usuário'}
-                </p>
-                <p className="text-[11px] text-[var(--text-3)] font-mono truncate mt-0.5">
-                  {user?.email}
-                </p>
-                <div className="mt-1.5 flex items-center gap-1">
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--accent-weak)] text-[var(--accent)] uppercase font-mono">
-                    {userData?.role || 'operador'} {userData?.turno ? `· T${userData.turno}` : ''}
+            <DropdownMenuContent 
+              side="right" 
+              align="end" 
+              sideOffset={12} 
+              className="w-64 p-0 bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] shadow-[0_16px_40px_rgba(0,0,0,0.35)] rounded-[8px] overflow-hidden animate-fade-in"
+            >
+              {/* Header do Usuário */}
+              <div className="p-3 bg-[var(--surface-2)]/60 border-b border-[var(--border)]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[var(--accent-weak)] border border-[var(--accent)]/30 text-[var(--accent)] grid place-items-center font-bold text-xs shrink-0 shadow-inner">
+                    {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-[var(--text)] truncate leading-tight">
+                      {userData?.name || 'Usuário'}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-3)] font-mono truncate mt-0.5" title={user?.email || ''}>
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-[4px] bg-[var(--accent-weak)] text-[var(--accent)] border border-[var(--accent)]/20 font-mono">
+                    {userData?.role || 'operador'}
                   </span>
+                  {userData?.turno && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-[4px] bg-[var(--surface)] text-[var(--text-2)] border border-[var(--border)] font-mono">
+                      {userData.turno}º Turno
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <DropdownMenuItem 
-                onClick={() => router.push('/dashboard')}
-                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
-              >
-                <User size={14} className="mr-2 text-[var(--text-3)]" />
-                Painel Geral
-              </DropdownMenuItem>
+              {/* Ações e Navegação */}
+              <div className="p-1.5 space-y-0.5">
+                <DropdownMenuItem 
+                  onClick={() => router.push('/dashboard')}
+                  className="text-xs py-2 px-2.5 rounded-[5px] cursor-pointer text-[var(--text)] hover:bg-[var(--hover)] hover:text-[var(--text)] focus:bg-[var(--hover)] focus:text-[var(--text)] transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-2">
+                    <User size={14} className="text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors" />
+                    <span className="font-medium">Painel Geral</span>
+                  </div>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem 
-                onClick={() => router.push('/settings')}
-                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
-              >
-                <Settings size={14} className="mr-2 text-[var(--text-3)]" />
-                Configurações
-              </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push('/settings')}
+                  className="text-xs py-2 px-2.5 rounded-[5px] cursor-pointer text-[var(--text)] hover:bg-[var(--hover)] hover:text-[var(--text)] focus:bg-[var(--hover)] focus:text-[var(--text)] transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings size={14} className="text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors" />
+                    <span className="font-medium">Configurações</span>
+                  </div>
+                </DropdownMenuItem>
 
-              <DropdownMenuSeparator className="bg-[var(--border)] my-1" />
-
-              <div className="px-2.5 py-1 text-[10px] text-[var(--text-3)] font-mono">
-                AgileWork v2.0 · ID: 75710
+                {userData?.role === 'admin' && (
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/settings/users')}
+                    className="text-xs py-2 px-2.5 rounded-[5px] cursor-pointer text-[var(--text)] hover:bg-[var(--hover)] hover:text-[var(--text)] focus:bg-[var(--hover)] focus:text-[var(--text)] transition-colors flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={14} className="text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors" />
+                      <span className="font-medium">Gestão de Usuários</span>
+                    </div>
+                  </DropdownMenuItem>
+                )}
               </div>
 
-              <DropdownMenuSeparator className="bg-[var(--border)] my-1" />
+              <div className="h-px bg-[var(--border)]" />
 
-              <DropdownMenuItem 
-                onClick={async () => {
-                  await signOut();
-                  router.push('/login');
-                }}
-                className="text-xs py-1.5 px-2 rounded-[4px] cursor-pointer text-[var(--red)] hover:bg-[var(--hover)] focus:bg-[var(--hover)]"
-              >
-                <LogOut size={14} className="mr-2" />
-                Encerrar Sessão
-              </DropdownMenuItem>
+              {/* Botão de Logout */}
+              <div className="p-1.5">
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    await signOut();
+                    router.push('/login');
+                  }}
+                  className="text-xs py-2 px-2.5 rounded-[5px] cursor-pointer text-[var(--red)] hover:bg-[var(--red)]/10 hover:text-[var(--red)] focus:bg-[var(--red)]/10 focus:text-[var(--red)] transition-colors flex items-center justify-between font-medium group"
+                >
+                  <div className="flex items-center gap-2">
+                    <LogOut size={14} className="transition-transform group-hover:translate-x-0.5" />
+                    <span>Encerrar Sessão</span>
+                  </div>
+                </DropdownMenuItem>
+              </div>
+
+              {/* Rodapé de Status */}
+              <div className="px-3 py-2 bg-[var(--surface-2)]/50 border-t border-[var(--border)] flex items-center justify-between text-[10px] text-[var(--text-3)] font-mono">
+                <span className="flex items-center gap-1.5 text-[var(--text-2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
+                  Sessão Ativa
+                </span>
+                <span>AgileWork v3.0</span>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

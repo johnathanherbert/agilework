@@ -269,8 +269,8 @@ export function UserManageModal({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1">Turno 1 (07:20 – 15:50)</SelectItem>
-                      <SelectItem value="2">Turno 2 (15:50 – 23:45)</SelectItem>
-                      <SelectItem value="3">Turno 3 (23:45 – 07:20)</SelectItem>
+                      <SelectItem value="2">Turno 2 (15:50 – 23:50)</SelectItem>
+                      <SelectItem value="3">Turno 3 (23:50 – 07:20)</SelectItem>
                       <SelectItem value="none">Todos os Turnos / Geral</SelectItem>
                     </SelectContent>
                   </Select>

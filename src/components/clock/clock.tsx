@@ -40,11 +40,11 @@ export const Clock = ({
       setDate(`${day}/${month}/${year}`);
       
       // Determinação do Turno
-      const currentHours = now.getHours();
-      if (currentHours >= 6 && currentHours < 14) {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      if (currentMinutes >= 7 * 60 + 20 && currentMinutes < 15 * 60 + 50) {
         setShift('1º Turno');
         setShiftColor('bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800');
-      } else if (currentHours >= 14 && currentHours < 22) {
+      } else if (currentMinutes >= 15 * 60 + 50 && currentMinutes < 23 * 60 + 50) {
         setShift('2º Turno');
         setShiftColor('bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800');
       } else {

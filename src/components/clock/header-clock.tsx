@@ -33,10 +33,10 @@ export const HeaderClock = () => {
         setDateStr(`${day}/${month}`);
       }
       
-      const currentHours = now.getHours();
-      if (currentHours >= 6 && currentHours < 14) {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      if (currentMinutes >= 7 * 60 + 20 && currentMinutes < 15 * 60 + 50) {
         setShiftLabel('1º turno');
-      } else if (currentHours >= 14 && currentHours < 22) {
+      } else if (currentMinutes >= 15 * 60 + 50 && currentMinutes < 23 * 60 + 50) {
         setShiftLabel('2º turno');
       } else {
         setShiftLabel('3º turno');

@@ -51,18 +51,36 @@ ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
 const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <ContextMenuPrimitive.Portal>
-    <ContextMenuPrimitive.Content
-      ref={ref}
-      className={cn(
-        "z-50 min-w-[10rem] overflow-hidden rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] p-1 text-[var(--text)] shadow-2xl animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        className
-      )}
-      {...props}
-    />
-  </ContextMenuPrimitive.Portal>
-));
+>(({ className, onCloseAutoFocus, ...props }, ref) => {
+  React.useEffect(() => {
+    return () => {
+      // Quando o menu contextual fecha, garante que pointer-events não fique preso
+      setTimeout(() => {
+        if (!document.querySelector('[role="dialog"]') && !document.querySelector('[role="menu"]')) {
+          document.body.style.pointerEvents = '';
+        }
+      }, 50);
+    };
+  }, []);
+
+  return (
+    <ContextMenuPrimitive.Portal>
+      <ContextMenuPrimitive.Content
+        ref={ref}
+        onCloseAutoFocus={(e) => {
+          if (onCloseAutoFocus) {
+            onCloseAutoFocus(e);
+          }
+        }}
+        className={cn(
+          "z-50 min-w-[10rem] overflow-hidden rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] p-1 text-[var(--text)] shadow-2xl animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          className
+        )}
+        {...props}
+      />
+    </ContextMenuPrimitive.Portal>
+  );
+});
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName;
 
 const ContextMenuItem = React.forwardRef<

@@ -67,9 +67,9 @@ function shiftOf(nt: NT): number {
   if (!d) return 1;
   const t = d.getHours() * 60 + d.getMinutes();
   const shifts = [
-    { n: 3, a: 23 * 60 + 45, b: 7 * 60 + 20 },
+    { n: 3, a: 23 * 60 + 50, b: 7 * 60 + 20 },
     { n: 1, a: 7 * 60 + 20, b: 15 * 60 + 50 },
-    { n: 2, a: 15 * 60 + 50, b: 23 * 60 + 45 },
+    { n: 2, a: 15 * 60 + 50, b: 23 * 60 + 50 },
   ];
   for (const s of shifts) {
     if (((t - s.a + 1440) % 1440) < ((s.b - s.a + 1440) % 1440)) return s.n;
@@ -291,14 +291,14 @@ function NTManagerContent() {
                   <RefreshCw size={14} />
                   Atualizar
                 </button>
-                <button
+                {/* <button
                   type="button"
                   className="btn-nt"
                   onClick={() => setShowBulkAddModal(true)}
                 >
                   <Layers size={14} />
                   Lote em massa
-                </button>
+                </button> */}
                 <button
                   type="button"
                   className="btn-nt primary"

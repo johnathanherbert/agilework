@@ -405,14 +405,15 @@ export function getCurrentTime(): string {
 
 // Get current shift based on time
 export function getCurrentShift(): number {
-  const hour = new Date().getHours()
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
   
-  if (hour >= 6 && hour < 14) {
-    return 1 // 1st shift (6:00 - 14:00)
-  } else if (hour >= 14 && hour < 22) {
-    return 2 // 2nd shift (14:00 - 22:00)
+  if (currentMinutes >= 7 * 60 + 20 && currentMinutes < 15 * 60 + 50) {
+    return 1 // 1st shift (07:20 - 15:50)
+  } else if (currentMinutes >= 15 * 60 + 50 && currentMinutes < 23 * 60 + 50) {
+    return 2 // 2nd shift (15:50 - 23:50)
   } else {
-    return 3 // 3rd shift (22:00 - 6:00)
+    return 3 // 3rd shift (23:50 - 07:20)
   }
 }
 

@@ -66,8 +66,21 @@ export function DeleteConfirmationModal({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+    <AlertDialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) {
+          document.body.style.pointerEvents = '';
+        }
+        onOpenChange(val);
+      }}
+    >
+      <AlertDialogContent
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          document.body.style.pointerEvents = '';
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

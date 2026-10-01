@@ -51,39 +51,96 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
   const ntsMapRef = useRef<Map<string, string>>(new Map());
   const previousItemsRef = useRef<Set<string>>(new Set());
 
-  // Calcular tempo decorrido entre criação e pagamento
-  const calculateElapsedTime = (createdDate: string, createdTime: string, paymentTime: string): string => {
+  // Utilitário para converter campos de data/hora em Date
+  const parseDateTime = (dateStr?: string | null, timeStr?: string | null, timestamp?: any): Date | null => {
     try {
-      // Parse created datetime supporting DD/MM/YYYY and YYYY-MM-DD
+      if (timestamp) {
+        if (timestamp instanceof Date && !isNaN(timestamp.getTime())) return timestamp;
+        if (typeof timestamp.toDate === 'function') {
+          const d = timestamp.toDate();
+          if (!isNaN(d.getTime())) return d;
+        }
+        const d = new Date(timestamp);
+        if (!isNaN(d.getTime())) return d;
+      }
+
+      if (!dateStr || typeof dateStr !== 'string') return null;
+
+      if (dateStr.includes('T') || (dateStr.includes('-') && dateStr.length >= 10 && !dateStr.includes('/'))) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) return d;
+      }
+
       let day = 1, month = 1, year = 1970;
-      if (createdDate.includes('/')) {
-        [day, month, year] = createdDate.split('/').map(Number);
-      } else if (createdDate.includes('-')) {
-        const parts = createdDate.split('-').map(Number);
-        if (parts[0] > 1000) {
-          [year, month, day] = parts;
-        } else {
-          [day, month, year] = parts;
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/').map(Number);
+        if (parts.length === 3) [day, month, year] = parts;
+      } else if (dateStr.includes('-')) {
+        const parts = dateStr.split('-').map(Number);
+        if (parts.length === 3) {
+          if (parts[0] > 1000) [year, month, day] = parts;
+          else [day, month, year] = parts;
         }
       }
-      const [createdHours, createdMinutes] = createdTime.split(':').map(Number);
-      const created = new Date(year, month - 1, day, createdHours, createdMinutes);
 
-      // Parse payment time (formato HH:MM)
-      const [paidHours, paidMinutes] = paymentTime.split(':').map(Number);
-      const paid = new Date(year, month - 1, day, paidHours, paidMinutes);
-
-      // Se o pagamento foi no dia seguinte (horário menor que criação)
-      if (paid < created) {
-        paid.setDate(paid.getDate() + 1);
+      let hours = 0, minutes = 0;
+      if (timeStr && typeof timeStr === 'string') {
+        const tParts = timeStr.split(':').map(Number);
+        if (!isNaN(tParts[0])) hours = tParts[0];
+        if (!isNaN(tParts[1])) minutes = tParts[1];
       }
 
+      const d = new Date(year, month - 1, day, hours, minutes);
+      return isNaN(d.getTime()) ? null : d;
+    } catch {
+      return null;
+    }
+  };
+
+  // Calcular tempo decorrido entre criação e pagamento
+  const calculateElapsedTime = (
+    createdDate?: string | null,
+    createdTime?: string | null,
+    paymentTime?: string | null,
+    createdAt?: any,
+    updatedAt?: any
+  ): string => {
+    try {
+      const created = parseDateTime(createdDate, createdTime, createdAt);
+      if (!created) return '-';
+
+      let paid: Date | null = null;
+      if (paymentTime && typeof paymentTime === 'string') {
+        const pt = paymentTime.trim();
+        if (pt.includes('T') || (pt.includes('-') && pt.length >= 10)) {
+          const d = new Date(pt);
+          if (!isNaN(d.getTime())) paid = d;
+        } else {
+          const match = pt.match(/^(\d{1,2}):(\d{2})/);
+          if (match) {
+            const h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            paid = new Date(created.getTime());
+            paid.setHours(h, m, 0, 0);
+            if (paid.getTime() < created.getTime()) {
+              paid.setDate(paid.getDate() + 1);
+            }
+          }
+        }
+      }
+
+      if (!paid && updatedAt) {
+        paid = parseDateTime(null, null, updatedAt);
+      }
+
+      if (!paid) return '-';
+
       const diffMs = paid.getTime() - created.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
+      const diffMins = Math.max(0, Math.floor(diffMs / 60000));
       const hours = Math.floor(diffMins / 60);
       const minutes = diffMins % 60;
 
-      return `${hours}h ${minutes}m`;
+      return `${hours}h ${minutes < 10 ? '0' : ''}${minutes}m`;
     } catch (error) {
       return '-';
     }
@@ -94,9 +151,9 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
     if (items.length === 0) {
       setStats({
         totalPaidToday: 0,
-        averagePaymentTime: '0h 0m',
-        fastestPayment: '-',
-        slowestPayment: '-'
+        averagePaymentTime: '—',
+        fastestPayment: '—',
+        slowestPayment: '—'
       });
       return;
     }
@@ -106,26 +163,32 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
     today.setHours(0, 0, 0, 0);
     
     const paidToday = items.filter(item => {
+      if (!item.paid_at || !(item.paid_at instanceof Date) || isNaN(item.paid_at.getTime())) return false;
       const itemDate = new Date(item.paid_at);
       itemDate.setHours(0, 0, 0, 0);
       return itemDate.getTime() === today.getTime();
     });
 
+    // Usar itens pagos hoje se houver pelo menos um com tempo calculado, senão todos
+    const targetItems = paidToday.some(item => item.elapsedTime && item.elapsedTime !== '-')
+      ? paidToday
+      : items;
+
     // Calcular tempos em minutos
-    const times = items
+    const times = targetItems
       .filter(item => item.elapsedTime && item.elapsedTime !== '-')
       .map(item => {
         const [hours, minutes] = item.elapsedTime!.split('h ').map(s => parseInt(s));
-        return hours * 60 + minutes;
+        return (isNaN(hours) ? 0 : hours) * 60 + (isNaN(minutes) ? 0 : minutes);
       })
       .filter(time => !isNaN(time) && time >= 0);
 
     if (times.length === 0) {
       setStats({
         totalPaidToday: paidToday.length,
-        averagePaymentTime: '-',
-        fastestPayment: '-',
-        slowestPayment: '-'
+        averagePaymentTime: '—',
+        fastestPayment: '—',
+        slowestPayment: '—'
       });
       return;
     }
@@ -144,9 +207,9 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
 
     setStats({
       totalPaidToday: paidToday.length,
-      averagePaymentTime: `${avgHours}h ${avgMinutes}m`,
-      fastestPayment: `${fastestHours}h ${fastestMinutes}m`,
-      slowestPayment: `${slowestHours}h ${slowestMinutes}m`
+      averagePaymentTime: `${avgHours}h ${avgMinutes < 10 ? '0' : ''}${avgMinutes}m`,
+      fastestPayment: `${fastestHours}h ${fastestMinutes < 10 ? '0' : ''}${fastestMinutes}m`,
+      slowestPayment: `${slowestHours}h ${slowestMinutes < 10 ? '0' : ''}${slowestMinutes}m`
     });
   }, []);
 
@@ -218,33 +281,43 @@ export function useTimelineFirebase(options: UseTimelineFirebaseOptions = {}) {
           // Pegar o número da NT do mapeamento
           const ntNumber = ntsMapRef.current.get(data.nt_id) || 'N/A';
 
-          // Calcular tempo decorrido
-          const elapsedTime = data.payment_time 
-            ? calculateElapsedTime(data.created_date, data.created_time, data.payment_time)
-            : '-';
+          // Determinar data de criação e data de pagamento de forma robusta
+          const createdDate = parseDateTime(data.created_date, data.created_time, data.created_at);
 
-          // Determinar data de pagamento
-          let paidAt: Date;
-          if (data.payment_time && data.created_date) {
-            let day = 1, month = 1, year = 1970;
-            if (data.created_date.includes('/')) {
-              [day, month, year] = data.created_date.split('/').map(Number);
-            } else if (data.created_date.includes('-')) {
-              const parts = data.created_date.split('-').map(Number);
-              if (parts[0] > 1000) {
-                [year, month, day] = parts;
-              } else {
-                [day, month, year] = parts;
+          let paidAt: Date | null = null;
+          if (data.payment_time && typeof data.payment_time === 'string') {
+            const pt = data.payment_time.trim();
+            if (pt.includes('T') || (pt.includes('-') && pt.length >= 10)) {
+              const d = new Date(pt);
+              if (!isNaN(d.getTime())) paidAt = d;
+            } else if (createdDate) {
+              const match = pt.match(/^(\d{1,2}):(\d{2})/);
+              if (match) {
+                const h = parseInt(match[1], 10);
+                const m = parseInt(match[2], 10);
+                paidAt = new Date(createdDate.getTime());
+                paidAt.setHours(h, m, 0, 0);
+                if (paidAt.getTime() < createdDate.getTime()) {
+                  paidAt.setDate(paidAt.getDate() + 1);
+                }
               }
             }
-            const [hours = 0, minutes = 0] = data.payment_time.split(':').map(Number);
-            paidAt = new Date(year, month - 1, day, hours, minutes);
-          } else if (data.updated_at && data.updated_at.toDate) {
-            paidAt = data.updated_at.toDate();
-          } else {
-            // Se ainda não foi pago e não tem data de atualização, usa o agora
+          }
+          if (!paidAt && data.updated_at) {
+            paidAt = parseDateTime(null, null, data.updated_at);
+          }
+          if (!paidAt || isNaN(paidAt.getTime())) {
             paidAt = new Date();
           }
+
+          // Calcular tempo decorrido
+          const elapsedTime = calculateElapsedTime(
+            data.created_date,
+            data.created_time,
+            data.payment_time,
+            data.created_at,
+            data.updated_at
+          );
 
           items.push({
             id: itemId,

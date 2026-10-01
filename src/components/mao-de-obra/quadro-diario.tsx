@@ -49,8 +49,8 @@ import { cn } from '@/lib/utils';
 // Turnos e horários
 const TURNO_INFO: Record<number, { label: string; horario: string; icon: React.ReactNode; color: string }> = {
   1: { label: 'Turno 1', horario: '07:20 – 15:50', icon: <Sun className="w-4 h-4" />, color: 'text-amber-600 dark:text-amber-400' },
-  2: { label: 'Turno 2', horario: '15:50 – 23:45', icon: <Sunset className="w-4 h-4" />, color: 'text-orange-600 dark:text-orange-400' },
-  3: { label: 'Turno 3', horario: '23:45 – 07:20', icon: <Moon className="w-4 h-4" />, color: 'text-blue-600 dark:text-blue-400' },
+  2: { label: 'Turno 2', horario: '15:50 – 23:50', icon: <Sunset className="w-4 h-4" />, color: 'text-orange-600 dark:text-orange-400' },
+  3: { label: 'Turno 3', horario: '23:50 – 07:20', icon: <Moon className="w-4 h-4" />, color: 'text-blue-600 dark:text-blue-400' },
 };
 
 interface QuadroDiarioProps {
