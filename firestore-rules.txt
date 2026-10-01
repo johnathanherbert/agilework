@@ -45,6 +45,15 @@ service cloud.firestore {
       return isAdmin() || isSupervisor() || isAuthorizedLeader();
     }
 
+    // Helper to check if user has access to Solicitações (Admin, Supervisor, ou usuário/líder com perfil liberado)
+    function canAccessSolicitacoes() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        isSupervisor() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('allowedSolicitacoes', false) == true
+      );
+    }
+
     // Helper to check if user is Supervisor or Admin
     function isSupervisorOrAdmin() {
       return isAdmin() || isSupervisor();
@@ -63,7 +72,8 @@ service cloud.firestore {
         isOwner(userId) &&
         request.resource.data.get('role', null) == resource.data.get('role', null) &&
         request.resource.data.get('isApproved', null) == resource.data.get('isApproved', null) &&
-        request.resource.data.get('allowedMaoDeObra', null) == resource.data.get('allowedMaoDeObra', null)
+        request.resource.data.get('allowedMaoDeObra', null) == resource.data.get('allowedMaoDeObra', null) &&
+        request.resource.data.get('allowedSolicitacoes', null) == resource.data.get('allowedSolicitacoes', null)
       );
       allow delete: if isAdmin();
     }
@@ -136,6 +146,22 @@ service cloud.firestore {
       allow delete: if isStaffOrAdmin();
     }
     
+    // Custom Routes collection - Cadastro de Ordens, Vias e Rotas (Gerenciamento)
+    match /custom_routes/{routeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Solicitações collection - Módulo de Solicitações de Materiais
+    match /solicitacoes/{solicitacaoId} {
+      allow read: if canAccessSolicitacoes();
+      allow create: if canAccessSolicitacoes();
+      allow update: if canAccessSolicitacoes();
+      allow delete: if canAccessSolicitacoes();
+    }
+
     // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && 

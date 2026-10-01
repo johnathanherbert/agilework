@@ -6,7 +6,7 @@ import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provid
 import { getAllUsers, deleteUserDb, editUserDb, wipeDataByCategory, resetUserMaoDeObraPin } from "@/lib/firestore-helpers";
 import {
   Shield, ShieldCheck, ShieldAlert, Trash2, X, UserCheck,
-  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock, SlidersHorizontal,
+  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock, SlidersHorizontal, Package,
 } from "lucide-react";
 import { UserManageModal } from "@/components/users/user-manage-modal";
 import { NTCleanupCard } from "@/components/settings/nt-cleanup-card";
@@ -39,6 +39,7 @@ interface UserItem {
   role?: UserRole;
   turno?: ProductionTurno | null;
   allowedMaoDeObra?: boolean;
+  allowedSolicitacoes?: boolean;
   pinMaoDeObra?: string | null;
   pinMaoDeObraUpdatedAt?: string;
   created_at?: string;
@@ -278,6 +279,7 @@ export default function AdminControlPanelPage() {
       role: UserRole;
       turno: ProductionTurno | null;
       allowedMaoDeObra: boolean;
+      allowedSolicitacoes: boolean;
     }
   ) => {
     await editUserDb(uid, data);
@@ -584,6 +586,19 @@ export default function AdminControlPanelPage() {
                                         ) : (
                                           <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
                                             M.O. Bloqueado
+                                          </Badge>
+                                        )
+                                      )}
+
+                                      {/* Badge de Solicitações */}
+                                      {!isAdmin && user.role !== 'supervisor' && (
+                                        user.allowedSolicitacoes ? (
+                                          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 text-[10px] font-black gap-1">
+                                            <Package className="w-3 h-3 text-blue-500" /> Solicitações
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
+                                            Solicitações Bloqueadas
                                           </Badge>
                                         )
                                       )}

@@ -418,10 +418,10 @@ body.capture .pl-\[52px\] {
 .lead.slow{color:var(--red)}
 .nacts{display:flex;justify-content:flex-end;gap:2px;opacity:0;transition:opacity .15s}
 .ntb:hover .nacts,.ntc:hover .nacts{opacity:1}
-.nacts button,.iacts button{width:26px;height:26px;border-radius:4px;display:grid;place-items:center;color:var(--text-3);background:none;border:0;cursor:pointer}
-.nacts button:hover,.iacts button:hover{background:var(--border);color:var(--text)}
-.nacts button.del:hover,.iacts button.del:hover{color:var(--red)}
-.nacts svg,.iacts svg{width:14px;height:14px}
+.nacts button, .iacts button:not(.status-pill){width:26px;height:26px;border-radius:4px;display:grid;place-items:center;color:var(--text-3);background:none;border:0;cursor:pointer}
+.nacts button:hover, .iacts button:not(.status-pill):hover{background:var(--border);color:var(--text)}
+.nacts button.del:hover, .iacts button.del:hover{color:var(--red)}
+.nacts svg, .iacts button:not(.status-pill) svg{width:14px;height:14px}
 
 /* Items timeline */
 .items-timeline{position:relative;padding:0 0 6px}

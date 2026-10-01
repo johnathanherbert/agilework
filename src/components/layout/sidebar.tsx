@@ -40,14 +40,14 @@ interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  requiredRole?: 'all' | 'leader' | 'supervisor' | 'admin' | 'maoDeObra';
+  requiredRole?: 'all' | 'leader' | 'supervisor' | 'admin' | 'maoDeObra' | 'solicitacoes';
 }
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: Home, requiredRole: 'all' },
   { label: 'Notas Técnicas', href: '/almoxarifado/nts', icon: FileText, requiredRole: 'all' },
   { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
-  { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'all' },
+  { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'solicitacoes' },
   { label: 'Painel de Produção', href: '/producao', icon: Factory, requiredRole: 'leader' },
   { label: 'Heijunka', href: '/heijunka', icon: TrendingUp, requiredRole: 'leader' },
   { label: 'Mão de Obra', href: '/mao-de-obra', icon: Users, requiredRole: 'maoDeObra' },
@@ -96,6 +96,13 @@ export const Sidebar = () => {
       return (
         userData.role === 'supervisor' ||
         (userData.role === 'leader' && Boolean(userData.allowedMaoDeObra))
+      );
+    }
+
+    if (item.requiredRole === 'solicitacoes') {
+      return (
+        userData.role === 'supervisor' ||
+        Boolean(userData.allowedSolicitacoes)
       );
     }
 

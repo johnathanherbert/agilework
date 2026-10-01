@@ -39,6 +39,7 @@ import {
   XCircle,
   SlidersHorizontal,
   Loader2,
+  Package,
 } from "lucide-react";
 import { ADMIN_EMAIL } from "@/components/providers/firebase-provider";
 import { ProductionTurno, UserRole } from "@/types";
@@ -52,6 +53,7 @@ export interface UserItemModalData {
   role?: UserRole;
   turno?: ProductionTurno | null;
   allowedMaoDeObra?: boolean;
+  allowedSolicitacoes?: boolean;
   pinMaoDeObra?: string | null;
   pinMaoDeObraUpdatedAt?: string;
   created_at?: string;
@@ -68,6 +70,7 @@ interface UserManageModalProps {
     role: UserRole;
     turno: ProductionTurno | null;
     allowedMaoDeObra: boolean;
+    allowedSolicitacoes: boolean;
   }) => Promise<void>;
   onResetPin: (user: UserItemModalData) => void;
   onDeleteUser: (user: UserItemModalData) => void;
@@ -86,6 +89,7 @@ export function UserManageModal({
   const [role, setRole] = useState<UserRole>("user");
   const [turno, setTurno] = useState<ProductionTurno | null>(null);
   const [allowedMaoDeObra, setAllowedMaoDeObra] = useState(false);
+  const [allowedSolicitacoes, setAllowedSolicitacoes] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -95,6 +99,7 @@ export function UserManageModal({
       setRole(user.role || "user");
       setTurno(user.turno ?? null);
       setAllowedMaoDeObra(user.allowedMaoDeObra ?? (user.role === "supervisor" || user.role === "admin"));
+      setAllowedSolicitacoes(user.allowedSolicitacoes ?? (user.role === "supervisor" || user.role === "admin"));
     }
   }, [user]);
 
@@ -124,6 +129,7 @@ export function UserManageModal({
         role: isAdmin ? "admin" : role,
         turno: (role === "leader" || role === "supervisor") ? turno : null,
         allowedMaoDeObra: isAdmin ? true : (role === "supervisor" ? true : allowedMaoDeObra),
+        allowedSolicitacoes: isAdmin ? true : (role === "supervisor" ? true : allowedSolicitacoes),
       });
       toast.success("Acessos e perfil atualizados com sucesso!");
       onOpenChange(false);
@@ -294,6 +300,34 @@ export function UserManageModal({
                     <Checkbox
                       checked={allowedMaoDeObra}
                       onCheckedChange={(checked) => setAllowedMaoDeObra(checked === true)}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* Permissão Solicitações */}
+              {!isAdmin && role !== 'supervisor' && (
+                <div className="sm:col-span-2 pt-1">
+                  <label className={cn(
+                    "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer",
+                    allowedSolicitacoes
+                      ? "bg-primary/5 border-primary/30"
+                      : "bg-slate-100/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800"
+                  )}>
+                    <div className="flex items-center gap-2.5">
+                      <Package className="w-5 h-5 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs font-black text-foreground block">
+                          Módulo Solicitações
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block">
+                          Permite acessar o módulo de solicitações e pedidos de matéria-prima.
+                        </span>
+                      </div>
+                    </div>
+                    <Checkbox
+                      checked={allowedSolicitacoes}
+                      onCheckedChange={(checked) => setAllowedSolicitacoes(checked === true)}
                     />
                   </label>
                 </div>

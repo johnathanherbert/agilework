@@ -110,6 +110,7 @@ export type User = {
   role: UserRole;
   turno?: ProductionTurno | null;
   allowedMaoDeObra?: boolean;
+  allowedSolicitacoes?: boolean;
 };
 
 // Mão de Obra & Escala Types

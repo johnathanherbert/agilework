@@ -119,7 +119,7 @@ export const deleteUserDb = async (uid: string): Promise<void> => {
   }
 };
 
-export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean; pinMaoDeObra?: string | null }>): Promise<void> => {
+export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean; allowedSolicitacoes: boolean; pinMaoDeObra?: string | null }>): Promise<void> => {
   try {
     const userRef = doc(db, COLLECTIONS.USERS, uid);
     await updateDoc(userRef, {

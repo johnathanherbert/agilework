@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import Autocomplete from "@/components/solicitacoes/Autocomplete";
 import TabelaPrincipal from "@/components/solicitacoes/TabelaPrincipal";
@@ -9,6 +10,7 @@ import Sap from "@/components/solicitacoes/Sap";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { Button } from "@/components/ui/button";
 import { 
   fetchListaTecnica, 
   loadAppState, 
@@ -17,7 +19,7 @@ import {
   fetchSapMaterialStock 
 } from "@/lib/dashpesagem-api";
 import { subscribeToNTs } from "@/lib/firestore-helpers";
-import { useFirebase } from "@/components/providers/firebase-provider";
+import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
 import toast from "react-hot-toast";
 import { formatNumber, parseBrazilianNumber, matchNTItemWithExcipient } from "@/lib/utils";
 import { NT, NTItem, ExcipienteNTInfo, PendingNTItemDetail } from "@/types";
@@ -33,7 +35,7 @@ import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import { Factory } from "lucide-react";
+import { Factory, Shield } from "lucide-react";
 
 const EXCIPIENTES_ESPECIAIS = [
   "LACTOSE (200)",
@@ -47,8 +49,14 @@ const EXCIPIENTES_ESPECIAIS = [
 ];
 
 export default function SolicitacoesPage() {
-  const { user } = useFirebase();
+  const { user, userData, loading: authLoading } = useFirebase();
+  const router = useRouter();
   const userId = user?.email || user?.uid || "default_user";
+
+  const isAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin';
+  const isSupervisor = userData?.role === 'supervisor';
+  const isAuthorized = Boolean(userData?.allowedSolicitacoes);
+  const canAccess = isAdmin || isSupervisor || isAuthorized;
 
   const [ordens, setOrdens] = useState<any[]>([]);
   const [ativo, setAtivo] = useState("");
@@ -772,6 +780,43 @@ export default function SolicitacoesPage() {
       handleAddOrdem();
     }
   };
+
+  // Loading de autenticação
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)]">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[var(--accent)]" />
+      </div>
+    );
+  }
+
+  // Acesso negado para usuários sem liberação de perfil
+  if (!canAccess) {
+    return (
+      <ProtectedRoute>
+        <div className="flex h-screen bg-[var(--bg)] text-[var(--text)]">
+          <Sidebar />
+          <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+            <Topbar />
+            <main className="flex-1 p-6 flex items-center justify-center">
+              <div className="max-w-md w-full p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
+                  <Shield className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-black text-[var(--text)]">Acesso Restrito</h2>
+                <p className="text-xs text-[var(--text-3)]">
+                  Este módulo de Solicitações está disponível apenas com liberação de perfil pela administração ou supervisão.
+                </p>
+                <Button onClick={() => router.push('/dashboard')} className="w-full font-bold rounded-xl">
+                  Voltar ao Dashboard
+                </Button>
+              </div>
+            </main>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>

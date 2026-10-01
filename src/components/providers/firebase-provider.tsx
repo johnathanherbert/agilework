@@ -25,6 +25,7 @@ export interface UserData {
   role?: UserRole; // 'admin' | 'supervisor' | 'leader' | 'user'
   turno?: ProductionTurno | null; // Turno atribuído ao líder/supervisor (1, 2 ou 3)
   allowedMaoDeObra?: boolean; // Permissão explícita de acesso ao módulo Mão de Obra
+  allowedSolicitacoes?: boolean; // Permissão explícita de acesso ao módulo Solicitações
   pinMaoDeObra?: string | null; // PIN numérico para autenticação em Mão de Obra
   pinMaoDeObraUpdatedAt?: string;
 }
