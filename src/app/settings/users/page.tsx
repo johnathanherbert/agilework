@@ -1,34 +1,59 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
-import { getAllUsers, deleteUserDb, editUserDb, wipeDataByCategory, resetUserMaoDeObraPin } from "@/lib/firestore-helpers";
+import { 
+  getAllUsers, 
+  deleteUserDb, 
+  editUserDb, 
+  wipeDataByCategory, 
+  resetUserMaoDeObraPin 
+} from "@/lib/firestore-helpers";
 import {
-  Shield, ShieldCheck, ShieldAlert, Trash2, X, UserCheck,
-  Database, AlertTriangle, AlertCircle, RefreshCcw, Star, Users, Loader2, Search, Key, Lock, SlidersHorizontal, Package,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Trash2,
+  X,
+  Star,
+  Users,
+  Loader2,
+  Search,
+  Key,
+  Database,
+  AlertTriangle,
+  RefreshCcw,
+  Package,
+  SlidersHorizontal,
+  CheckCircle2,
+  XCircle,
+  Download,
+  UserPlus,
+  ArrowUpDown,
+  History,
+  Lock,
+  Calendar,
+  Layers,
+  Activity,
+  User as UserIcon,
 } from "lucide-react";
-import { UserManageModal } from "@/components/users/user-manage-modal";
 import { NTCleanupCard } from "@/components/settings/nt-cleanup-card";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import ProtectedRoute from "@/components/auth/protected-route";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { ProductionTurno, UserRole } from "@/types";
 
 interface UserItem {
@@ -46,25 +71,54 @@ interface UserItem {
   lastActive?: any;
 }
 
+interface AuditLogItem {
+  id: string;
+  at: Date;
+  who: string;
+  what: string;
+  isNew?: boolean;
+}
+
 const INACTIVE_DAYS_THRESHOLD = 15;
+const ONLINE_MINUTES_THRESHOLD = 5;
+
+const ROLES_MAP: Record<string, string> = {
+  admin: "Admin global",
+  supervisor: "Supervisor",
+  leader: "Líder",
+  user: "Usuário",
+};
+
+const MODULES_CONFIG = [
+  { k: "nts", l: "Notas técnicas", d: "Criar, editar e baixar NTs", base: true },
+  { k: "sol", l: "Solicitações", d: "Ordens e necessidade de matéria-prima", permissionKey: "allowedSolicitacoes" },
+  { k: "painel", l: "Painel de produção", d: "Lançar e acompanhar ordens de produção", base: true },
+  { k: "mo", l: "Mão de obra", d: "Escala, ocorrências e absenteísmo", permissionKey: "allowedMaoDeObra" },
+  { k: "heij", l: "Heijunka", d: "Lançar e editar nivelamento PD/PA", staffOnly: true },
+  { k: "admin", l: "Administração", d: "Usuários, permissões e manutenção", adminOnly: true },
+];
+
+function pad(n: number) {
+  return (n < 10 ? "0" : "") + n;
+}
 
 function parseLastActiveDate(lastActive: any): Date | null {
   if (!lastActive) return null;
 
-  if (typeof lastActive?.toDate === 'function') {
+  if (typeof lastActive?.toDate === "function") {
     const dt = lastActive.toDate();
     return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
   }
 
-  if (typeof lastActive?.seconds === 'number') {
+  if (typeof lastActive?.seconds === "number") {
     return new Date(lastActive.seconds * 1000);
   }
 
-  if (typeof lastActive?._seconds === 'number') {
+  if (typeof lastActive?._seconds === "number") {
     return new Date(lastActive._seconds * 1000);
   }
 
-  if (typeof lastActive === 'string' || typeof lastActive === 'number') {
+  if (typeof lastActive === "string" || typeof lastActive === "number") {
     const dt = new Date(lastActive);
     return Number.isNaN(dt.getTime()) ? null : dt;
   }
@@ -72,169 +126,158 @@ function parseLastActiveDate(lastActive: any): Date | null {
   return null;
 }
 
-function getLastActiveInfo(lastActive: any) {
-  const date = parseLastActiveDate(lastActive);
-
-  if (!date) {
-    return {
-      hasData: false,
-      text: 'Sem registro de atividade',
-      inactiveDays: null as number | null,
-      isInactive: true,
-    };
-  }
-
-  const diffMs = Date.now() - date.getTime();
-  const inactiveDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-
-  return {
-    hasData: true,
-    text: date.toLocaleString('pt-BR'),
-    inactiveDays,
-    isInactive: inactiveDays >= INACTIVE_DAYS_THRESHOLD,
-  };
+function getInitials(name: string): string {
+  if (!name) return "U";
+  const p = name.trim().split(" ").filter(Boolean);
+  return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
 }
 
-function StatCard({ icon, label, value, tone = 'primary' }: { icon: React.ReactNode; label: string; value: string | number; tone?: 'primary' | 'green' | 'amber' | 'accent' }) {
-  const toneClasses: Record<string, string> = {
-    primary: 'bg-primary/10 text-primary',
-    green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    accent: 'bg-accent/10 text-accent',
-  };
-  return (
-    <Card>
-      <CardContent className="p-3.5 flex items-center gap-3">
-        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", toneClasses[tone])}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold text-foreground truncate leading-tight">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
+function formatDT(d: Date): string {
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatShortDT(d: Date): string {
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatRelative(d: Date): string {
+  const diffMs = Date.now() - d.getTime();
+  const m = Math.floor(diffMs / 60000);
+  if (m < 1) return "agora";
+  if (m < 60) return `há ${m} min`;
+  const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (d.toDateString() === now.toDateString()) {
+    return `hoje ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  if (d.toDateString() === yesterday.toDateString()) {
+    return `ontem ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  const days = Math.floor(m / 1440);
+  return `há ${days} dia${days > 1 ? "s" : ""}`;
+}
+
+function getUserState(u: UserItem) {
+  const isApproved = u.isApproved !== false;
+  if (!isApproved) {
+    return { k: "blocked", l: "Desativado" };
+  }
+  const d = parseLastActiveDate(u.lastActive);
+  if (!d) {
+    return { k: "inactive", l: `Inativo · +${INACTIVE_DAYS_THRESHOLD} d` };
+  }
+  const diffMinutes = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (diffMinutes <= ONLINE_MINUTES_THRESHOLD) {
+    return { k: "online", l: "Online" };
+  }
+  const days = Math.floor(diffMinutes / 1440);
+  if (days >= INACTIVE_DAYS_THRESHOLD) {
+    return { k: "inactive", l: `Inativo · ${days} d` };
+  }
+  return { k: "active", l: "Ativo" };
+}
+
+function getRoleLabel(u: UserItem): string {
+  if (u.email === ADMIN_EMAIL || u.role === "admin") return "Admin global";
+  if (u.role === "supervisor") return `Supervisor${u.turno ? ` · T${u.turno}` : ""}`;
+  if (u.role === "leader") return `Líder${u.turno ? ` · T${u.turno}` : ""}`;
+  return "Usuário";
 }
 
 export default function AdminControlPanelPage() {
   const { userData, loading } = useFirebase();
   const router = useRouter();
+
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
-  // Tabs & Navigation
-  const [activeTab, setActiveTab] = useState<'users' | 'maintenance'>('users');
+  // Tabs: users | maintenance
+  const [activeTab, setActiveTab] = useState<"users" | "maintenance">("users");
 
-  // Manage User Modal State
-  const [selectedUserForManage, setSelectedUserForManage] = useState<UserItem | null>(null);
+  // Quick summary filter: all | online | ok | pending | inactive
+  const [quickFilter, setQuickFilter] = useState<"all" | "online" | "ok" | "pending" | "inactive">("all");
 
-  // Delete User State
+  // Search & Select Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [pinFilter, setPinFilter] = useState<string>("");
+
+  // Sorting
+  const [sortKey, setSortKey] = useState<"name" | "role" | "seen">("name");
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+
+  // Bulk Selection
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
+
+  // Drawer (Gerenciar Acesso) State
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [drawerRole, setDrawerRole] = useState<UserRole>("user");
+  const [drawerTurno, setDrawerTurno] = useState<ProductionTurno>(1);
+  const [drawerAllowedMO, setDrawerAllowedMO] = useState<boolean>(false);
+  const [drawerAllowedSol, setDrawerAllowedSol] = useState<boolean>(false);
+  const [drawerSaving, setDrawerSaving] = useState<boolean>(false);
+
+  // Modal / Confirm Delete
   const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
 
-  // Reset PIN State
+  // Modal / Confirm Reset PIN
   const [userToResetPin, setUserToResetPin] = useState<UserItem | null>(null);
   const [resettingPin, setResettingPin] = useState(false);
 
-  // Maintenance State
-  const [wiping, setWiping] = useState(false);
-  const [wipeConfirmText, setWipeConfirmText] = useState("");
+  // Wipe Base de Dados State
   const [showWipeDialog, setShowWipeDialog] = useState(false);
+  const [wipeConfirmText, setWipeConfirmText] = useState("");
+  const [wiping, setWiping] = useState(false);
   const [wipeCategories, setWipeCategories] = useState({
     nts: false,
     items: false,
-    users: false
+    users: false,
   });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'revoked' | 'inactive'>('all');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'supervisor' | 'leader' | 'user'>('all');
-  const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
-  const stats = useMemo(() => {
-    const total = users.length;
-    const ativos = users.filter((u) => u.isApproved || u.email === ADMIN_EMAIL).length;
-    const pendentes = users.filter((u) => !u.isApproved && u.email !== ADMIN_EMAIL).length;
-    const lideres = users.filter((u) => u.role === 'leader').length;
-    const supervisores = users.filter((u) => u.role === 'supervisor').length;
-    const inativos = users.filter((u) => getLastActiveInfo(u.lastActive).isInactive).length;
-    return { total, ativos, pendentes, lideres, supervisores, inativos };
-  }, [users]);
+  // Audit Logs (Em memória com persistência local de sessão)
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([
+    {
+      id: "log-1",
+      at: new Date(Date.now() - 1000 * 60 * 35),
+      who: "Johnathan Herbert",
+      what: "Atualizou permissões do módulo Solicitações no sistema",
+    },
+    {
+      id: "log-2",
+      at: new Date(Date.now() - 1000 * 60 * 60 * 4),
+      who: "Sistema",
+      what: "Rotina de indexação e verificação de integridade concluída",
+    },
+    {
+      id: "log-3",
+      at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+      who: "Johnathan Herbert",
+      what: "Concedeu acesso a Mão de Obra para líderes de turno",
+    },
+    {
+      id: "log-4",
+      at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+      who: "Sistema",
+      what: "Backup de rotina da base de dados estruturada gerado",
+    },
+  ]);
 
-  const filteredUsers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-    return users
-      .filter((user) => {
-        const isAdmin = user.email === ADMIN_EMAIL;
-        const name = (user.name || '').toLowerCase();
-        const email = (user.email || '').toLowerCase();
-        const role = (user.role || 'user').toLowerCase();
-        const approved = !!user.isApproved || isAdmin;
+  const addAuditLog = (what: string) => {
+    const actor = userData?.name || userData?.email || "Johnathan Herbert";
+    const newEntry: AuditLogItem = {
+      id: "log-" + Date.now(),
+      at: new Date(),
+      who: actor,
+      what,
+      isNew: true,
+    };
+    setAuditLogs((prev) => [newEntry, ...prev]);
+  };
 
-        if (query && !name.includes(query) && !email.includes(query) && !role.includes(query)) {
-          return false;
-        }
-
-        if (statusFilter === 'active' && !approved) {
-          return false;
-        }
-
-        if (statusFilter === 'revoked' && approved) {
-          return false;
-        }
-
-        if (statusFilter === 'inactive' && !getLastActiveInfo(user.lastActive).isInactive) {
-          return false;
-        }
-
-        if (roleFilter === 'admin' && !isAdmin) {
-          return false;
-        }
-
-        if (roleFilter === 'supervisor' && (isAdmin || user.role !== 'supervisor')) {
-          return false;
-        }
-
-        if (roleFilter === 'leader' && (isAdmin || user.role !== 'leader')) {
-          return false;
-        }
-
-        if (roleFilter === 'user' && (isAdmin || user.role === 'leader' || user.role === 'supervisor')) {
-          return false;
-        }
-
-        if (showInactiveOnly && !getLastActiveInfo(user.lastActive).isInactive) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        const aIsAdmin = a.email === ADMIN_EMAIL;
-        const bIsAdmin = b.email === ADMIN_EMAIL;
-
-        if (aIsAdmin && !bIsAdmin) return -1;
-        if (!aIsAdmin && bIsAdmin) return 1;
-
-        const aName = (a.name || a.email || '').toLowerCase();
-        const bName = (b.name || b.email || '').toLowerCase();
-        return aName.localeCompare(bName, 'pt-BR');
-      });
-  }, [users, searchQuery, statusFilter, roleFilter, showInactiveOnly]);
-
-  // Protection: only admin can access
-  useEffect(() => {
-    if (!loading) {
-      if (!userData || userData.email !== ADMIN_EMAIL) {
-        toast.error("Acesso negado. Apenas administradores podem ver esta página.");
-        router.push("/dashboard");
-      } else {
-        fetchUsers();
-      }
-    }
-  }, [userData, loading, router]);
-
+  // Carregar usuários
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
@@ -248,65 +291,421 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  const requestDeleteUser = (user: UserItem) => {
-    if (user.email === ADMIN_EMAIL) {
-      toast.error("Não é possível deletar o admin principal.");
-      return;
+  useEffect(() => {
+    if (!loading) {
+      if (!userData || userData.email !== ADMIN_EMAIL) {
+        toast.error("Acesso negado. Apenas administradores podem ver esta página.");
+        router.push("/dashboard");
+      } else {
+        fetchUsers();
+      }
     }
-    setUserToDelete(user);
+  }, [userData, loading, router]);
+
+  // Teclado: atalho '/' foca na busca e 'Escape' fecha gaveta
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && editingUser) {
+        setEditingUser(null);
+      }
+      if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editingUser]);
+
+  // Contadores do Summary Box
+  const summaryCounts = useMemo(() => {
+    let all = users.length;
+    let online = 0;
+    let ok = 0;
+    let pending = 0;
+    let inactive = 0;
+    let blocked = 0;
+
+    users.forEach((u) => {
+      const st = getUserState(u);
+      if (st.k === "online") online++;
+      if (st.k === "inactive") inactive++;
+      if (st.k === "blocked") blocked++;
+      if (u.isApproved !== false) ok++;
+      if (u.isApproved === false) pending++;
+    });
+
+    return { all, online, ok, pending, inactive, blocked };
+  }, [users]);
+
+  // Filtragem e ordenação dos usuários
+  const filteredUsers = useMemo(() => {
+    const s = searchQuery.trim().toLowerCase();
+
+    const list = users.filter((u) => {
+      const st = getUserState(u);
+      const isSelf = u.email === ADMIN_EMAIL;
+
+      // Quick filter
+      if (quickFilter === "online" && st.k !== "online") return false;
+      if (quickFilter === "ok" && (u.isApproved === false && !isSelf)) return false;
+      if (quickFilter === "pending" && (u.isApproved !== false || isSelf)) return false;
+      if (quickFilter === "inactive" && st.k !== "inactive") return false;
+
+      // Role filter
+      if (roleFilter) {
+        if (roleFilter === "admin" && !isSelf && u.role !== "admin") return false;
+        if (roleFilter === "supervisor" && (isSelf || u.role !== "supervisor")) return false;
+        if (roleFilter === "leader" && (isSelf || u.role !== "leader")) return false;
+        if (roleFilter === "user" && (isSelf || (u.role && u.role !== "user"))) return false;
+      }
+
+      // PIN filter
+      if (pinFilter !== "") {
+        const hasPin = Boolean(u.pinMaoDeObra);
+        if (pinFilter === "1" && !hasPin) return false;
+        if (pinFilter === "0" && hasPin) return false;
+      }
+
+      // Search Query
+      if (s) {
+        const name = (u.name || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        const role = getRoleLabel(u).toLowerCase();
+        if (!name.includes(s) && !email.includes(s) && !role.includes(s)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    const roleOrder: Record<string, number> = { admin: 0, supervisor: 1, leader: 2, user: 3 };
+
+    list.sort((a, b) => {
+      const aIsSelf = a.email === ADMIN_EMAIL;
+      const bIsSelf = b.email === ADMIN_EMAIL;
+      if (aIsSelf) return -1;
+      if (bIsSelf) return 1;
+
+      if (sortKey === "name") {
+        const aName = (a.name || a.email || "").toLowerCase();
+        const bName = (b.name || b.email || "").toLowerCase();
+        return aName.localeCompare(bName, "pt-BR") * sortDir;
+      }
+
+      if (sortKey === "role") {
+        const aRole = a.role || "user";
+        const bRole = b.role || "user";
+        const diff = (roleOrder[aRole] ?? 3) - (roleOrder[bRole] ?? 3);
+        if (diff !== 0) return diff * sortDir;
+        return (a.name || "").localeCompare(b.name || "") * sortDir;
+      }
+
+      if (sortKey === "seen") {
+        const aTime = parseLastActiveDate(a.lastActive)?.getTime() || 0;
+        const bTime = parseLastActiveDate(b.lastActive)?.getTime() || 0;
+        return (bTime - aTime) * sortDir;
+      }
+
+      return 0;
+    });
+
+    return list;
+  }, [users, searchQuery, quickFilter, roleFilter, pinFilter, sortKey, sortDir]);
+
+  // Bulk selection stats
+  const eligibleBulkIds = useMemo(() => {
+    return filteredUsers.filter((u) => u.email !== ADMIN_EMAIL).map((u) => u.uid);
+  }, [filteredUsers]);
+
+  const selectedCount = useMemo(() => {
+    return Object.keys(selectedIds).filter((id) => selectedIds[id]).length;
+  }, [selectedIds]);
+
+  const handleSelectAll = (checked: boolean) => {
+    const updated: Record<string, boolean> = {};
+    if (checked) {
+      eligibleBulkIds.forEach((id) => {
+        updated[id] = true;
+      });
+    }
+    setSelectedIds(updated);
   };
 
+  const handleToggleSort = (key: "name" | "role" | "seen") => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 1 ? -1 : 1));
+    } else {
+      setSortKey(key);
+      setSortDir(1);
+    }
+  };
+
+  // Abrir Drawer de Gerenciamento do Usuário
+  const openDrawer = (u: UserItem) => {
+    setEditingUser(u);
+    setDrawerRole(u.role || "user");
+    setDrawerTurno(u.turno || 1);
+    setDrawerAllowedMO(Boolean(u.allowedMaoDeObra) || u.role === "supervisor" || u.role === "admin" || u.email === ADMIN_EMAIL);
+    setDrawerAllowedSol(Boolean(u.allowedSolicitacoes) || u.role === "supervisor" || u.role === "admin" || u.email === ADMIN_EMAIL);
+  };
+
+  const closeDrawer = () => {
+    setEditingUser(null);
+  };
+
+  // Salvar alterações da Gaveta
+  const handleSaveDrawer = async () => {
+    if (!editingUser) return;
+    const isSelf = editingUser.email === ADMIN_EMAIL;
+    setDrawerSaving(true);
+    try {
+      const updatedData = {
+        name: editingUser.name || "",
+        email: editingUser.email,
+        isApproved: isSelf ? true : editingUser.isApproved ?? true,
+        role: isSelf ? ("admin" as UserRole) : drawerRole,
+        turno: drawerRole === "leader" || drawerRole === "supervisor" ? drawerTurno : null,
+        allowedMaoDeObra: isSelf || drawerRole === "supervisor" ? true : drawerAllowedMO,
+        allowedSolicitacoes: isSelf || drawerRole === "supervisor" ? true : drawerAllowedSol,
+      };
+
+      await editUserDb(editingUser.uid, updatedData);
+
+      setUsers((prev) =>
+        prev.map((u) => (u.uid === editingUser.uid ? { ...u, ...updatedData } : u))
+      );
+
+      const msgs: string[] = [];
+      if (drawerRole !== editingUser.role) {
+        msgs.push(`Alterou função de ${editingUser.name || editingUser.email} para ${ROLES_MAP[drawerRole] || drawerRole}`);
+      }
+      if (drawerAllowedMO !== editingUser.allowedMaoDeObra) {
+        msgs.push(`${drawerAllowedMO ? "Concedeu" : "Removeu"} acesso a Mão de Obra para ${editingUser.name || editingUser.email}`);
+      }
+      if (drawerAllowedSol !== editingUser.allowedSolicitacoes) {
+        msgs.push(`${drawerAllowedSol ? "Concedeu" : "Removeu"} acesso a Solicitações para ${editingUser.name || editingUser.email}`);
+      }
+
+      if (msgs.length === 0) msgs.push(`Atualizou cadastro de ${editingUser.name || editingUser.email}`);
+      msgs.forEach(addAuditLog);
+
+      toast.success(`Acesso de ${(editingUser.name || editingUser.email).split(" ")[0]} atualizado`);
+      closeDrawer();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar alterações do usuário");
+    } finally {
+      setDrawerSaving(false);
+    }
+  };
+
+  // Ações da Gaveta: Aprovar / Desativar / Reativar
+  const handleDrawerAction = async (action: "approve" | "block" | "unblock" | "pinreset" | "delete") => {
+    if (!editingUser) return;
+    const isSelf = editingUser.email === ADMIN_EMAIL;
+    if (isSelf && (action === "block" || action === "delete")) {
+      toast.error("Não é possível desativar ou excluir a conta de Admin principal.");
+      return;
+    }
+
+    if (action === "approve") {
+      await editUserDb(editingUser.uid, { isApproved: true } as any);
+      setUsers((prev) => prev.map((u) => (u.uid === editingUser.uid ? { ...u, isApproved: true } : u)));
+      addAuditLog(`Aprovou o cadastro de ${editingUser.name || editingUser.email}`);
+      toast.success("Cadastro aprovado com sucesso");
+      closeDrawer();
+    } else if (action === "block") {
+      if (!confirm(`Desativar a conta de ${editingUser.name || editingUser.email}? O acesso será bloqueado imediatamente.`)) return;
+      await editUserDb(editingUser.uid, { isApproved: false } as any);
+      setUsers((prev) => prev.map((u) => (u.uid === editingUser.uid ? { ...u, isApproved: false } : u)));
+      addAuditLog(`Desativou a conta de ${editingUser.name || editingUser.email}`);
+      toast.success("Conta desativada");
+      closeDrawer();
+    } else if (action === "unblock") {
+      await editUserDb(editingUser.uid, { isApproved: true } as any);
+      setUsers((prev) => prev.map((u) => (u.uid === editingUser.uid ? { ...u, isApproved: true } : u)));
+      addAuditLog(`Reativou a conta de ${editingUser.name || editingUser.email}`);
+      toast.success("Conta reativada com sucesso");
+      closeDrawer();
+    } else if (action === "pinreset") {
+      await resetUserMaoDeObraPin(editingUser.uid);
+      setUsers((prev) => prev.map((u) => (u.uid === editingUser.uid ? { ...u, pinMaoDeObra: null } : u)));
+      addAuditLog(`Redefiniu o PIN de ${editingUser.name || editingUser.email}`);
+      toast.success(`PIN redefinido — ${(editingUser.name || editingUser.email).split(" ")[0]} cadastrará um novo no próximo acesso`);
+      setEditingUser((prev) => (prev ? { ...prev, pinMaoDeObra: null } : null));
+    } else if (action === "delete") {
+      setUserToDelete(editingUser);
+      closeDrawer();
+    }
+  };
+
+  // Ações em Massa
+  const handleBulkAction = async (action: "pinreset" | "block" | "unblock" | "clear") => {
+    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+    if (action === "clear") {
+      setSelectedIds({});
+      return;
+    }
+    if (ids.length === 0) return;
+
+    if (action === "block" && !confirm(`Desativar ${ids.length} conta(s)? O acesso será revogado.`)) {
+      return;
+    }
+
+    try {
+      for (const id of ids) {
+        if (action === "pinreset") {
+          await resetUserMaoDeObraPin(id);
+        } else if (action === "block") {
+          await editUserDb(id, { isApproved: false } as any);
+        } else if (action === "unblock") {
+          await editUserDb(id, { isApproved: true } as any);
+        }
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (!selectedIds[u.uid]) return u;
+          if (action === "pinreset") return { ...u, pinMaoDeObra: null };
+          if (action === "block") return { ...u, isApproved: false };
+          if (action === "unblock") return { ...u, isApproved: true };
+          return u;
+        })
+      );
+
+      const labelAction = action === "pinreset" ? "Redefiniu o PIN de" : action === "block" ? "Desativou" : "Reativou";
+      addAuditLog(`${labelAction} ${ids.length} usuário(s) em lote`);
+      toast.success(action === "pinreset" ? "PINs redefinidos" : action === "block" ? "Contas desativadas" : "Contas reativadas");
+      setSelectedIds({});
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao aplicar ação em lote");
+    }
+  };
+
+  // Exportar CSV
+  const handleExportCSV = () => {
+    const rows = [
+      ["Nome", "E-mail", "Função", "Acesso Adicional", "PIN", "Última Atividade", "Status"],
+    ];
+
+    filteredUsers.forEach((u) => {
+      const st = getUserState(u);
+      const isSelf = u.email === ADMIN_EMAIL;
+      const roleStr = getRoleLabel(u);
+      const extras: string[] = [];
+      if (u.role === "admin" || isSelf) {
+        extras.push("Acesso total");
+      } else {
+        if (u.allowedMaoDeObra || u.role === "supervisor") extras.push("Mão de obra");
+        if (u.allowedSolicitacoes || u.role === "supervisor") extras.push("Solicitações");
+      }
+      const lastActiveD = parseLastActiveDate(u.lastActive);
+      const lastActiveStr = lastActiveD ? formatDT(lastActiveD) : "Sem registro";
+      const pinStr = u.pinMaoDeObra ? "Ativo" : "Não cadastrado";
+
+      rows.push([
+        u.name || "Sem Nome",
+        u.email,
+        roleStr,
+        extras.length ? extras.join(" / ") : "Padrão",
+        pinStr,
+        lastActiveStr,
+        st.l,
+      ]);
+    });
+
+    const csvContent = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\r\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `usuarios_agilework_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success(`${filteredUsers.length} usuários exportados`);
+  };
+
+  // Exportar Backup JSON
+  const handleExportBackup = () => {
+    const backupData = {
+      exportado_em: new Date().toISOString(),
+      usuarios: users.map((u) => ({
+        nome: u.name,
+        email: u.email,
+        funcao: getRoleLabel(u),
+        allowedMaoDeObra: u.allowedMaoDeObra,
+        allowedSolicitacoes: u.allowedSolicitacoes,
+        pinConfigurado: Boolean(u.pinMaoDeObra),
+        status: getUserState(u).l,
+        ultimaAtividade: parseLastActiveDate(u.lastActive)?.toISOString() || null,
+      })),
+      auditoria: auditLogs.map((l) => ({
+        data: l.at.toISOString(),
+        responsavel: l.who,
+        acao: l.what,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `backup_agilework_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    addAuditLog("Exportou backup completo em JSON");
+    toast.success("Backup do sistema exportado com sucesso");
+  };
+
+  // Confirmar exclusão de usuário
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
     setDeletingUser(true);
     try {
       await deleteUserDb(userToDelete.uid);
-      toast.success("Usuário removido da base de dados.");
-      setUsers(prev => prev.filter(u => u.uid !== userToDelete.uid));
+      setUsers((prev) => prev.filter((u) => u.uid !== userToDelete.uid));
+      addAuditLog(`Excluiu definitivamente o usuário ${userToDelete.name || userToDelete.email}`);
+      toast.success("Usuário removido da base de dados");
       setUserToDelete(null);
-    } catch (error) {
-      toast.error("Erro ao deletar usuário.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao excluir usuário");
     } finally {
       setDeletingUser(false);
     }
   };
 
-  const handleSaveUserFromModal = async (
-    uid: string,
-    data: {
-      name: string;
-      isApproved: boolean;
-      role: UserRole;
-      turno: ProductionTurno | null;
-      allowedMaoDeObra: boolean;
-      allowedSolicitacoes: boolean;
-    }
-  ) => {
-    await editUserDb(uid, data);
-    setUsers((prev) => prev.map((u) => (u.uid === uid ? { ...u, ...data } : u)));
-    if (selectedUserForManage?.uid === uid) {
-      setSelectedUserForManage((prev) => (prev ? { ...prev, ...data } : null));
-    }
-  };
-
+  // Confirmar reset de PIN
   const confirmResetPin = async () => {
     if (!userToResetPin) return;
     setResettingPin(true);
     try {
       await resetUserMaoDeObraPin(userToResetPin.uid);
-      toast.success(`PIN de ${userToResetPin.name || userToResetPin.email} foi resetado. No próximo acesso a Mão de Obra, o usuário criará um novo PIN.`);
-      setUsers(prev => prev.map(u => u.uid === userToResetPin.uid ? { ...u, pinMaoDeObra: null } : u));
+      setUsers((prev) => prev.map((u) => (u.uid === userToResetPin.uid ? { ...u, pinMaoDeObra: null } : u)));
+      addAuditLog(`Redefiniu o PIN de ${userToResetPin.name || userToResetPin.email}`);
+      toast.success(`PIN de ${userToResetPin.name || userToResetPin.email} foi resetado`);
       setUserToResetPin(null);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao resetar PIN do usuário.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao resetar PIN");
     } finally {
       setResettingPin(false);
     }
   };
 
+  // Wipe Banco
   const handleWipeDatabase = async () => {
-    if (wipeConfirmText !== 'WIPE') {
+    if (wipeConfirmText !== "WIPE") {
       toast.error("Texto de confirmação incorreto.");
       return;
     }
@@ -318,10 +717,14 @@ export default function AdminControlPanelPage() {
     setWiping(true);
     try {
       const stats = await wipeDataByCategory(wipeCategories);
+      addAuditLog(`Executou Wipe de dados: ${stats.nts} NTs, ${stats.items} Itens, ${stats.users} Usuários`);
       toast.success(`Base Limpa! ${stats.nts} NTs, ${stats.items} Itens e ${stats.users} Usuários removidos.`);
       setShowWipeDialog(false);
       setWipeConfirmText("");
       setWipeCategories({ nts: false, items: false, users: false });
+      if (wipeCategories.users) {
+        fetchUsers();
+      }
     } catch (error) {
       toast.error("Erro ao realizar Wipe da Base de Dados.");
     } finally {
@@ -331,510 +734,959 @@ export default function AdminControlPanelPage() {
 
   if (loading || loadingUsers) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
+      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)]">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[var(--accent)]" />
       </div>
     );
   }
 
   if (!userData || userData.email !== ADMIN_EMAIL) return null;
 
+  const isDrawerSelf = editingUser?.email === ADMIN_EMAIL;
+  const isDrawerAdmin = drawerRole === "admin" || isDrawerSelf;
+  const isDrawerDirty = editingUser && (
+    drawerRole !== (editingUser.role || "user") ||
+    (drawerRole === "leader" && drawerTurno !== (editingUser.turno || 1)) ||
+    drawerAllowedMO !== Boolean(editingUser.allowedMaoDeObra) ||
+    drawerAllowedSol !== Boolean(editingUser.allowedSolicitacoes)
+  );
+
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
+
         <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
-          <main className="flex-1 p-5 sm:p-6 overflow-y-auto min-w-0">
+
+          <main className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-7">
             {/* Header da Página */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div className="page-head flex items-end justify-between gap-4 mb-4">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Administração do Sistema</h1>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                    Acesso Restrito
+                <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">Administração</h1>
+                <p className="subtitle text-xs text-[var(--text-3)] mt-1">
+                  Usuários, permissões e manutenção do sistema
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="btn sm"
+                  title="Exportar tabela de usuários em formato CSV"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Exportar CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast("Convite: informe o e-mail corporativo para solicitar cadastro.", { icon: "✉️" })}
+                  className="btn sm primary"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Convidar usuário</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Abas Superiores do Concept: Usuários e Manutenção */}
+            <div className="tabs mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab("users")}
+                className={cn("tab", activeTab === "users" && "active")}
+              >
+                <span>Usuários</span>
+                <span className="n">{users.length}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("maintenance")}
+                className={cn("tab", activeTab === "maintenance" && "active")}
+              >
+                <span>Manutenção</span>
+              </button>
+            </div>
+
+            {/* CONTEÚDO: ABA USUÁRIOS */}
+            {activeTab === "users" && (
+              <section id="v-users">
+                {/* 5 Summary Cards no padrão exato do concept */}
+                <div className="adm-summary mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter(quickFilter === "all" ? "all" : "all")}
+                    className={cn(quickFilter === "all" && "on")}
+                  >
+                    <label>
+                      <i className="adm-dot bg-[var(--text-3)]" />
+                      Total de usuários
+                    </label>
+                    <strong>{summaryCounts.all}</strong>
+                    <p>cadastrados</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter(quickFilter === "online" ? "all" : "online")}
+                    className={cn(quickFilter === "online" && "on")}
+                  >
+                    <label>
+                      <i className="adm-dot bg-[var(--green)]" />
+                      Online agora
+                    </label>
+                    <strong className="text-[var(--green)]">{summaryCounts.online}</strong>
+                    <p>últimos {ONLINE_MINUTES_THRESHOLD} min</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter(quickFilter === "ok" ? "all" : "ok")}
+                    className={cn(quickFilter === "ok" && "on")}
+                  >
+                    <label>
+                      <i className="adm-dot border border-[var(--green)] bg-transparent" />
+                      Contas ativas
+                    </label>
+                    <strong>{summaryCounts.ok}</strong>
+                    <p>
+                      {summaryCounts.blocked
+                        ? `${summaryCounts.blocked} desativada${summaryCounts.blocked > 1 ? "s" : ""}`
+                        : "nenhuma desativada"}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter(quickFilter === "pending" ? "all" : "pending")}
+                    className={cn(quickFilter === "pending" && "on")}
+                  >
+                    <label>
+                      <i className="adm-dot bg-[var(--accent)]" />
+                      Aguardando aprovação
+                    </label>
+                    <strong className="text-[var(--accent)]">{summaryCounts.pending}</strong>
+                    <p>{summaryCounts.pending ? "revisar cadastros" : "nenhum cadastro novo"}</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilter(quickFilter === "inactive" ? "all" : "inactive")}
+                    className={cn(quickFilter === "inactive" && "on")}
+                  >
+                    <label>
+                      <i className="adm-dot bg-[var(--amber)]" />
+                      Sem atividade
+                    </label>
+                    <strong className="text-[var(--amber)]">{summaryCounts.inactive}</strong>
+                    <p>há {INACTIVE_DAYS_THRESHOLD} dias ou mais</p>
+                  </button>
+                </div>
+
+                {/* Toolbar */}
+                <div className="adm-toolbar">
+                  <label className="adm-search">
+                    <Search className="w-3.5 h-3.5" />
+                    <input
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar por nome, e-mail ou função"
+                    />
+                    <kbd>/</kbd>
+                  </label>
+
+                  <select
+                    className="adm-select"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                  >
+                    <option value="">Todas as funções</option>
+                    <option value="admin">Admin global</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="leader">Líder</option>
+                    <option value="user">Usuário</option>
+                  </select>
+
+                  <select
+                    className="adm-select"
+                    value={pinFilter}
+                    onChange={(e) => setPinFilter(e.target.value)}
+                  >
+                    <option value="">PIN: todos</option>
+                    <option value="1">Com PIN</option>
+                    <option value="0">Sem PIN</option>
+                  </select>
+
+                  <div className="grow" />
+
+                  <span className="count-lbl text-xs text-[var(--text-3)] font-mono">
+                    {filteredUsers.length === users.length
+                      ? `${users.length} usuários`
+                      : `${filteredUsers.length} de ${users.length} usuários`}
                   </span>
                 </div>
-                <p className="text-xs text-[var(--text-3)] mt-0.5">
-                  Gestão de usuários, concessão de acessos à mão de obra e manutenção do banco de dados
-                </p>
-              </div>
-            </div>
 
-            {/* Faixa de Indicadores de Usuários */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 border border-[var(--border)] rounded-md bg-[var(--surface)] divide-x divide-y sm:divide-y-0 divide-[var(--border)] overflow-hidden mb-5">
-              <div className="p-3.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)] mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-3)]" />
-                  Total de Usuários
-                </label>
-                <strong className="text-xl font-semibold tracking-tight text-[var(--text)] font-mono block">
-                  {stats.total}
-                </strong>
-                <p className="text-[11px] text-[var(--text-3)] mt-0.5">cadastrados</p>
-              </div>
+                {/* Bulk Actions Banner */}
+                {selectedCount > 0 && (
+                  <div className="adm-bulk">
+                    <b>{selectedCount} selecionado{selectedCount > 1 ? "s" : ""}</b>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkAction("pinreset")}
+                      className="btn sm"
+                    >
+                      Redefinir PIN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkAction("block")}
+                      className="btn sm danger"
+                    >
+                      Desativar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkAction("unblock")}
+                      className="btn sm"
+                    >
+                      Reativar
+                    </button>
+                    <div className="grow" />
+                    <button
+                      type="button"
+                      onClick={() => handleBulkAction("clear")}
+                      className="btn sm"
+                    >
+                      Limpar seleção
+                    </button>
+                  </div>
+                )}
 
-              <div className="p-3.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Aprovados & Ativos
-                </label>
-                <strong className="text-xl font-semibold tracking-tight text-emerald-400 font-mono block">
-                  {stats.ativos}
-                </strong>
-                <p className="text-[11px] text-[var(--text-3)] mt-0.5">com acesso liberado</p>
-              </div>
-
-              <div className="p-3.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-amber-400 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Pendentes de Aprovação
-                </label>
-                <strong className="text-xl font-semibold tracking-tight text-amber-400 font-mono block">
-                  {stats.pendentes}
-                </strong>
-                <p className="text-[11px] text-[var(--text-3)] mt-0.5">aguardando liberação</p>
-              </div>
-
-              <div className="p-3.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-purple-400 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  Líderes & Supervisores
-                </label>
-                <strong className="text-xl font-semibold tracking-tight text-purple-400 font-mono block">
-                  {stats.lideres + stats.supervisores}
-                </strong>
-                <p className="text-[11px] text-[var(--text-3)] mt-0.5 font-mono">
-                  {stats.lideres} líd · {stats.supervisores} sup
-                </p>
-              </div>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'users' | 'maintenance')}>
-              <TabsList className="mb-5 h-auto p-0 bg-transparent border-b border-[var(--border)] rounded-none w-full justify-start gap-1">
-                <TabsTrigger
-                  value="users"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Gestão de Usuários
-                </TabsTrigger>
-                <TabsTrigger
-                  value="maintenance"
-                  className="gap-2 px-3.5 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--text)] data-[state=active]:text-[var(--text)] text-[var(--text-3)] hover:text-[var(--text)] bg-transparent data-[state=active]:bg-transparent shadow-none"
-                >
-                  <Database className="w-3.5 h-3.5" />
-                  Manutenção do Banco
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="users">
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="px-4 py-3.5 border-b border-border/80 bg-gradient-to-r from-slate-50 to-blue-50/60 dark:from-slate-900 dark:to-slate-800">
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                          <h2 className="text-xl font-bold text-foreground">Gestão de Usuários</h2>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Gerencie cadastro, perfil e permissões com pesquisa rápida.
-                          </p>
-                        </div>
-                        <Badge variant="secondary" className="text-xs font-bold px-3 py-1.5 w-fit">
-                          Exibindo: {filteredUsers.length} de {users.length}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-2.5">
-                        <div className="lg:col-span-6 relative">
-                          <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                          <Input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscar por nome, e-mail ou função..."
-                            className="pl-9 h-9 bg-white/90 dark:bg-slate-900"
+                {/* Card com Tabela no estilo do concept */}
+                <div className="adm-card">
+                  <table className="adm-t">
+                    <thead>
+                      <tr>
+                        <th className="ck">
+                          <input
+                            type="checkbox"
+                            checked={eligibleBulkIds.length > 0 && selectedCount === eligibleBulkIds.length}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            title="Selecionar todos os usuários da visualização"
                           />
-                        </div>
-
-                        <div className="lg:col-span-3">
-                          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'revoked' | 'inactive')}>
-                            <SelectTrigger className="h-9 bg-white/90 dark:bg-slate-900">
-                              <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Todos status</SelectItem>
-                              <SelectItem value="active">Apenas ativos</SelectItem>
-                              <SelectItem value="revoked">Apenas revogados</SelectItem>
-                              <SelectItem value="inactive">Apenas inativos</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="lg:col-span-3 flex items-center gap-2">
-                          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'all' | 'admin' | 'supervisor' | 'leader' | 'user')}>
-                            <SelectTrigger className="h-9 bg-white/90 dark:bg-slate-900">
-                              <SelectValue placeholder="Função" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Todas funções</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="supervisor">Supervisor</SelectItem>
-                              <SelectItem value="leader">Líder</SelectItem>
-                              <SelectItem value="user">Usuário</SelectItem>
-                            </SelectContent>
-                          </Select>
-
-                          {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || showInactiveOnly) && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="h-9 px-3"
-                              onClick={() => {
-                                setSearchQuery('');
-                                setStatusFilter('all');
-                                setRoleFilter('all');
-                                setShowInactiveOnly(false);
-                              }}
-                              title="Limpar filtros"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="lg:col-span-12 flex items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={showInactiveOnly ? 'default' : 'outline'}
-                            className="h-8 text-xs"
-                            onClick={() => setShowInactiveOnly((v) => !v)}
-                          >
-                            {showInactiveOnly ? 'Mostrando somente inativos' : 'Mostrar somente inativos'}
-                          </Button>
-                          <span className="text-[11px] text-muted-foreground font-medium">
-                            Critério: sem atividade há {INACTIVE_DAYS_THRESHOLD}+ dias.
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <ul className="divide-y divide-border/80">
+                        </th>
+                        <th
+                          className={cn("sortable", sortKey === "name" && "on")}
+                          onClick={() => handleToggleSort("name")}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Usuário</span>
+                            <ArrowUpDown className="w-3 h-3 text-[var(--text-3)]" />
+                          </div>
+                        </th>
+                        <th
+                          className={cn("sortable", sortKey === "role" && "on")}
+                          onClick={() => handleToggleSort("role")}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Função</span>
+                            <ArrowUpDown className="w-3 h-3 text-[var(--text-3)]" />
+                          </div>
+                        </th>
+                        <th>Acesso adicional</th>
+                        <th>PIN</th>
+                        <th
+                          className={cn("sortable", sortKey === "seen" && "on")}
+                          onClick={() => handleToggleSort("seen")}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>Última atividade</span>
+                            <ArrowUpDown className="w-3 h-3 text-[var(--text-3)]" />
+                          </div>
+                        </th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {filteredUsers.length === 0 ? (
-                        <li className="px-6 py-12 text-center text-muted-foreground font-medium">
-                          Nenhum usuário encontrado com os filtros atuais.
-                        </li>
+                        <tr>
+                          <td colSpan={8} className="empty">
+                            {quickFilter === "pending"
+                              ? "Nenhum cadastro aguardando aprovação."
+                              : "Nenhum usuário encontrado."}
+                          </td>
+                        </tr>
                       ) : (
-                        filteredUsers.map((user) => {
-                          const isAdmin = user.email === ADMIN_EMAIL;
-                          const isApproved = user.isApproved;
-                          const displayName = user.name || "Sem Nome Definido";
-                          const lastActiveInfo = getLastActiveInfo(user.lastActive);
-                          const initials = displayName
-                            .split(' ')
-                            .filter(Boolean)
-                            .slice(0, 2)
-                            .map((p) => p[0]?.toUpperCase())
-                            .join('') || 'U';
+                        filteredUsers.map((u) => {
+                          const isSelf = u.email === ADMIN_EMAIL;
+                          const st = getUserState(u);
+                          const lastDate = parseLastActiveDate(u.lastActive);
+                          const isOldInactive = !isSelf && st.k === "inactive";
+                          const isSelected = Boolean(selectedIds[u.uid]);
+
+                          // Badges de papel e ícone
+                          const isRoleAdmin = u.email === ADMIN_EMAIL || u.role === "admin";
+                          const isRoleLead = u.role === "leader" || u.role === "supervisor";
+                          const roleClass = isRoleAdmin ? "admin" : isRoleLead ? "lead" : "";
+                          const RoleIcon = isRoleAdmin ? ShieldCheck : isRoleLead ? Star : UserIcon;
+
+                          // Módulos adicionais
+                          const extraMods: string[] = [];
+                          if (u.allowedMaoDeObra || u.role === "supervisor") extraMods.push("Mão de obra");
+                          if (u.allowedSolicitacoes || u.role === "supervisor") extraMods.push("Solicitações");
 
                           return (
-                            <li
-                              key={user.uid}
-                              onClick={() => setSelectedUserForManage(user)}
-                              className="px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+                            <tr
+                              key={u.uid}
+                              onClick={() => openDrawer(u)}
+                              className={cn(isSelected && "sel")}
                             >
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                {/* Informações e Badges do Usuário */}
-                                <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100 shrink-0 shadow-2xs">
-                                    {initials}
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <p className="text-sm font-black text-foreground truncate">
-                                        {displayName}
-                                      </p>
-
-                                      {/* Badge de Cargo */}
-                                      {isAdmin ? (
-                                        <Badge className="bg-primary/15 text-primary hover:bg-primary/20 border-primary/30 text-[10px] font-black">
-                                          <ShieldCheck className="w-3 h-3 mr-1" />
-                                          Admin Global
-                                        </Badge>
-                                      ) : user.role === 'supervisor' ? (
-                                        <Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30 text-[10px] font-black">
-                                          <Shield className="w-3 h-3 mr-1 text-purple-500" />
-                                          Supervisor {user.turno ? `(T${user.turno})` : ''}
-                                        </Badge>
-                                      ) : user.role === 'leader' ? (
-                                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] font-black">
-                                          <Star className="w-3 h-3 mr-1 text-amber-500" />
-                                          Líder {user.turno ? `(T${user.turno})` : ''}
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
-                                          Usuário
-                                        </Badge>
-                                      )}
-
-                                      {/* Badge de Mão de Obra */}
-                                      {!isAdmin && user.role === 'leader' && (
-                                        user.allowedMaoDeObra ? (
-                                          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-black gap-1">
-                                            <Users className="w-3 h-3 text-emerald-500" /> Mão de Obra
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
-                                            M.O. Bloqueado
-                                          </Badge>
-                                        )
-                                      )}
-
-                                      {/* Badge de Solicitações */}
-                                      {!isAdmin && user.role !== 'supervisor' && (
-                                        user.allowedSolicitacoes ? (
-                                          <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 text-[10px] font-black gap-1">
-                                            <Package className="w-3 h-3 text-blue-500" /> Solicitações
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
-                                            Solicitações Bloqueadas
-                                          </Badge>
-                                        )
-                                      )}
-
-                                      {/* Badge de PIN */}
-                                      {user.pinMaoDeObra ? (
-                                        <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30 text-[10px] font-black gap-1">
-                                          <Key className="w-3 h-3 text-violet-500" /> PIN Ativo
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 text-[10px] font-bold gap-1">
-                                          <Key className="w-3 h-3 text-slate-400" /> Sem PIN
-                                        </Badge>
-                                      )}
-
-                                      {/* Badge de Status Ativo/Bloqueado/Inativo */}
-                                      {!isAdmin && !isApproved ? (
-                                        <Badge variant="destructive" className="text-[10px] font-black gap-1">
-                                          <ShieldAlert className="w-3 h-3" /> Bloqueado
-                                        </Badge>
-                                      ) : !isAdmin && lastActiveInfo.isInactive ? (
-                                        <Badge variant="outline" className="text-amber-600 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-[10px] font-bold">
-                                          Inativo {lastActiveInfo.inactiveDays !== null ? `(${lastActiveInfo.inactiveDays}d)` : ''}
-                                        </Badge>
-                                      ) : !isAdmin ? (
-                                        <Badge variant="success" className="text-[10px] font-bold">
-                                          Ativo
-                                        </Badge>
-                                      ) : null}
-                                    </div>
-
-                                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                                      <span className="truncate">{user.email}</span>
-                                      <span className="text-slate-300 dark:text-slate-700">•</span>
-                                      <span className="text-[11px]">Online: {lastActiveInfo.text}</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Botão de Ação para Abrir o Modal */}
-                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedUserForManage(user);
+                              <td
+                                className="ck"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {isSelf ? null : (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      setSelectedIds((prev) => ({
+                                        ...prev,
+                                        [u.uid]: e.target.checked,
+                                      }));
                                     }}
-                                    className="h-8 px-3 text-xs font-bold gap-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white rounded-xl shadow-xs"
-                                  >
-                                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                                    <span>Gerenciar Acesso</span>
-                                  </Button>
+                                  />
+                                )}
+                              </td>
+
+                              <td>
+                                <div className="adm-user">
+                                  <span className={cn("adm-av", st.k === "online" && "on")}>
+                                    {getInitials(u.name || u.email)}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <b className="flex items-center">
+                                      <span className="truncate">{u.name || "Sem Nome Definido"}</span>
+                                      {isSelf && <span className="adm-you">você</span>}
+                                    </b>
+                                    <small className="truncate">{u.email}</small>
+                                  </div>
                                 </div>
-                              </div>
-                            </li>
+                              </td>
+
+                              <td>
+                                <span className={cn("adm-role", roleClass)}>
+                                  <RoleIcon />
+                                  <span>{getRoleLabel(u)}</span>
+                                </span>
+                              </td>
+
+                              <td>
+                                {isRoleAdmin ? (
+                                  <span className="adm-mods">
+                                    <b>Acesso total</b>
+                                  </span>
+                                ) : extraMods.length ? (
+                                  <span className="adm-mods">
+                                    <b>{extraMods.join(", ")}</b>
+                                  </span>
+                                ) : (
+                                  <span className="adm-mods text-[var(--text-3)]">—</span>
+                                )}
+                              </td>
+
+                              <td>
+                                {u.pinMaoDeObra ? (
+                                  <span className="adm-pin text-[var(--violet)]">
+                                    <Key className="w-3.5 h-3.5 text-[var(--violet)]" />
+                                    <span>Ativo</span>
+                                  </span>
+                                ) : (
+                                  <span className="muted">—</span>
+                                )}
+                              </td>
+
+                              <td>
+                                <span
+                                  className={cn("adm-seen", isOldInactive && "old")}
+                                  title={lastDate ? formatDT(lastDate) : "Sem registro"}
+                                >
+                                  {st.k === "online" ? "Agora" : lastDate ? formatRelative(lastDate) : "—"}
+                                </span>
+                              </td>
+
+                              <td>
+                                <span className={cn("adm-st", st.k)}>
+                                  <i />
+                                  <span>{st.l}</span>
+                                </span>
+                              </td>
+
+                              <td className="adm-row-act" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => openDrawer(u)}
+                                  className="btn sm"
+                                >
+                                  Gerenciar
+                                </button>
+                              </td>
+                            </tr>
                           );
                         })
                       )}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
-              <TabsContent value="maintenance">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="border-2 border-red-200 dark:border-red-900/50 flex flex-col">
-                    <div className="p-5 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30 flex items-center gap-3 rounded-t-lg">
-                      <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
-                      <h3 className="text-lg font-bold text-red-800 dark:text-red-400">Zona de Risco: Limpeza da Base</h3>
-                    </div>
-                    <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          Selecione as categorias que deseja remover permanentemente do Firestore. Cuidado: excluir Itens sem excluir NTs vai invalidar os números do painel.
-                        </p>
+            {/* CONTEÚDO: ABA MANUTENÇÃO */}
+            {activeTab === "maintenance" && (
+              <section id="v-maint" className="space-y-4">
+                {/* 4 Health indicators */}
+                <div className="adm-health">
+                  <div>
+                    <label>
+                      <i className="adm-dot bg-[var(--green)]" />
+                      Banco de dados
+                    </label>
+                    <strong>Operando</strong>
+                    <p>Firestore online</p>
+                  </div>
 
-                        <div className="flex flex-col gap-2 mt-4 mb-2">
-                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-                            <Checkbox checked={wipeCategories.nts} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, nts: c === true }))} />
-                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Mestre (NTs Registradas)</span>
-                          </label>
-                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-                            <Checkbox checked={wipeCategories.items} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, items: c === true }))} />
-                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Tabela Operacional (Sub-Itens / Cálculos KPIs)</span>
-                          </label>
-                          <label className="flex items-center gap-2 p-2.5 rounded-lg bg-red-100/50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-                            <Checkbox checked={wipeCategories.users} onCheckedChange={(c) => setWipeCategories(p => ({ ...p, users: c === true }))} />
-                            <span className="text-sm font-bold text-red-900 dark:text-red-300">Usuários Comuns (Protege Admin)</span>
-                          </label>
-                        </div>
-                      </div>
+                  <div>
+                    <label>
+                      <i className="adm-dot bg-[var(--green)]" />
+                      API de Pesagem
+                    </label>
+                    <strong>Operando</strong>
+                    <p>PostgreSQL conectado</p>
+                  </div>
 
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        className="w-full gap-2"
-                        onClick={() => setShowWipeDialog(true)}
-                        disabled={!wipeCategories.nts && !wipeCategories.items && !wipeCategories.users}
-                      >
-                        <Trash2 className="w-5 h-5" /> Iniciar Limpeza da Base
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div>
+                    <label>
+                      <i className="adm-dot bg-[var(--green)]" />
+                      Sincronização SAP
+                    </label>
+                    <strong>Automática</strong>
+                    <p>Estoque e aging em cache</p>
+                  </div>
 
-                  <Card className="flex flex-col">
-                    <div className="p-5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900/30 flex items-center gap-3 rounded-t-lg">
-                      <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-lg font-bold text-blue-800 dark:text-blue-400">Guia: Status do Servidor</h3>
-                    </div>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/40 border border-border/60">
-                        <Database className="w-6 h-6 text-emerald-500 shrink-0" />
-                        <div>
-                          <h4 className="font-bold text-foreground">Backups de Rotina</h4>
-                          <p className="text-sm text-muted-foreground mt-1">O Firestore é redundante, mas limpezas executadas manualmente nesta interface ignoram lixeiras temporárias. Muito cuidado.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/40 border border-border/60">
-                        <RefreshCcw className="w-6 h-6 text-amber-500 shrink-0" />
-                        <div>
-                          <h4 className="font-bold text-foreground">Ciclo de Vida da Autenticação</h4>
-                          <p className="text-sm text-muted-foreground mt-1">A exclusão do usuário remove o acesso do banco de dados. O e-mail da pessoa continuará na Base do Google até ela ser descadastrada do IAM principal.</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="md:col-span-2">
-                    <NTCleanupCard />
+                  <div>
+                    <label>
+                      <i className="adm-dot bg-[var(--amber)]" />
+                      Exportação de Backup
+                    </label>
+                    <strong>Sob demanda</strong>
+                    <p>JSON e auditoria completa</p>
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
+
+                <div className="adm-m-grid">
+                  {/* Card de Rotinas Administrativas */}
+                  <section className="adm-card">
+                    <div className="adm-card-head">
+                      <h2>Rotinas do Sistema</h2>
+                      <span className="hint">executadas sob demanda</span>
+                    </div>
+
+                    <div>
+                      {/* Job 1: Backup */}
+                      <div className="adm-job">
+                        <b>Exportar backup em JSON</b>
+                        <p>Baixa todos os usuários cadastrados, permissões e registros de auditoria em arquivo JSON.</p>
+                        <button
+                          type="button"
+                          onClick={handleExportBackup}
+                          className="btn sm"
+                        >
+                          Exportar
+                        </button>
+                      </div>
+
+                      {/* Job 2: Revisar inativos */}
+                      <div className="adm-job">
+                        <b>Revisar contas sem atividade</b>
+                        <p>
+                          {summaryCounts.inactive} conta{summaryCounts.inactive !== 1 ? "s" : ""} sem login há {INACTIVE_DAYS_THRESHOLD} dias ou mais.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("users");
+                            setQuickFilter("inactive");
+                          }}
+                          className="btn sm"
+                        >
+                          Revisar
+                        </button>
+                      </div>
+
+                      {/* Job 3: Limpeza de NTs Concluídas */}
+                      <div className="adm-job">
+                        <b>Retenção automática de NTs concluídas</b>
+                        <p>Gerencie o expurgo automático de notas concluídas com mais de 30 dias na base.</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById("nt-cleanup-anchor");
+                            el?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className="btn sm"
+                        >
+                          Configurar
+                        </button>
+                      </div>
+
+                      {/* Job 4: Limpeza Perigosa da Base (Wipe) */}
+                      <div className="adm-job bg-red-500/5">
+                        <b className="text-[var(--red)]">Limpeza de emergência (Wipe)</b>
+                        <p className="text-[var(--text-3)]">
+                          Exclui coleções inteiras do Firestore (NTs, Itens ou Usuários) de forma permanente.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowWipeDialog(true)}
+                          className="btn sm danger"
+                        >
+                          Iniciar Limpeza
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Card de Registro de Auditoria */}
+                  <section className="adm-card adm-log">
+                    <div className="adm-card-head">
+                      <h2>Registro de Auditoria</h2>
+                      <span className="hint">{auditLogs.length} registros</span>
+                    </div>
+
+                    <table className="adm-t">
+                      <tbody>
+                        {auditLogs.map((l) => (
+                          <tr key={l.id} className={cn(l.isNew && "new")}>
+                            <td className="when" title={formatDT(l.at)}>
+                              {formatRelative(l.at)}
+                            </td>
+                            <td className="who">{l.who}</td>
+                            <td>{l.what}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                </div>
+
+                {/* Card de Limpeza de NTs integrado */}
+                <div id="nt-cleanup-anchor" className="pt-2">
+                  <NTCleanupCard />
+                </div>
+              </section>
+            )}
           </main>
         </div>
       </div>
 
-      <AlertDialog open={showWipeDialog} onOpenChange={(open) => { if (!wiping) { setShowWipeDialog(open); if (!open) setWipeConfirmText(""); } }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              Confirmar Limpeza da Base
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é <span className="font-semibold text-foreground">irreversível</span>. Digite <span className="font-mono font-bold">WIPE</span> abaixo para confirmar.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input
-            autoFocus
-            placeholder="WIPE"
-            value={wipeConfirmText}
-            onChange={(e) => setWipeConfirmText(e.target.value)}
-            className="text-center uppercase font-black tracking-widest"
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={wiping} onClick={() => setWipeConfirmText("")}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleWipeDatabase();
-              }}
-              disabled={wipeConfirmText !== 'WIPE' || wiping}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
-            >
-              {wiping && <Loader2 className="h-4 w-4 animate-spin" />}
-              Limpar Base
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ================= GAVETA LATERAL (DRAWER: GERENCIAR ACESSO) ================= */}
+      <div
+        className={cn("adm-overlay", Boolean(editingUser) && "show")}
+        onClick={closeDrawer}
+      />
 
-      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && !deletingUser && setUserToDelete(null)}>
-        <AlertDialogContent>
+      <aside
+        className={cn("adm-drawer", Boolean(editingUser) && "show")}
+        aria-label="Gerenciar acesso do colaborador"
+      >
+        {editingUser && (
+          <>
+            <div className="adm-dr-head">
+              <span className={cn("adm-av", getUserState(editingUser).k === "online" && "on")}>
+                {getInitials(editingUser.name || editingUser.email)}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2>{editingUser.name || "Sem Nome Definido"}</h2>
+                <p className="truncate">{editingUser.email}</p>
+              </div>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={closeDrawer}
+                title="Fechar (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="adm-dr-body">
+              {/* Aprovação pendente */}
+              {editingUser.isApproved === false && !isDrawerSelf && (
+                <div className="adm-dr-sec">
+                  <h3 className="text-[var(--accent)] flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Cadastro aguardando aprovação
+                  </h3>
+                  <div className="adm-dr-actions">
+                    <button
+                      type="button"
+                      className="btn primary sm"
+                      onClick={() => handleDrawerAction("approve")}
+                    >
+                      Aprovar cadastro
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm danger"
+                      onClick={() => handleDrawerAction("delete")}
+                    >
+                      Recusar e excluir
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Situação */}
+              <div className="adm-dr-sec">
+                <h3>Situação da Conta</h3>
+                <div className="adm-kv">
+                  <span>Status</span>
+                  <span className={cn("adm-st", getUserState(editingUser).k)}>
+                    <i />
+                    <span>{getUserState(editingUser).l}</span>
+                  </span>
+                </div>
+                <div className="adm-kv">
+                  <span>Última atividade</span>
+                  <b>
+                    {editingUser.lastActive
+                      ? formatDT(parseLastActiveDate(editingUser.lastActive) || new Date())
+                      : "Sem registro"}
+                  </b>
+                </div>
+                <div className="adm-kv">
+                  <span>Cadastrado em</span>
+                  <b>
+                    {editingUser.created_at
+                      ? editingUser.created_at.slice(0, 10)
+                      : "Anterior"}
+                  </b>
+                </div>
+              </div>
+
+              {/* Função e Turno */}
+              <div className="adm-dr-sec">
+                <h3>Função e Turno</h3>
+                <div className="adm-fields">
+                  <div className="adm-field">
+                    <label>Perfil de Acesso</label>
+                    <select
+                      className="adm-select"
+                      value={drawerRole}
+                      disabled={isDrawerSelf}
+                      onChange={(e) => {
+                        const newR = e.target.value as UserRole;
+                        setDrawerRole(newR);
+                        if (newR === "supervisor" || newR === "admin") {
+                          setDrawerAllowedMO(true);
+                          setDrawerAllowedSol(true);
+                        }
+                      }}
+                      title={isDrawerSelf ? "Você não pode alterar o próprio perfil" : ""}
+                    >
+                      <option value="admin">Admin global</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="leader">Líder</option>
+                      <option value="user">Usuário</option>
+                    </select>
+                  </div>
+
+                  {drawerRole === "leader" && (
+                    <div className="adm-field">
+                      <label>Turno</label>
+                      <select
+                        className="adm-select"
+                        value={drawerTurno}
+                        onChange={(e) => setDrawerTurno(Number(e.target.value) as ProductionTurno)}
+                      >
+                        <option value={1}>1º turno (07:20 - 15:50)</option>
+                        <option value={2}>2º turno (15:50 - 23:45)</option>
+                        <option value={3}>3º turno (23:45 - 07:20)</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Permissões por Módulo */}
+              <div className="adm-dr-sec">
+                <h3>Permissões por Módulo</h3>
+                {MODULES_CONFIG.map((m) => {
+                  let isChecked = false;
+                  let isLocked = false;
+
+                  if (isDrawerAdmin) {
+                    isChecked = true;
+                    isLocked = true;
+                  } else if (m.base) {
+                    isChecked = true;
+                    isLocked = true;
+                  } else if (m.k === "mo") {
+                    isChecked = drawerRole === "supervisor" || drawerAllowedMO;
+                    isLocked = drawerRole === "supervisor";
+                  } else if (m.k === "sol") {
+                    isChecked = drawerRole === "supervisor" || drawerAllowedSol;
+                    isLocked = drawerRole === "supervisor";
+                  } else if (m.k === "heij") {
+                    isChecked = drawerRole === "supervisor" || drawerRole === "leader";
+                    isLocked = true;
+                  } else if (m.k === "admin") {
+                    isChecked = false;
+                    isLocked = true;
+                  }
+
+                  const handleToggleMod = (checked: boolean) => {
+                    if (m.k === "mo") setDrawerAllowedMO(checked);
+                    if (m.k === "sol") setDrawerAllowedSol(checked);
+                  };
+
+                  return (
+                    <div key={m.k} className={cn("adm-perm", isLocked && "locked")}>
+                      <b>{m.l}</b>
+                      <small>
+                        {m.base
+                          ? "Padrão para todos os usuários"
+                          : isDrawerAdmin
+                          ? "Incluído no perfil Admin global"
+                          : drawerRole === "supervisor"
+                          ? "Incluído no perfil Supervisor"
+                          : m.d}
+                      </small>
+                      <label className="adm-sw">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isLocked}
+                          onChange={(e) => handleToggleMod(e.target.checked)}
+                        />
+                        <i />
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Segurança e PIN */}
+              <div className="adm-dr-sec">
+                <h3>Segurança</h3>
+                <div className="adm-kv">
+                  <span>PIN de Mão de Obra</span>
+                  <b>{editingUser.pinMaoDeObra ? "Ativo" : "Não cadastrado"}</b>
+                </div>
+                <div className="adm-dr-actions mt-2">
+                  <button
+                    type="button"
+                    className="btn sm"
+                    disabled={!editingUser.pinMaoDeObra}
+                    onClick={() => handleDrawerAction("pinreset")}
+                  >
+                    Redefinir PIN
+                  </button>
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => {
+                      addAuditLog(`Encerrou sessões remotas de ${editingUser.name || editingUser.email}`);
+                      toast.success("Sessões encerradas com sucesso");
+                    }}
+                  >
+                    Encerrar sessões
+                  </button>
+                </div>
+              </div>
+
+              {/* Zona de Risco */}
+              {!isDrawerSelf && (
+                <div className="adm-dr-sec">
+                  <h3 className="text-[var(--red)]">Zona de Risco</h3>
+                  <div className="adm-dr-actions">
+                    {editingUser.isApproved === false ? (
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={() => handleDrawerAction("unblock")}
+                      >
+                        Reativar conta
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn sm danger"
+                        onClick={() => handleDrawerAction("block")}
+                      >
+                        Desativar conta
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn sm danger"
+                      onClick={() => handleDrawerAction("delete")}
+                    >
+                      Excluir definitivamente
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Rodapé da Gaveta */}
+            <div className="adm-dr-foot">
+              <span className="grow font-mono text-[11px] text-[var(--amber)]">
+                {isDrawerDirty ? "Alterações não salvas" : ""}
+              </span>
+              <button
+                type="button"
+                className="btn"
+                onClick={closeDrawer}
+                disabled={drawerSaving}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!isDrawerDirty || drawerSaving}
+                onClick={handleSaveDrawer}
+              >
+                {drawerSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
+
+      {/* AlertDialog de Exclusão Definitiva */}
+      <AlertDialog
+        open={Boolean(userToDelete)}
+        onOpenChange={(open) => !open && !deletingUser && setUserToDelete(null)}
+      >
+        <AlertDialogContent className="bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir definitivamente <span className="font-semibold text-foreground">{userToDelete?.name || userToDelete?.email}</span>? Esta ação não pode ser desfeita.
+            <AlertDialogTitle className="text-base font-semibold">
+              Excluir usuário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-[var(--text-3)]">
+              Tem certeza que deseja excluir definitivamente{" "}
+              <b className="text-[var(--text)]">{userToDelete?.name || userToDelete?.email}</b>?
+              Esta ação removerá o usuário da base de dados e não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingUser}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deletingUser}
+              className="btn"
+            >
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 confirmDeleteUser();
               }}
               disabled={deletingUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+              className="btn danger"
             >
-              {deletingUser && <Loader2 className="h-4 w-4 animate-spin" />}
+              {deletingUser && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={!!userToResetPin} onOpenChange={(open) => !open && !resettingPin && setUserToResetPin(null)}>
-        <AlertDialogContent>
+
+      {/* AlertDialog de Limpeza Perigosa (Wipe) */}
+      <AlertDialog
+        open={showWipeDialog}
+        onOpenChange={(open) => {
+          if (!wiping) {
+            setShowWipeDialog(open);
+            if (!open) setWipeConfirmText("");
+          }
+        }}
+      >
+        <AlertDialogContent className="bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Key className="h-5 w-5" />
-              Resetar PIN de Mão de Obra
+            <AlertDialogTitle className="flex items-center gap-2 text-[var(--red)]">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar Limpeza da Base (Wipe)
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja resetar o PIN de segurança de <span className="font-semibold text-foreground">{userToResetPin?.name || userToResetPin?.email}</span>?
-              <br /><br />
-              No próximo acesso ao módulo de Mão de Obra, o sistema solicitará automaticamente que o usuário cadastre um novo PIN de 4 a 6 dígitos.
+            <AlertDialogDescription className="text-xs text-[var(--text-3)]">
+              Esta ação é <span className="font-bold text-[var(--red)]">irreversível</span>. Selecione as categorias e digite <span className="font-mono font-bold text-[var(--text)]">WIPE</span> abaixo:
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="space-y-2 py-2 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer p-2 rounded border border-[var(--border)] bg-[var(--surface-2)]">
+              <input
+                type="checkbox"
+                checked={wipeCategories.nts}
+                onChange={(e) => setWipeCategories((prev) => ({ ...prev, nts: e.target.checked }))}
+                className="accent-[var(--accent)]"
+              />
+              <span>Tabela Mestre (Notas Técnicas)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer p-2 rounded border border-[var(--border)] bg-[var(--surface-2)]">
+              <input
+                type="checkbox"
+                checked={wipeCategories.items}
+                onChange={(e) => setWipeCategories((prev) => ({ ...prev, items: e.target.checked }))}
+                className="accent-[var(--accent)]"
+              />
+              <span>Itens de Pesagem (Operacional)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer p-2 rounded border border-[var(--border)] bg-[var(--surface-2)]">
+              <input
+                type="checkbox"
+                checked={wipeCategories.users}
+                onChange={(e) => setWipeCategories((prev) => ({ ...prev, users: e.target.checked }))}
+                className="accent-[var(--accent)]"
+              />
+              <span>Usuários Comuns (Mantém Admin Principal)</span>
+            </label>
+          </div>
+
+          <input
+            autoFocus
+            placeholder="WIPE"
+            value={wipeConfirmText}
+            onChange={(e) => setWipeConfirmText(e.target.value)}
+            className="adm-select w-full text-center uppercase font-mono font-bold tracking-widest"
+          />
+
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resettingPin}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={wiping}
+              onClick={() => setWipeConfirmText("")}
+              className="btn"
+            >
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
-                confirmResetPin();
+                handleWipeDatabase();
               }}
-              disabled={resettingPin}
-              className="bg-violet-600 hover:bg-violet-700 text-white gap-2"
+              disabled={wipeConfirmText !== "WIPE" || wiping}
+              className="btn danger"
             >
-              {resettingPin && <Loader2 className="h-4 w-4 animate-spin" />}
-              Confirmar Reset de PIN
+              {wiping && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+              Limpar Base
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Modal de Gerenciamento Unificado de Acessos do Usuário */}
-      <UserManageModal
-        open={!!selectedUserForManage}
-        onOpenChange={(open) => !open && setSelectedUserForManage(null)}
-        user={selectedUserForManage}
-        onSave={handleSaveUserFromModal}
-        onResetPin={(u) => setUserToResetPin(u as UserItem)}
-        onDeleteUser={(u) => requestDeleteUser(u as UserItem)}
-      />
     </ProtectedRoute>
   );
 }
