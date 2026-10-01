@@ -193,9 +193,9 @@ export const NTItemRow = ({
                   className="pay"
                   disabled={isUpdating}
                   onClick={() => handleSetStatus('Pago')}
-                  title="Pagar diretamente (marcar como pago)"
+                  title="Marcar como pago!"
                 >
-                  {isUpdating ? "Salvando..." : "Pagar"}
+                  {isUpdating ? "Salvando..." : "✓"}
                 </button>
               )}
 

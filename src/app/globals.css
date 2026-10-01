@@ -441,7 +441,7 @@ body.capture .pl-\[52px\] {
 .it .when b{font-family:var(--font-mono),var(--mono),'JetBrains Mono',monospace;font-weight:500;color:var(--text-2)}
 .it .when .late{color:var(--red)}
 .it .when .slow{color:var(--red)}
-.iacts{display:flex;justify-content:flex-end;gap:2px;opacity:0;transition:opacity .15s}
+.iacts{display:flex;align-items:center;justify-content:flex-end;gap:25px;opacity:0;transition:opacity .15s}
 .it:hover .iacts{opacity:1}
 .iacts .pay{width:auto;padding:0 8px;height:24px;border:1px solid var(--border-strong);font-size:11.5px;font-weight:500;color:var(--text-2);background:none;cursor:pointer;border-radius:4px}
 .iacts .pay:hover{border-color:var(--green);color:var(--green);background:none}
