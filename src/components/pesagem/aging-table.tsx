@@ -5,6 +5,15 @@ import { AgingData, RemessaData, ConfiguracaoResiduais, LoteInvestigacao } from 
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
 import { addLoteInvestigacao, removeLoteInvestigacao, triggerSapAutomation, checkSapAutomationStatus } from '@/lib/dashpesagem-api';
+import { generateDevolverZwm296Vbs, DevolverVolumeItem } from './residuais-view';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Search,
   Filter,
@@ -16,6 +25,12 @@ import {
   X,
   RefreshCw,
   Loader2,
+  Undo2,
+  Plus,
+  Trash2,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -78,6 +93,8 @@ interface AgingTableProps {
   onDevolver?: (selectedRows: EnrichedRow[]) => void;
   selectedMaterialFilter?: string;
   onClearMaterialFilter?: () => void;
+  currentUserEmail?: string;
+  onAtualizarDb?: () => void;
 }
 
 export function AgingTable({
@@ -95,6 +112,8 @@ export function AgingTable({
   onDevolver,
   selectedMaterialFilter,
   onClearMaterialFilter,
+  currentUserEmail,
+  onAtualizarDb,
 }: AgingTableProps) {
   const [cols, setCols] = useState<ColumnDef[]>(DEFAULT_COLS);
   const [colsPopOpen, setColsPopOpen] = useState(false);
@@ -108,6 +127,18 @@ export function AgingTable({
   const [isMoverSRunning, setIsMoverSRunning] = useState(false);
   const lastSelectedRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados do Modal de Devolução Fracionada (/nzwm296)
+  const [devolverOpen, setDevolverOpen] = useState(false);
+  const [devolverMaterial, setDevolverMaterial] = useState('');
+  const [devolverDescricao, setDevolverDescricao] = useState('');
+  const [devolverLote, setDevolverLote] = useState('');
+  const [devolverUnidade, setDevolverUnidade] = useState('KG');
+  const [devolverSaldoTotal, setDevolverSaldoTotal] = useState(0);
+  const [devolverVolumes, setDevolverVolumes] = useState<DevolverVolumeItem[]>([
+    { id: '1', quantidade: '', volume: '1' },
+  ]);
+  const [isDevolverRunning, setIsDevolverRunning] = useState(false);
 
   // Atalho '/' para focar a busca
   useEffect(() => {
@@ -486,13 +517,130 @@ export function AgingTable({
     }
   };
 
-  const handleDevolver = () => {
-    if (selectedRowsList.length === 0) return;
-    if (onDevolver) {
-      onDevolver(selectedRowsList);
-    } else {
-      toast.success(`${selectedRowsList.length} lote(s) direcionados para devolução`);
+  const totalDevolvendo = useMemo(() => {
+    return devolverVolumes.reduce((acc, v) => {
+      const parsed = parseFloat(v.quantidade.replace(',', '.')) || 0;
+      return acc + parsed;
+    }, 0);
+  }, [devolverVolumes]);
+
+  const saldoRestante = useMemo(() => {
+    return Number((devolverSaldoTotal - totalDevolvendo).toFixed(3));
+  }, [devolverSaldoTotal, totalDevolvendo]);
+
+  const isOverSaldo = totalDevolvendo > devolverSaldoTotal + 0.0001;
+  const isZeroRestante = Math.abs(saldoRestante) <= 0.0001 && totalDevolvendo > 0;
+
+  const handleOpenDevolver = () => {
+    if (selectedRowsList.length !== 1) {
+      toast.error('Selecione exatamente 1 item para devolução');
+      return;
     }
+    const item = selectedRowsList[0];
+    const rawEstoque = item.estoque_disponivel;
+    const numEstoque =
+      typeof rawEstoque === 'number'
+        ? rawEstoque
+        : parseFloat(String(rawEstoque).replace(',', '.')) || 0;
+    const quantidadeFormatada = numEstoque.toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+      useGrouping: false,
+    });
+    setDevolverMaterial(item.material);
+    setDevolverDescricao(item.texto_breve_material || '');
+    setDevolverLote(item.lote);
+    setDevolverUnidade(item.unidade_medida?.toUpperCase() || 'KG');
+    setDevolverSaldoTotal(numEstoque);
+    setDevolverVolumes([
+      { id: '1', quantidade: quantidadeFormatada, volume: '1' },
+    ]);
+    setDevolverOpen(true);
+  };
+
+  const handleAddVolume = () => {
+    setDevolverVolumes((prev) => [
+      ...prev,
+      {
+        id: String(Date.now()),
+        quantidade: '',
+        volume: String(prev.length + 1),
+      },
+    ]);
+  };
+
+  const handleRemoveVolume = (idx: number) => {
+    if (devolverVolumes.length <= 1) return;
+    setDevolverVolumes((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleUpdateVolume = (
+    idx: number,
+    field: keyof DevolverVolumeItem,
+    val: string
+  ) => {
+    setDevolverVolumes((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: val };
+      return next;
+    });
+  };
+
+  const handleFillRestante = () => {
+    if (saldoRestante <= 0.0001) return;
+    setDevolverVolumes((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      const curQtd = parseFloat(last.quantidade.replace(',', '.')) || 0;
+      const newQtd = (curQtd + saldoRestante).toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3,
+        useGrouping: false,
+      });
+      next[next.length - 1] = { ...last, quantidade: newQtd };
+      return next;
+    });
+  };
+
+  const handleConfirmDevolver = async () => {
+    if (devolverVolumes.length === 0) return;
+    setIsDevolverRunning(true);
+    const toastId = toast.loading('Enviando devolução ao SAP GUI via Planilha Sync...');
+
+    try {
+      const vbs = generateDevolverZwm296Vbs(devolverMaterial, devolverLote, devolverVolumes);
+      const res = await triggerSapAutomation(
+        'devolver_zwm296',
+        currentUserEmail || 'Web Pesagem',
+        vbs
+      );
+
+      if (res.job?.id) {
+        const start = Date.now();
+        const maxWaitMs = 60000;
+        while (Date.now() - start < maxWaitMs) {
+          const job = await checkSapAutomationStatus(res.job.id);
+          if (job?.status === 'completed') break;
+          if (job?.status === 'failed') throw new Error(job.result_message || 'Erro na execução do script SAP');
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+
+      toast.dismiss(toastId);
+      toast.success('Devolução processada com sucesso no SAP!');
+      setDevolverOpen(false);
+      setSelectedIds({});
+      onAtualizarDb?.();
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(`Erro ao executar devolução: ${err.message || 'Falha no SAP'}`);
+    } finally {
+      setIsDevolverRunning(false);
+    }
+  };
+
+  const handleDevolver = () => {
+    handleOpenDevolver();
   };
 
   const handleMoverS = async () => {
@@ -1086,6 +1234,218 @@ export function AgingTable({
           </tbody>
         </table>
       </div>
+
+      {/* Dialog Devolução Fracionada (/nzwm296) */}
+      <Dialog open={devolverOpen} onOpenChange={setDevolverOpen}>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-3xl lg:max-w-4xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] p-4 sm:p-6 max-h-[90dvh] flex flex-col rounded-xl shadow-2xl">
+          <DialogHeader className="shrink-0 pb-1">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <DialogTitle className="flex items-center gap-2 text-[var(--text)] text-base font-bold uppercase tracking-wider">
+                <Undo2 className="h-5 w-5 text-[var(--amber)]" />
+                <span>Devolução Fracionada no SAP (/nzwm296)</span>
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <span className="bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] font-mono text-xs px-2 py-0.5 rounded">
+                  Material: <strong className="text-[var(--accent)] ml-1">{devolverMaterial}</strong>
+                </span>
+                <span className="bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] font-mono text-xs px-2 py-0.5 rounded">
+                  Lote: <strong className="text-[var(--amber)] ml-1">{devolverLote}</strong>
+                </span>
+              </div>
+            </div>
+            {devolverDescricao && (
+              <p className="text-xs text-[var(--text-3)] truncate max-w-2xl mt-1">{devolverDescricao}</p>
+            )}
+            <DialogDescription className="text-[var(--text-3)] text-xs font-mono mt-0.5">
+              Configure múltiplos volumes para devolução na transação <code>/nzwm296</code>. O saldo restante é calculado automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Cards de Saldo */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-2 shrink-0">
+            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-strong)] flex flex-col justify-between">
+              <span className="text-[10.5px] font-mono font-semibold text-[var(--text-3)] uppercase tracking-wider">Saldo em Estoque</span>
+              <div className="mt-1">
+                <span className="text-xl font-bold font-mono text-[var(--text)]">
+                  {devolverSaldoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                </span>
+                <span className="text-xs text-[var(--text-3)] ml-1.5 font-semibold font-mono">{devolverUnidade}</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-3)] font-mono mt-1">Total disponível no lote selecionado</span>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-strong)] flex flex-col justify-between">
+              <span className="text-[10.5px] font-mono font-semibold text-[var(--text-3)] uppercase tracking-wider">Total a Devolver</span>
+              <div className="mt-1">
+                <span className={cn(
+                  "text-xl font-bold font-mono",
+                  isOverSaldo ? "text-[var(--red)]" : isZeroRestante ? "text-[var(--green)]" : "text-[var(--text)]"
+                )}>
+                  {totalDevolvendo.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                </span>
+                <span className="text-xs text-[var(--text-3)] ml-1.5 font-semibold font-mono">{devolverUnidade}</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-3)] font-mono mt-1">
+                Soma de {devolverVolumes.length} volume(s)
+              </span>
+            </div>
+
+            <div
+              onClick={saldoRestante > 0.0001 ? handleFillRestante : undefined}
+              className={cn(
+                "p-3.5 rounded-lg border flex flex-col justify-between transition-all duration-200",
+                isZeroRestante
+                  ? "bg-[var(--green)]/10 border-[var(--green)]/40 text-[var(--green)]"
+                  : isOverSaldo
+                  ? "bg-[var(--red)]/10 border-[var(--red)]/40 text-[var(--red)]"
+                  : "bg-[var(--amber)]/10 hover:bg-[var(--amber)]/20 border-[var(--amber)]/40 text-[var(--amber)] cursor-pointer shadow-xs group"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-mono font-semibold uppercase tracking-wider">
+                  {isZeroRestante ? 'Devolução Completa' : isOverSaldo ? 'Saldo Excedido' : 'Saldo Restante'}
+                </span>
+                {isZeroRestante ? (
+                  <CheckCircle2 size={15} className="text-[var(--green)]" />
+                ) : isOverSaldo ? (
+                  <AlertCircle size={15} className="text-[var(--red)]" />
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--amber)]/20 border border-[var(--amber)]/40 text-[var(--amber)] font-bold group-hover:bg-[var(--amber)] group-hover:text-[#0e1014] transition-colors">
+                    Auto-preencher ↵
+                  </span>
+                )}
+              </div>
+              <div className="mt-1">
+                <span className="text-xl font-bold font-mono">
+                  {isOverSaldo ? '+' : ''}
+                  {Math.abs(saldoRestante).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                </span>
+                <span className="text-xs ml-1.5 font-semibold font-mono">{devolverUnidade}</span>
+              </div>
+              <span className="text-[10px] font-mono mt-1 opacity-90 truncate">
+                {isZeroRestante ? "100% do saldo distribuído" : isOverSaldo ? "Reduza a quantidade" : "👉 Clique para auto-preencher"}
+              </span>
+            </div>
+          </div>
+
+          {/* Tabela de Volumes */}
+          <div className="flex-1 overflow-y-auto border border-[var(--border-strong)] rounded-lg bg-[var(--surface-2)]/60 my-1">
+            <table className="w-full text-left border-collapse font-mono text-xs">
+              <thead className="bg-[var(--surface-2)] sticky top-0 z-10 border-b border-[var(--border-strong)] text-[11px] text-[var(--text-3)] uppercase">
+                <tr>
+                  <th className="w-12 px-3 py-2 text-center font-bold">#</th>
+                  <th className="w-28 px-3 py-2 font-bold">Material</th>
+                  <th className="w-28 px-3 py-2 font-bold">Lote</th>
+                  <th className="px-3 py-2 font-bold">Qtd a Devolver (MENGE)</th>
+                  <th className="w-28 px-3 py-2 text-center font-bold">Qtd Vol</th>
+                  <th className="w-20 px-3 py-2 text-center font-bold">Pallet</th>
+                  <th className="w-14 px-3 py-2 text-center font-bold">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {devolverVolumes.map((volItem, idx) => (
+                  <tr key={volItem.id} className="hover:bg-[var(--hover)] transition-colors">
+                    <td className="text-center font-bold text-[var(--text-3)] px-3 py-2">
+                      {idx + 1}
+                    </td>
+                    <td className="text-[var(--accent)] font-semibold px-3 py-2">
+                      {devolverMaterial}
+                    </td>
+                    <td className="text-[var(--amber)] font-semibold px-3 py-2">
+                      {devolverLote}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={volItem.quantidade}
+                          onChange={(e) => handleUpdateVolume(idx, 'quantidade', e.target.value)}
+                          placeholder="Ex: 4,985"
+                          className="font-mono font-bold text-xs bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] focus:border-[var(--accent)] h-8 rounded-[var(--radius)] px-2.5 outline-none flex-1 placeholder:text-[var(--text-3)]"
+                        />
+                        <span className="text-xs text-[var(--text-3)] font-semibold">{devolverUnidade}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        value={volItem.volume}
+                        onChange={(e) => handleUpdateVolume(idx, 'volume', e.target.value)}
+                        placeholder="1"
+                        className="font-mono text-center text-xs bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] focus:border-[var(--accent)] h-8 rounded-[var(--radius)] w-20 mx-auto block outline-none placeholder:text-[var(--text-3)]"
+                      />
+                    </td>
+                    <td className="text-center font-mono text-xs text-[var(--text-3)] px-3 py-2">
+                      1
+                    </td>
+                    <td className="text-center px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVolume(idx)}
+                        disabled={devolverVolumes.length <= 1}
+                        className="h-7 w-7 rounded-[var(--radius)] bg-[var(--surface)] hover:bg-[var(--red)]/20 text-[var(--text-3)] hover:text-[var(--red)] border border-[var(--border)] disabled:opacity-20 grid place-items-center mx-auto transition-colors cursor-pointer"
+                        title="Remover volume"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between flex-wrap gap-2 pt-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddVolume}
+                className="px-3 py-1.5 rounded-[var(--radius)] bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-bold text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus size={13} className="text-[var(--accent)]" />
+                <span>+ Adicionar Volume</span>
+              </button>
+
+              {saldoRestante > 0.0001 && (
+                <button
+                  type="button"
+                  onClick={handleFillRestante}
+                  className="px-3 py-1.5 rounded-[var(--radius)] bg-[var(--amber)]/10 hover:bg-[var(--amber)]/20 border border-[var(--amber)]/40 text-[var(--amber)] font-bold text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Sparkles size={13} />
+                  <span>Preencher Restante ({saldoRestante.toLocaleString('pt-BR', { minimumFractionDigits: 3 })} {devolverUnidade})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="mt-3 pt-3 border-t border-[var(--border)] gap-2 sm:gap-0 shrink-0">
+            <button
+              type="button"
+              onClick={() => setDevolverOpen(false)}
+              className="px-4 py-2 rounded-[var(--radius)] bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-semibold text-xs transition-colors cursor-pointer mr-2"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDevolver}
+              disabled={totalDevolvendo <= 0 || isOverSaldo || isDevolverRunning}
+              className="px-5 py-2 rounded-[var(--radius)] bg-[var(--amber)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-[#0e1014] font-bold text-xs shadow-xs transition-all active:scale-[0.98] flex items-center gap-1.5 cursor-pointer"
+            >
+              {isDevolverRunning ? (
+                <>
+                  <Loader2 size={14} className="animate-spin text-[#0e1014]" />
+                  <span>Executando no SAP...</span>
+                </>
+              ) : (
+                <>
+                  <Undo2 size={14} />
+                  <span>Executar Devolução SAP ({devolverVolumes.length} Volumes)</span>
+                </>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

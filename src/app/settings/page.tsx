@@ -361,12 +361,76 @@ export default function SettingsPage() {
       <Sidebar />
 
       {/* Conteúdo com Topbar (48px) */}
-      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
         <Topbar />
 
         {/* Layout do Concept: Navegação Lateral Secundária + Main com Scroll */}
-        <div className="flex-1 flex min-h-0 overflow-hidden">
-          {/* Navegação Interna de Configurações (220px) */}
+        <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+          {/* Navegação Mobile de Configurações (Fita Horizontal) */}
+          <div className="lg:hidden border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+            <button
+              type="button"
+              onClick={() => scrollToSection('perfil')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'perfil' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Perfil
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('notif')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'notif' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Notificações
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('pesagem')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'pesagem' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Pesagem
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('fabrica')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'fabrica' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Fábrica
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('mdo')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'mdo' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Mão de Obra
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('sync')}
+              className={cn(
+                "px-2.5 py-1 rounded-[5px] text-xs font-medium whitespace-nowrap transition-colors",
+                activeSection === 'sync' ? "bg-[var(--hover)] text-[var(--text)] font-semibold" : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              Sincronização
+            </button>
+          </div>
+
+          {/* Navegação Interna de Configurações (220px) Desktop */}
           <aside className="w-[220px] shrink-0 border-r border-[var(--border)] p-5 overflow-y-auto hidden lg:flex flex-col select-none bg-[var(--surface)]">
             <h1 className="text-base font-semibold text-[var(--text)] tracking-tight px-2">Configurações</h1>
             <p className="text-xs text-[var(--text-3)] px-2 mb-4 leading-relaxed">

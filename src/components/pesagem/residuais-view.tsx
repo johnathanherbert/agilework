@@ -581,7 +581,7 @@ export function ResiduaisView({
   const [sortDir, setSortDir] = useState<number>(1);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [blockedMap, setBlockedMap] = useState<Record<string, boolean>>({});
-  const [analysisMode, setAnalysisMode] = useState(true);
+  const [analysisMode, setAnalysisMode] = useState(false);
   const [resNivelFilter, setResNivelFilter] = useState<'all' | 'v' | 'a' | 'r'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const lastSelectedRef = useRef<number | null>(null);

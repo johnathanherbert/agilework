@@ -389,7 +389,7 @@ function ProducaoPageContent() {
       </div>
 
       {/* Conteúdo Principal com Topbar */}
-      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
         <div className="app-topbar">
           <Topbar />
         </div>

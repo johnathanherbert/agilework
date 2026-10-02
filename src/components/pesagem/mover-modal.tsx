@@ -159,7 +159,7 @@ export function MoverModal({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !isRunning && onOpenChange(val)}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-[#0e1014] border border-[var(--border-strong)] text-[var(--text)] rounded-xl shadow-2xl">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[90dvh] flex flex-col p-0 overflow-hidden bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] rounded-xl shadow-2xl">
         <DialogHeader className="p-4 border-b border-[var(--border)]">
           <DialogTitle className="text-base font-bold text-[var(--text)] uppercase tracking-wider">
             Mover estoque no SAP

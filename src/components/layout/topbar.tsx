@@ -1,30 +1,97 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useFirebase } from '../providers/firebase-provider';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useFirebase, ADMIN_EMAIL } from '../providers/firebase-provider';
 import { HeaderClock } from '../clock/header-clock';
 import { NotificationBell } from '../notifications/notification-bell';
 import { OnlineUsers } from './online-users';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, User, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Sun, Moon, User, Settings, ShieldCheck, LogOut, Menu } from 'lucide-react';
+import { navItems, type NavItem } from './sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 export const Topbar = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { userData, user, signOut } = useFirebase();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentPath, setCurrentPath] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const status = searchParams?.get('status') || null;
+    let fullPath = pathname || '';
+    if (status) {
+      fullPath += `?status=${status}`;
+    }
+    setCurrentPath(fullPath);
+  }, [pathname, searchParams]);
+
+  const isNavActive = (href: string) => {
+    if (href.includes('?')) {
+      return currentPath === href;
+    }
+    return pathname === href && !searchParams?.get('status');
+  };
+
+  const isItemVisible = (item: NavItem) => {
+    if (item.requiredRole === 'all') return true;
+    if (!userData) return false;
+    if (userData.email === ADMIN_EMAIL) return true;
+
+    if (item.requiredRole === 'admin') {
+      return userData.email === ADMIN_EMAIL;
+    }
+
+    if (item.requiredRole === 'leader') {
+      return userData.role === 'leader' || userData.role === 'supervisor';
+    }
+
+    if (item.requiredRole === 'maoDeObra') {
+      return (
+        userData.role === 'supervisor' ||
+        (userData.role === 'leader' && Boolean(userData.allowedMaoDeObra))
+      );
+    }
+
+    if (item.requiredRole === 'solicitacoes') {
+      return (
+        userData.role === 'supervisor' ||
+        Boolean(userData.allowedSolicitacoes)
+      );
+    }
+
+    if (item.requiredRole === 'pesagem') {
+      return (
+        userData.role === 'supervisor' ||
+        Boolean(userData.allowedPesagem)
+      );
+    }
+
+    return false;
+  };
+
+  const visibleItems = navItems.filter(isItemVisible);
 
   const getBreadcrumbs = () => {
     if (!pathname) return { section: 'AgileWork', page: 'Painel' };
@@ -43,12 +110,107 @@ export const Topbar = () => {
   const { section, page } = getBreadcrumbs();
 
   return (
-    <header className="h-12 border-b border-[var(--border)] bg-[var(--surface)] px-4 md:px-6 flex items-center justify-between z-40 select-none transition-colors">
-      {/* Breadcrumb da Seção / Página */}
-      <div className="flex items-center gap-2 text-xs text-[var(--text-3)]">
-        <span>{section}</span>
-        <span className="text-[var(--border-strong)]">/</span>
-        <b className="font-semibold text-[var(--text)]">{page}</b>
+    <header className="h-12 border-b border-[var(--border)] bg-[var(--surface)] px-3 md:px-6 flex items-center justify-between z-40 select-none transition-colors">
+      {/* Lado Esquerdo: Botão Mobile Hamburguer & Breadcrumb */}
+      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        {/* Botão Hamburguer Mobile */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="md:hidden w-8 h-8 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer shrink-0"
+              aria-label="Abrir menu de navegação"
+            >
+              <Menu size={18} />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[280px] p-0 bg-[var(--surface)] border-r border-[var(--border)] text-[var(--text)] flex flex-col justify-between">
+            <div>
+              {/* Header do Menu Mobile */}
+              <div className="p-4 border-b border-[var(--border)] flex items-center gap-3">
+                <div className="w-7 h-7 rounded-[6px] bg-[var(--text)] text-[var(--bg)] grid place-items-center font-bold text-xs shadow-xs">
+                  A
+                </div>
+                <div>
+                  <div className="text-sm font-semibold tracking-tight text-[var(--text)]">AgileWork</div>
+                  <div className="text-[11px] text-[var(--text-3)] font-mono">Gestão Operacional</div>
+                </div>
+              </div>
+
+              {/* Lista de Navegação Mobile */}
+              <nav className="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)] no-scrollbar">
+                {visibleItems.map((item) => {
+                  const active = isNavActive(item.href);
+                  const Icon = item.icon;
+
+                  return (
+                    <button
+                      key={item.href}
+                      type="button"
+                      onClick={() => {
+                        router.push(item.href);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-xs font-medium transition-colors cursor-pointer text-left",
+                        active
+                          ? "bg-[var(--hover)] text-[var(--text)] font-semibold border-l-2 border-[var(--accent)]"
+                          : "text-[var(--text-2)] hover:bg-[var(--hover)] hover:text-[var(--text)]"
+                      )}
+                    >
+                      <Icon size={16} className={cn("shrink-0", active ? "text-[var(--accent)]" : "text-[var(--text-3)]")} />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Footer do Menu Mobile com Perfil */}
+            <div className="p-3 border-t border-[var(--border)] bg-[var(--surface-2)]/40 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[var(--accent-weak)] border border-[var(--accent)]/30 text-[var(--accent)] grid place-items-center font-bold text-xs shrink-0">
+                  {userData?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium text-[var(--text)] truncate">{userData?.name || 'Usuário'}</div>
+                  <div className="text-[10px] text-[var(--text-3)] font-mono truncate">{user?.email}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTheme(theme === 'dark' ? 'light' : 'dark');
+                  }}
+                  className="flex-1 text-[11px] py-1.5 px-2 rounded-[5px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+                  <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    router.push('/login');
+                  }}
+                  className="text-[11px] py-1.5 px-2 rounded-[5px] border border-[var(--red)]/30 bg-[var(--red)]/10 text-[var(--red)] flex items-center justify-center gap-1.5 cursor-pointer hover:bg-[var(--red)]/20"
+                >
+                  <LogOut size={13} />
+                  <span>Sair</span>
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Breadcrumb da Seção / Página */}
+        <div className="flex items-center gap-1.5 md:gap-2 text-xs text-[var(--text-3)] truncate">
+          <span className="hidden sm:inline truncate">{section}</span>
+          <span className="text-[var(--border-strong)] hidden sm:inline">/</span>
+          <b className="font-semibold text-[var(--text)] truncate">{page}</b>
+        </div>
       </div>
 
       {/* Metadados Operacionais & Ações */}

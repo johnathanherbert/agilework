@@ -268,12 +268,12 @@ function NTManagerContent() {
     <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
         <Topbar />
 
         <div className="flex-1 flex min-h-0 overflow-hidden">
           {/* Main content area */}
-          <main className="flex-1 overflow-auto" style={{ padding: '24px 28px 48px' }}>
+          <main className="flex-1 overflow-auto p-4 sm:p-6 md:px-7 md:py-6 pb-12">
             {/* ── .page-head ── */}
             <div className="page-head">
               <div>

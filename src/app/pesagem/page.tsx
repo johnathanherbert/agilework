@@ -56,10 +56,20 @@ import {
   X,
   Scale,
   Loader2,
+  Shield,
 } from 'lucide-react';
-import { useFirebase } from '@/components/providers/firebase-provider';
+import { useRouter } from 'next/navigation';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 
 export default function PesagemPage() {
+  const router = useRouter();
+  const { userData, user } = useFirebase();
+
+  const isAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin';
+  const isSupervisor = userData?.role === 'supervisor';
+  const isAuthorized = Boolean(userData?.allowedPesagem);
+  const canAccess = isAdmin || isSupervisor || isAuthorized;
+
   const [data, setData] = useState<AgingData[]>([]);
   const [valores, setValores] = useState<Record<string, number>>({});
   const [remessas, setRemessas] = useState<RemessaData[]>([]);
@@ -94,8 +104,6 @@ export default function PesagemPage() {
   const [moverModalOpen, setMoverModalOpen] = useState(false);
   const [moverSelectedItems, setMoverSelectedItems] = useState<EnrichedRow[]>([]);
   const [isAtualizandoDb, setIsAtualizandoDb] = useState(false);
-
-  const { user, userData } = useFirebase();
 
   // Relógio ao vivo
   useEffect(() => {
@@ -542,19 +550,47 @@ export default function PesagemPage() {
     toast.success(`${selectedRows.length} lote(s) direcionados para DEVOLUCAO`);
   };
 
+  // Acesso negado para usuários sem liberação de perfil
+  if (!canAccess) {
+    return (
+      <ProtectedRoute>
+        <div className="flex h-screen bg-[var(--bg)] text-[var(--text)]">
+          <Sidebar />
+          <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
+            <Topbar />
+            <main className="flex-1 p-6 flex items-center justify-center">
+              <div className="max-w-md w-full p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
+                  <Shield className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-black text-[var(--text)]">Acesso Restrito</h2>
+                <p className="text-xs text-[var(--text-3)]">
+                  Este módulo de Pesagem & Estoque está disponível apenas com liberação de perfil pela administração ou supervisão.
+                </p>
+                <Button onClick={() => router.push('/dashboard')} className="w-full font-bold rounded-xl">
+                  Voltar ao Dashboard
+                </Button>
+              </div>
+            </main>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
 
-        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 min-w-0">
+          <main className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-5 pb-24 md:pb-5 min-w-0">
             {/* Topbar de Sub-Navegação e Ações Integradas */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 mb-4 border-b border-[var(--border)]">
-              {/* Seletor Segmentado de Abas */}
-              <div className="seg flex-wrap">
+              {/* Seletor Segmentado de Abas (Visível apenas em Desktop md:) */}
+              <div className="seg hidden md:flex overflow-x-auto no-scrollbar flex-nowrap max-w-full pb-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -945,9 +981,10 @@ export default function PesagemPage() {
                 onToggleResiduais={() => setResiduaisActive(!residuaisActive)}
                 onOpenMoverModal={handleOpenMover}
                 onInvestigacaoChange={loadData}
-                onDevolver={handleDevolver}
                 selectedMaterialFilter={selectedMaterialFilter}
                 onClearMaterialFilter={() => setSelectedMaterialFilter(undefined)}
+                currentUserEmail={user?.email || 'Web Pesagem'}
+                onAtualizarDb={handleAtualizarDb}
               />
             </div>
           )}
@@ -1089,6 +1126,127 @@ export default function PesagemPage() {
         currentUserEmail={user?.email || userData?.email}
       />
           </main>
+
+          {/* Mobile Bottom Navigation Bar (Fixo no Rodapé em Telas < 768px) */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--surface)] border-t border-[var(--border)] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] px-1 py-1.5 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('fin');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'fin'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <TrendingUp size={15} />
+              <span className="truncate">Financeiro</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('one');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'one'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <FileText size={15} />
+              <span className="truncate">Onepage</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('res');
+                setResiduaisActive(true);
+              }}
+              className={cn(
+                "relative flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'res'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <AlertTriangle size={15} />
+              <span className="truncate">Residuais</span>
+              {totalResiduaisCount > 0 && (
+                <span className="absolute top-0 right-1 px-1 rounded-full bg-[var(--red)] text-white text-[9px] font-mono leading-none py-0.5">
+                  {totalResiduaisCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('rem');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'rem'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <Truck size={15} />
+              <span className="truncate">Remessas</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('scan');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'scan'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <QrCode size={15} />
+              <span className="truncate">Scanner</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('tools');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'tools'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <Wrench size={15} />
+              <span className="truncate">Tools</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('settings');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'settings'
+                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <SettingsIcon size={15} />
+              <span className="truncate">Config</span>
+            </button>
+          </nav>
         </div>
       </div>
     </ProtectedRoute>

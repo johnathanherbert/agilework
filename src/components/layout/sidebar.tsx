@@ -40,19 +40,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { LucideIcon } from 'lucide-react';
 
-interface NavItem {
+export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  requiredRole?: 'all' | 'leader' | 'supervisor' | 'admin' | 'maoDeObra' | 'solicitacoes';
+  requiredRole?: 'all' | 'leader' | 'supervisor' | 'admin' | 'maoDeObra' | 'solicitacoes' | 'pesagem';
 }
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: Home, requiredRole: 'all' },
   { label: 'Notas Técnicas', href: '/almoxarifado/nts', icon: FileText, requiredRole: 'all' },
   // { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
   { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'solicitacoes' },
-  { label: 'Pesagem & Estoque', href: '/pesagem', icon: Scale, requiredRole: 'all' },
+  { label: 'Pesagem & Estoque', href: '/pesagem', icon: Scale, requiredRole: 'pesagem' },
   { label: 'Painel de Produção', href: '/producao', icon: Factory, requiredRole: 'leader' },
   { label: 'Heijunka', href: '/heijunka', icon: TrendingUp, requiredRole: 'leader' },
   { label: 'Mão de Obra', href: '/mao-de-obra', icon: Users, requiredRole: 'maoDeObra' },
@@ -111,6 +111,13 @@ export const Sidebar = () => {
       );
     }
 
+    if (item.requiredRole === 'pesagem') {
+      return (
+        userData.role === 'supervisor' ||
+        Boolean(userData.allowedPesagem)
+      );
+    }
+
     return false;
   };
 
@@ -118,7 +125,7 @@ export const Sidebar = () => {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <aside className="w-[52px] h-screen fixed left-0 top-0 z-50 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col items-center py-2.5 select-none transition-colors">
+      <aside className="w-[52px] h-screen fixed left-0 top-0 z-50 bg-[var(--surface)] border-r border-[var(--border)] hidden md:flex flex-col items-center py-2.5 select-none transition-colors">
         {/* Brand Icon / Logo */}
         <div 
           onClick={() => router.push('/dashboard')}

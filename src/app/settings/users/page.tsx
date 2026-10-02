@@ -65,6 +65,7 @@ interface UserItem {
   turno?: ProductionTurno | null;
   allowedMaoDeObra?: boolean;
   allowedSolicitacoes?: boolean;
+  allowedPesagem?: boolean;
   pinMaoDeObra?: string | null;
   pinMaoDeObraUpdatedAt?: string;
   created_at?: string;
@@ -91,6 +92,7 @@ const ROLES_MAP: Record<string, string> = {
 
 const MODULES_CONFIG = [
   { k: "nts", l: "Notas técnicas", d: "Criar, editar e baixar NTs", base: true },
+  { k: "pes", l: "Pesagem & Estoque", d: "Aging, residuais, consultas e automação SAP", permissionKey: "allowedPesagem" },
   { k: "sol", l: "Solicitações", d: "Ordens e necessidade de matéria-prima", permissionKey: "allowedSolicitacoes" },
   { k: "painel", l: "Painel de produção", d: "Lançar e acompanhar ordens de produção", base: true },
   { k: "mo", l: "Mão de obra", d: "Escala, ocorrências e absenteísmo", permissionKey: "allowedMaoDeObra" },
@@ -215,6 +217,7 @@ export default function AdminControlPanelPage() {
   const [drawerTurno, setDrawerTurno] = useState<ProductionTurno>(1);
   const [drawerAllowedMO, setDrawerAllowedMO] = useState<boolean>(false);
   const [drawerAllowedSol, setDrawerAllowedSol] = useState<boolean>(false);
+  const [drawerAllowedPesagem, setDrawerAllowedPesagem] = useState<boolean>(false);
   const [drawerSaving, setDrawerSaving] = useState<boolean>(false);
 
   // Modal / Confirm Delete
@@ -449,6 +452,7 @@ export default function AdminControlPanelPage() {
     setDrawerTurno(u.turno || 1);
     setDrawerAllowedMO(Boolean(u.allowedMaoDeObra) || u.role === "supervisor" || u.role === "admin" || u.email === ADMIN_EMAIL);
     setDrawerAllowedSol(Boolean(u.allowedSolicitacoes) || u.role === "supervisor" || u.role === "admin" || u.email === ADMIN_EMAIL);
+    setDrawerAllowedPesagem(Boolean(u.allowedPesagem) || u.role === "supervisor" || u.role === "admin" || u.email === ADMIN_EMAIL);
   };
 
   const closeDrawer = () => {
@@ -469,6 +473,7 @@ export default function AdminControlPanelPage() {
         turno: drawerRole === "leader" || drawerRole === "supervisor" ? drawerTurno : null,
         allowedMaoDeObra: isSelf || drawerRole === "supervisor" ? true : drawerAllowedMO,
         allowedSolicitacoes: isSelf || drawerRole === "supervisor" ? true : drawerAllowedSol,
+        allowedPesagem: isSelf || drawerRole === "supervisor" ? true : drawerAllowedPesagem,
       };
 
       await editUserDb(editingUser.uid, updatedData);
@@ -486,6 +491,9 @@ export default function AdminControlPanelPage() {
       }
       if (drawerAllowedSol !== editingUser.allowedSolicitacoes) {
         msgs.push(`${drawerAllowedSol ? "Concedeu" : "Removeu"} acesso a Solicitações para ${editingUser.name || editingUser.email}`);
+      }
+      if (drawerAllowedPesagem !== editingUser.allowedPesagem) {
+        msgs.push(`${drawerAllowedPesagem ? "Concedeu" : "Removeu"} acesso a Pesagem & Estoque para ${editingUser.name || editingUser.email}`);
       }
 
       if (msgs.length === 0) msgs.push(`Atualizou cadastro de ${editingUser.name || editingUser.email}`);
@@ -748,7 +756,8 @@ export default function AdminControlPanelPage() {
     drawerRole !== (editingUser.role || "user") ||
     (drawerRole === "leader" && drawerTurno !== (editingUser.turno || 1)) ||
     drawerAllowedMO !== Boolean(editingUser.allowedMaoDeObra) ||
-    drawerAllowedSol !== Boolean(editingUser.allowedSolicitacoes)
+    drawerAllowedSol !== Boolean(editingUser.allowedSolicitacoes) ||
+    drawerAllowedPesagem !== Boolean(editingUser.allowedPesagem)
   );
 
   return (
@@ -756,10 +765,10 @@ export default function AdminControlPanelPage() {
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
 
-        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <main className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-7">
+          <main className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-7">
             {/* Header da Página */}
             <div className="page-head flex items-end justify-between gap-4 mb-4">
               <div>
@@ -1440,6 +1449,9 @@ export default function AdminControlPanelPage() {
                   } else if (m.k === "sol") {
                     isChecked = drawerRole === "supervisor" || drawerAllowedSol;
                     isLocked = drawerRole === "supervisor";
+                  } else if (m.k === "pes") {
+                    isChecked = drawerRole === "supervisor" || drawerAllowedPesagem;
+                    isLocked = drawerRole === "supervisor";
                   } else if (m.k === "heij") {
                     isChecked = drawerRole === "supervisor" || drawerRole === "leader";
                     isLocked = true;
@@ -1451,6 +1463,7 @@ export default function AdminControlPanelPage() {
                   const handleToggleMod = (checked: boolean) => {
                     if (m.k === "mo") setDrawerAllowedMO(checked);
                     if (m.k === "sol") setDrawerAllowedSol(checked);
+                    if (m.k === "pes") setDrawerAllowedPesagem(checked);
                   };
 
                   return (

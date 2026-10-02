@@ -26,6 +26,7 @@ export interface UserData {
   turno?: ProductionTurno | null; // Turno atribuído ao líder/supervisor (1, 2 ou 3)
   allowedMaoDeObra?: boolean; // Permissão explícita de acesso ao módulo Mão de Obra
   allowedSolicitacoes?: boolean; // Permissão explícita de acesso ao módulo Solicitações
+  allowedPesagem?: boolean; // Permissão explícita de acesso ao módulo Pesagem & Estoque
   pinMaoDeObra?: string | null; // PIN numérico para autenticação em Mão de Obra
   pinMaoDeObraUpdatedAt?: string;
 }

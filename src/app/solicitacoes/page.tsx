@@ -796,7 +796,7 @@ export default function SolicitacoesPage() {
       <ProtectedRoute>
         <div className="flex h-screen bg-[var(--bg)] text-[var(--text)]">
           <Sidebar />
-          <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+          <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
             <Topbar />
             <main className="flex-1 p-6 flex items-center justify-center">
               <div className="max-w-md w-full p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl text-center space-y-4">
@@ -823,10 +823,10 @@ export default function SolicitacoesPage() {
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
 
-        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_1fr] min-h-0 overflow-hidden">
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_1fr] min-h-0 overflow-y-auto lg:overflow-hidden">
             {/* Coluna de Ordens (300px) */}
             <aside className="border-r border-[var(--border)] bg-[var(--surface)] flex flex-col min-h-0 shrink-0">
               {/* Formulário Nova Ordem */}

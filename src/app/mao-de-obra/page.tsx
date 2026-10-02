@@ -156,7 +156,7 @@ export default function MaoDeObraPage() {
     <ProtectedRoute>
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col pl-[52px] min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
           <main className={cn(
