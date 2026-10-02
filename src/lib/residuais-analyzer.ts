@@ -1,0 +1,282 @@
+import { AgingData, SaldoResidual, NivelResidual, ConfiguracaoResiduais, AgingTableRow, RemessaData } from '@/types/aging';
+
+/**
+ * Converte quantidade para gramas baseado na unidade de medida
+ */
+function converterParaGramas(quantidade: number, unidadeMedida: string): number {
+  const unidade = (unidadeMedida || '').toUpperCase().trim();
+
+  switch (unidade) {
+    case 'KG':
+      return quantidade * 1000; // 1 KG = 1000g
+    case 'G':
+      return quantidade;
+    case 'MG':
+      return quantidade / 1000; // 1000 MG = 1g
+    case 'TON':
+    case 'T':
+      return quantidade * 1000000; // 1 TON = 1.000.000g
+    case 'UN':
+    case 'PC':
+    case 'L':
+    case 'ML':
+      // Para unidades não converteríveis, retorna a quantidade original
+      return quantidade;
+    default:
+      return quantidade;
+  }
+}
+
+/**
+ * Determina o nível de residual baseado na quantidade em gramas
+ * Retorna null se estiver acima do limite máximo (não é residual)
+ */
+function determinarNivelResidual(
+  quantidadeGramas: number,
+  config: ConfiguracaoResiduais
+): NivelResidual | null {
+  const limiteMaximo = config?.limite_maximo ?? 999;
+  const limiteVerde = config?.limite_verde ?? 100;
+  const limiteAmarelo = config?.limite_amarelo ?? 900;
+
+  if (quantidadeGramas > limiteMaximo) {
+    return null;
+  }
+
+  if (quantidadeGramas <= limiteVerde) {
+    return 'verde';
+  } else if (quantidadeGramas <= limiteAmarelo) {
+    return 'amarelo';
+  } else {
+    return 'vermelho';
+  }
+}
+
+/**
+ * Verifica se um material é de alto valor (extrema atenção)
+ */
+function ehMaterialAltoValor(material: string, config: ConfiguracaoResiduais): boolean {
+  return config?.materiais_alto_valor?.includes(material) ?? false;
+}
+
+/**
+ * Verifica se é o único resquício daquele lote específico em todas as posições do PES
+ */
+function verificarLoteUnico(
+  material: string,
+  lote: string,
+  deposito: string,
+  todosOsDados: AgingData[]
+): boolean {
+  if (deposito !== 'PES') {
+    return false;
+  }
+
+  const posicoesDoLote = todosOsDados.filter(
+    item => item.material === material && 
+            item.lote === lote && 
+            item.deposito === 'PES'
+  ).length;
+
+  return posicoesDoLote === 1;
+}
+
+/**
+ * Analisa os dados de aging e identifica saldos residuais
+ */
+export function analisarSaldosResiduais(
+  agingData: AgingData[],
+  config: ConfiguracaoResiduais
+): SaldoResidual[] {
+  const residuais: SaldoResidual[] = [];
+  const itensPES = agingData.filter(item => item.deposito === 'PES');
+
+  for (const item of itensPES) {
+    const quantidadeGramas = converterParaGramas(
+      item.estoque_disponivel,
+      item.unidade_medida
+    );
+
+    const nivel = determinarNivelResidual(quantidadeGramas, config);
+    const materialAltoValor = ehMaterialAltoValor(item.material, config);
+
+    if (materialAltoValor || nivel === null) {
+      continue;
+    }
+
+    const loteUnico = verificarLoteUnico(
+      item.material,
+      item.lote,
+      item.deposito,
+      agingData
+    );
+
+    const residual: SaldoResidual = {
+      material: item.material,
+      descricao_material: item.texto_breve_material,
+      lote: item.lote,
+      deposito: item.deposito,
+      quantidade: item.estoque_disponivel,
+      unidade_medida: item.unidade_medida,
+      nivel,
+      dias_aging: item.dias_aging || 0,
+      eh_lote_unico: loteUnico,
+      material_alto_valor: false,
+      ultimo_movimento: item.ultimo_movimento,
+    };
+
+    residuais.push(residual);
+  }
+
+  return residuais;
+}
+
+/**
+ * Filtra residuais por nível
+ */
+export function filtrarResiduaisPorNivel(
+  residuais: SaldoResidual[],
+  nivel?: NivelResidual
+): SaldoResidual[] {
+  if (!nivel) return residuais;
+  return residuais.filter(r => r.nivel === nivel);
+}
+
+/**
+ * Agrupa residuais por material
+ */
+export function agruparResiduaisPorMaterial(
+  residuais: SaldoResidual[]
+): Record<string, SaldoResidual[]> {
+  const agrupados: Record<string, SaldoResidual[]> = {};
+
+  for (const residual of residuais) {
+    if (!agrupados[residual.material]) {
+      agrupados[residual.material] = [];
+    }
+    agrupados[residual.material].push(residual);
+  }
+
+  return agrupados;
+}
+
+/**
+ * Estatísticas de residuais
+ */
+export interface EstatisticasResiduais {
+  total: number;
+  verdes: number;
+  amarelos: number;
+  vermelhos: number;
+  lotesUnicos: number;
+  quantidadeTotalGramas: number;
+}
+
+export function calcularEstatisticasResiduais(
+  residuais: SaldoResidual[]
+): EstatisticasResiduais {
+  const stats: EstatisticasResiduais = {
+    total: residuais.length,
+    verdes: 0,
+    amarelos: 0,
+    vermelhos: 0,
+    lotesUnicos: 0,
+    quantidadeTotalGramas: 0,
+  };
+
+  for (const residual of residuais) {
+    if (residual.nivel === 'verde') stats.verdes++;
+    if (residual.nivel === 'amarelo') stats.amarelos++;
+    if (residual.nivel === 'vermelho') stats.vermelhos++;
+    if (residual.eh_lote_unico) stats.lotesUnicos++;
+
+    stats.quantidadeTotalGramas += converterParaGramas(
+      residual.quantidade,
+      residual.unidade_medida
+    );
+  }
+
+  return stats;
+}
+
+/**
+ * Ordena residuais por prioridade (vermelho > amarelo > verde, depois por quantidade)
+ */
+export function ordenarResiduaisPorPrioridade(
+  residuais: SaldoResidual[]
+): SaldoResidual[] {
+  const prioridadeNivel: Record<NivelResidual, number> = {
+    vermelho: 3,
+    amarelo: 2,
+    verde: 1,
+  };
+
+  return [...residuais].sort((a, b) => {
+    const difNivel = prioridadeNivel[b.nivel] - prioridadeNivel[a.nivel];
+    if (difNivel !== 0) return difNivel;
+
+    const qtdA = converterParaGramas(a.quantidade, a.unidade_medida);
+    const qtdB = converterParaGramas(b.quantidade, b.unidade_medida);
+    return qtdB - qtdA;
+  });
+}
+
+/**
+ * Enriquece dados de aging com análise de residuais, valores e contagem de remessas
+ */
+export function enriquecerAgingComAnalise(
+  agingData: AgingData[],
+  config: ConfiguracaoResiduais,
+  valores: Record<string, number>,
+  remessas: RemessaData[]
+): AgingTableRow[] {
+  const remessasPorMaterial: Record<string, number> = {};
+  const remessasArray = remessas || [];
+  for (const r of remessasArray) {
+    remessasPorMaterial[r.material] = (remessasPorMaterial[r.material] || 0) + 1;
+  }
+
+  const posicoesDoLoteNoPES: Record<string, number> = {};
+  for (const item of agingData) {
+    if (item.deposito === 'PES') {
+      const chave = `${item.material}|${item.lote}`;
+      posicoesDoLoteNoPES[chave] = (posicoesDoLoteNoPES[chave] || 0) + 1;
+    }
+  }
+
+  return agingData.map(item => {
+    const valorUnit = valores[item.material] || 0;
+    const quantidadeGramas = converterParaGramas(item.estoque_disponivel, item.unidade_medida);
+    const nivel = item.deposito === 'PES' ? determinarNivelResidual(quantidadeGramas, config) : null;
+    const materialAltoValor = ehMaterialAltoValor(item.material, config);
+    
+    const chave = `${item.material}|${item.lote}`;
+    const ehLoteUnico = item.deposito === 'PES'
+      ? (posicoesDoLoteNoPES[chave] === 1)
+      : false;
+
+    return {
+      material: item.material,
+      texto_breve_material: item.texto_breve_material,
+      unidade_medida: item.unidade_medida,
+      lote: item.lote,
+      centro: item.centro,
+      deposito: item.deposito,
+      tipo_deposito: item.tipo_deposito,
+      posicao_deposito: item.posicao_deposito,
+      estoque_disponivel: item.estoque_disponivel,
+      data_vencimento: item.data_vencimento,
+      ultimo_movimento: item.ultimo_movimento,
+      tipo_estoque: item.tipo_estoque,
+      ultima_entrada_deposito: item.ultima_entrada_deposito,
+      dias_aging: item.dias_aging || 0,
+      valor_unitario: valorUnit,
+      valor_total: item.estoque_disponivel * valorUnit,
+      remessas_abertas: remessasPorMaterial[item.material] || 0,
+      nivel: nivel ?? undefined,
+      eh_lote_unico: ehLoteUnico,
+      material_alto_valor: materialAltoValor,
+      is_residual: item.deposito === 'PES' && nivel !== null && !materialAltoValor,
+    };
+  });
+}

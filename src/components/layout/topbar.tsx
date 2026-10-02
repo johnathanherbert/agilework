@@ -28,6 +28,7 @@ export const Topbar = () => {
 
   const getBreadcrumbs = () => {
     if (!pathname) return { section: 'AgileWork', page: 'Painel' };
+    if (pathname.includes('/pesagem')) return { section: 'Pesagem & Estoque', page: 'DashPesagem' };
     if (pathname.includes('/almoxarifado')) return { section: 'Pesagem', page: 'Notas Técnicas' };
     if (pathname.includes('/solicitacoes')) return { section: 'Materiais', page: 'Solicitações' };
     if (pathname.includes('/producao')) return { section: 'Fábrica', page: 'Painel de Produção' };

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mão de obra · Pesagem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1013; --surface:#14171b; --surface-2:#191c21; --hover:#1d2127;
+    --border:#23272e; --border-strong:#2e333b;
+    --text:#e6e8eb; --text-2:#9aa1ab; --text-3:#6b727c;
+    --accent:#4c8dff; --accent-weak:rgba(76,141,255,.10);
+    --red:#e5484d; --amber:#e2a336; --green:#3fb68b; --blue:#4c8dff; --violet:#9b87d6;
+    --bar:#3a414b;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+    --radius:6px;
+  }
+  [data-theme="light"]{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#fafbfc; --hover:#f1f3f5;
+    --border:#e4e7eb; --border-strong:#d3d8de;
+    --text:#14171b; --text-2:#5b636e; --text-3:#8a929c;
+    --accent:#2563eb; --accent-weak:rgba(37,99,235,.07); --bar:#d3d8de;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;font-size:13px;background:var(--bg);color:var(--text);
+    -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1;overflow:hidden}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{background:none;border:0;cursor:pointer}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .mono{font-family:var(--mono);font-size:12px}
+  .muted{color:var(--text-3)}
+  .r,.t th.r,.t td.r{text-align:right}
+
+  /* ---------- Layout ---------- */
+  .app{display:grid;grid-template-columns:52px 1fr;grid-template-rows:48px 1fr;height:100vh}
+  .rail{grid-row:1/3;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px}
+  .rail .logo{width:28px;height:28px;border-radius:6px;background:var(--text);color:var(--bg);display:grid;place-items:center;font-weight:600;font-size:12px;margin-bottom:14px}
+  .rail button{width:36px;height:36px;border-radius:6px;display:grid;place-items:center;color:var(--text-3);position:relative}
+  .rail button:hover{background:var(--hover);color:var(--text)}
+  .rail button.active{color:var(--text);background:var(--hover)}
+  .rail button.active::before{content:"";position:absolute;left:-8px;top:9px;bottom:9px;width:2px;background:var(--accent);border-radius:2px}
+  .rail .spacer{flex:1}
+
+  .topbar{display:flex;align-items:center;gap:16px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:var(--text-3)}
+  .crumbs b{color:var(--text);font-weight:500}
+  .grow{flex:1}
+  .meta{display:flex;align-items:center;gap:14px;color:var(--text-2)}
+  .meta .sep{width:1px;height:16px;background:var(--border)}
+  .clock{font-family:var(--mono);color:var(--text)}
+  .avatars{display:flex}
+  .avatars span{width:22px;height:22px;border-radius:50%;border:2px solid var(--surface);margin-left:-6px;display:grid;place-items:center;font-size:9px;font-weight:600;background:#2a3038;color:#c9ced6}
+  .avatars span:first-child{margin-left:0}
+  .icon-btn{width:30px;height:30px;border-radius:6px;display:grid;place-items:center;color:var(--text-2);position:relative}
+  .icon-btn:hover{background:var(--hover);color:var(--text)}
+  .icon-btn .count{position:absolute;top:3px;right:2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--red);color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center}
+  .me{width:28px;height:28px;border-radius:50%;background:#2a3038;color:#dfe3e8;display:grid;place-items:center;font-weight:600;font-size:11px}
+
+  main{overflow:auto;padding:24px 28px 40px}
+
+  /* ---------- Cabeçalho ---------- */
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+  h1{font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .subtitle{color:var(--text-3);margin-top:4px;display:flex;align-items:center;gap:6px}
+  .live{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .actions{display:flex;gap:8px;align-items:center}
+  .btn{height:32px;padding:0 12px;border-radius:var(--radius);border:1px solid var(--border-strong);display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--text-2);background:var(--surface);white-space:nowrap}
+  .btn:hover:not(:disabled){color:var(--text);border-color:var(--text-3)}
+  .btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .btn.primary:hover:not(:disabled){opacity:.9}
+  .btn.sm{height:28px;padding:0 10px;font-size:12px}
+  .btn.locked{color:var(--amber);border-color:var(--amber)}
+  .btn svg{width:14px;height:14px}
+
+  .seg{display:flex;border:1px solid var(--border-strong);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .seg button{height:30px;padding:0 12px;color:var(--text-3);font-weight:500;font-size:12px;border-right:1px solid var(--border-strong)}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{color:var(--text)}
+  .seg button.on{background:var(--hover);color:var(--text)}
+  .seg.sm button{height:26px;padding:0 10px}
+
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .tab{padding:9px 12px;color:var(--text-3);font-weight:500;position:relative;display:flex;gap:6px;align-items:center}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--text)}
+  .tab.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--text)}
+  .tab .n{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .tab .n.alert{color:var(--red)}
+
+  /* ---------- Blocos comuns ---------- */
+  .summary{display:grid;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);margin-bottom:16px}
+  .summary > div{padding:14px 16px;border-right:1px solid var(--border);min-width:0}
+  .summary > div:last-child{border-right:0}
+  .summary label{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:12px;margin-bottom:6px;white-space:nowrap}
+  .summary strong{font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .summary strong small{font-size:12px;font-weight:500;color:var(--text-3);margin-left:4px}
+  .summary p{color:var(--text-3);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .summary .warn strong{color:var(--amber)}
+  .summary .bad strong{color:var(--red)}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .dot.ring{background:transparent;border:1.5px solid var(--text-3)}
+
+  .toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .search{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);width:260px;color:var(--text-3)}
+  .search input{background:none;border:0;outline:0;color:var(--text);flex:1;min-width:0}
+  .search:focus-within{border-color:var(--accent)}
+  .select{height:32px;padding:0 28px 0 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b727c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center/12px;appearance:none;outline:0;cursor:pointer;color:var(--text-2)}
+  .select:focus{border-color:var(--accent)}
+  .select option{background:var(--surface);color:var(--text)}
+
+  .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);min-width:0}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+  .card-head h2{font-size:13px;font-weight:600}
+  .card-head .hint{color:var(--text-3);font-size:12px}
+
+  /* Tabela genérica */
+  table.t{width:100%;border-collapse:collapse}
+  .t th{text-align:left;font-weight:500;color:var(--text-3);font-size:12px;padding:0 12px;height:36px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap}
+  .t td{padding:0 12px;height:48px;border-bottom:1px solid var(--border);color:var(--text-2)}
+  .t tr:last-child td{border-bottom:0}
+  .t tbody tr:hover{background:var(--hover)}
+  .t th.sortable{cursor:pointer;user-select:none}
+  .t th.sortable:hover,.t th.on{color:var(--text)}
+  .person b{display:block;font-weight:500;color:var(--text)}
+  .person span{font-size:12px;color:var(--text-3)}
+  .person .mono{font-size:11.5px}
+  .turma{display:inline-grid;place-items:center;width:20px;height:20px;border:1px solid var(--border-strong);border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-2)}
+  .st{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+  .row-actions{display:flex;justify-content:flex-end;gap:2px;opacity:0}
+  tr:hover .row-actions{opacity:1}
+  .row-actions button{height:26px;min-width:26px;padding:0 6px;border-radius:4px;display:grid;place-items:center;color:var(--text-3);font-size:12px}
+  .row-actions button:hover:not(:disabled){background:var(--border);color:var(--text)}
+  .row-actions button.del:hover:not(:disabled){color:var(--red)}
+  .row-actions svg{width:14px;height:14px}
+  .neg{color:var(--red)}
+  .empty{padding:40px;text-align:center;color:var(--text-3)}
+
+  /* ---------- Quadro do dia ---------- */
+  .daynav{display:flex;align-items:center;gap:8px}
+  .daynav .lbl{font-weight:600;font-size:14px;min-width:170px}
+  .cycle{color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:8px}
+  .shifts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .shift-list .p{display:grid;grid-template-columns:1fr auto;gap:0 10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+  .shift-list .p:last-child{border-bottom:0}
+  .shift-list .p:hover{background:var(--hover)}
+  .shift-list .p.off b{color:var(--text-3);font-weight:400}
+  .shift-list .p .st{font-size:12px;color:var(--text-2)}
+  .shift-list .p.off .st{color:var(--text-3)}
+  .shift-list .sep{padding:8px 16px 6px;font-size:11.5px;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border)}
+  .cov{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3)}
+  .cov .bar{width:60px;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+  .cov .bar span{display:block;height:100%;background:var(--text-2)}
+
+  /* ---------- Calendário ---------- */
+  .cal-wrap{display:grid;grid-template-columns:1fr 300px;gap:16px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .cal .dow{padding:8px 10px;font-size:12px;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border)}
+  .cell{min-height:104px;padding:8px 8px 6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .cell:nth-child(7n){border-right:0}
+  .cell:hover{background:var(--hover)}
+  .cell.sel{background:var(--accent-weak);box-shadow:inset 0 0 0 1px var(--accent)}
+  .cell.out{background:var(--bg);cursor:default}
+  .cell .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .cell .d{font-family:var(--mono);font-size:12px;font-weight:500;width:22px;height:22px;display:grid;place-items:center;border-radius:50%}
+  .cell.we .d{color:var(--text-3)}
+  .cell.today .d{background:var(--text);color:var(--bg)}
+  .cell .f{font-size:10.5px;color:var(--text-3);display:flex;align-items:center;gap:4px}
+  .cell .hol{font-size:10.5px;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell .e{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-2);white-space:nowrap;overflow:hidden}
+  .cell .e span{overflow:hidden;text-overflow:ellipsis}
+  .cell .more{font-size:11px;color:var(--text-3)}
+  .legend{display:flex;gap:14px;align-items:center;color:var(--text-3);font-size:12px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .side .kv{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)}
+  .side .kv:last-child{border-bottom:0}
+  .side .kv span{display:flex;align-items:center;gap:8px;color:var(--text-2)}
+  .side .kv strong{font-family:var(--mono);font-weight:500}
+  .side .li{padding:9px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+  .side .li:last-child{border-bottom:0}
+  .side .li b{font-weight:500}
+  .side .li small{grid-column:1/3;font-size:12px;color:var(--text-3)}
+  .side .card + .card{margin-top:16px}
+
+  /* ---------- Absenteísmo ---------- */
+  .abs-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+  .chart-wrap{padding:16px}
+  .chart{display:flex;align-items:flex-end;gap:10px;height:180px;border-bottom:1px solid var(--border);position:relative;padding:0 4px}
+  .chart .goal{position:absolute;left:0;right:0;border-top:1px dashed var(--red);opacity:.6}
+  .chart .goal span{position:absolute;right:0;top:-16px;font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+  .col .stack{display:flex;flex-direction:column-reverse;border-radius:2px 2px 0 0;overflow:hidden;max-width:36px;width:100%;margin:0 auto}
+  .col .stack i{display:block}
+  .col .v{position:absolute;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--text-3)}
+  .col.cur .v{color:var(--text)}
+  .col.none .stack{height:2px;background:var(--border)}
+  .axis{display:flex;gap:10px;margin-top:6px;padding:0 4px}
+  .axis span{flex:1;text-align:center;font-size:11px;color:var(--text-3)}
+  .axis span.cur{color:var(--text);font-weight:500}
+  .hbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--border);margin:16px}
+  .hbar i{display:block;height:100%}
+  .rank .rw{display:grid;grid-template-columns:48px 1fr 60px;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+  .rank .rw:last-child{border-bottom:0}
+  .rank .track{height:6px;background:var(--border);border-radius:3px;position:relative}
+  .rank .track i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--text-2)}
+  .rank .track i.over{background:var(--red)}
+  .rank .track b{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--red);opacity:.6}
+  .formula{color:var(--text-3);font-size:12px;margin-top:10px}
+  .formula code{font-family:var(--mono);font-size:11.5px;color:var(--text-2)}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:20}
+  .overlay.show{display:flex}
+  .modal{width:min(480px,92vw);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .modal-head h2{font-size:15px;font-weight:600}
+  .modal-body{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/3}
+  .field label{font-size:12px;color:var(--text-3)}
+  .input{height:32px;padding:0 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--bg);outline:0;width:100%}
+  textarea.input{height:64px;padding:8px 10px;resize:vertical}
+  .input:focus{border-color:var(--accent)}
+  .modal .select{width:100%;background-color:var(--bg)}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:6px;font-weight:500;opacity:0;transition:.2s;pointer-events:none;z-index:30}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px;border:3px solid transparent;background-clip:content-box}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="rail">
+    <div class="logo">N</div>
+    <button title="Visão geral"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/></svg></button>
+    <button title="Notas Técnicas"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></button>
+    <button title="NTs concluídas"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg></button>
+    <button title="Solicitações"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></button>
+    <button class="active" title="Mão de obra"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.5-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .6 3.2 2.5 3.5 5.5"/></svg></button>
+    <button title="Painel de Produção"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg></button>
+    <button title="Heijunka"><svg viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></button>
+    <button title="Usuários"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></button>
+    <div class="spacer"></div>
+    <button title="Configurações"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+  </nav>
+
+  <header class="topbar">
+    <div class="crumbs">Pesagem <span>/</span> <b>Mão de obra</b></div>
+    <div class="grow"></div>
+    <div class="meta">
+      <span style="font-size:12px">1º turno</span>
+      <span class="clock" id="clock">--:--:--</span>
+      <span id="date"></span>
+      <span class="sep"></span>
+      <div class="avatars" title="2 online"><span>LB</span><span>VH</span></div>
+      <span class="sep"></span>
+      <button class="icon-btn" title="Notificações"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="count">2</span></button>
+      <button class="icon-btn" id="themeBtn" title="Alternar tema"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <div class="me">JA</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Mão de obra</h1>
+        <p class="subtitle"><i class="live"></i>Escala 4×1 · 4×2 · 5×1 · 2026 · folgas flexíveis</p>
+      </div>
+      <div class="actions">
+        <div class="seg" id="turnoSeg">
+          <button data-t="all" class="on">Geral</button><button data-t="1">T1</button><button data-t="2">T2</button><button data-t="3">T3</button>
+        </div>
+        <button class="btn" id="lockBtn" title="Bloquear edição da escala"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Bloquear</span></button>
+        <button class="btn edit" id="occBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Ocorrência</button>
+        <button class="btn primary edit" id="opBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Operador</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-v="quadro">Quadro do dia</button>
+      <button class="tab" data-v="cal">Calendário</button>
+      <button class="tab" data-v="ops">Operadores <span class="n" id="nOps"></span></button>
+      <button class="tab" data-v="occ">Ocorrências <span class="n" id="nOcc"></span></button>
+      <button class="tab" data-v="trat">Tratativas <span class="n" id="nTrat"></span></button>
+      <button class="tab" data-v="abs">Absenteísmo</button>
+    </div>
+
+    <!-- QUADRO DO DIA -->
+    <section id="v-quadro">
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:14px">
+        <div class="daynav">
+          <button class="btn sm" id="dPrev" title="Dia anterior"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+          <button class="btn sm" id="dToday">Hoje</button>
+          <button class="btn sm" id="dNext" title="Próximo dia"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+          <span class="lbl" id="dLabel"></span>
+        </div>
+        <span class="cycle" id="cycleInfo"></span>
+      </div>
+      <div class="summary" style="grid-template-columns:repeat(6,1fr)" id="qSummary"></div>
+      <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="qSearch" placeholder="Buscar operador ou cargo"></label>
+        <select class="select" id="qTurma"><option value="">Todas as turmas</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        <select class="select" id="qCargo"></select>
+        <label style="display:flex;align-items:center;gap:6px;color:var(--text-2);font-size:12px;margin-left:4px;cursor:pointer"><input type="checkbox" id="qHideOff" style="accent-color:var(--accent)">Ocultar folga de escala</label>
+      </div>
+      <div class="shifts" id="shifts"></div>
+    </section>
+
+    <!-- CALENDÁRIO -->
+    <section id="v-cal" hidden>
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:14px">
+        <div class="daynav">
+          <button class="btn sm" id="mPrev"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+          <button class="btn sm" id="mToday">Mês atual</button>
+          <button class="btn sm" id="mNext"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+          <span class="lbl" id="mLabel"></span>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="cal-wrap">
+        <div class="cal" id="cal"></div>
+        <div class="side">
+          <div class="card" id="daySide"></div>
+          <div class="card" id="monthSide"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPERADORES -->
+    <section id="v-ops" hidden>
+      <div class="summary" style="grid-template-columns:repeat(5,1fr)" id="oSummary"></div>
+      <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="oSearch" placeholder="Buscar nome ou matrícula"></label>
+        <select class="select" id="oTurma"><option value="">Todas as turmas</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        <select class="select" id="oCargo"></select>
+        <div class="grow"></div>
+        <button class="btn sm edit" id="importBtn"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>Importar</button>
+      </div>
+      <div class="card">
+        <table class="t">
+          <thead><tr>
+            <th class="sortable" data-os="nome">Operador</th><th>Cargo</th><th class="sortable" data-os="turno">Turno</th>
+            <th>Turma</th><th class="sortable r" data-os="saldo">Saldo folga flex.</th><th>Situação hoje</th><th style="width:170px"></th>
+          </tr></thead>
+          <tbody id="oBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- OCORRÊNCIAS -->
+    <section id="v-occ" hidden>
+      <div class="summary" style="grid-template-columns:repeat(5,1fr)" id="cSummary"></div>
+      <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="cSearch" placeholder="Buscar colaborador"></label>
+        <select class="select" id="cTipo"></select>
+        <select class="select" id="cPer"><option value="cur">Mês atual</option><option value="prev">Mês anterior</option><option value="all">Todo o período</option></select>
+      </div>
+      <div class="card">
+        <table class="t">
+          <thead><tr><th>Colaborador</th><th>Turma</th><th>Tipo</th><th>Período</th><th class="r">Dias</th><th>Observação</th><th style="width:80px"></th></tr></thead>
+          <tbody id="cBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TRATATIVAS -->
+    <section id="v-trat" hidden>
+      <div class="summary" style="grid-template-columns:repeat(3,1fr)" id="tSummary"></div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Colaboradores que exigem tratativa</h2>
+          <span class="hint" id="tRule"></span>
+        </div>
+        <table class="t">
+          <thead><tr><th>Colaborador</th><th>Ocorrências (últimos 30 dias)</th><th>Última</th><th style="width:190px">Medida</th><th style="width:150px">Situação</th></tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ABSENTEÍSMO -->
+    <section id="v-abs" hidden>
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-weight:600">Índice de absenteísmo</div>
+          <div class="formula">(<code>dias perdidos por faltas + atestados</code>) ÷ <code>dias-homem programados</code> × 100 · meta &lt; <span id="metaLbl"></span></div>
+        </div>
+        <select class="select" id="aMonth"></select>
+      </div>
+      <div class="summary" style="grid-template-columns:repeat(4,1fr)" id="aSummary"></div>
+      <div class="abs-grid">
+        <div class="card">
+          <div class="card-head"><h2>Evolução mensal · 2026</h2>
+            <div class="legend"><span><i class="dot" style="background:var(--amber)"></i>Atestados</span><span><i class="dot" style="background:var(--red)"></i>Faltas</span></div>
+          </div>
+          <div class="chart-wrap"><div class="chart" id="aChart"></div><div class="axis" id="aAxis"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Distribuição por motivo</h2><span class="hint" id="aDistLbl"></span></div>
+          <div class="hbar" id="aDistBar"></div>
+          <div class="side" id="aDist"></div>
+        </div>
+      </div>
+      <div class="abs-grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <div class="card-head"><h2>Por turno</h2><span class="hint">linha vermelha = meta</span></div>
+          <div class="rank" id="aTurno"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Ausências no mês</h2><span class="hint" id="aAusLbl"></span></div>
+          <table class="t"><thead><tr><th>Colaborador</th><th class="r">Atestado</th><th class="r">Falta</th><th class="r">Total</th></tr></thead><tbody id="aAus"></tbody></table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal ocorrência -->
+<div class="overlay" id="mOcc">
+  <form class="modal" id="occForm">
+    <div class="modal-head"><h2 id="occTitle">Lançar ocorrência</h2><button type="button" class="icon-btn" data-close><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field full"><label>Colaborador</label><select class="select" id="fOp" required></select></div>
+      <div class="field full"><label>Tipo</label><select class="select" id="fTipo"></select></div>
+      <div class="field"><label>Início</label><input class="input mono" type="date" id="fIni" required></div>
+      <div class="field"><label>Fim</label><input class="input mono" type="date" id="fFim" required></div>
+      <div class="field full"><label>Observação</label><textarea class="input" id="fObs" placeholder="Opcional"></textarea></div>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn" data-close>Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</div>
+<!-- Modal operador -->
+<div class="overlay" id="mOp">
+  <form class="modal" id="opForm">
+    <div class="modal-head"><h2 id="opTitle">Novo operador</h2><button type="button" class="icon-btn" data-close><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field full"><label>Nome completo</label><input class="input" id="gNome" required></div>
+      <div class="field"><label>Matrícula</label><input class="input mono" id="gMat" required inputmode="numeric"></div>
+      <div class="field"><label>Cargo</label><select class="select" id="gCargo"></select></div>
+      <div class="field"><label>Turno</label><select class="select" id="gTurno"><option value="1">T1 · 07:20–15:50</option><option value="2">T2 · 15:50–23:45</option><option value="3">T3 · 23:45–07:20</option></select></div>
+      <div class="field"><label>Turma</label><select class="select" id="gTurma"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn" data-close>Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* Mostra qualquer erro na tela em vez de deixar a página vazia */
+window.addEventListener('error',function(e){
+  var b=document.getElementById('errBanner');
+  if(!b){ b=document.createElement('div'); b.id='errBanner';
+    b.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:99;background:#2a1215;border:1px solid #e5484d;color:#ffd7d9;padding:10px 14px;border-radius:6px;font:12px/1.5 monospace;white-space:pre-wrap';
+    document.body.appendChild(b); }
+  b.textContent='Erro na tela: '+(e.message||e)+(e.lineno?'  (linha '+e.lineno+')':'');
+});
+/* ================= CONFIGURAÇÃO ================= */
+const META_ABS = 2.5;               // % meta de absenteísmo
+const HORAS_DIA = 8;                // horas por dia programado
+const TRAT_REGRA = {faltas:2, total:3, dias:30}; // gatilho de tratativa
+// Ciclo de 28 dias: turma de folga em cada dia. Dia 1 do ciclo = CICLO_INICIO
+const CICLO = 'BCDDABBCDAABCCDABBCDDABCCDAA';
+const CICLO_INICIO = new Date(2026,8,10);
+
+const TURNOS = {1:{l:'T1',h:'07:20–15:50'},2:{l:'T2',h:'15:50–23:45'},3:{l:'T3',h:'23:45–07:20'}};
+const CARGOS = {I:'Operador Pesagem I',II:'Operador Pesagem II',E:'Operador Pesagem Especializado',L:'Líder Pesagem',A:'Auxiliar de Produção',P:'Operador de Produção I'};
+const TIPOS = {
+  falta:   {l:'Falta injustificada', s:'Falta',      c:'var(--red)'},
+  atestado:{l:'Atestado',            s:'Atestado',   c:'var(--amber)'},
+  atraso:  {l:'Atraso',              s:'Atraso',     c:'var(--text-2)'},
+  folga:   {l:'Folga flexível',      s:'Folga flex.',c:'var(--blue)'},
+  ferias:  {l:'Férias',              s:'Férias',     c:'var(--violet)'},
+};
+const FERIADOS = {'2026-09-05':'Elevação do Amazonas','2026-09-07':'Independência do Brasil','2026-10-12':'N. Sra. Aparecida','2026-10-24':'Aniversário de Manaus','2026-11-02':'Finados','2026-11-15':'Proclamação da República','2026-11-20':'Consciência Negra','2026-12-08':'N. Sra. da Conceição','2026-12-25':'Natal'};
+
+/* ================= DADOS DE EXEMPLO (substituir pela API) ================= */
+const OPS = `
+ANTHONY EDUARDO LIMA DA SILVA|96819|I|1|D|0
+BENEDITO DAVI PEREIRA OLIVEIRA|97214|I|1|A|0
+BRUNO ROSSI DA SILVA SOUZA|52224|E|1|D|-1
+CASSIO TIAGO O SOUZA|95421|I|1|A|0
+DIEGO GEORGE CAVALCANTE MARIALVA|98439|L|1|A|1
+EDUARDO BARROS|100555|A|1|D|0
+ELIASAFE DA SILVA VALENTE|95438|I|1|B|0
+GLEISON RODRIGUES DA SILVA|45923|E|1|C|0
+JERRY FALCAO DA COSTA|41022|L|1|D|0
+LUCAS SOARES DE SOUZA|58811|E|1|A|0
+VANDERSON FERREIRA PAIXAO|88213|I|1|B|0
+WILLACE CRUZ DOS SANTOS|44310|L|1|B|0
+HAROLDO GAMA GUARIM JUNIOR|90318|I|1|D|0
+JOSILENO PEREIRA DA SILVA|81220|II|1|C|0
+MATHEUS HENRIQUE FONSECA|87744|E|1|C|0
+IURY GOMES DE OLIVEIRA|99102|I|1|B|0
+LUAN ISAC DA SILVA|99870|I|1|A|0
+RERISON BATISTA PINTO|93561|II|1|B|0
+ALESSANDRO SIMAS GOMES|47489|L|2|C|0
+ANDRE LUIZ SOUZA DE LIMA|57369|E|2|D|0
+DANIEL MARQUES DE FREITAS|82834|II|2|D|-2
+EMANUEL F DO NASCIMENTO|47403|E|2|B|0
+ELIREZ COSTA DA SILVA|98669|L|2|D|0
+ENZO GABRIEL NASCIMENTO|100628|P|2|B|0
+FELIPE DA SILVA RIBEIRO|95430|I|2|C|0
+GILBERTO DE SOUZA FREIRE|82960|E|2|D|0
+GABRIEL DA SILVA BRAZ|99511|I|2|A|0
+RAIMUNDO ALVES DE SOUZA NETO|96240|P|2|D|0
+LUIZ CARLOS DE NAZARE BARBOZA|92117|P|2|B|0
+JOSE ADRIANO OLIVEIRA DE FREITAS|91830|I|2|A|0
+JULIO CESAR GONCALVES|90544|II|2|C|0
+LENEKER JOSE MARTINS|61277|E|2|A|1
+KENNER CASTRO DA SILVA|63480|E|2|C|0
+RYAN CORDEIRO CAVALCANTE|100712|P|2|A|0
+AIRTON SOBRINHO DE PAULA PESSOA DOS REIS|73830|II|3|D|0
+ALEXSANDRO GOES DE SOUZA|100629|I|3|D|0
+DANIEL MATOS TORRES|47404|E|3|C|0
+EDUARDO DA SILVA|75986|I|3|B|0
+ELIDALVO DOS SANTOS DA COSTA|39229|E|3|C|0
+EUCLIDES RODRIGUES MOREIRA|43636|E|3|C|0
+EVERTON SOUZA DA SILVA|73647|E|3|B|0
+HARLEY DE OLIVEIRA BARBOSA|41458|I|3|A|0
+KARL LEWIS DE SOUZA ARAUJO|97650|I|3|A|0
+MAYKON OLIVEIRA DA SILVA|98802|I|3|B|0
+ROBERT GOMES DE SOUZA|99214|P|3|A|0
+SAMUEL CASCAES DA SILVA|100301|P|3|D|0
+WALBER AIRES DE LIMA|55120|E|3|B|0
+WESLEY ALMEIDA DE SOUZA|94417|I|3|C|0`.trim().split('\n').map(l=>{
+  const [nome,mat,cargo,turno,turma,saldo]=l.split('|');
+  return {nome,mat,cargo,turno:+turno,turma,saldo:+saldo,ativo:true};
+});
+const byMat = m => OPS.find(o=>o.mat===m);
+const find = n => OPS.find(o=>o.nome.startsWith(n)).mat;
+let OCC_ID=0;
+const O = (nome,tipo,ini,fim,obs='') => ({id:++OCC_ID, mat:find(nome), tipo, ini, fim:fim||ini, obs});
+const OCC = [
+  O('HAROLDO','atestado','2026-09-01','2026-09-23','CID informado ao RH'),
+  O('JOSILENO','ferias','2026-09-01','2026-09-10'),
+  O('MATHEUS','ferias','2026-09-12','2026-10-01'),
+  O('JERRY','ferias','2026-09-25','2026-10-14'),
+  O('VANDERSON','atestado','2026-09-06'), O('VANDERSON','atestado','2026-09-20'),
+  O('VANDERSON','atestado','2026-08-14','2026-08-15'),
+  O('LUIZ CARLOS','falta','2026-09-06'), O('LUIZ CARLOS','falta','2026-09-19'), O('LUIZ CARLOS','falta','2026-09-20'),
+  O('JOSE ADRIANO','falta','2026-09-11'), O('JOSE ADRIANO','falta','2026-09-17'),
+  O('ANTHONY','atestado','2026-09-08'),
+  O('IURY','folga','2026-09-02'), O('ELIASAFE','folga','2026-09-08'), O('ELIASAFE','folga','2026-09-13'),
+  O('LUAN','folga','2026-09-09'), O('RERISON','folga','2026-09-10'), O('LENEKER','folga','2026-09-12'),
+  O('BRUNO','folga','2026-09-14'), O('JULIO','folga','2026-09-18'), O('DANIEL MARQUES','folga','2026-09-21'),
+  O('LUCAS SOARES','folga','2026-09-24'), O('RAIMUNDO','folga','2026-09-26'), O('GABRIEL','folga','2026-09-30'),
+  O('WILLACE','folga','2026-09-20'),
+  O('HAROLDO','atestado','2026-08-10','2026-08-20'), O('KENNER','falta','2026-08-12'),
+];
+const TRAT = {}; // mat -> {medida, status}
+
+/* ================= HELPERS ================= */
+const BASE = new Date(2026,8,29,11,46,26), T0=Date.now();
+const now = () => new Date(BASE.getTime()+(Date.now()-T0));
+const TODAY = new Date(2026,8,29);
+const pad = n => String(n).padStart(2,'0');
+const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d]=s.split('-'); return new Date(+y,+m-1,+d); };
+const addD = (d,n) => new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const dm = s => { const d=parse(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+const days = (a,b) => Math.round((parse(b)-parse(a))/86400000)+1;
+const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const LOW=['de','da','do','das','dos','e'];
+const title = s => s.toLowerCase().split(' ').map((w,i)=>i&&LOW.includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+const short = s => { const p=s.split(' '); return title(p[0])+' '+p[1][0]+'.'; };
+const fmtPct = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+
+function cyc(d){ const i=((Math.round((d-CICLO_INICIO)/86400000))%28+28)%28; return {turma:CICLO[i], dia:i+1}; }
+function occOn(mat, k){ return OCC.find(o=>o.mat===mat && o.ini<=k && o.fim>=k); }
+function statusOn(op, d){
+  const k=key(d), o=occOn(op.mat,k);
+  if(o) return o.tipo;
+  if(cyc(d).turma===op.turma) return 'escala';
+  return 'presente';
+}
+const ST = {...TIPOS, presente:{l:'Presente',s:'Presente',c:'var(--green)'}, escala:{l:'Folga de escala',s:'Folga escala',c:null}};
+const stHtml = s => `<span class="st">${ST[s].c?`<i class="dot" style="background:${ST[s].c}"></i>`:'<i class="dot ring"></i>'}${ST[s].l}</span>`;
+
+/* ================= ESTADO ================= */
+let view='quadro', turno='all', locked=false;
+let qDate = new Date(TODAY), calMonth = new Date(2026,8,1), calSel = new Date(TODAY);
+let oSort='nome', oDir=1, absMonth=8;
+const inTurno = op => turno==='all' || op.turno==+turno;
+const scopeOps = () => OPS.filter(o=>o.ativo && inTurno(o));
+
+/* ================= QUADRO DO DIA ================= */
+function fillCargoSelect(el, first){
+  el.innerHTML = `<option value="">${first}</option>`+Object.entries(CARGOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+}
+function renderQuadro(){
+  const d=qDate, c=cyc(d);
+  dLabel.textContent = `${DIAS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}` + (key(d)===key(TODAY)?' · hoje':'');
+  const hol = FERIADOS[key(d)];
+  cycleInfo.innerHTML = `${hol?`<span style="color:var(--amber)">Feriado: ${hol}</span> · `:''}Turma de folga <span class="turma">${c.turma}</span> · dia ${c.dia}/28 do ciclo`;
+
+  const ops = scopeOps(), st = ops.map(o=>[o,statusOn(o,d)]);
+  const cnt = t => st.filter(x=>x[1]===t).length;
+  const pres=cnt('presente'), fa=cnt('falta'), at=cnt('atestado');
+  const escalados = ops.length - cnt('escala') - cnt('ferias') - cnt('folga');
+  qSummary.innerHTML = `
+    <div><label>Efetivo</label><strong>${ops.length}</strong><p>quadro cadastrado</p></div>
+    <div><label><i class="dot" style="background:var(--green)"></i>Presentes</label><strong>${pres}</strong><p>de ${escalados} escalados</p></div>
+    <div class="${fa+at?'bad':''}"><label><i class="dot" style="background:var(--red)"></i>Faltas e atestados</label><strong>${fa+at}</strong><p>${fa} faltas · ${at} atestados</p></div>
+    <div><label><i class="dot" style="background:var(--blue)"></i>Folga flexível</label><strong>${cnt('folga')}</strong><p>folgas alinhadas</p></div>
+    <div><label><i class="dot" style="background:var(--violet)"></i>Férias</label><strong>${cnt('ferias')}</strong><p>em gozo</p></div>
+    <div><label><i class="dot ring"></i>Folga de escala</label><strong>${cnt('escala')}</strong><p>turma ${c.turma}</p></div>`;
+
+  const s=qSearch.value.trim().toLowerCase(), tm=qTurma.value, cg=qCargo.value, hide=qHideOff.checked;
+  const ORDER=['falta','atestado','atraso','presente','folga','ferias','escala'];
+  const turnos = turno==='all' ? [1,2,3] : [+turno];
+  shifts.style.gridTemplateColumns = `repeat(${turnos.length},1fr)`;
+  shifts.innerHTML = turnos.map(t=>{
+    let list = st.filter(([o])=>o.turno===t);
+    const tot=list.length, esc=list.filter(x=>!['escala','ferias','folga'].includes(x[1])).length, pr=list.filter(x=>x[1]==='presente').length;
+    list = list.filter(([o,x])=>(!s||o.nome.toLowerCase().includes(s)||CARGOS[o.cargo].toLowerCase().includes(s)||o.mat.includes(s)) && (!tm||o.turma===tm) && (!cg||o.cargo===cg) && !(hide&&x==='escala'));
+    list.sort((a,b)=>ORDER.indexOf(a[1])-ORDER.indexOf(b[1]) || a[0].nome.localeCompare(b[0].nome));
+    let lastOff=false;
+    const rows = list.map(([o,x])=>{
+      const off = ['escala','ferias','folga'].includes(x);
+      const sep = off && !lastOff ? `<div class="sep">Fora da escala hoje</div>` : '';
+      lastOff = off;
+      return sep+`<div class="p ${off?'off':''}" data-mat="${o.mat}">
+        <span class="person"><b>${title(o.nome)}</b><span><span class="mono">${o.mat}</span> · ${CARGOS[o.cargo]} · Turma ${o.turma}</span></span>
+        ${stHtml(x)}</div>`;
+    }).join('');
+    return `<div class="card shift-list">
+      <div class="card-head"><div><h2>${TURNOS[t].l === 'T1' ? 'Turno 1' : TURNOS[t].l === 'T2' ? 'Turno 2' : 'Turno 3'}</h2><span class="hint mono">${TURNOS[t].h}</span></div>
+        <span class="cov" title="Presentes / escalados"><span class="bar"><span style="width:${esc?pr/esc*100:0}%"></span></span><span class="mono">${pr}/${esc}</span></span></div>
+      ${rows || '<div class="empty">Ninguém encontrado.</div>'}</div>`;
+  }).join('');
+}
+
+/* ================= CALENDÁRIO ================= */
+function renderCal(){
+  const y=calMonth.getFullYear(), m=calMonth.getMonth();
+  mLabel.textContent = `${MESES[m]} ${y}`;
+  legend.innerHTML = ['falta','atestado','folga','ferias'].map(t=>`<span><i class="dot" style="background:${TIPOS[t].c}"></i>${TIPOS[t].s}</span>`).join('')+`<span><span class="turma" style="width:16px;height:16px;font-size:10px">D</span>Turma de folga</span>`;
+  const first=new Date(y,m,1), n=new Date(y,m+1,0).getDate();
+  const mats = new Set(scopeOps().map(o=>o.mat));
+  let h = DIAS.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<first.getDay();i++) h+=`<div class="cell out"></div>`;
+  for(let dd=1; dd<=n; dd++){
+    const d=new Date(y,m,dd), k=key(d), c=cyc(d);
+    const ev = OCC.filter(o=>mats.has(o.mat) && o.ini<=k && o.fim>=k && o.tipo!=='atraso')
+      .sort((a,b)=>Object.keys(TIPOS).indexOf(a.tipo)-Object.keys(TIPOS).indexOf(b.tipo));
+    const cls = [d.getDay()%6===0?'we':'', k===key(TODAY)?'today':'', k===key(calSel)?'sel':''].join(' ');
+    h+=`<div class="cell ${cls}" data-k="${k}">
+      <div class="top"><span class="d">${dd}</span><span class="f" title="Turma de folga">folga <span class="turma" style="width:16px;height:16px;font-size:10px">${c.turma}</span></span></div>
+      ${FERIADOS[k]?`<div class="hol" title="${FERIADOS[k]}">${FERIADOS[k]}</div>`:''}
+      ${ev.slice(0,3).map(o=>`<div class="e"><i class="dot" style="background:${TIPOS[o.tipo].c}"></i><span>${short(byMat(o.mat).nome)}</span></div>`).join('')}
+      ${ev.length>3?`<div class="more">+${ev.length-3} mais</div>`:''}</div>`;
+  }
+  const rest=(7-(first.getDay()+n)%7)%7;
+  for(let i=0;i<rest;i++) h+=`<div class="cell out"></div>`;
+  cal.innerHTML=h;
+
+  // Painel do dia
+  const k=key(calSel), c=cyc(calSel);
+  const ev = OCC.filter(o=>mats.has(o.mat) && o.ini<=k && o.fim>=k);
+  daySide.innerHTML = `<div class="card-head"><h2>${DIAS[calSel.getDay()]}, ${pad(calSel.getDate())}/${pad(calSel.getMonth()+1)}</h2><span class="hint">folga turma ${c.turma}</span></div>
+    ${FERIADOS[k]?`<div class="li"><b style="color:var(--amber)">${FERIADOS[k]}</b><span class="muted">Feriado</span></div>`:''}
+    ${ev.length ? ev.map(o=>{const op=byMat(o.mat);return `<div class="li"><b>${title(op.nome)}</b>${stHtml(o.tipo)}<small>${TURNOS[op.turno].l} · Turma ${op.turma}${o.ini!==o.fim?` · ${dm(o.ini)} → ${dm(o.fim)}`:''}</small></div>`}).join('')
+      : '<div class="empty" style="padding:24px">Nenhuma ocorrência neste dia.</div>'}`;
+
+  // Resumo do mês
+  const ini=`${y}-${pad(m+1)}-01`, fim=`${y}-${pad(m+1)}-${pad(n)}`;
+  const inM = OCC.filter(o=>mats.has(o.mat) && o.ini<=fim && o.fim>=ini);
+  const opsBy = t => new Set(inM.filter(o=>o.tipo===t).map(o=>o.mat)).size;
+  const hols = Object.entries(FERIADOS).filter(([d])=>d>=ini && d<=fim);
+  monthSide.innerHTML = `<div class="card-head"><h2>Resumo de ${MESES[m].toLowerCase()}</h2><span class="hint">operadores</span></div>
+    ${['folga','ferias','falta','atestado'].map(t=>`<div class="kv"><span><i class="dot" style="background:${TIPOS[t].c}"></i>${TIPOS[t].l}</span><strong>${opsBy(t)}</strong></div>`).join('')}
+    ${hols.length?`<div class="kv" style="background:var(--surface-2)"><span class="muted" style="font-size:12px">Feriados</span></div>`+hols.map(([d,n])=>`<div class="kv"><span>${n}</span><strong class="muted">${dm(d)}</strong></div>`).join(''):''}`;
+}
+
+/* ================= OPERADORES ================= */
+function renderOps(){
+  const ops=scopeOps();
+  const byT = t => ops.filter(o=>o.turma===t).length;
+  const fer = ops.filter(o=>statusOn(o,TODAY)==='ferias').length;
+  oSummary.innerHTML = `<div><label>Total</label><strong>${ops.length}</strong><p>${ops.length-fer} ativos · ${fer} em férias</p></div>`+
+    ['A','B','C','D'].map(t=>`<div><label><span class="turma" style="width:16px;height:16px;font-size:10px">${t}</span>Turma ${t}</label><strong>${byT(t)}</strong><p>${cyc(TODAY).turma===t?'de folga hoje':'&nbsp;'}</p></div>`).join('');
+  const s=oSearch.value.trim().toLowerCase(), tm=oTurma.value, cg=oCargo.value;
+  let rows = ops.filter(o=>(!s||o.nome.toLowerCase().includes(s)||o.mat.includes(s))&&(!tm||o.turma===tm)&&(!cg||o.cargo===cg));
+  rows.sort((a,b)=>(oSort==='nome'?a.nome.localeCompare(b.nome):a[oSort]-b[oSort]||a.nome.localeCompare(b.nome))*oDir);
+  document.querySelectorAll('[data-os]').forEach(h=>h.classList.toggle('on',h.dataset.os===oSort));
+  oBody.innerHTML = rows.length ? rows.map(o=>`<tr>
+    <td class="person"><b>${title(o.nome)}</b><span class="mono">${o.mat}</span></td>
+    <td>${CARGOS[o.cargo]}</td>
+    <td><span class="mono">${TURNOS[o.turno].l}</span> <span class="muted mono">${TURNOS[o.turno].h}</span></td>
+    <td><span class="turma">${o.turma}</span></td>
+    <td class="r mono ${o.saldo<0?'neg':''}">${o.saldo>0?'+':''}${o.saldo} d</td>
+    <td>${stHtml(statusOn(o,TODAY))}</td>
+    <td><div class="row-actions">
+      <button class="edit" data-occ="${o.mat}" title="Lançar ocorrência">+ Ocorrência</button>
+      <button class="edit" data-edit="${o.mat}" title="Editar"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+      <button class="edit del" data-del="${o.mat}" title="Inativar"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+    </div></td></tr>`).join('') : `<tr><td colspan="7" class="empty">Nenhum operador encontrado.</td></tr>`;
+  applyLock();
+}
+
+/* ================= OCORRÊNCIAS ================= */
+function monthRange(off){ const d=new Date(TODAY.getFullYear(),TODAY.getMonth()+off,1); return [key(d), key(new Date(d.getFullYear(),d.getMonth()+1,0))]; }
+function renderOcc(){
+  const mats=new Set(scopeOps().map(o=>o.mat)), per=cPer.value;
+  const [ini,fim] = per==='cur'?monthRange(0):per==='prev'?monthRange(-1):['0000','9999'];
+  const base = OCC.filter(o=>mats.has(o.mat) && o.ini<=fim && o.fim>=ini);
+  const cnt = t => base.filter(o=>o.tipo===t).length;
+  const ferHoje = scopeOps().filter(o=>statusOn(o,TODAY)==='ferias').length;
+  cSummary.innerHTML = `
+    <div class="${cnt('falta')?'bad':''}"><label><i class="dot" style="background:var(--red)"></i>Faltas injustificadas</label><strong>${cnt('falta')}</strong></div>
+    <div><label><i class="dot" style="background:var(--amber)"></i>Atestados</label><strong>${cnt('atestado')}</strong></div>
+    <div><label><i class="dot" style="background:var(--blue)"></i>Folgas flexíveis</label><strong>${cnt('folga')}</strong></div>
+    <div><label><i class="dot" style="background:var(--violet)"></i>Em férias hoje</label><strong>${ferHoje}</strong></div>
+    <div><label><i class="dot" style="background:var(--text-2)"></i>Atrasos</label><strong>${cnt('atraso')}</strong></div>`;
+  const s=cSearch.value.trim().toLowerCase(), tp=cTipo.value;
+  const rows = base.filter(o=>(!tp||o.tipo===tp) && (!s||byMat(o.mat).nome.toLowerCase().includes(s))).sort((a,b)=>b.ini.localeCompare(a.ini)||b.id-a.id);
+  cBody.innerHTML = rows.length ? rows.map(o=>{const op=byMat(o.mat), n=days(o.ini,o.fim); return `<tr>
+    <td class="person"><b>${title(op.nome)}</b><span>${CARGOS[op.cargo]} · ${TURNOS[op.turno].l}</span></td>
+    <td><span class="turma">${op.turma}</span></td>
+    <td>${stHtml(o.tipo)}</td>
+    <td class="mono">${dm(o.ini)}${o.ini!==o.fim?` → ${dm(o.fim)}`:''}</td>
+    <td class="r mono">${n}</td>
+    <td class="muted" style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.obs||'—'}</td>
+    <td><div class="row-actions">
+      <button class="edit" data-eocc="${o.id}" title="Editar"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+      <button class="edit del" data-docc="${o.id}" title="Excluir"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+    </div></td></tr>`}).join('') : `<tr><td colspan="7" class="empty">Nenhuma ocorrência no período.</td></tr>`;
+  applyLock();
+}
+
+/* ================= TRATATIVAS ================= */
+function tratList(){
+  const lim = key(addD(TODAY,-TRAT_REGRA.dias+1)), hoje=key(TODAY);
+  const mats=new Set(scopeOps().map(o=>o.mat));
+  const res=[];
+  scopeOps().forEach(op=>{
+    const oc = OCC.filter(o=>o.mat===op.mat && ['falta','atestado','atraso'].includes(o.tipo) && o.fim>=lim && o.ini<=hoje);
+    const f=oc.filter(o=>o.tipo==='falta').length;
+    if(f>=TRAT_REGRA.faltas || oc.length>=TRAT_REGRA.total){
+      if(!TRAT[op.mat]) TRAT[op.mat]={medida:'',status:'Pendente'};
+      res.push({op, oc, f, last:oc.map(o=>o.fim).sort().pop(), t:TRAT[op.mat]});
+    }
+  });
+  return res.sort((a,b)=>b.f-a.f||b.oc.length-a.oc.length);
+}
+function renderTrat(){
+  const l=tratList();
+  const c = s => l.filter(x=>x.t.status===s).length;
+  tSummary.innerHTML = `<div class="${c('Pendente')?'warn':''}"><label>Pendentes</label><strong>${c('Pendente')}</strong><p>aguardando conversa</p></div>
+    <div><label>Em andamento</label><strong>${c('Em andamento')}</strong></div>
+    <div><label>Concluídas</label><strong>${c('Concluída')}</strong></div>`;
+  tRule.textContent = `Gatilho: ${TRAT_REGRA.faltas}+ faltas ou ${TRAT_REGRA.total}+ ocorrências em ${TRAT_REGRA.dias} dias`;
+  const MED=['','Feedback / alinhamento','Advertência verbal','Advertência escrita','Encaminhar ao RH'];
+  tBody.innerHTML = l.length ? l.map(x=>{
+    const parts = ['falta','atestado','atraso'].map(t=>{const n=x.oc.filter(o=>o.tipo===t).length; return n?`<span class="st" style="margin-right:12px"><i class="dot" style="background:${TIPOS[t].c}"></i>${n} ${TIPOS[t].s.toLowerCase()}${n>1?'s':''}</span>`:''}).join('');
+    return `<tr>
+      <td class="person"><b>${title(x.op.nome)}</b><span>${CARGOS[x.op.cargo]} · ${TURNOS[x.op.turno].l} · Turma ${x.op.turma}</span></td>
+      <td>${parts}</td>
+      <td class="mono">${dm(x.last)}</td>
+      <td><select class="select edit" style="height:28px;width:100%" data-tm="${x.op.mat}">${MED.map(m=>`<option ${m===x.t.medida?'selected':''} value="${m}">${m||'Definir…'}</option>`).join('')}</select></td>
+      <td><select class="select edit" style="height:28px;width:100%" data-ts="${x.op.mat}">${['Pendente','Em andamento','Concluída'].map(s=>`<option ${s===x.t.status?'selected':''}>${s}</option>`).join('')}</select></td>
+    </tr>`}).join('') : `<tr><td colspan="5" class="empty">Nenhum colaborador atinge o gatilho.</td></tr>`;
+  applyLock();
+}
+
+/* ================= ABSENTEÍSMO ================= */
+function absCalc(m, ops){
+  const y=2026, n=new Date(y,m+1,0).getDate();
+  const lastDay = (y===TODAY.getFullYear() && m===TODAY.getMonth()) ? TODAY.getDate() : n;
+  if(new Date(y,m,1)>TODAY) return null;
+  let prog=0, at=0, fa=0; const per={};
+  ops.forEach(op=>{
+    for(let d=1; d<=lastDay; d++){
+      const s=statusOn(op,new Date(y,m,d));
+      if(['escala','ferias','folga'].includes(s)) continue;
+      prog++;
+      if(s==='atestado'){at++; (per[op.mat] = per[op.mat]||{a:0,f:0}).a++;}
+      if(s==='falta'){fa++; (per[op.mat] = per[op.mat]||{a:0,f:0}).f++;}
+    }
+  });
+  if(!at && !fa && !OCC.some(o=>o.ini.startsWith(`${y}-${pad(m+1)}`))) return null;
+  return {prog, at, fa, pct:(at+fa)/prog*100, pa:at/prog*100, pf:fa/prog*100, per, partial:lastDay<n, lastDay};
+}
+function renderAbs(){
+  metaLbl.textContent = fmtPct(META_ABS);
+  const ops=scopeOps();
+  const r=absCalc(absMonth, ops);
+  const ok = r && r.pct<META_ABS;
+  aSummary.innerHTML = r ? `
+    <div class="${ok?'':'bad'}"><label>Taxa de absenteísmo</label><strong>${fmtPct(r.pct)}</strong><p>${ok?'dentro da meta':`acima da meta em ${fmtPct(r.pct-META_ABS)}`}${r.partial?` · até dia ${r.lastDay}`:''}</p></div>
+    <div><label><i class="dot" style="background:var(--amber)"></i>Por atestados</label><strong>${fmtPct(r.pa)}</strong><p>${r.at} dias · ${r.at*HORAS_DIA} h</p></div>
+    <div><label><i class="dot" style="background:var(--red)"></i>Por faltas</label><strong>${fmtPct(r.pf)}</strong><p>${r.fa} dias · ${r.fa*HORAS_DIA} h</p></div>
+    <div><label>Horas-homem perdidas</label><strong>${((r.at+r.fa)*HORAS_DIA).toLocaleString('pt-BR')}<small>h de ${(r.prog*HORAS_DIA).toLocaleString('pt-BR')}</small></strong><p>${ops.length} operadores · ${r.prog.toLocaleString('pt-BR')} dias programados</p></div>`
+    : `<div style="grid-column:1/5" class="empty">Sem dados para ${MESES[absMonth].toLowerCase()}.</div>`;
+
+  // Evolução
+  const data = MESES.map((_,m)=>absCalc(m,ops));
+  const max = Math.max(META_ABS*1.4, ...data.filter(Boolean).map(d=>d.pct));
+  aChart.innerHTML = `<div class="goal" style="bottom:${META_ABS/max*100}%"><span>meta ${fmtPct(META_ABS)}</span></div>`+
+    data.map((d,m)=>d ? `<div class="col ${m===absMonth?'cur':''}" title="${MESES[m]}: ${fmtPct(d.pct)}">
+      <span class="v" style="bottom:calc(${d.pct/max*100}% + 4px)">${d.pct.toFixed(1).replace('.',',')}</span>
+      <div class="stack" style="height:${d.pct/max*100}%"><i style="flex:${d.pa};background:var(--amber);opacity:${m===absMonth?1:.55}"></i><i style="flex:${d.pf};background:var(--red)"></i></div></div>`
+      : `<div class="col none"><div class="stack"></div></div>`).join('');
+  aAxis.innerHTML = MESES.map((n,m)=>`<span class="${m===absMonth?'cur':''}">${n.slice(0,3)}</span>`).join('');
+
+  // Distribuição
+  aDistLbl.textContent = MESES[absMonth];
+  if(r && r.at+r.fa){
+    const t=r.at+r.fa;
+    aDistBar.innerHTML = `<i style="width:${r.at/t*100}%;background:var(--amber)"></i><i style="width:${r.fa/t*100}%;background:var(--red)"></i>`;
+    aDist.innerHTML = `<div class="kv"><span><i class="dot" style="background:var(--amber)"></i>Atestados médicos</span><strong>${r.at} d · ${Math.round(r.at/t*100)}%</strong></div>
+      <div class="kv"><span><i class="dot" style="background:var(--red)"></i>Faltas injustificadas</span><strong>${r.fa} d · ${Math.round(r.fa/t*100)}%</strong></div>`;
+  } else { aDistBar.innerHTML=''; aDist.innerHTML='<div class="empty">Sem ausências.</div>'; }
+
+  // Por turno
+  const tmax = Math.max(META_ABS*1.4, ...[1,2,3].map(t=>(absCalc(absMonth,ops.filter(o=>o.turno===t))||{}).pct||0));
+  aTurno.innerHTML = [1,2,3].filter(t=>turno==='all'||+turno===t).map(t=>{
+    const x=absCalc(absMonth, ops.filter(o=>o.turno===t)), p=x?x.pct:0;
+    return `<div class="rw"><span class="mono">${TURNOS[t].l}</span><span class="track"><i class="${p>META_ABS?'over':''}" style="width:${p/tmax*100}%"></i><b style="left:${META_ABS/tmax*100}%"></b></span><span class="mono r ${p>META_ABS?'neg':''}">${fmtPct(p)}</span></div>`;
+  }).join('');
+
+  // Ausências
+  const aus = r ? Object.entries(r.per).map(([m,v])=>({op:byMat(m),...v})).sort((a,b)=>(b.a+b.f)-(a.a+a.f)) : [];
+  aAusLbl.textContent = `${aus.length} colaborador(es)`;
+  aAus.innerHTML = aus.length ? aus.map(x=>`<tr>
+    <td class="person"><b>${title(x.op.nome)}</b><span>${TURNOS[x.op.turno].l} · Turma ${x.op.turma}</span></td>
+    <td class="r mono">${x.a||'—'}</td><td class="r mono ${x.f?'neg':''}">${x.f||'—'}</td><td class="r mono" style="color:var(--text)">${x.a+x.f} d</td></tr>`).join('')
+    : `<tr><td colspan="4" class="empty">Nenhuma ausência.</td></tr>`;
+}
+
+/* ================= RENDER GERAL ================= */
+function renderCounts(){
+  nOps.textContent = scopeOps().length;
+  const [i,f]=monthRange(0), mats=new Set(scopeOps().map(o=>o.mat));
+  nOcc.textContent = OCC.filter(o=>mats.has(o.mat)&&o.ini<=f&&o.fim>=i).length;
+  const p = tratList().filter(x=>x.t.status==='Pendente').length;
+  nTrat.textContent = p||''; nTrat.classList.toggle('alert',p>0);
+}
+const R = {quadro:renderQuadro, cal:renderCal, ops:renderOps, occ:renderOcc, trat:renderTrat, abs:renderAbs};
+function render(){ renderCounts(); R[view](); }
+
+/* ================= EVENTOS ================= */
+tabs.addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  view=b.dataset.v;
+  tabs.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));
+  document.querySelectorAll('main > section').forEach(s=>s.hidden = s.id!=='v-'+view);
+  render();
+});
+turnoSeg.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  turno=b.dataset.t; turnoSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); render();
+});
+dPrev.onclick=()=>{qDate=addD(qDate,-1);render();};
+dNext.onclick=()=>{qDate=addD(qDate,1);render();};
+dToday.onclick=()=>{qDate=new Date(TODAY);render();};
+mPrev.onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);render();};
+mNext.onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);render();};
+mToday.onclick=()=>{calMonth=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);calSel=new Date(TODAY);render();};
+cal.addEventListener('click',e=>{const c=e.target.closest('[data-k]'); if(!c) return; calSel=parse(c.dataset.k); render();});
+cal.addEventListener('dblclick',e=>{const c=e.target.closest('[data-k]'); if(c && !locked) openOcc(null,c.dataset.k);});
+['qSearch','qTurma','qCargo','qHideOff','oSearch','oTurma','oCargo','cSearch','cTipo','cPer'].forEach(id=>{
+  const el=document.getElementById(id); el.addEventListener(el.tagName==='INPUT'&&el.type!=='checkbox'?'input':'change',render);
+});
+shifts.addEventListener('click',e=>{const p=e.target.closest('[data-mat]'); if(p && !locked) openOcc(p.dataset.mat, key(qDate));});
+document.querySelectorAll('[data-os]').forEach(h=>h.addEventListener('click',()=>{oDir = oSort===h.dataset.os ? -oDir : 1; oSort=h.dataset.os; render();}));
+oBody.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  if(b.dataset.occ) openOcc(b.dataset.occ, key(TODAY));
+  if(b.dataset.edit) openOp(b.dataset.edit);
+  if(b.dataset.del){ const o=byMat(b.dataset.del); if(confirm(`Inativar ${title(o.nome)}?`)){ o.ativo=false; render(); toast('Operador inativado'); } }
+});
+cBody.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  if(b.dataset.eocc) openOcc(null,null,OCC.find(o=>o.id==b.dataset.eocc));
+  if(b.dataset.docc && confirm('Excluir esta ocorrência?')){ OCC.splice(OCC.findIndex(o=>o.id==b.dataset.docc),1); render(); toast('Ocorrência excluída'); }
+});
+tBody.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.tm) TRAT[t.dataset.tm].medida=t.value;
+  if(t.dataset.ts){ TRAT[t.dataset.ts].status=t.value; render(); toast('Tratativa atualizada'); }
+});
+aMonth.addEventListener('change',()=>{absMonth=+aMonth.value;render();});
+
+// Bloqueio
+function applyLock(){
+  document.querySelectorAll('.edit').forEach(b=>b.disabled=locked);
+}
+lockBtn.onclick=()=>{
+  locked=!locked; lockBtn.classList.toggle('locked',locked);
+  lockBtn.querySelector('span').textContent = locked?'Bloqueado':'Bloquear';
+  applyLock(); toast(locked?'Edição bloqueada':'Edição liberada');
+};
+
+// Modal ocorrência
+let editingOcc=null;
+function openOcc(mat, day, occ){
+  editingOcc = occ||null;
+  occTitle.textContent = occ?'Editar ocorrência':'Lançar ocorrência';
+  fOp.innerHTML = OPS.filter(o=>o.ativo).sort((a,b)=>a.nome.localeCompare(b.nome)).map(o=>`<option value="${o.mat}">${title(o.nome)} · ${o.mat}</option>`).join('');
+  fOp.value = occ?occ.mat:(mat||fOp.options[0].value);
+  fTipo.value = occ?occ.tipo:'falta';
+  fIni.value = occ?occ.ini:(day||key(TODAY));
+  fFim.value = occ?occ.fim:(day||key(TODAY));
+  fObs.value = occ?occ.obs:'';
+  mOcc.classList.add('show');
+}
+fIni.addEventListener('change',()=>{ if(fFim.value<fIni.value) fFim.value=fIni.value; });
+occForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(fFim.value<fIni.value){ toast('Data final antes da inicial'); return; }
+  const data={mat:fOp.value,tipo:fTipo.value,ini:fIni.value,fim:fFim.value,obs:fObs.value.trim()};
+  const clash = OCC.find(o=>o!==editingOcc && o.mat===data.mat && o.ini<=data.fim && o.fim>=data.ini);
+  if(clash && !confirm(`Já existe ${TIPOS[clash.tipo].l.toLowerCase()} de ${dm(clash.ini)} a ${dm(clash.fim)} para este colaborador. Salvar mesmo assim?`)) return;
+  if(editingOcc) Object.assign(editingOcc,data); else OCC.push({id:++OCC_ID,...data});
+  mOcc.classList.remove('show'); render(); toast('Ocorrência salva');
+});
+// Modal operador
+let editingOp=null;
+function openOp(mat){
+  editingOp = mat?byMat(mat):null;
+  opTitle.textContent = editingOp?'Editar operador':'Novo operador';
+  gNome.value = editingOp?title(editingOp.nome):''; gMat.value=(editingOp||{}).mat||''; gMat.disabled=!!editingOp;
+  gCargo.value = (editingOp||{}).cargo||'I'; gTurno.value=(editingOp||{}).turno||1; gTurma.value=(editingOp||{}).turma||'A';
+  mOp.classList.add('show'); gNome.focus();
+}
+opForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const d={nome:gNome.value.trim().toUpperCase(),cargo:gCargo.value,turno:+gTurno.value,turma:gTurma.value};
+  if(editingOp) Object.assign(editingOp,d);
+  else { if(byMat(gMat.value.trim())){ toast('Matrícula já cadastrada'); return; } OPS.push({...d,mat:gMat.value.trim(),saldo:0,ativo:true}); }
+  mOp.classList.remove('show'); render(); toast('Operador salvo');
+});
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.overlay').classList.remove('show'));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o) o.classList.remove('show');}));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show')); });
+occBtn.onclick=()=>openOcc(null, view==='cal'?key(calSel):view==='quadro'?key(qDate):key(TODAY));
+opBtn.onclick=()=>openOp();
+importBtn.onclick=()=>toast('Importação de planilha');
+themeBtn.onclick=()=>{const r=document.documentElement; r.dataset.theme=r.dataset.theme==='light'?'':'light'; render();};
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ================= INIT ================= */
+fillCargoSelect(qCargo,'Todos os cargos'); fillCargoSelect(oCargo,'Todos os cargos');
+gCargo.innerHTML = Object.entries(CARGOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+fTipo.innerHTML = Object.entries(TIPOS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('');
+cTipo.innerHTML = '<option value="">Todos os tipos</option>'+Object.entries(TIPOS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('');
+aMonth.innerHTML = MESES.map((n,i)=>`<option value="${i}" ${i===absMonth?'selected':''} ${new Date(2026,i,1)>TODAY?'disabled':''}>${n} 2026</option>`).join('');
+function tick(){ const n=now(); clock.textContent=`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`; date.textContent=`${DIAS[n.getDay()]}, ${n.getDate()} ${MESES[n.getMonth()].slice(0,3).toLowerCase()}`; }
+setInterval(tick,1000); tick();
+try{ render(); }catch(e){ console.error(e); window.dispatchEvent(new ErrorEvent('error',{message:e.message})); }
+</script>
+</body>
+</html>

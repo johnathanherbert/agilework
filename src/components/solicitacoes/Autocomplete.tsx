@@ -78,9 +78,12 @@ export const Autocomplete = React.forwardRef<HTMLInputElement, AutocompleteProps
         } else {
           // Busca sugestões online do dashpesagem
           try {
-            const onlineSuggestions = await fetchListaTecnica({ sugestoes: newValue });
+            const onlineSuggestions: any = await fetchListaTecnica({ sugestoes: newValue });
             if (Array.isArray(onlineSuggestions) && onlineSuggestions.length > 0) {
-              setFilteredSuggestions(onlineSuggestions);
+              const strList: string[] = onlineSuggestions.map((s: any) =>
+                typeof s === 'string' ? s : (s.semi_acabado || s.descricao_semi_acabado || String(s))
+              );
+              setFilteredSuggestions(strList);
               setIsOpen(true);
             }
           } catch (err) {

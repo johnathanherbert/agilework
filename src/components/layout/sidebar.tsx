@@ -18,7 +18,8 @@ import {
   Info,
   ShieldCheck,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Scale
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   { label: 'Notas Técnicas', href: '/almoxarifado/nts', icon: FileText, requiredRole: 'all' },
   // { label: 'NTs Concluídas', href: '/almoxarifado/nts?status=concluida', icon: CheckSquare, requiredRole: 'all' },
   { label: 'Solicitações', href: '/solicitacoes', icon: Package, requiredRole: 'solicitacoes' },
+  { label: 'Pesagem & Estoque', href: '/pesagem', icon: Scale, requiredRole: 'all' },
   { label: 'Painel de Produção', href: '/producao', icon: Factory, requiredRole: 'leader' },
   { label: 'Heijunka', href: '/heijunka', icon: TrendingUp, requiredRole: 'leader' },
   { label: 'Mão de Obra', href: '/mao-de-obra', icon: Users, requiredRole: 'maoDeObra' },

@@ -27,7 +27,7 @@ export interface SolicitacaoFormData {
 }
 
 export interface ListaTecnicaItem {
-  id: number;
+  id?: number;
   concatenar?: string;
   status?: string;
   semi_acabado: string;
@@ -38,6 +38,11 @@ export interface ListaTecnicaItem {
   descricao_materia_prima: string;
   qtd_materia_prima: number;
   un_materia_prima: string;
+  created_at?: string;
+  Codigo_Receita?: string;
+  Ativo?: string;
+  Excipiente?: string;
+  codigo_materia_prima?: string;
 }
 
 export interface SaldoMP {

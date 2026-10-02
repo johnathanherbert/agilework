@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrar · AgileWork</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1013; --surface:#14171b; --surface-2:#191c21; --hover:#1d2127;
+    --border:#23272e; --border-strong:#2e333b;
+    --text:#e6e8eb; --text-2:#9aa1ab; --text-3:#6b727c;
+    --accent:#4c8dff; --accent-weak:rgba(76,141,255,.12);
+    --red:#e5484d; --amber:#e2a336; --green:#3fb68b;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+    --radius:6px;
+  }
+  [data-theme="light"]{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#fafbfc; --hover:#f1f3f5;
+    --border:#e4e7eb; --border-strong:#d3d8de;
+    --text:#14171b; --text-2:#5b636e; --text-3:#8a929c;
+    --accent:#2563eb; --accent-weak:rgba(37,99,235,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;font-size:13px;background:var(--bg);color:var(--text);
+    -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1}
+  button,input{font:inherit;color:inherit}
+  button{background:none;border:0;cursor:pointer}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  [hidden]{display:none!important}
+
+  /* ================= LAYOUT ================= */
+  .page{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,440px)}
+  .aside{background:var(--surface);border-right:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .main{display:flex;flex-direction:column;padding:32px 40px}
+
+  /* Lado esquerdo: marca + turno */
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:32px;height:32px;border-radius:7px;background:var(--text);color:var(--bg);display:grid;place-items:center;font-weight:600;font-size:14px}
+  .brand b{display:block;font-weight:600;font-size:14px}
+  .brand small{display:block;font-size:12px;color:var(--text-3)}
+  .hero{margin:auto 0;max-width:520px}
+  .clock{font-family:var(--mono);font-size:64px;font-weight:500;letter-spacing:-.03em;line-height:1}
+  .clock span{color:var(--text-3)}
+  .day{margin-top:12px;font-size:15px;color:var(--text-2)}
+  .shift{margin-top:28px;border-top:1px solid var(--border);padding-top:18px}
+  .shift-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .shift-top b{font-size:15px;font-weight:600}
+  .shift-top span{font-family:var(--mono);font-size:12px;color:var(--text-3)}
+  .track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .track span{display:block;height:100%;background:var(--accent);border-radius:3px}
+  .shift-sub{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-3)}
+  .turns{display:grid;grid-template-columns:repeat(3,1fr);margin-top:18px;border:1px solid var(--border);border-radius:var(--radius)}
+  .turns div{padding:10px 12px;border-right:1px solid var(--border);font-size:12px;color:var(--text-3)}
+  .turns div:last-child{border-right:0}
+  .turns b{display:block;font-weight:500;color:var(--text-2);font-size:12.5px;margin-bottom:2px}
+  .turns .now{background:var(--accent-weak)}
+  .turns .now b{color:var(--text)}
+  .aside-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3)}
+  .status{display:flex;align-items:center;gap:6px}
+  .status i{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .status.off i{background:var(--amber)}
+
+  /* Lado direito: formulário */
+  .top{display:flex;justify-content:flex-end;gap:4px}
+  .icon-btn{width:30px;height:30px;border-radius:6px;display:grid;place-items:center;color:var(--text-2)}
+  .icon-btn:hover{background:var(--hover);color:var(--text)}
+  .form-wrap{margin:auto 0;width:100%;max-width:340px;align-self:center}
+  .mobile-brand{display:none;margin-bottom:28px}
+  h1{font-size:20px;font-weight:600;letter-spacing:-.01em}
+  .lead{color:var(--text-3);margin-top:4px;margin-bottom:22px;line-height:1.5}
+
+  .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border-strong);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+  .seg button{height:32px;color:var(--text-3);font-weight:500;font-size:12.5px}
+  .seg button + button{border-left:1px solid var(--border-strong)}
+  .seg button:hover{color:var(--text)}
+  .seg button.on{background:var(--hover);color:var(--text)}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field-top{display:flex;justify-content:space-between;align-items:baseline}
+  .field label{font-size:12px;font-weight:500;color:var(--text-2)}
+  .field-top a{font-size:12px}
+  .inp{position:relative;display:flex;align-items:center}
+  .input{height:38px;width:100%;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);outline:0;transition:border-color .12s,box-shadow .12s}
+  .input::placeholder{color:var(--text-3)}
+  .input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+  .input.err{border-color:var(--red)}
+  .input.err:focus{box-shadow:0 0 0 3px rgba(229,72,77,.15)}
+  .inp .input.pad-r{padding-right:40px}
+  .inp .eye{position:absolute;right:4px;width:32px;height:30px;border-radius:4px;display:grid;place-items:center;color:var(--text-3)}
+  .inp .eye:hover{color:var(--text)}
+  .hint{font-size:12px;color:var(--text-3);min-height:0}
+  .hint.err{color:var(--red)}
+  .hint.warn{color:var(--amber)}
+  input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--surface) inset!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)}
+
+  .row{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px}
+  .check{display:flex;align-items:center;gap:8px;color:var(--text-2);cursor:pointer;user-select:none}
+  .check input{accent-color:var(--accent);width:14px;height:14px}
+
+  .btn{height:38px;width:100%;border-radius:var(--radius);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:500;border:1px solid var(--border-strong);color:var(--text-2);background:var(--surface)}
+  .btn:hover{color:var(--text);border-color:var(--text-3)}
+  .btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .btn.primary:hover{opacity:.9}
+  .btn:disabled{opacity:.6;cursor:default}
+  .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--radius);border:1px solid var(--red);background:rgba(229,72,77,.08);color:var(--text);margin-bottom:16px;font-size:12.5px;line-height:1.45}
+  .alert svg{color:var(--red);margin-top:1px}
+  .alert.ok{border-color:var(--green);background:rgba(63,182,139,.08)}
+  .alert.ok svg{color:var(--green)}
+
+  .alt{margin-top:22px;padding-top:18px;border-top:1px solid var(--border);text-align:center;color:var(--text-3)}
+
+  /* PIN */
+  .who{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+  .av{width:32px;height:32px;border-radius:50%;background:#2a3038;color:#c9ced6;display:grid;place-items:center;font-weight:600;font-size:12px;flex-shrink:0}
+  [data-theme="light"] .av{background:#e4e7eb;color:#3b424b}
+  .who b{display:block;font-weight:500}
+  .who small{display:block;font-size:12px;color:var(--text-3)}
+  .who a{margin-left:auto;font-size:12px;white-space:nowrap}
+  .who > div{min-width:0}
+  .who small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+  .pin input{min-width:0;width:100%;height:52px;text-align:center;font-family:var(--mono);font-size:22px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);outline:0;-webkit-text-security:disc}
+  .pin input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+  .pin.err input{border-color:var(--red)}
+  .pin.shake{animation:shake .35s}
+  @keyframes shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+
+  .strength{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:2px}
+  .strength i{height:3px;border-radius:2px;background:var(--border)}
+
+  .legal{font-size:11.5px;color:var(--text-3);text-align:center;margin-top:16px}
+
+  /* ================= RESPONSIVO ================= */
+  @media (max-width:880px){
+    .page{grid-template-columns:1fr}
+    .aside{display:none}
+    .main{padding:24px}
+    .mobile-brand{display:flex;justify-content:space-between;align-items:center}
+    .mobile-brand .mt{font-family:var(--mono);font-size:12px;color:var(--text-3);text-align:right;line-height:1.4}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ================= ESQUERDA ================= -->
+  <section class="aside">
+    <div class="brand"><div class="logo">A</div><div><b>AgileWork</b><small>Gestão de NTs e produção · Pesagem</small></div></div>
+
+    <div class="hero">
+      <div class="clock" id="clock">--:--<span>:--</span></div>
+      <div class="day" id="day"></div>
+      <div class="shift">
+        <div class="shift-top"><b id="shName">—</b><span id="shHours"></span></div>
+        <div class="track"><span id="shBar" style="width:0"></span></div>
+        <div class="shift-sub"><span id="shEl"></span><span id="shLeft"></span></div>
+        <div class="turns" id="turns"></div>
+      </div>
+    </div>
+
+    <div class="aside-foot">
+      <span class="status" id="netStatus"><i></i>Sistema operando</span>
+      <span>Novamed · Grupo EMS</span>
+    </div>
+  </section>
+
+  <!-- ================= DIREITA ================= -->
+  <section class="main">
+    <div class="top">
+      <button class="icon-btn" id="themeBtn" title="Alternar tema"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </div>
+
+    <div class="form-wrap">
+      <div class="mobile-brand">
+        <div class="brand"><div class="logo">A</div><div><b>AgileWork</b><small>Pesagem</small></div></div>
+        <div class="mt" id="mClock"></div>
+      </div>
+
+      <!-- ---------- ENTRAR ---------- -->
+      <div id="v-login">
+        <h1 id="hello">Entrar</h1>
+        <p class="lead">Acesse para gerenciar notas técnicas e a produção da pesagem.</p>
+
+        <div class="seg" id="modeSeg"><button data-m="pass" class="on">E-mail e senha</button><button data-m="pin">PIN</button></div>
+
+        <div class="alert" id="loginAlert" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span></span></div>
+
+        <!-- E-mail e senha -->
+        <form id="fPass" novalidate autocomplete="on">
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input class="input" id="email" type="email" autocomplete="username" placeholder="nome@ems.com.br" required>
+            <span class="hint" id="emailHint"></span>
+          </div>
+          <div class="field">
+            <div class="field-top"><label for="pass">Senha</label><a href="#" data-go="forgot">Esqueci minha senha</a></div>
+            <div class="inp">
+              <input class="input pad-r" id="pass" type="password" autocomplete="current-password" required>
+              <button type="button" class="eye" data-eye="pass" title="Mostrar senha"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <span class="hint" id="passHint"></span>
+          </div>
+          <div class="row"><label class="check"><input type="checkbox" id="remember" checked>Lembrar meu e-mail</label></div>
+          <button class="btn primary" id="btnLogin" type="submit">Entrar</button>
+        </form>
+
+        <!-- PIN -->
+        <form id="fPin" hidden novalidate>
+          <div class="who" id="pinWho"></div>
+          <div class="field" id="pinEmailField" hidden>
+            <label for="pinEmail">E-mail</label>
+            <input class="input" id="pinEmail" type="email" placeholder="nome@ems.com.br">
+          </div>
+          <div class="field" style="margin-bottom:6px"><label>PIN de 4 dígitos</label></div>
+          <div class="pin" id="pinBox">
+            <input inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 2">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 3">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 4">
+          </div>
+          <span class="hint" id="pinHint">Entra automaticamente ao digitar o 4º número.</span>
+        </form>
+
+        <div class="alt">Não tem uma conta? <a href="#" data-go="register">Solicitar acesso</a></div>
+      </div>
+
+      <!-- ---------- ESQUECI A SENHA ---------- -->
+      <div id="v-forgot" hidden>
+        <h1>Redefinir senha</h1>
+        <p class="lead">Informe seu e-mail. Enviaremos um link para criar uma nova senha.</p>
+        <div class="alert ok" id="forgotOk" hidden><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg><span></span></div>
+        <form id="fForgot" novalidate>
+          <div class="field"><label for="fEmail">E-mail</label><input class="input" id="fEmail" type="email" placeholder="nome@ems.com.br"><span class="hint" id="fEmailHint"></span></div>
+          <button class="btn primary" type="submit" id="btnForgot">Enviar link</button>
+        </form>
+        <div class="alt"><a href="#" data-go="login">Voltar para o login</a></div>
+      </div>
+
+      <!-- ---------- SOLICITAR ACESSO ---------- -->
+      <div id="v-register" hidden>
+        <h1>Solicitar acesso</h1>
+        <p class="lead">O cadastro fica pendente até a aprovação de um administrador.</p>
+        <div class="alert ok" id="regOk" hidden><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg><span></span></div>
+        <form id="fReg" novalidate>
+          <div class="field"><label for="rName">Nome completo</label><input class="input" id="rName" autocomplete="name"><span class="hint" id="rNameHint"></span></div>
+          <div class="field"><label for="rEmail">E-mail corporativo</label><input class="input" id="rEmail" type="email" autocomplete="email" placeholder="nome@ems.com.br"><span class="hint" id="rEmailHint"></span></div>
+          <div class="field">
+            <label for="rPass">Senha</label>
+            <div class="inp"><input class="input pad-r" id="rPass" type="password" autocomplete="new-password">
+              <button type="button" class="eye" data-eye="rPass" title="Mostrar senha"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <div class="strength" id="strength"><i></i><i></i><i></i><i></i></div>
+            <span class="hint" id="rPassHint">Mínimo de 8 caracteres, com letras e números.</span>
+          </div>
+          <button class="btn primary" type="submit" id="btnReg">Enviar solicitação</button>
+        </form>
+        <div class="alt">Já tem conta? <a href="#" data-go="login">Entrar</a></div>
+      </div>
+
+      <p class="legal">Uso restrito a colaboradores autorizados. Acessos são registrados.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+/* Mostra qualquer erro na tela em vez de deixar a página vazia */
+window.addEventListener('error',function(e){
+  var b=document.getElementById('errBanner');
+  if(!b){ b=document.createElement('div'); b.id='errBanner';
+    b.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:99;background:#2a1215;border:1px solid #e5484d;color:#ffd7d9;padding:10px 14px;border-radius:6px;font:12px/1.5 monospace;white-space:pre-wrap';
+    document.body.appendChild(b); }
+  b.textContent='Erro na tela de login: '+(e.message||e)+(e.lineno?'  (linha '+e.lineno+')':'');
+});
+
+/* ================= CONFIGURAÇÃO ================= */
+var SHIFTS = [
+  {n:3, l:'3º turno', a:[23,45], b:[7,20]},
+  {n:1, l:'1º turno', a:[7,20],  b:[15,50]},
+  {n:2, l:'2º turno', a:[15,50], b:[23,45]}
+];
+var MAX_TENT = 5;           // tentativas antes do bloqueio temporário
+var BLOQ_SEG = 60;          // segundos de bloqueio
+
+var store = {
+  get:function(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } },
+  set:function(k,v){ try{ window.localStorage.setItem(k,v); }catch(e){} },
+  del:function(k){ try{ window.localStorage.removeItem(k); }catch(e){} }
+};
+function $(id){ return document.getElementById(id); }
+function pad(n){ return (n<10?'0':'')+n; }
+var DIAS=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+var MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+/* ================= TEMA ================= */
+(function(){
+  var t=store.get('aw_theme');
+  if(!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  if(t==='light') document.documentElement.dataset.theme='light';
+})();
+$('themeBtn').onclick=function(){
+  var r=document.documentElement, light=r.dataset.theme!=='light';
+  r.dataset.theme = light?'light':''; store.set('aw_theme', light?'light':'dark');
+};
+
+/* ================= RELÓGIO E TURNO ================= */
+function mm(h,m){ return h*60+m; }
+function currentShift(d){
+  var t=mm(d.getHours(),d.getMinutes())+d.getSeconds()/60;
+  for(var i=0;i<SHIFTS.length;i++){
+    var s=SHIFTS[i], a=mm(s.a[0],s.a[1]), b=mm(s.b[0],s.b[1]), len=(b-a+1440)%1440, el=(t-a+1440)%1440;
+    if(el<len) return {s:s, el:el, len:len};
+  }
+  return null;
+}
+function fmtDur(m){ m=Math.round(m); return Math.floor(m/60)+'h'+pad(m%60); }
+function tick(){
+  var d=new Date(), c=currentShift(d);
+  $('clock').innerHTML = pad(d.getHours())+':'+pad(d.getMinutes())+'<span>:'+pad(d.getSeconds())+'</span>';
+  $('day').textContent = DIAS[d.getDay()].charAt(0).toUpperCase()+DIAS[d.getDay()].slice(1)+', '+d.getDate()+' de '+MESES[d.getMonth()]+' de '+d.getFullYear();
+  $('mClock').innerHTML = pad(d.getHours())+':'+pad(d.getMinutes())+'<br>'+(c?c.s.l:'');
+  if(c){
+    $('shName').textContent = c.s.l+' em andamento';
+    $('shHours').textContent = pad(c.s.a[0])+':'+pad(c.s.a[1])+' – '+pad(c.s.b[0])+':'+pad(c.s.b[1]);
+    $('shBar').style.width = (c.el/c.len*100)+'%';
+    $('shEl').textContent = Math.round(c.el/c.len*100)+'% do turno';
+    $('shLeft').textContent = 'termina em '+fmtDur(c.len-c.el);
+  }
+  $('turns').innerHTML = SHIFTS.map(function(s){
+    return '<div class="'+(c&&c.s===s?'now':'')+'"><b>'+s.l+'</b>'+pad(s.a[0])+':'+pad(s.a[1])+'–'+pad(s.b[0])+':'+pad(s.b[1])+'</div>';
+  }).join('');
+}
+setInterval(tick,1000); tick();
+function net(){ var on=navigator.onLine!==false; $('netStatus').classList.toggle('off',!on); $('netStatus').lastChild.textContent = on?'Sistema operando':'Sem conexão com a rede'; }
+window.addEventListener('online',net); window.addEventListener('offline',net); net();
+
+/* ================= AUTENTICAÇÃO (substituir pela API) ================= */
+// Exemplo: troque estas funções por chamadas ao seu backend (fetch).
+var DEMO = {'johnathan.herbert47@gmail.com':{name:'Johnathan Herbert',pass:'senha1234',pin:'1234'}};
+function apiLogin(email,pass){ return new Promise(function(ok,fail){ setTimeout(function(){
+  var u=DEMO[email.toLowerCase()]; if(u && u.pass===pass) ok(u); else fail('E-mail ou senha incorretos.'); },700); }); }
+function apiPin(email,pin){ return new Promise(function(ok,fail){ setTimeout(function(){
+  var u=DEMO[email.toLowerCase()]; if(!u) fail('E-mail não encontrado.'); else if(!u.pin) fail('Este usuário não tem PIN cadastrado.'); else if(u.pin===pin) ok(u); else fail('PIN incorreto.'); },500); }); }
+function apiForgot(email){ return new Promise(function(ok){ setTimeout(ok,700); }); }
+function apiRegister(data){ return new Promise(function(ok,fail){ setTimeout(function(){ if(DEMO[data.email.toLowerCase()]) fail('Já existe uma conta com este e-mail.'); else ok(); },800); }); }
+function onSuccess(u){
+  var em = mode==='pin' ? (lastUser?lastUser.email:$('pinEmail').value.trim()) : $('email').value.trim();
+  if($('remember').checked){ lastUser={email:em,name:u.name}; store.set('aw_last', JSON.stringify(lastUser)); }
+  store.del('aw_fail');
+  // window.location.href = 'index.html';   // ← redirecionar para o sistema
+  showAlert('loginAlert','Bem-vindo, '+u.name.split(' ')[0]+'. Redirecionando…',true);
+}
+
+/* ================= NAVEGAÇÃO ENTRE TELAS ================= */
+function go(v){
+  ['login','forgot','register'].forEach(function(x){ $('v-'+x).hidden = x!==v; });
+  if(v==='forgot'){ $('fEmail').value=$('email').value; $('forgotOk').hidden=true; $('fForgot').hidden=false; setTimeout(function(){$('fEmail').focus();},30); }
+  if(v==='register'){ $('regOk').hidden=true; $('fReg').hidden=false; setTimeout(function(){$('rName').focus();},30); }
+  if(v==='login') focusFirst();
+}
+document.addEventListener('click',function(e){ var a=e.target.closest('[data-go]'); if(a){ e.preventDefault(); go(a.dataset.go); } });
+
+/* ================= HELPERS DE FORMULÁRIO ================= */
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+function setErr(input,hint,msg){ $(input).classList.toggle('err',!!msg); $(hint).textContent=msg||''; $(hint).className='hint'+(msg?' err':''); }
+function showAlert(id,msg,ok){ var a=$(id); a.hidden=!msg; if(!msg) return; a.classList.toggle('ok',!!ok); a.querySelector('span').textContent=msg;
+  a.querySelector('svg').innerHTML = ok?'<path d="m5 12 5 5 9-10"/>':'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>'; }
+function busy(btn,on,label){ btn.disabled=on; btn.innerHTML = on?'<span class="spin"></span>'+label:btn.dataset.label; }
+['btnLogin','btnForgot','btnReg'].forEach(function(id){ $(id).dataset.label=$(id).textContent; });
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-eye]'); if(!b) return;
+  var i=$(b.dataset.eye), show=i.type==='password'; i.type=show?'text':'password';
+  b.title=show?'Ocultar senha':'Mostrar senha';
+  b.innerHTML = show ? '<svg viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 4M6.1 6.1C3.6 7.8 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.4 4.5-1.1"/></svg>'
+                     : '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  i.focus();
+});
+// Aviso de Caps Lock
+['pass','rPass'].forEach(function(id){
+  $(id).addEventListener('keyup',function(e){
+    var h=id==='pass'?'passHint':'rPassHint', on=e.getModifierState&&e.getModifierState('CapsLock');
+    if(on){ $(h).textContent='Caps Lock está ativado'; $(h).className='hint warn'; }
+    else if($(h).className==='hint warn'){ $(h).textContent = id==='rPass'?'Mínimo de 8 caracteres, com letras e números.':''; $(h).className='hint'; }
+  });
+});
+
+/* ================= BLOQUEIO POR TENTATIVAS ================= */
+function fails(){ try{ return JSON.parse(store.get('aw_fail')||'{"n":0,"until":0}'); }catch(e){ return {n:0,until:0}; } }
+var memFail={n:0,until:0};
+function getFail(){ var f=fails(); return f.n>=memFail.n?f:memFail; }
+function addFail(){ var f=getFail(); f.n++; if(f.n>=MAX_TENT){ f.until=Date.now()+BLOQ_SEG*1000; f.n=0; } memFail=f; store.set('aw_fail',JSON.stringify(f)); return f; }
+function lockedFor(){ return Math.max(0,Math.ceil((getFail().until-Date.now())/1000)); }
+var lockTimer;
+function checkLock(){
+  var s=lockedFor(), b=$('btnLogin');
+  clearInterval(lockTimer);
+  if(s>0){
+    b.disabled=true; setPinDisabled(true);
+    var upd=function(){ var r=lockedFor(); if(r<=0){ clearInterval(lockTimer); b.disabled=false; setPinDisabled(false); showAlert('loginAlert',''); return; }
+      showAlert('loginAlert','Muitas tentativas sem sucesso. Tente novamente em '+r+' s.'); };
+    upd(); lockTimer=setInterval(upd,1000); return true;
+  }
+  return false;
+}
+function failMsg(msg){ var f=addFail(); if(checkLock()) return; var left=MAX_TENT-f.n;
+  showAlert('loginAlert', msg+(left<=2?' Restam '+left+' tentativa'+(left>1?'s':'')+' antes do bloqueio temporário.':'')); }
+
+/* ================= LOGIN POR SENHA ================= */
+$('fPass').addEventListener('submit',function(e){
+  e.preventDefault(); if(checkLock()) return;
+  var em=$('email').value.trim(), pw=$('pass').value, ok=true;
+  showAlert('loginAlert','');
+  if(!em){ setErr('email','emailHint','Informe seu e-mail.'); ok=false; } else if(!validEmail(em)){ setErr('email','emailHint','E-mail inválido.'); ok=false; } else setErr('email','emailHint','');
+  if(!pw){ setErr('pass','passHint','Informe sua senha.'); ok=false; } else setErr('pass','passHint','');
+  if(!ok){ (em&&validEmail(em)?$('pass'):$('email')).focus(); return; }
+  busy($('btnLogin'),true,'Entrando…');
+  apiLogin(em,pw).then(function(u){ busy($('btnLogin'),false); onSuccess(u); },
+    function(msg){ busy($('btnLogin'),false); $('pass').value=''; $('pass').focus(); failMsg(msg); });
+});
+$('email').addEventListener('input',function(){ if(this.classList.contains('err')) setErr('email','emailHint',''); });
+$('pass').addEventListener('input',function(){ if(this.classList.contains('err')) setErr('pass','passHint',''); });
+
+/* ================= LOGIN POR PIN ================= */
+var lastUser=null; try{ lastUser=JSON.parse(store.get('aw_last')||'null'); }catch(e){}
+var mode='pass';
+function renderWho(){
+  if(lastUser){
+    var p=lastUser.name.split(' '), ini=(p[0][0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase();
+    $('pinWho').hidden=false; $('pinEmailField').hidden=true;
+    $('pinWho').innerHTML='<span class="av">'+ini+'</span><div><b>'+lastUser.name+'</b><small>'+lastUser.email+'</small></div><a href="#" id="notMe">Não sou eu</a>';
+  } else { $('pinWho').hidden=true; $('pinEmailField').hidden=false; }
+}
+function setMode(m){
+  mode=m; store.set('aw_mode',m);
+  $('modeSeg').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on',b.dataset.m===m); });
+  $('fPass').hidden = m!=='pass'; $('fPin').hidden = m!=='pin';
+  showAlert('loginAlert',''); if(m==='pin') renderWho(); checkLock(); focusFirst();
+}
+$('modeSeg').addEventListener('click',function(e){ var b=e.target.closest('[data-m]'); if(b) setMode(b.dataset.m); });
+$('pinWho').addEventListener('click',function(e){ if(e.target.id==='notMe'){ e.preventDefault(); lastUser=null; store.del('aw_last'); renderWho(); clearPin(); $('pinEmail').focus(); } });
+var pins=[].slice.call(document.querySelectorAll('#pinBox input'));
+function setPinDisabled(on){ pins.forEach(function(p){ p.disabled=on; }); }
+function clearPin(){ pins.forEach(function(p){ p.value=''; }); }
+pins.forEach(function(inp,i){
+  inp.addEventListener('input',function(){
+    inp.value=inp.value.replace(/\D/g,'').slice(-1);
+    $('pinBox').classList.remove('err');
+    if(inp.value && i<3) pins[i+1].focus();
+    var code=pins.map(function(p){return p.value;}).join('');
+    if(code.length===4) submitPin(code);
+  });
+  inp.addEventListener('keydown',function(e){
+    if(e.key==='Backspace' && !inp.value && i>0){ pins[i-1].focus(); pins[i-1].value=''; e.preventDefault(); }
+    if(e.key==='ArrowLeft' && i>0) pins[i-1].focus();
+    if(e.key==='ArrowRight' && i<3) pins[i+1].focus();
+  });
+  inp.addEventListener('paste',function(e){
+    var t=((e.clipboardData||window.clipboardData).getData('text')||'').replace(/\D/g,'').slice(0,4);
+    if(!t) return; e.preventDefault(); t.split('').forEach(function(c,k){ pins[k].value=c; });
+    if(t.length===4) submitPin(t); else pins[t.length].focus();
+  });
+});
+function submitPin(code){
+  if(checkLock()) return;
+  var em = lastUser ? lastUser.email : $('pinEmail').value.trim();
+  if(!validEmail(em)){ showAlert('loginAlert','Informe seu e-mail antes do PIN.'); clearPin(); $('pinEmail').focus(); return; }
+  setPinDisabled(true); $('pinHint').textContent='Verificando…'; showAlert('loginAlert','');
+  apiPin(em,code).then(function(u){ setPinDisabled(false); $('pinHint').textContent='';
+      onSuccess(u); },
+    function(msg){ setPinDisabled(false); $('pinHint').textContent='Entra automaticamente ao digitar o 4º número.';
+      var b=$('pinBox'); b.classList.add('err'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+      clearPin(); pins[0].focus(); failMsg(msg); });
+}
+
+/* ================= ESQUECI A SENHA ================= */
+$('fForgot').addEventListener('submit',function(e){
+  e.preventDefault(); var em=$('fEmail').value.trim();
+  if(!validEmail(em)){ setErr('fEmail','fEmailHint', em?'E-mail inválido.':'Informe seu e-mail.'); $('fEmail').focus(); return; }
+  setErr('fEmail','fEmailHint',''); busy($('btnForgot'),true,'Enviando…');
+  apiForgot(em).then(function(){ busy($('btnForgot'),false); $('fForgot').hidden=true;
+    showAlert('forgotOk','Se houver uma conta para '+em+', você receberá o link em alguns minutos. Confira também a caixa de spam.',true); });
+});
+
+/* ================= SOLICITAR ACESSO ================= */
+function score(p){ var s=0; if(p.length>=8) s++; if(/[a-z]/i.test(p)&&/\d/.test(p)) s++; if(/[A-Z]/.test(p)&&/[a-z]/.test(p)) s++; if(/[^A-Za-z0-9]/.test(p)||p.length>=12) s++; return p?Math.max(1,s):0; }
+$('rPass').addEventListener('input',function(){
+  var s=score(this.value), c=['var(--red)','var(--amber)','var(--accent)','var(--green)'][s-1];
+  [].forEach.call($('strength').children,function(i,k){ i.style.background = k<s ? c : ''; });
+  if($('rPassHint').className!=='hint warn'){ $('rPassHint').className='hint'; $('rPassHint').textContent = !this.value?'Mínimo de 8 caracteres, com letras e números.':['Senha fraca','Senha razoável','Senha boa','Senha forte'][s-1]; }
+});
+$('fReg').addEventListener('submit',function(e){
+  e.preventDefault(); var n=$('rName').value.trim(), em=$('rEmail').value.trim(), pw=$('rPass').value, ok=true, first=null;
+  if(n.split(/\s+/).length<2){ setErr('rName','rNameHint','Informe nome e sobrenome.'); ok=false; first=first||'rName'; } else setErr('rName','rNameHint','');
+  if(!validEmail(em)){ setErr('rEmail','rEmailHint',em?'E-mail inválido.':'Informe seu e-mail.'); ok=false; first=first||'rEmail'; } else setErr('rEmail','rEmailHint','');
+  if(pw.length<8 || !(/[a-z]/i.test(pw)&&/\d/.test(pw))){ setErr('rPass','rPassHint','Use pelo menos 8 caracteres, com letras e números.'); ok=false; first=first||'rPass'; } else $('rPass').classList.remove('err');
+  if(!ok){ $(first).focus(); return; }
+  busy($('btnReg'),true,'Enviando…');
+  apiRegister({name:n,email:em,pass:pw}).then(function(){ busy($('btnReg'),false); $('fReg').hidden=true;
+      showAlert('regOk','Solicitação enviada. Você receberá um e-mail em '+em+' quando o acesso for aprovado.',true); },
+    function(msg){ busy($('btnReg'),false); setErr('rEmail','rEmailHint',msg); $('rEmail').focus(); });
+});
+
+/* ================= INÍCIO ================= */
+function focusFirst(){
+  setTimeout(function(){
+    if(mode==='pin'){ if(!lastUser) $('pinEmail').focus(); else pins[0].focus(); return; }
+    if(!$('email').value) $('email').focus(); else $('pass').focus();
+  },30);
+}
+try{
+  if(lastUser){ $('email').value=lastUser.email; $('hello').textContent='Olá, '+lastUser.name.split(' ')[0]; }
+  setMode(store.get('aw_mode')==='pin' && lastUser ? 'pin' : 'pass');
+}catch(e){ console.error(e); window.dispatchEvent(new ErrorEvent('error',{message:e.message})); }
+</script>
+</body>
+</html>

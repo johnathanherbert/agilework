@@ -24,7 +24,7 @@ type FormData = z.infer<typeof formSchema>;
 export const ResetPasswordForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const oobCode = searchParams.get('oobCode');
+  const oobCode = searchParams?.get('oobCode') ?? null;
   
   const { confirmReset } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
