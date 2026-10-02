@@ -404,22 +404,6 @@ export function ConsultaRapidaView({
       } catch (e) {
         // Ignora
       }
-
-      const foundStock = agingList.some(
-        (a) =>
-          (parsed.material && a.material.replace(/^0+/, '') === parsed.material.replace(/^0+/, '')) ||
-          (parsed.lote && a.lote.toUpperCase() === parsed.lote.toUpperCase())
-      );
-
-      if (foundStock) {
-        toast.success(`Etiqueta identificada: Lote ${parsed.lote || parsed.material}`, {
-          icon: '🏷️',
-        });
-      } else {
-        toast('Material/Lote lido, buscando dados...', {
-          icon: '🔍',
-        });
-      }
     } catch (e) {
       setScannedResult({
         raw: rawText,

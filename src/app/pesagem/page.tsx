@@ -798,7 +798,7 @@ export default function PesagemPage() {
             )}
 
             {/* Barra de Filtros de Depósito e Chips Ativos (.filters) */}
-            <div className="filters">
+            <div className="filters flex flex-wrap items-center gap-2.5">
               {/* Segmented Control de Depósitos (.seg) */}
               <div className="seg" id="depSeg">
                 <button
@@ -823,73 +823,73 @@ export default function PesagemPage() {
               </div>
 
               {/* Chips de Filtros Ativos (.chip) */}
-              <span id="chips">
-                {selectedDep !== 'all' && (
-                  <span className="chip">
-                    Depósito: {selectedDep}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedDep('all')}
-                      title="Remover"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
+              {(selectedDep !== 'all' || selectedSpec || selectedMaterialFilter || searchTerm) && (
+                <div id="chips" className="flex flex-wrap items-center gap-2">
+                  {selectedDep !== 'all' && (
+                    <span className="chip">
+                      Depósito: {selectedDep}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDep('all')}
+                        title="Remover"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )}
 
-                {selectedSpec && (
-                  <span className="chip">
-                    Especial: {selectedSpec}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSpec(null)}
-                      title="Remover"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
+                  {selectedSpec && (
+                    <span className="chip">
+                      Especial: {selectedSpec}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSpec(null)}
+                        title="Remover"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )}
 
-                {selectedMaterialFilter && (
-                  <span className="chip">
-                    Material: {selectedMaterialFilter}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMaterialFilter(undefined)}
-                      title="Remover"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
+                  {selectedMaterialFilter && (
+                    <span className="chip">
+                      Material: {selectedMaterialFilter}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMaterialFilter(undefined)}
+                        title="Remover"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )}
 
-                {searchTerm && (
-                  <span className="chip">
-                    Busca: “{searchTerm}”
-                    <button
-                      type="button"
-                      onClick={() => setSearchTerm('')}
-                      title="Remover"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-              </span>
+                  {searchTerm && (
+                    <span className="chip">
+                      Busca: “{searchTerm}”
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        title="Remover"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  )}
 
-              {(selectedSpec || selectedMaterialFilter || searchTerm || selectedDep !== 'all') && (
-                <button
-                  type="button"
-                  className="btn sm"
-                  onClick={() => {
-                    setSelectedSpec(null);
-                    setSelectedMaterialFilter(undefined);
-                    setSearchTerm('');
-                    setSelectedDep('all');
-                  }}
-                >
-                  Limpar tudo
-                </button>
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => {
+                      setSelectedSpec(null);
+                      setSelectedMaterialFilter(undefined);
+                      setSearchTerm('');
+                      setSelectedDep('all');
+                    }}
+                  >
+                    Limpar tudo
+                  </button>
+                </div>
               )}
             </div>
 

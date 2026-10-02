@@ -378,9 +378,13 @@ body.capture .pl-\[52px\] {
 .select-nt{height:32px;padding:0 28px 0 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b727c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center/12px;appearance:none;outline:0;cursor:pointer;color:var(--text-2);font:inherit;font-size:12px}
 .select-nt option{background:var(--surface);color:var(--text)}
 .check-nt{display:flex;align-items:center;gap:6px;color:var(--text-2);font-size:12px;cursor:pointer;white-space:nowrap}
-.check-nt input{accent-color:var(--accent)}
 .grow{flex:1}
 .vsep{width:1px;height:20px;background:var(--border);margin:0 2px}
+
+/* Filter Chips */
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 6px 0 10px;border-radius:12px;background:var(--accent-weak);color:var(--text);font-size:12px;border:1px solid var(--border-strong);white-space:nowrap}
+.chip button{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;color:var(--text-3);background:none;border:0;cursor:pointer;padding:0;transition:color .15s,background .15s}
+.chip button:hover{background:var(--border-strong);color:var(--text)}
 
 /* Pagination */
 .pager{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-3);flex-wrap:wrap}
