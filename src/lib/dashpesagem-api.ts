@@ -8,14 +8,17 @@ import { AgingData, RemessaData, ConfiguracaoResiduais, DashboardSnapshot, Lista
 export type { DashboardSnapshot, LoteInvestigacao, ListaTecnicaItem };
 
 export const getApiBaseUrl = (): string => {
-  const configured =
-    process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL ||
-    process.env.DASHPESAGEM_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL;
-  if (configured) {
-    return configured.replace(/\/+$/, '');
+  // No navegador (client-side), usa string vazia para usar o proxy/rewrites do Next.js
+  // Isso evita qualquer bloqueio de CORS entre os diferentes domínios/máquinas
+  if (typeof window !== 'undefined') {
+    return '';
   }
-  return 'https://dash.agilework.app.br';
+  // No servidor (SSR/Node), acessa diretamente a URL do backend
+  return (
+    process.env.DASHPESAGEM_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL ||
+    'https://dash.agilework.app.br'
+  ).replace(/\/+$/, '');
 };
 
 // =====================================================
