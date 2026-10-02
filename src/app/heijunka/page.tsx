@@ -162,7 +162,14 @@ function getCompleteDays(list: DayData[]) {
 
 // ── Converter HeijunkaSnapshot Real em DayData ──────────────────────────────
 function snapshotToDayData(s: HeijunkaSnapshot): DayData {
-  const d = new Date(s.date + 'T00:00:00');
+  let d: Date;
+  if (s.date && typeof s.date === 'string' && s.date.includes('-')) {
+    const [y, m, day] = s.date.split('-').map(Number);
+    d = new Date(y, m - 1, day, 0, 0, 0, 0);
+  } else {
+    d = new Date(s.date);
+    d.setHours(0, 0, 0, 0);
+  }
   const isToday = keyFromDate(d) === keyFromDate(new Date());
 
   const t1 = s.turnos?.['1'];
@@ -307,11 +314,19 @@ export default function HeijunkaPage() {
   const periodDays = useMemo(() => {
     if (!history.length) return [];
     if (period === 'all') return history;
-    const today = new Date();
-    const len = period === 'mes' ? today.getDate() : Number(period);
-    const start = addDays(today, -(len - 1));
 
-    return history.filter((d) => d.date >= start && d.date <= today);
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (period === 'mes') {
+      // Início do mês atual (dia 1 às 00:00:00) até o final do dia de hoje (ou fim do mês)
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      return history.filter((d) => d.date >= start && d.date <= end);
+    }
+
+    const len = Number(period);
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (len - 1), 0, 0, 0, 0);
+    return history.filter((d) => d.date >= start && d.date <= end);
   }, [history, period]);
 
   // Período anterior para comparação delta
@@ -319,16 +334,21 @@ export default function HeijunkaPage() {
     if (period === 'all') return [];
     const curComplete = getCompleteDays(periodDays);
     if (!curComplete.length) return [];
-    const today = new Date();
+    const now = new Date();
     let start: Date;
     let end: Date;
 
     if (period === 'mes') {
-      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      end = new Date(today.getFullYear(), today.getMonth() - 1, curComplete.length);
+      // Mês anterior completo
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
     } else {
-      end = addDays(curComplete[0].date, -1);
-      start = addDays(end, -(curComplete.length - 1));
+      end = new Date(curComplete[0].date);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 999);
+      start = new Date(end);
+      start.setDate(start.getDate() - (curComplete.length - 1));
+      start.setHours(0, 0, 0, 0);
     }
 
     return history.filter((d) => d.date >= start && d.date <= end);
