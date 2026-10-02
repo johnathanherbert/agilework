@@ -29,7 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import {
   QrCode,
   Camera,
@@ -61,6 +61,7 @@ import {
   X,
   GripVertical,
   Play,
+  Copy,
 } from 'lucide-react';
 
 interface ConsultaRapidaViewProps {
@@ -108,9 +109,18 @@ export function ConsultaRapidaView({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState<string>('');
   const [scannedResult, setScannedResult] = useState<ParsedBarcode | null>(null);
+  const [mobileResultTab, setMobileResultTab] = useState<'lotes' | 'remessas'>('lotes');
   const [processingImage, setProcessingImage] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleCopy = async (text: string, label: string) => {
+    if (!text) return;
+    const success = await copyToClipboard(text);
+    if (success) {
+      toast.success(`${label} copiado!`, { id: `copy-${text}`, duration: 2000, icon: '📋' });
+    }
+  };
 
   // Scanner HTML element ref & Html5Qrcode instance
   const scannerContainerId = 'mobile-barcode-reader-view';
@@ -1153,43 +1163,66 @@ export function ConsultaRapidaView({
             <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg p-3.5 sm:p-4.5 shadow-2xs">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
                 {/* Informações do Material e Lote */}
-                <div className="md:col-span-7 space-y-1.5">
+                <div className="md:col-span-7 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--text-3)] bg-[var(--surface-2)] px-2 py-0.5 rounded border border-[var(--border)]">
                       Material
                     </span>
-                    <span className="text-xl sm:text-2xl font-mono font-bold text-[var(--accent)]">
-                      {materialCode || 'N/A'}
-                    </span>
+                    <div className="flex items-center gap-1 bg-[var(--surface-2)] border border-[var(--border)] px-2 py-0.5 rounded">
+                      <span className="text-lg sm:text-2xl font-mono font-bold text-[var(--accent)]">
+                        {materialCode || 'N/A'}
+                      </span>
+                      {materialCode && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(materialCode, 'Código do material')}
+                          className="p-1 text-[var(--text-3)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                          title="Copiar Código"
+                        >
+                          <Copy size={13} />
+                        </button>
+                      )}
+                    </div>
+
                     {loteCode ? (
-                      <span
+                      <div
                         className={cn(
-                          "font-mono text-xs px-2.5 py-0.5 font-bold rounded border",
+                          "flex items-center gap-1 font-mono text-xs px-2.5 py-0.5 font-bold rounded border",
                           loteEncontradoNoEstoque
                             ? "bg-[var(--amber)]/15 border-[var(--amber)]/30 text-[var(--amber)]"
                             : "bg-[var(--red)]/15 border-[var(--red)]/30 text-[var(--red)]"
                         )}
                       >
-                        Lote Lido: {loteCode}
-                      </span>
+                        <span>Lote: {loteCode}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(loteCode, 'Lote')}
+                          className="p-0.5 hover:opacity-75 transition-opacity cursor-pointer"
+                          title="Copiar Lote"
+                        >
+                          <Copy size={11} />
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-[10.5px] font-mono px-2 py-0.5 font-medium rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)]">
                         Busca por código · todos os lotes
                       </span>
                     )}
                   </div>
+
                   {loteCode && !loteEncontradoNoEstoque && (
                     <p className="text-[11px] text-[var(--red)] font-medium flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                       Lote não localizado no estoque atual — exibindo todos os lotes do material.
                     </p>
                   )}
+
                   <p className="text-xs sm:text-sm text-[var(--text-2)] font-medium leading-snug">
                     {materialDescription}
                   </p>
                   
                   {/* Resumo rápido de estoque */}
-                  <div className="flex items-center gap-2 pt-1 text-xs text-[var(--text-2)] flex-wrap">
+                  <div className="flex items-center gap-2 pt-0.5 text-xs text-[var(--text-2)] flex-wrap">
                     <div className="flex items-baseline gap-1.5 bg-[var(--surface-2)] border border-[var(--border)] px-2.5 py-1 rounded-[var(--radius)] font-mono">
                       <span className="text-[10.5px] text-[var(--text-3)] font-semibold">
                         {loteCode ? 'Estoque Lote:' : 'Estoque Total:'}
@@ -1204,7 +1237,7 @@ export function ConsultaRapidaView({
 
                     {allMaterialItems.length > 0 && (
                       <div className="flex items-baseline gap-1.5 bg-[var(--surface-2)] border border-[var(--border)] px-2.5 py-1 rounded-[var(--radius)] font-mono">
-                        <span className="text-[10.5px] text-[var(--text-3)] font-semibold">Lotes:</span>
+                        <span className="text-[10.5px] text-[var(--text-3)] font-semibold">Total Lotes:</span>
                         <span className="font-mono font-bold text-[var(--accent)]">
                           {allMaterialItems.length}
                         </span>
@@ -1213,8 +1246,8 @@ export function ConsultaRapidaView({
                   </div>
                 </div>
 
-                {/* Botões de Ação Imediata */}
-                <div className="md:col-span-5 space-y-1.5">
+                {/* Botões de Ação Imediata (Grandes e Táteis no Mobile) */}
+                <div className="md:col-span-5 space-y-1.5 pt-1 md:pt-0">
                   <div className="grid grid-cols-2 gap-2">
                     {/* 1. Botão Devolver */}
                     <button
@@ -1230,7 +1263,7 @@ export function ConsultaRapidaView({
                       }
                       disabled={isDevolverRunning || !loteCode}
                       title="Devolver ao almoxarifado via /nzwm296"
-                      className="py-2.5 px-3 bg-[var(--amber)] hover:bg-[var(--amber)]/90 text-black font-bold text-xs rounded-[var(--radius)] shadow-2xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="py-3 md:py-2.5 px-3 bg-[var(--amber)] hover:bg-[var(--amber)]/90 text-black font-bold text-xs rounded-[var(--radius)] shadow-2xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <Undo2 className="h-4 w-4 shrink-0" />
                       <span>Devolver</span>
@@ -1250,7 +1283,7 @@ export function ConsultaRapidaView({
                       }
                       disabled={isBloquearMigoRunning || !loteCode}
                       title="Bloquear ou desbloquear no SAP via MIGO"
-                      className="py-2.5 px-3 bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-semibold text-xs rounded-[var(--radius)] shadow-2xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="py-3 md:py-2.5 px-3 bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-semibold text-xs rounded-[var(--radius)] shadow-2xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <div className="flex items-center -space-x-1 shrink-0">
                         <Lock className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -1268,10 +1301,46 @@ export function ConsultaRapidaView({
               </div>
             </div>
 
+            {/* Alternador de Visualização em Telas Mobile/Tablet (< 1024px) */}
+            <div className="lg:hidden flex items-center bg-[var(--surface-2)] border border-[var(--border-strong)] p-1 rounded-lg gap-1">
+              <button
+                type="button"
+                onClick={() => setMobileResultTab('lotes')}
+                className={cn(
+                  "flex-1 py-2 px-3 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  mobileResultTab === 'lotes'
+                    ? "bg-[var(--surface)] text-[var(--accent)] shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-3)] hover:text-[var(--text)]"
+                )}
+              >
+                <Package className="h-3.5 w-3.5" />
+                <span>Lotes do Material</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[var(--accent-weak)] text-[var(--accent)] font-semibold">
+                  {allMaterialItems.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileResultTab('remessas')}
+                className={cn(
+                  "flex-1 py-2 px-3 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  mobileResultTab === 'remessas'
+                    ? "bg-[var(--surface)] text-[var(--accent)] shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-3)] hover:text-[var(--text)]"
+                )}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                <span>Remessas Abertas</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[var(--surface)] border border-[var(--border)] text-[var(--text-2)] font-semibold">
+                  {materialRemessas.length}
+                </span>
+              </button>
+            </div>
+
             {/* Grid Principal com Outros Lotes do Material e Remessas Abertas */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
               {/* Coluna 1: Outros Lotes do Material */}
-              <div className="lg:col-span-7 space-y-3">
+              <div className={cn("lg:col-span-7 space-y-3", mobileResultTab !== 'lotes' && "hidden lg:block")}>
                 <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg p-3.5 sm:p-4 space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
                     <div className="flex items-center gap-2">
@@ -1313,9 +1382,9 @@ export function ConsultaRapidaView({
                                 : "bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border)]"
                             )}
                           >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                               {/* Lote e Posição */}
-                              <div className="space-y-1 min-w-0 flex-1">
+                              <div className="space-y-1.5 min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-mono font-bold text-[var(--amber)] text-sm">
                                     {item.lote}
@@ -1356,7 +1425,7 @@ export function ConsultaRapidaView({
                               </div>
 
                               {/* Saldo e Ações Rápidas */}
-                              <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 border-[var(--border)] pt-2 sm:pt-0">
+                              <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 border-[var(--border)] pt-2.5 sm:pt-0">
                                 <div className="text-left sm:text-right">
                                   <span className="font-mono font-bold text-sm text-[var(--text)]">
                                     {Number(item.estoque_disponivel || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}
@@ -1364,7 +1433,7 @@ export function ConsultaRapidaView({
                                   <span className="text-[10px] text-[var(--accent)] ml-1 font-semibold">{item.unidade_medida || 'KG'}</span>
                                 </div>
 
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -1376,7 +1445,7 @@ export function ConsultaRapidaView({
                                         item.texto_breve_material || materialDescription
                                       )
                                     }
-                                    className="px-2 py-1 bg-[var(--surface)] hover:bg-[var(--hover)] text-[var(--text-2)] hover:text-[var(--text)] border border-[var(--border-strong)] rounded text-[10px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                                    className="px-2.5 py-1.5 sm:py-1 bg-[var(--surface)] hover:bg-[var(--hover)] text-[var(--text-2)] hover:text-[var(--text)] border border-[var(--border-strong)] rounded text-[11px] sm:text-[10px] font-semibold transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
                                     title="Bloquear ou Desbloquear no SAP via MIGO"
                                   >
                                     <Lock className="h-3 w-3" /> Bloq
@@ -1392,7 +1461,7 @@ export function ConsultaRapidaView({
                                         Number(item.estoque_disponivel) || 0
                                       )
                                     }
-                                    className="px-2 py-1 bg-[var(--amber)]/15 hover:bg-[var(--amber)] text-[var(--amber)] hover:text-black border border-[var(--amber)]/30 rounded text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                    className="px-2.5 py-1.5 sm:py-1 bg-[var(--amber)]/15 hover:bg-[var(--amber)] text-[var(--amber)] hover:text-black border border-[var(--amber)]/30 rounded text-[11px] sm:text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95"
                                     title="Devolver ao almoxarifado via /nzwm296"
                                   >
                                     <Undo2 className="h-3 w-3" /> Devolver
@@ -1409,7 +1478,7 @@ export function ConsultaRapidaView({
               </div>
 
               {/* Coluna 2: Remessas Abertas do Material */}
-              <div className="lg:col-span-5 space-y-3">
+              <div className={cn("lg:col-span-5 space-y-3", mobileResultTab !== 'remessas' && "hidden lg:block")}>
                 <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg p-3.5 sm:p-4 space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
                     <div className="flex items-center gap-2">

@@ -794,6 +794,10 @@ export function ResiduaisView({
             if (row.status_crit !== 'al') return false;
           } else if (crit === 'critico' || crit === 'crítico' || crit === 'vermelho' || crit === 'cr') {
             if (row.status_crit !== 'cr') return false;
+          } else if (crit === 'inf') {
+            if (!row.is_inf) return false;
+          } else if (crit === 'cfa') {
+            if (!row.is_cfa) return false;
           }
         }
 

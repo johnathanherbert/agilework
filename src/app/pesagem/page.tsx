@@ -487,8 +487,10 @@ export default function PesagemPage() {
         case 'cr':
           return dias > diasCritico;
         case 'INF':
+        case 'inf':
           return isMaterialEspecial(item.material) === 'inf';
         case 'CFA':
+        case 'cfa':
           return isMaterialEspecial(item.material) === 'cfa';
         case 'v30': {
           const dtVenc = parseDate(item.data_vencimento);
@@ -833,101 +835,103 @@ export default function PesagemPage() {
               </div>
             )}
 
-            {/* Barra de Filtros de Depósito e Chips Ativos (.filters) */}
-            <div className="filters flex flex-wrap items-center gap-2.5">
-              {/* Segmented Control de Depósitos (.seg) */}
-              <div className="seg" id="depSeg">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDep('all')}
-                  className={selectedDep === 'all' ? 'on' : ''}
-                >
-                  Todos
-                  <span className="n">{depCounts.all || 0}</span>
-                </button>
-                {uniqueDeps.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setSelectedDep(d)}
-                    className={selectedDep === d ? 'on' : ''}
-                  >
-                    {d}
-                    <span className="n">{depCounts[d] || 0}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Chips de Filtros Ativos (.chip) */}
-              {(selectedDep !== 'all' || selectedSpec || selectedMaterialFilter || searchTerm) && (
-                <div id="chips" className="flex flex-wrap items-center gap-2">
-                  {selectedDep !== 'all' && (
-                    <span className="chip">
-                      Depósito: {selectedDep}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDep('all')}
-                        title="Remover"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-
-                  {selectedSpec && (
-                    <span className="chip">
-                      Especial: {selectedSpec}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSpec(null)}
-                        title="Remover"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-
-                  {selectedMaterialFilter && (
-                    <span className="chip">
-                      Material: {selectedMaterialFilter}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMaterialFilter(undefined)}
-                        title="Remover"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-
-                  {searchTerm && (
-                    <span className="chip">
-                      Busca: “{searchTerm}”
-                      <button
-                        type="button"
-                        onClick={() => setSearchTerm('')}
-                        title="Remover"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-
+            {/* Barra de Filtros de Depósito e Chips Ativos (.filters) - apenas em abas operacionais */}
+            {(activeTab === 'fin' || activeTab === 'one' || activeTab === 'res' || activeTab === 'rem') && (
+              <div className="filters flex flex-wrap items-center gap-2.5 overflow-x-auto no-scrollbar max-w-full pb-1">
+                {/* Segmented Control de Depósitos (.seg) */}
+                <div className="seg shrink-0 overflow-x-auto no-scrollbar" id="depSeg">
                   <button
                     type="button"
-                    className="btn sm"
-                    onClick={() => {
-                      setSelectedSpec(null);
-                      setSelectedMaterialFilter(undefined);
-                      setSearchTerm('');
-                      setSelectedDep('all');
-                    }}
+                    onClick={() => setSelectedDep('all')}
+                    className={selectedDep === 'all' ? 'on' : ''}
                   >
-                    Limpar tudo
+                    Todos
+                    <span className="n">{depCounts.all || 0}</span>
                   </button>
+                  {uniqueDeps.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setSelectedDep(d)}
+                      className={selectedDep === d ? 'on' : ''}
+                    >
+                      {d}
+                      <span className="n">{depCounts[d] || 0}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+
+                {/* Chips de Filtros Ativos (.chip) */}
+                {(selectedDep !== 'all' || selectedSpec || selectedMaterialFilter || searchTerm) && (
+                  <div id="chips" className="flex flex-wrap items-center gap-2">
+                    {selectedDep !== 'all' && (
+                      <span className="chip">
+                        Depósito: {selectedDep}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDep('all')}
+                          title="Remover"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    )}
+
+                    {selectedSpec && (
+                      <span className="chip">
+                        Especial: {selectedSpec}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSpec(null)}
+                          title="Remover"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    )}
+
+                    {selectedMaterialFilter && (
+                      <span className="chip">
+                        Material: {selectedMaterialFilter}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMaterialFilter(undefined)}
+                          title="Remover"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    )}
+
+                    {searchTerm && (
+                      <span className="chip">
+                        Busca: “{searchTerm}”
+                        <button
+                          type="button"
+                          onClick={() => setSearchTerm('')}
+                          title="Remover"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    )}
+
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => {
+                        setSelectedSpec(null);
+                        setSelectedMaterialFilter(undefined);
+                        setSearchTerm('');
+                        setSelectedDep('all');
+                      }}
+                    >
+                      Limpar tudo
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
       {/* Estados de Carregamento & Erro */}
       {loading && (

@@ -15,18 +15,21 @@ export interface MateriaisEspeciaisData {
   cfa: MaterialEspecialConfig
 }
 
-export function isMaterialEspecial(material: string): TipoMaterialEspecial | null {
-  const data = materiaisEspeciais as MateriaisEspeciaisData
-  
-  if (data.inf.materiais.includes(material)) {
-    return 'inf'
+export function isMaterialEspecial(material: string | null | undefined): TipoMaterialEspecial | null {
+  if (!material) return null;
+  const data = materiaisEspeciais as MateriaisEspeciaisData;
+  const cleanCode = String(material).trim().replace(/^0+/, '');
+  if (!cleanCode) return null;
+
+  if (data.inf.materiais.some((m) => m.trim().replace(/^0+/, '') === cleanCode)) {
+    return 'inf';
   }
-  
-  if (data.cfa.materiais.includes(material)) {
-    return 'cfa'
+
+  if (data.cfa.materiais.some((m) => m.trim().replace(/^0+/, '') === cleanCode)) {
+    return 'cfa';
   }
-  
-  return null
+
+  return null;
 }
 
 export function getMaterialEspecialConfig(tipo: TipoMaterialEspecial): MaterialEspecialConfig {
