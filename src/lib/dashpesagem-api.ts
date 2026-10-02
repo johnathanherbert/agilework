@@ -8,14 +8,21 @@ import { AgingData, RemessaData, ConfiguracaoResiduais, DashboardSnapshot, Lista
 export type { DashboardSnapshot, LoteInvestigacao, ListaTecnicaItem };
 
 export const getApiBaseUrl = (): string => {
-  const configured = process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL || process.env.NEXT_PUBLIC_API_URL || '';
+  const configured =
+    process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL ||
+    process.env.DASHPESAGEM_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    '';
   if (configured) {
     return configured.replace(/\/+$/, '');
   }
-  return typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  // No navegador, URL relativa usa o proxy/rewrites do Next.js sem problemas de CORS
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+  // No servidor (SSR/Node), acessa diretamente a URL de produção ou localhost
+  return (process.env.NEXT_PUBLIC_APP_URL || 'https://dash.agilework.app.br').replace(/\/+$/, '');
 };
-
-const API_BASE_URL = getApiBaseUrl();
 
 // =====================================================
 // STATUS / POLLING
@@ -33,15 +40,15 @@ export async function fetchAgingStatus() {
 
 export async function fetchSolicitacoes(status?: string) {
   const url = status && status !== 'todos' 
-    ? `${API_BASE_URL}/api/solicitacoes?status=${encodeURIComponent(status)}`
-    : `${API_BASE_URL}/api/solicitacoes`;
+    ? `${getApiBaseUrl()}/api/solicitacoes?status=${encodeURIComponent(status)}`
+    : `${getApiBaseUrl()}/api/solicitacoes`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Erro ao buscar solicitações');
   return res.json();
 }
 
 export async function createSolicitacao(data: any) {
-  const res = await fetch(`${API_BASE_URL}/api/solicitacoes`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/solicitacoes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -51,7 +58,7 @@ export async function createSolicitacao(data: any) {
 }
 
 export async function updateSolicitacao(data: { id: string; status?: string; prioridade?: string; observacoes?: string }) {
-  const res = await fetch(`${API_BASE_URL}/api/solicitacoes`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/solicitacoes`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -61,7 +68,7 @@ export async function updateSolicitacao(data: { id: string; status?: string; pri
 }
 
 export async function deleteSolicitacao(id: string) {
-  const res = await fetch(`${API_BASE_URL}/api/solicitacoes?id=${encodeURIComponent(id)}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/solicitacoes?id=${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Erro ao excluir solicitação');
@@ -73,13 +80,13 @@ export async function deleteSolicitacao(id: string) {
 // =====================================================
 
 export async function loadAppState(userId: string) {
-  const res = await fetch(`${API_BASE_URL}/api/app-state?user_id=${encodeURIComponent(userId)}`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/app-state?user_id=${encodeURIComponent(userId)}`, { cache: 'no-store' });
   if (!res.ok) return { state: null };
   return res.json();
 }
 
 export async function saveAppState(userId: string, state: any) {
-  const res = await fetch(`${API_BASE_URL}/api/app-state`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/app-state`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId, state }),
@@ -89,7 +96,7 @@ export async function saveAppState(userId: string, state: any) {
 }
 
 export async function clearAppState(userId?: string) {
-  const url = userId ? `${API_BASE_URL}/api/app-state?user_id=${encodeURIComponent(userId)}` : `${API_BASE_URL}/api/app-state`;
+  const url = userId ? `${getApiBaseUrl()}/api/app-state?user_id=${encodeURIComponent(userId)}` : `${getApiBaseUrl()}/api/app-state`;
   const res = await fetch(url, { method: 'DELETE' });
   if (!res.ok) throw new Error('Erro ao limpar estado');
   return res.json();
@@ -100,7 +107,7 @@ export async function clearAppState(userId?: string) {
 // =====================================================
 
 export async function fetchAgingData(): Promise<AgingData[]> {
-  const res = await fetch(`${API_BASE_URL}/api/aging?_t=${Date.now()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/aging?_t=${Date.now()}`, {
     cache: 'no-store',
     headers: { 'Cache-Control': 'no-cache' },
   });
@@ -112,7 +119,7 @@ export async function replaceAllAgingData(newData: AgingData[]): Promise<void> {
   if (!newData || newData.length === 0) {
     throw new Error('Nenhum dado para inserir no banco');
   }
-  const res = await fetch(`${API_BASE_URL}/api/aging`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/aging`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newData),
@@ -133,7 +140,7 @@ export async function uploadExcelAging(data: any[]): Promise<{ success: boolean;
 }
 
 export async function fetchSapMaterialStock(codigo: string) {
-  const res = await fetch(`${API_BASE_URL}/api/aging?material=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/aging?material=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Erro ao buscar estoque SAP');
   return res.json();
 }
@@ -214,7 +221,7 @@ export async function fetchMaterialValores(
     if (cached) return cached;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/material-valores`);
+  const res = await fetch(`${getApiBaseUrl()}/api/material-valores`);
   if (!res.ok) {
     console.error('Erro ao buscar valores');
     return {};
@@ -232,7 +239,7 @@ export async function fetchMaterialValores(
 export async function replaceAllMaterialValores(
   data: { material: string; valor_unitario: number }[]
 ): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/material-valores`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/material-valores`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -305,7 +312,7 @@ export async function fetchRemessas(forceRefresh = false): Promise<RemessaData[]
     }
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/remessas`);
+  const res = await fetch(`${getApiBaseUrl()}/api/remessas`);
   if (!res.ok) throw new Error('Erro ao buscar remessas');
   const data: RemessaData[] = await res.json();
   saveRemessasCache(data);
@@ -316,7 +323,7 @@ export async function replaceAllRemessas(newData: RemessaData[]): Promise<void> 
   if (!newData || newData.length === 0) {
     throw new Error('Nenhuma remessa para inserir');
   }
-  const res = await fetch(`${API_BASE_URL}/api/remessas`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/remessas`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newData),
@@ -340,7 +347,7 @@ const DEFAULT_CONFIG: ConfiguracaoResiduais = {
 };
 
 export async function fetchConfiguracaoResiduais(): Promise<ConfiguracaoResiduais> {
-  const res = await fetch(`${API_BASE_URL}/api/config-residuais`);
+  const res = await fetch(`${getApiBaseUrl()}/api/config-residuais`);
   if (!res.ok) return DEFAULT_CONFIG;
   const data = await res.json();
   return data || DEFAULT_CONFIG;
@@ -349,7 +356,7 @@ export async function fetchConfiguracaoResiduais(): Promise<ConfiguracaoResiduai
 export async function saveConfiguracaoResiduais(
   config: ConfiguracaoResiduais
 ): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/config-residuais`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/config-residuais`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
@@ -367,7 +374,7 @@ export async function saveConfiguracaoResiduais(
 export async function fetchDashboardHistorico(
   limit = 90
 ): Promise<(DashboardSnapshot & { id: string; snapshot_at: string })[]> {
-  const res = await fetch(`${API_BASE_URL}/api/dashboard-historico?limit=${limit}`);
+  const res = await fetch(`${getApiBaseUrl()}/api/dashboard-historico?limit=${limit}`);
   if (!res.ok) return [];
   return res.json();
 }
@@ -455,7 +462,7 @@ export async function saveSnapshotHistorico(
   };
 
   try {
-    await fetch(`${API_BASE_URL}/api/dashboard-historico`, {
+    await fetch(`${getApiBaseUrl()}/api/dashboard-historico`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(snapshot),
@@ -471,7 +478,7 @@ export async function saveSnapshotHistorico(
 
 export async function fetchLotesInvestigacao(): Promise<LoteInvestigacao[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/lotes-investigacao`);
+    const res = await fetch(`${getApiBaseUrl()}/api/lotes-investigacao`);
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
@@ -487,7 +494,7 @@ export async function addLoteInvestigacao(item: {
   created_by?: string;
 }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/lotes-investigacao`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/lotes-investigacao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
@@ -501,7 +508,7 @@ export async function addLoteInvestigacao(item: {
 
 export async function removeLoteInvestigacao(lote: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/lotes-investigacao?lote=${encodeURIComponent(lote)}`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/lotes-investigacao?lote=${encodeURIComponent(lote)}`, {
       method: 'DELETE',
     });
     return res.ok;
@@ -533,7 +540,7 @@ export async function fetchListaTecnica(params?: {
     if (params?.sugestoes) query.set('sugestoes', params.sugestoes);
 
     const qs = query.toString();
-    const res = await fetch(`${API_BASE_URL}/api/lista-tecnica${qs ? `?${qs}` : ''}`);
+    const res = await fetch(`${getApiBaseUrl()}/api/lista-tecnica${qs ? `?${qs}` : ''}`);
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
@@ -564,7 +571,7 @@ export async function triggerSapAutomation(
   scriptCode?: string
 ): Promise<{ success: boolean; job?: SapAutomationJob; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/sap-automation`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/sap-automation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -588,7 +595,7 @@ export async function checkSapAutomationStatus(
   jobId: number
 ): Promise<SapAutomationJob | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/sap-automation?id=${jobId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/sap-automation?id=${jobId}`, {
       cache: 'no-store',
     });
     if (!res.ok) return null;

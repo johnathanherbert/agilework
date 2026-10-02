@@ -42,6 +42,43 @@ const nextConfig = {
   images: {
     domains: ['lh3.googleusercontent.com'],
   },
-}
+  async rewrites() {
+    const dashPesagemBackend = (
+      process.env.DASHPESAGEM_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL ||
+      'https://dash.agilework.app.br'
+    ).replace(/\/+$/, '');
+
+    const routes = [
+      'aging',
+      'remessas',
+      'material-valores',
+      'config-residuais',
+      'dashboard-historico',
+      'lotes-investigacao',
+      'lista-tecnica',
+      'sap-automation',
+      'saldo-mp',
+      'app-state',
+      'solicitacoes',
+    ];
+
+    const rewritesList = [];
+    for (const route of routes) {
+      rewritesList.push({
+        source: `/api/${route}/:path*`,
+        destination: `${dashPesagemBackend}/api/${route}/:path*`,
+      });
+      rewritesList.push({
+        source: `/api/${route}`,
+        destination: `${dashPesagemBackend}/api/${route}`,
+      });
+    }
+
+    return {
+      beforeFiles: rewritesList,
+    };
+  },
+};
 
 module.exports = nextConfig
