@@ -11,17 +11,11 @@ export const getApiBaseUrl = (): string => {
   const configured =
     process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL ||
     process.env.DASHPESAGEM_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    '';
+    process.env.NEXT_PUBLIC_API_URL;
   if (configured) {
     return configured.replace(/\/+$/, '');
   }
-  // No navegador, URL relativa usa o proxy/rewrites do Next.js sem problemas de CORS
-  if (typeof window !== 'undefined') {
-    return '';
-  }
-  // No servidor (SSR/Node), acessa diretamente a URL de produção ou localhost
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://dash.agilework.app.br').replace(/\/+$/, '');
+  return 'https://dash.agilework.app.br';
 };
 
 // =====================================================
