@@ -13,6 +13,7 @@ import {
   fetchLotesInvestigacao,
   triggerSapAutomation,
   checkSapAutomationStatus,
+  fetchAgingStatus,
 } from '@/lib/dashpesagem-api';
 
 import { AgingTable, EnrichedRow } from '@/components/pesagem/aging-table';
@@ -218,12 +219,7 @@ export default function PesagemPage() {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/aging/status?_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        if (!res.ok) return;
-        const status = await res.json();
+        const status = await fetchAgingStatus();
         if (status?.last_updated) {
           const currentTimestamp = String(status.last_updated);
           if (lastSyncTimestampRef.current && lastSyncTimestampRef.current !== currentTimestamp) {

@@ -7,11 +7,29 @@ import { AgingData, RemessaData, ConfiguracaoResiduais, DashboardSnapshot, Lista
 
 export type { DashboardSnapshot, LoteInvestigacao, ListaTecnicaItem };
 
-const API_BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+export const getApiBaseUrl = (): string => {
+  const configured = process.env.NEXT_PUBLIC_DASHPESAGEM_API_URL || process.env.NEXT_PUBLIC_API_URL || '';
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+  return typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // =====================================================
-// SOLICITAÇÕES (ALMOXARIFADO / LEGADO)
+// STATUS / POLLING
 // =====================================================
+
+export async function fetchAgingStatus() {
+  const url = `${getApiBaseUrl()}/api/aging/status?_t=${Date.now()}`;
+  const res = await fetch(url, {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  });
+  if (!res.ok) throw new Error('Erro ao buscar status de aging');
+  return res.json();
+}
 
 export async function fetchSolicitacoes(status?: string) {
   const url = status && status !== 'todos' 
