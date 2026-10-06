@@ -225,8 +225,12 @@ export function ConsultaRapidaView({
   const [scannedResult, setScannedResult] = useState<ParsedBarcode | null>(null);
   const [processingImage, setProcessingImage] = useState(false);
   const [history, setHistory] = useState<ScanHist[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [showAllLots, setShowAllLots] = useState(false);
   const [secTab, setSecTab] = useState<'lotes' | 'remessas'>('lotes');
+
+  const agingListRef = useRef<AgingData[]>(agingList);
+  agingListRef.current = agingList;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -313,18 +317,19 @@ export function ConsultaRapidaView({
 
     if (!isManualTyping && inputRef.current) inputRef.current.blur();
 
+    const currentAging = agingListRef.current;
     try {
       const parsed = parseBarcode(cleanRaw);
 
       if (!parsed.lote && parsed.material) {
         const single = up(parsed.material);
-        const byLote = agingList.find((i) => up(i.lote) === single);
+        const byLote = currentAging.find((i) => up(i.lote) === single);
         if (byLote) {
           setScannedResult({ material: byLote.material, lote: byLote.lote, quantidade: null, raw: cleanRaw });
           setManualInput(cleanRaw);
           return;
         }
-        const byMat = agingList.find((i) => normMat(i.material) === normMat(single));
+        const byMat = currentAging.find((i) => normMat(i.material) === normMat(single));
         if (byMat) {
           setScannedResult({ material: byMat.material, lote: '', quantidade: null, raw: cleanRaw });
           setManualInput(cleanRaw);
@@ -346,37 +351,6 @@ export function ConsultaRapidaView({
     if (isManualTyping && inputRef.current) inputRef.current.focus();
   };
 
-  // Processamento imediato ao abrir com código pré-carregado na URL, sessionStorage ou evento global
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkPending = () => {
-      const params = new URLSearchParams(window.location.search);
-      const urlCode = params.get('code');
-      const sessionCode = sessionStorage.getItem('agilework_global_scan_code');
-      const targetCode = urlCode || sessionCode;
-
-      if (targetCode && targetCode.trim()) {
-        sessionStorage.removeItem('agilework_global_scan_code');
-        handleBarcodeScanned(targetCode.trim());
-      }
-    };
-
-    checkPending();
-
-    const handleGlobalScanEvent = (e: Event) => {
-      const customEvt = e as CustomEvent<string>;
-      if (customEvt.detail) {
-        handleBarcodeScanned(customEvt.detail);
-      }
-    };
-
-    window.addEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
-    return () => {
-      window.removeEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
-    };
-  }, [agingList]);
-
   // Refs para o listener global não usar versões antigas das funções/estados
   const scanRef = useRef(handleBarcodeScanned);
   const clearRef = useRef(handleClear);
@@ -386,6 +360,43 @@ export function ConsultaRapidaView({
   clearRef.current = handleClear;
   manualRef.current = isManualTyping;
   blockedRef.current = devolverOpen || bloquearMigoOpen;
+
+  // Processamento imediato ao abrir com código pré-carregado na URL ou sessionStorage (APENAS UMA VEZ)
+  const initialCodeCheckedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!initialCodeCheckedRef.current) {
+      initialCodeCheckedRef.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const urlCode = params.get('code');
+      const sessionCode = sessionStorage.getItem('agilework_global_scan_code');
+      const targetCode = urlCode || sessionCode;
+
+      if (targetCode && targetCode.trim()) {
+        sessionStorage.removeItem('agilework_global_scan_code');
+        if (urlCode) {
+          params.delete('code');
+          const newSearch = params.toString();
+          const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+          window.history.replaceState({}, '', newUrl);
+        }
+        scanRef.current(targetCode.trim());
+      }
+    }
+
+    const handleGlobalScanEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<string>;
+      if (customEvt.detail) {
+        scanRef.current(customEvt.detail);
+      }
+    };
+
+    window.addEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
+    return () => {
+      window.removeEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.body.dataset.scannerActive = 'true';
@@ -1103,6 +1114,18 @@ export function ConsultaRapidaView({
             </span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {history.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className={cn(iconBtn, showHistory && 'text-[var(--text)] bg-[var(--hover)] border-[var(--text-3)]')}
+                title={showHistory ? 'Ocultar histórico' : 'Exibir histórico de leituras'}
+              >
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">Histórico</span>
+                <span className="font-mono text-[11px] text-[var(--text-3)] ml-0.5">({history.length})</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => (scannerActive ? stopScanner() : setShowCameraDrawer((v) => !v))}
@@ -1171,9 +1194,11 @@ export function ConsultaRapidaView({
           </button>
         </form>
 
-        {history.length > 1 && (
-          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar">
-            <History className="h-3.5 w-3.5 text-[var(--text-3)] shrink-0" />
+        {showHistory && history.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-1 border-t border-[var(--border)]">
+            <span className="text-[11px] text-[var(--text-3)] font-mono shrink-0 flex items-center gap-1">
+              <History className="h-3.5 w-3.5" /> Histórico:
+            </span>
             {history.slice(0, 8).map((h) => {
               const on = (loteCode || materialCode) && (h.lote ? up(h.lote) === loteUp : normMat(h.material) === matKey && !loteCode);
               return (
@@ -1182,16 +1207,27 @@ export function ConsultaRapidaView({
                   type="button"
                   onClick={() => reopenHistory(h)}
                   className={cn(
-                    'h-7 px-2.5 rounded-full border text-[11.5px] font-mono whitespace-nowrap',
+                    'h-7 px-2.5 rounded-full border text-[11.5px] font-mono whitespace-nowrap transition-colors',
                     on
-                      ? 'border-[var(--text-3)] bg-[var(--hover)] text-[var(--text)]'
-                      : 'border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]'
+                      ? 'border-[var(--text-3)] bg-[var(--hover)] text-[var(--text)] font-semibold'
+                      : 'border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)]'
                   )}
                 >
                   {h.lote || h.material || h.key}
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => {
+                setHistory([]);
+                setShowHistory(false);
+              }}
+              className="text-[10.5px] text-[var(--text-3)] hover:text-[var(--red)] px-1.5 py-0.5 rounded ml-auto whitespace-nowrap"
+              title="Limpar histórico"
+            >
+              Limpar
+            </button>
           </div>
         )}
 
