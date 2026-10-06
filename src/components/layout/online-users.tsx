@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { db } from '@/lib/firebase';
 import { 
@@ -164,6 +164,7 @@ function playBeepSound() {
 
 export function OnlineUsers() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, userData } = useFirebase();
   const { playNotificationSound } = useNotifications();
 
@@ -524,6 +525,10 @@ export function OnlineUsers() {
       }
 
       if (!isInput && (e.key === 'm' || e.key === 'M')) {
+        // Bloqueia abertura de chat se estiver em telas operacionais de pesagem ou se scanner/coletor estiver ativo
+        if (pathname?.startsWith('/pesagem') || document.body.dataset.scannerActive === 'true') {
+          return;
+        }
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
@@ -531,7 +536,7 @@ export function OnlineUsers() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isOpen, activeChat, showMentionPicker]);
+  }, [isOpen, activeChat, showMentionPicker, pathname]);
 
   // Fechar ao clicar fora do painel
   useEffect(() => {

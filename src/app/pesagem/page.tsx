@@ -1049,6 +1049,7 @@ export default function PesagemPage() {
               <ConsultaRapidaView
                 agingData={data}
                 remessas={remessas}
+                valores={valores}
                 currentUserEmail={user?.email || userData?.email}
                 isEmbedded={true}
               />
