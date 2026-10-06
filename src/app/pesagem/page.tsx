@@ -122,6 +122,28 @@ export default function PesagemPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Sincroniza aba e leitura do leitor de código de barras global
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const checkUrlAndStorage = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'scan' || params.get('code')) {
+        setActiveTab('scan');
+      }
+    };
+    checkUrlAndStorage();
+
+    const handleGlobalBarcode = () => {
+      setActiveTab('scan');
+    };
+
+    window.addEventListener('agilework:barcode_scanned', handleGlobalBarcode);
+    return () => {
+      window.removeEventListener('agilework:barcode_scanned', handleGlobalBarcode);
+    };
+  }, []);
+
   // Carregamento de dados da base
   const loadData = async (showLoadingSpinner = true) => {
     try {

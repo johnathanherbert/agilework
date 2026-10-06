@@ -279,7 +279,7 @@ function NTManagerContent() {
               <div>
                 <h1>{tab === 'done' ? 'Notas técnicas' : 'Notas técnicas'}</h1>
                 <p className="subtitle" style={{ fontSize: 13 }}>
-                  NTs da pesagem com seus itens · clique em &ldquo;Pagar&rdquo; no item para dar baixa
+                  NTs · clique na bolinha do item para marcar como pago.
                 </p>
               </div>
               <div className="nt-actions">

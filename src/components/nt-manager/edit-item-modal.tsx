@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -43,6 +43,7 @@ export function EditItemModal({
   item,
 }: EditItemModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const quantityInputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<EditItemFormData>({
     resolver: zodResolver(editItemSchema),
@@ -56,6 +57,8 @@ export function EditItemModal({
       priority: false,
     },
   });
+
+  const { ref: quantityRegisterRef, ...quantityRegisterRest } = form.register('quantity');
 
   useEffect(() => {
     return () => {
@@ -74,6 +77,11 @@ export function EditItemModal({
         payment_time: item.payment_time || '',
         priority: Boolean(item.priority),
       });
+
+      setTimeout(() => {
+        quantityInputRef.current?.focus();
+        quantityInputRef.current?.select();
+      }, 50);
     }
   }, [open, item, form]);
 
@@ -126,6 +134,11 @@ export function EditItemModal({
       }}
     >
       <DialogContent
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          quantityInputRef.current?.focus();
+          quantityInputRef.current?.select();
+        }}
         onCloseAutoFocus={(e) => {
           e.preventDefault();
           document.body.style.pointerEvents = '';
@@ -200,7 +213,11 @@ export function EditItemModal({
                 <div className="space-y-1.5">
                   <label className="text-xs text-[var(--text-3)] block font-medium">Quantidade (kg)</label>
                   <input
-                    {...form.register('quantity')}
+                    {...quantityRegisterRest}
+                    ref={(el) => {
+                      quantityRegisterRef(el);
+                      quantityInputRef.current = el;
+                    }}
                     placeholder="Ex: 120"
                     disabled={isSubmitting}
                     className={cn(

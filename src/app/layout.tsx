@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { FirebaseProvider } from '@/components/providers/firebase-provider';
 import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { NotificationProvider } from '@/components/providers/notification-provider';
+import { GlobalBarcodeListener } from '@/components/providers/global-barcode-listener';
 import { AppUpdateManager } from '@/components/app-update-manager';
 import { Toaster } from 'react-hot-toast';
 
@@ -62,6 +63,7 @@ export default function RootLayout({
             <SupabaseProvider>
               <NotificationProvider>
                 <AppUpdateManager />
+                <GlobalBarcodeListener />
                 {children}
                 <Toaster 
                   position="top-center"

@@ -346,6 +346,37 @@ export function ConsultaRapidaView({
     if (isManualTyping && inputRef.current) inputRef.current.focus();
   };
 
+  // Processamento imediato ao abrir com código pré-carregado na URL, sessionStorage ou evento global
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkPending = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlCode = params.get('code');
+      const sessionCode = sessionStorage.getItem('agilework_global_scan_code');
+      const targetCode = urlCode || sessionCode;
+
+      if (targetCode && targetCode.trim()) {
+        sessionStorage.removeItem('agilework_global_scan_code');
+        handleBarcodeScanned(targetCode.trim());
+      }
+    };
+
+    checkPending();
+
+    const handleGlobalScanEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<string>;
+      if (customEvt.detail) {
+        handleBarcodeScanned(customEvt.detail);
+      }
+    };
+
+    window.addEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
+    return () => {
+      window.removeEventListener('agilework:barcode_scanned', handleGlobalScanEvent);
+    };
+  }, [agingList]);
+
   // Refs para o listener global não usar versões antigas das funções/estados
   const scanRef = useRef(handleBarcodeScanned);
   const clearRef = useRef(handleClear);

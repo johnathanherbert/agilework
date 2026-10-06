@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NT, NTItem, ItemStatus } from '@/types';
-import { Edit, Trash2, Check, RotateCcw } from 'lucide-react';
+import { Edit, Trash2, Check } from 'lucide-react';
 import { cn, formatNumber, parseDateTime, isItemDelayed } from '@/lib/utils';
 import { EditItemModal } from './edit-item-modal';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
@@ -133,8 +133,18 @@ export const NTItemRow = ({
               isDim && "dim",
             )}
           >
-            {/* 1. Node */}
-            <span className="node" />
+            {/* 1. Node (Bolinha de status: cinza/vermelha marca como pago, verde estorna) */}
+            <button
+              type="button"
+              className="node"
+              disabled={isUpdating}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSetStatus(isPaid ? 'Ag. Pagamento' : 'Pago');
+              }}
+              title={isPaid ? "Clique na bolinha para estornar pagamento" : "Clique na bolinha para marcar como pago"}
+              aria-label={isPaid ? "Estornar pagamento" : "Marcar como pago"}
+            />
 
             {/* 2. Code (.cod) */}
             <span
@@ -176,29 +186,8 @@ export const NTItemRow = ({
             {/* 6. When (.when) */}
             <span className="when">{whenHtml}</span>
 
-            {/* 7. Actions (.iacts) com botão direto para pagar e botões rápidos */}
+            {/* 7. Actions (.iacts) botões rápidos de editar e excluir */}
             <div className="iacts" onClick={e => e.stopPropagation()}>
-              {isPaid ? (
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => handleSetStatus('Ag. Pagamento')}
-                  title="Estornar pagamento (voltar para pendente)"
-                >
-                  <RotateCcw size={14} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="pay"
-                  disabled={isUpdating}
-                  onClick={() => handleSetStatus('Pago')}
-                  title="Marcar como pago!"
-                >
-                  {isUpdating ? "Salvando..." : "✓"}
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={() => setShowEditItemModal(true)}

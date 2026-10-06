@@ -438,7 +438,9 @@ body.capture .pl-\[52px\] {
 .items-timeline::before{content:"";position:absolute;left:14px;top:0;bottom:14px;width:1px;background:var(--border-strong)}
 .it{display:grid;grid-template-columns:22px 64px minmax(0,1fr) 84px 92px 190px 92px;gap:10px;align-items:center;padding:3px 4px;min-height:30px;position:relative;border-radius:4px;transition:background .15s}
 .it:hover{background:var(--hover)}
-.node{width:9px;height:9px;border-radius:50%;justify-self:center;position:relative;z-index:1;border:1.5px solid var(--text-3);background:var(--bg)}
+.node{width:9px;height:9px;border-radius:50%;justify-self:center;position:relative;z-index:2;border:1.5px solid var(--text-3);background:var(--bg);padding:0;cursor:pointer;outline:none;transition:transform .15s ease, border-color .15s ease, background-color .15s ease}
+.node:hover{transform:scale(1.4)}
+.node:disabled{cursor:not-allowed;opacity:.5}
 .it.paid .node{background:var(--green);border-color:var(--green)}
 .it.latei .node{border-color:var(--red)}
 .it .cod{font-family:var(--font-mono),var(--mono),'JetBrains Mono',monospace;font-size:12.5px;font-weight:500}
