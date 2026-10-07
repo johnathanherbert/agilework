@@ -65,6 +65,12 @@ export const NTItemRow = ({
     whenHtml = (
       <>pago <b>{item.payment_time}</b></>
     );
+  } else if (isPartial) {
+    whenHtml = (
+      <span className="text-[var(--amber)]">
+        pago parcial{item.payment_time ? <> <b>{item.payment_time}</b></> : ''}
+      </span>
+    );
   } else {
     whenHtml = (
       <span className={isLate ? 'late' : ''}>
@@ -79,7 +85,7 @@ export const NTItemRow = ({
     setIsUpdating(true);
     try {
       const updateData: Partial<NTItem> = { status: newStatus };
-      if (newStatus === 'Pago') {
+      if (newStatus === 'Pago' || newStatus === 'Pago Parcial') {
         const now = new Date();
         const h = now.getHours().toString().padStart(2, '0');
         const m = now.getMinutes().toString().padStart(2, '0');
@@ -129,11 +135,12 @@ export const NTItemRow = ({
             className={cn(
               "it",
               isPaid && "paid",
-              isLate && !isPaid && "latei",
+              isPartial && "partial",
+              isLate && !isPaid && !isPartial && "latei",
               isDim && "dim",
             )}
           >
-            {/* 1. Node (Bolinha de status: cinza/vermelha marca como pago, verde estorna) */}
+            {/* 1. Node (Bolinha de status: cinza/vermelha marca como pago, amarela pago parcial, verde estorna) */}
             <button
               type="button"
               className="node"
@@ -142,8 +149,14 @@ export const NTItemRow = ({
                 e.stopPropagation();
                 handleSetStatus(isPaid ? 'Ag. Pagamento' : 'Pago');
               }}
-              title={isPaid ? "Clique na bolinha para estornar pagamento" : "Clique na bolinha para marcar como pago"}
-              aria-label={isPaid ? "Estornar pagamento" : "Marcar como pago"}
+              title={
+                isPaid
+                  ? "Pago · Clique na bolinha para estornar pagamento"
+                  : isPartial
+                  ? "Pago Parcial · Clique na bolinha para marcar como Pago Total"
+                  : "Pendente · Clique na bolinha para marcar como Pago"
+              }
+              aria-label={isPaid ? "Estornar pagamento" : isPartial ? "Marcar como pago total" : "Marcar como pago"}
             />
 
             {/* 2. Code (.cod) */}
@@ -244,20 +257,6 @@ export const NTItemRow = ({
             </ContextMenuItem>
 
             <ContextMenuItem
-              onClick={() => handleSetStatus('Ag. Pagamento')}
-              className={cn(
-                "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
-                (!isPaid && !isPartial) ? "bg-[var(--accent-weak)] text-[var(--text)] font-semibold" : "text-[var(--text)] hover:bg-[var(--hover)]"
-              )}
-            >
-              <span className="flex items-center gap-2">
-                <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block shrink-0 shadow-xs" />
-                <span>Ag. Pagamento</span>
-              </span>
-              {!isPaid && !isPartial && <Check size={13} className="text-[var(--amber)] stroke-[2.5]" />}
-            </ContextMenuItem>
-
-            <ContextMenuItem
               onClick={() => handleSetStatus('Pago Parcial')}
               className={cn(
                 "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
@@ -265,10 +264,24 @@ export const NTItemRow = ({
               )}
             >
               <span className="flex items-center gap-2">
-                <i className="w-2 h-2 rounded-full bg-[var(--blue,var(--accent))] inline-block shrink-0 shadow-xs" />
+                <i className="w-2 h-2 rounded-full bg-[var(--amber)] inline-block shrink-0 shadow-xs" />
                 <span>Pago Parcial</span>
               </span>
-              {isPartial && <Check size={13} className="text-[var(--blue,var(--accent))] stroke-[2.5]" />}
+              {isPartial && <Check size={13} className="text-[var(--amber)] stroke-[2.5]" />}
+            </ContextMenuItem>
+
+            <ContextMenuItem
+              onClick={() => handleSetStatus('Ag. Pagamento')}
+              className={cn(
+                "text-xs py-1.5 px-2 rounded-[5px] flex items-center justify-between cursor-pointer transition-colors",
+                (!isPaid && !isPartial) ? "bg-[var(--accent-weak)] text-[var(--text)] font-semibold" : "text-[var(--text)] hover:bg-[var(--hover)]"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <i className="w-2 h-2 rounded-full bg-[var(--text-3)] inline-block shrink-0 shadow-xs" />
+                <span>Ag. Pagamento</span>
+              </span>
+              {!isPaid && !isPartial && <Check size={13} className="text-[var(--text-2)] stroke-[2.5]" />}
             </ContextMenuItem>
           </div>
 

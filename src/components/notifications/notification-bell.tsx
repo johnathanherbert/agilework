@@ -129,9 +129,27 @@ export const NotificationBell = () => {
       markAsRead(notification.id);
     }
     
-    if (notification.type === 'nt_created' && notification.entityId) {
-      router.push(`/almoxarifado/nts?search=${notification.entityId}`);
-    } else if (notification.type === 'item_paid') {
+    // Extrai número da NT se existir em parts, message ou entityId
+    let ntNumber = '';
+    if (notification.parts) {
+      const entityPart = notification.parts.find(p => p.variant === 'entity' && /\d{4,10}/.test(p.text));
+      if (entityPart) {
+        ntNumber = entityPart.text.replace(/[^0-9]/g, '');
+      }
+    }
+    if (!ntNumber && notification.message) {
+      const match = notification.message.match(/NT\s*#?(\d{4,10})/i) || notification.message.match(/#(\d{4,10})/) || notification.message.match(/(\d{5,10})/);
+      if (match) {
+        ntNumber = match[1];
+      }
+    }
+    if (!ntNumber && notification.entityId && /^\d+$/.test(notification.entityId)) {
+      ntNumber = notification.entityId;
+    }
+
+    if (ntNumber) {
+      router.push(`/almoxarifado/nts?search=${encodeURIComponent(ntNumber)}`);
+    } else if (notification.type === 'nt_created' || notification.type === 'nt_updated' || notification.type === 'item_paid') {
       router.push('/almoxarifado/nts');
     } else if (notification.type === 'production_updated') {
       router.push('/producao');
@@ -158,7 +176,7 @@ export const NotificationBell = () => {
             const isWarning = part.variant === 'status-warning';
             const isAccent = part.variant === 'accent';
 
-            if (isEntity && /\d{6,10}/.test(part.text)) {
+            if (isEntity && /\d{4,10}/.test(part.text)) {
               const code = part.text.replace(/[^0-9]/g, '');
               return (
                 <button
@@ -166,11 +184,14 @@ export const NotificationBell = () => {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigator.clipboard.writeText(code);
-                    toast.success(`NT ${code} copiada!`, { icon: '📋' });
+                    if (!notification.read) {
+                      markAsRead(notification.id);
+                    }
+                    setIsOpen(false);
+                    router.push(`/almoxarifado/nts?search=${encodeURIComponent(code)}`);
                   }}
-                  title="Copiar NT"
-                  className="inline-flex items-center font-mono text-[11.5px] px-1 py-0.2 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                  title={`Abrir NT ${code} em Notas Técnicas`}
+                  className="inline-flex items-center font-mono text-[11.5px] px-1.5 py-0.5 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--accent)] hover:border-[var(--accent)] hover:bg-[var(--accent-weak)] font-semibold transition-colors cursor-pointer"
                 >
                   {part.text}
                 </button>
@@ -193,6 +214,34 @@ export const NotificationBell = () => {
               </span>
             );
           })}
+        </span>
+      );
+    }
+
+    // Fallback: se não tiver parts, detecta número da NT no texto e cria o link
+    const match = notification.message?.match(/NT\s*#?(\d{4,10})/i) || notification.message?.match(/#(\d{4,10})/);
+    if (match) {
+      const code = match[1];
+      const parts = notification.message.split(match[0]);
+      return (
+        <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">
+          {parts[0]}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!notification.read) {
+                markAsRead(notification.id);
+              }
+              setIsOpen(false);
+              router.push(`/almoxarifado/nts?search=${encodeURIComponent(code)}`);
+            }}
+            title={`Abrir NT ${code} em Notas Técnicas`}
+            className="inline-flex items-center font-mono text-[11.5px] px-1.5 py-0.5 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--accent)] hover:border-[var(--accent)] hover:bg-[var(--accent-weak)] font-semibold transition-colors cursor-pointer"
+          >
+            {match[0]}
+          </button>
+          {parts.slice(1).join(match[0])}
         </span>
       );
     }

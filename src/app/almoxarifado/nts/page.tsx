@@ -108,8 +108,19 @@ function NTManagerContent() {
 
   // URL check
   useEffect(() => {
-    if (searchParams?.get('status') === 'concluida') setTab('done');
-  }, [searchParams]);
+    if (!searchParams) return;
+    if (searchParams.get('status') === 'concluida') setTab('done');
+    const searchVal = searchParams.get('search') || searchParams.get('nt') || searchParams.get('q');
+    if (searchVal) {
+      setQ(searchVal);
+      // Se a NT procurada estiver concluída e não nas abertas, muda para aba de concluídas
+      const foundInOpen = nts.some(n => !isDone(n) && n.nt_number?.includes(searchVal));
+      const foundInDone = nts.some(n => isDone(n) && n.nt_number?.includes(searchVal));
+      if (!foundInOpen && foundInDone) {
+        setTab('done');
+      }
+    }
+  }, [searchParams, nts]);
 
   // Load NTs
   const fetchNTs = useCallback(async () => {
@@ -118,7 +129,11 @@ function NTManagerContent() {
       const data = await getNTs();
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const searchVal = searchParams?.get('search') || searchParams?.get('nt') || searchParams?.get('q');
       const recent = data.filter((nt: NT) => {
+        if (searchVal && (nt.nt_number?.toLowerCase().includes(searchVal.toLowerCase()) || nt.id === searchVal)) {
+          return true;
+        }
         if (!nt.created_date) return false;
         try {
           const [d, m, y] = nt.created_date.split('/').map(Number);
@@ -128,7 +143,7 @@ function NTManagerContent() {
       setNts(recent);
     } catch { toast.error('Erro ao carregar as NTs'); }
     finally { setLoading(false); }
-  }, []);
+  }, [searchParams]);
 
   // Realtime subscription
   useEffect(() => {
@@ -137,7 +152,11 @@ function NTManagerContent() {
       (data) => {
         const twoDaysAgo = new Date();
         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        const searchVal = searchParams?.get('search') || searchParams?.get('nt') || searchParams?.get('q');
         const recent = data.filter((nt: NT) => {
+          if (searchVal && (nt.nt_number?.toLowerCase().includes(searchVal.toLowerCase()) || nt.id === searchVal)) {
+            return true;
+          }
           if (!nt.created_date) return false;
           try {
             const [d, m, y] = nt.created_date.split('/').map(Number);
@@ -150,7 +169,7 @@ function NTManagerContent() {
       () => toast.error('Erro na atualização em tempo real')
     );
     return () => unsub();
-  }, [user]);
+  }, [user, searchParams]);
 
   // Keyboard shortcuts
   useEffect(() => {

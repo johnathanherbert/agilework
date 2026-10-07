@@ -269,8 +269,8 @@ export function EditItemModal({
                     disabled={isSubmitting}
                     className="h-[34px] w-full px-3 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] text-xs text-[var(--text)] focus:border-[var(--accent)] outline-none transition-colors cursor-pointer"
                   >
-                    <option value="Ag. Pagamento">🟡 Aguardando Pagamento</option>
-                    <option value="Pago Parcial">🟣 Pago Parcial</option>
+                    <option value="Ag. Pagamento">⚪ Aguardando Pagamento</option>
+                    <option value="Pago Parcial">🟡 Pago Parcial</option>
                     <option value="Pago">🟢 Pago</option>
                   </select>
                 </div>
