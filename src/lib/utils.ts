@@ -503,6 +503,61 @@ export function parseBrazilianNumber(value: string | number | null | undefined):
   return parseFloat(clean) || 0;
 }
 
+/**
+ * Converte qualquer quantidade baseada na sua UMB para quilogramas (KG)
+ */
+export function converterParaKg(quantidade: number, unidadeMedida?: string): number {
+  if (isNaN(quantidade) || quantidade === 0) return 0;
+  const unidade = (unidadeMedida || 'KG').toUpperCase().trim();
+  switch (unidade) {
+    case 'KG':
+    case 'KGS':
+    case 'QUILOGRAMAS':
+    case 'QUILOS':
+    case 'QUILO':
+      return quantidade;
+    case 'G':
+    case 'GR':
+    case 'GMS':
+    case 'GRAMAS':
+    case 'GRAMA':
+      return quantidade / 1000;
+    case 'MG':
+    case 'MILIGRAMAS':
+    case 'MILIGRAMA':
+      return quantidade / 1000000;
+    case 'TON':
+    case 'T':
+    case 'TONELADAS':
+      return quantidade * 1000;
+    default:
+      return quantidade;
+  }
+}
+
+/**
+ * Verifica se uma linha de estoque do SAP está fisicamente na Área de Pesagem (PES)
+ * e não está em trânsito (TR-ZONE), devolução (DEP), ajuste (AJUSTE) ou almoxarifado central (ALM).
+ */
+export function isItemInPesagemArea(item: any): boolean {
+  if (!item) return false;
+  const dep = String(item.deposito || '').trim().toUpperCase();
+  const tipo = String(item.tipo_deposito || '').trim().toUpperCase();
+  const pos = String(item.posicao_deposito || '').trim().toUpperCase();
+
+  // Exclui depósitos fora da pesagem (ex: ALM almoxarifado central, etc.)
+  if (dep && dep !== 'PES' && dep !== 'PESAGEM') return false;
+  // Exclui TR-ZONE / In-transit
+  if (tipo === 'TR-ZONE' || tipo === '922' || pos.includes('TR-ZONE') || pos.includes('TRZONE') || dep === '922') return false;
+  // Exclui Devoluções
+  if (tipo === 'DEP' || pos.includes('DEVOL') || (dep === 'DEP' && tipo !== 'PES')) return false;
+  // Exclui Ajustes
+  if (tipo === '999' && (pos.includes('AJU') || pos === 'AJUSTE' || pos === 'AJU-SAIDA')) return false;
+
+  const estq = parseFloat(item.estoque_disponivel || 0);
+  return !isNaN(estq) && estq > 0;
+}
+
 // Validate NT number format
 export function isValidNTNumber(ntNumber: string): boolean {
   // NT numbers should follow the pattern: NT-YYYY-XXXXX

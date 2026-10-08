@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { ProductionTurno, ProductionItem } from "@/types";
+import { ProductionTurno, ProductionTipo, ProductionItem } from "@/types";
 import { useProductionRealtime } from "@/hooks/useProductionRealtime";
 import { 
   Factory, 
@@ -36,13 +36,15 @@ export const PullProductionDialog: React.FC<PullProductionDialogProps> = ({
 }) => {
   const { items: productionItems, loading: loadingProd } = useProductionRealtime();
   const [selectedTurno, setSelectedTurno] = useState<ProductionTurno | 'todos'>(1);
+  const [selectedTipo, setSelectedTipo] = useState<ProductionTipo | 'todos'>('ordem');
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtra os itens do painel de produção com base no turno e busca
+  // Filtra os itens do painel de produção com base no turno, tipo e busca
   const filteredItems = useMemo(() => {
     return productionItems.filter((item) => {
       if (selectedTurno !== 'todos' && item.turno !== selectedTurno) return false;
+      if (selectedTipo !== 'todos' && item.tipo !== selectedTipo) return false;
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const code = (item.codigoReceita || "").toLowerCase();
@@ -52,24 +54,28 @@ export const PullProductionDialog: React.FC<PullProductionDialogProps> = ({
       }
       return true;
     });
-  }, [productionItems, selectedTurno, searchQuery]);
+  }, [productionItems, selectedTurno, selectedTipo, searchQuery]);
 
   // Contadores por turno
   const turnoCounts = useMemo(() => {
-    const counts = { 1: 0, 2: 0, 3: 0, todos: productionItems.length };
-    productionItems.forEach(item => {
+    const base = selectedTipo === 'todos'
+      ? productionItems
+      : productionItems.filter(item => item.tipo === selectedTipo);
+
+    const counts = { 1: 0, 2: 0, 3: 0, todos: base.length };
+    base.forEach(item => {
       if (item.turno === 1) counts[1]++;
       else if (item.turno === 2) counts[2]++;
       else if (item.turno === 3) counts[3]++;
     });
     return counts;
-  }, [productionItems]);
+  }, [productionItems, selectedTipo]);
 
-  // Inicializa a seleção marcando todos os itens visíveis por padrão ao mudar o turno
+  // Inicializa a seleção marcando todos os itens visíveis por padrão ao mudar o turno ou tipo
   useEffect(() => {
     const validIds = new Set(filteredItems.map(i => i.id));
     setSelectedItemIds(validIds);
-  }, [selectedTurno]); // apenas quando muda o turno, para não resetar seleções ao digitar na busca
+  }, [selectedTurno, selectedTipo]); // apenas quando muda o turno ou tipo
 
   const toggleSelectAll = () => {
     if (selectedItemIds.size === filteredItems.length && filteredItems.length > 0) {
@@ -120,6 +126,13 @@ export const PullProductionDialog: React.FC<PullProductionDialogProps> = ({
     { label: 'Todos', value: 'todos', desc: 'Geral' },
   ];
 
+  const tipos: { label: string; value: ProductionTipo | 'todos' }[] = [
+    { label: 'Ordens de Produção', value: 'ordem' },
+    { label: 'Pesagem Direta', value: 'direta' },
+    { label: 'Pesagem Auto', value: 'auto' },
+    { label: 'Todos', value: 'todos' },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
       <DialogContent className="max-w-[620px] w-full p-0 overflow-hidden bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl flex flex-col max-h-[88vh]">
@@ -142,43 +155,70 @@ export const PullProductionDialog: React.FC<PullProductionDialogProps> = ({
 
         {/* Corpo do Modal */}
         <div className="overflow-y-auto px-5 py-3 space-y-4 flex-1">
-          {/* 1. SELEÇÃO DE TURNO (SEGMENTED) */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-baseline">
-              <label className="text-xs font-semibold text-[var(--text-2)]">
-                Turno da Produção
-              </label>
-              <span className="text-[11.5px] text-[var(--text-3)] font-mono">
-                {selectedTurno === 'todos' ? `${turnoCounts.todos} ordens no total` : `${turnoCounts[selectedTurno]} ordens no turno`}
-              </span>
+          {/* 1. SELEÇÃO DE TURNO E TIPO */}
+          <div className="space-y-2.5">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <label className="text-xs font-semibold text-[var(--text-2)]">
+                  Turno da Produção
+                </label>
+                <span className="text-[11.5px] text-[var(--text-3)] font-mono">
+                  {selectedTurno === 'todos' ? `${turnoCounts.todos} programados no total` : `${turnoCounts[selectedTurno]} programados no turno`}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-4 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)] divide-x divide-[var(--border-strong)]">
+                {turnos.map((t) => {
+                  const isSelected = selectedTurno === t.value;
+                  const count = turnoCounts[t.value];
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setSelectedTurno(t.value)}
+                      className={cn(
+                        "py-2 px-2.5 flex flex-col items-center justify-center transition-colors text-xs font-medium",
+                        isSelected
+                          ? "bg-[var(--hover)] text-[var(--text)] shadow-xs"
+                          : "text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--surface)]"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={11} className={isSelected ? "text-[var(--accent)]" : "opacity-50"} />
+                        <span>{t.label}</span>
+                      </span>
+                      <span className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">
+                        {count} {count === 1 ? 'item' : 'itens'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)] divide-x divide-[var(--border-strong)]">
-              {turnos.map((t) => {
-                const isSelected = selectedTurno === t.value;
-                const count = turnoCounts[t.value];
-                return (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => setSelectedTurno(t.value)}
-                    className={cn(
-                      "py-2 px-2.5 flex flex-col items-center justify-center transition-colors text-xs font-medium",
-                      isSelected
-                        ? "bg-[var(--hover)] text-[var(--text)] shadow-xs"
-                        : "text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--surface)]"
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={11} className={isSelected ? "text-[var(--accent)]" : "opacity-50"} />
-                      <span>{t.label}</span>
-                    </span>
-                    <span className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">
-                      {count} {count === 1 ? 'ordem' : 'ordens'}
-                    </span>
-                  </button>
-                );
-              })}
+            {/* Filtro de Tipo (Ordens vs PD/PA) */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--border)]">
+              <span className="text-xs text-[var(--text-3)] font-medium">Categoria:</span>
+              <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)] divide-x divide-[var(--border-strong)]">
+                {tipos.map((tp) => {
+                  const isSelected = selectedTipo === tp.value;
+                  return (
+                    <button
+                      key={tp.value}
+                      type="button"
+                      onClick={() => setSelectedTipo(tp.value)}
+                      className={cn(
+                        "py-1 px-2.5 text-[11px] font-medium transition-colors",
+                        isSelected
+                          ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
+                          : "text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--surface)]"
+                      )}
+                    >
+                      {tp.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

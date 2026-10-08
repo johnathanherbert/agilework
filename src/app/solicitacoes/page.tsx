@@ -16,12 +16,19 @@ import {
   loadAppState, 
   saveAppState, 
   clearAppState,
-  fetchSapMaterialStock 
+  fetchSapMaterialStock,
+  fetchAgingData 
 } from "@/lib/dashpesagem-api";
 import { subscribeToNTs } from "@/lib/firestore-helpers";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
 import toast from "react-hot-toast";
-import { formatNumber, parseBrazilianNumber, matchNTItemWithExcipient } from "@/lib/utils";
+import { 
+  formatNumber, 
+  parseBrazilianNumber, 
+  matchNTItemWithExcipient,
+  converterParaKg,
+  isItemInPesagemArea
+} from "@/lib/utils";
 import { NT, NTItem, ExcipienteNTInfo, PendingNTItemDetail } from "@/types";
 
 import {
@@ -251,31 +258,86 @@ export default function SolicitacoesPage() {
     []
   );
 
+  // Função robusta para buscar lista técnica pelo código do material (semi_acabado) e da receita (codigo_receita)
+  const buscarListaTecnicaReceita = async (codeOrText: string, productName?: string): Promise<any[]> => {
+    const clean = (codeOrText || '').trim();
+    if (!clean && !productName) return [];
+
+    const rawCode = clean.replace(/I$/i, '').trim();
+    const digits = rawCode.replace(/\D/g, '');
+
+    const searchCodes = Array.from(new Set([
+      rawCode,
+      digits,
+      digits ? digits.padStart(6, '0') : '',
+      digits ? digits.replace(/^0+/, '') : '',
+    ])).filter(Boolean);
+
+    // 1. Busca priorizando o código do material (semi_acabado) e código da receita (codigo_receita)
+    for (const c of searchCodes) {
+      // Tenta por semi_acabado (código do material cadastrado no SAP)
+      let res = await fetchListaTecnica({ semi_acabado: c });
+      if (res && res.length > 0) return res;
+
+      // Tenta por codigo_receita
+      res = await fetchListaTecnica({ codigo_receita: c });
+      if (res && res.length > 0) return res;
+
+      // Tenta ambos combinados
+      res = await fetchListaTecnica({ semi_acabado: c, codigo_receita: c });
+      if (res && res.length > 0) return res;
+    }
+
+    // 2. Busca exata usando o parâmetro search do código
+    if (rawCode) {
+      const searchRes = await fetchListaTecnica({ search: rawCode });
+      if (searchRes && searchRes.length > 0) {
+        const exact = searchRes.filter((r) =>
+          searchCodes.some(
+            (c) =>
+              String(r.semi_acabado || '').trim() === c ||
+              String(r.Codigo_Receita || '').trim() === c ||
+              String(r.semi_acabado || '').replace(/\D/g, '') === digits
+          )
+        );
+        if (exact.length > 0) return exact;
+        return searchRes;
+      }
+    }
+
+    // 3. Fallback pelo nome do produto apenas se não tiver retornado pelo código
+    if (productName && productName.trim()) {
+      const resAtivo = await fetchListaTecnica({ ativo: productName.trim() });
+      if (resAtivo && resAtivo.length > 0) return resAtivo;
+    }
+
+    return [];
+  };
+
   // Adicionar Ordem
   const handleAddOrdem = async () => {
     if (!ativo.trim()) return;
 
     try {
       let rawInput = ativo.trim();
-      if (rawInput.toUpperCase().endsWith('I')) {
-        rawInput = rawInput.slice(0, -1).trim();
-      }
-
       let data: any[] = [];
       if (addMode === "codigo") {
-        data = await fetchListaTecnica({ codigo_receita: rawInput });
+        data = await buscarListaTecnicaReceita(rawInput);
       } else {
         data = await fetchListaTecnica({ ativo: rawInput });
+        if (!data || data.length === 0) {
+          data = await buscarListaTecnicaReceita(rawInput);
+        }
       }
 
       if (!data || data.length === 0) {
-        toast.error(addMode === "codigo" ? "Código da receita não encontrado na Lista Técnica" : "Ativo não encontrado");
+        toast.error(addMode === "codigo" ? "Código do material/receita não encontrado na Lista Técnica" : "Ativo não encontrado");
         return;
       }
 
       const primeiroRegistro = data[0];
-      const codigo = primeiroRegistro.Codigo_Receita || primeiroRegistro.semi_acabado;
-      const nome = primeiroRegistro.Ativo || primeiroRegistro.descricao_semi_acabado;
+      const codigo = primeiroRegistro.Codigo_Receita || primeiroRegistro.semi_acabado || rawInput.replace(/I$/i, '').trim();
+      const nome = primeiroRegistro.Ativo || primeiroRegistro.descricao_semi_acabado || rawInput;
 
       let op: any = null;
       if (autoIncrementOP) {
@@ -291,8 +353,10 @@ export default function SolicitacoesPage() {
         op: op ? String(op) : null,
         excipientes: data.reduce((acc: any, item: any) => {
           const nomeExp = item.Excipiente || item.descricao_materia_prima;
+          const rawQtd = parseFloat(item.qtd_materia_prima || 0);
+          const qtdKg = converterParaKg(rawQtd, item.un_materia_prima);
           acc[nomeExp] = {
-            quantidade: parseFloat(item.qtd_materia_prima || 0),
+            quantidade: qtdKg,
             codigo: item.codigo_materia_prima || item.materia_prima,
           };
           return acc;
@@ -338,16 +402,8 @@ export default function SolicitacoesPage() {
 
       const results = await Promise.all(
         itemsToImport.map(async (item) => {
-          let cleanCode = (item.codigoReceita || item.produto || '').trim();
-          if (cleanCode.toUpperCase().endsWith('I')) {
-            cleanCode = cleanCode.slice(0, -1).trim();
-          }
-
-          let data = await fetchListaTecnica({ codigo_receita: cleanCode });
-          if (!data || data.length === 0) {
-            data = await fetchListaTecnica({ ativo: item.produto });
-          }
-
+          const cleanCode = (item.codigoReceita || item.produto || '').trim();
+          const data = await buscarListaTecnicaReceita(cleanCode, item.produto);
           return { item, cleanCode, data };
         })
       );
@@ -368,8 +424,10 @@ export default function SolicitacoesPage() {
               op: item.op || null,
               excipientes: data.reduce((acc: any, row: any) => {
                 const nomeExp = row.Excipiente || row.descricao_materia_prima;
+                const rawQtd = parseFloat(row.qtd_materia_prima || 0);
+                const qtdKg = converterParaKg(rawQtd, row.un_materia_prima);
                 acc[nomeExp] = {
-                  quantidade: parseFloat(row.qtd_materia_prima || 0),
+                  quantidade: qtdKg,
                   codigo: row.codigo_materia_prima || row.materia_prima,
                 };
                 return acc;
@@ -532,13 +590,20 @@ export default function SolicitacoesPage() {
     try {
       const data = await fetchSapMaterialStock(codigo);
       if (Array.isArray(data) && data.length > 0) {
-        const saldoTotal = data.reduce(
-          (sum: number, item: any) => sum + parseFloat(item.estoque_disponivel || 0),
+        const pesItems = data.filter(isItemInPesagemArea);
+        const saldoTotalKg = pesItems.reduce(
+          (sum: number, item: any) => sum + converterParaKg(parseFloat(item.estoque_disponivel || 0), item.unidade_medida),
           0
         );
-        handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotal, 3));
-        toast.success(`Saldo SAP atualizado: ${formatNumber(saldoTotal, 3)} kg`);
+        handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotalKg, 3));
+        if (pesItems.length > 0) {
+          toast.success(`Saldo na Área SAP: ${formatNumber(saldoTotalKg, 3)} kg`);
+        } else {
+          const totalSapKg = data.reduce((s, i) => s + (Number(i.estoque_disponivel) || 0), 0);
+          toast(`Material cadastrado no SAP (${formatNumber(totalSapKg, 3)} kg total), mas sem saldo na Área PES.`, { icon: 'ℹ️' });
+        }
       } else {
+        handleMateriaisNaAreaChange(excipient, "0,000");
         toast.error("Nenhum estoque encontrado para este código no SAP");
       }
     } catch (err) {
@@ -555,26 +620,44 @@ export default function SolicitacoesPage() {
         return;
       }
 
-      let count = 0;
-      await Promise.all(
-        entries.map(async ([excipient, data]) => {
-          try {
-            const sapData = await fetchSapMaterialStock(data.codigo);
-            if (Array.isArray(sapData) && sapData.length > 0) {
-              const saldoTotal = sapData.reduce(
-                (sum: number, item: any) => sum + parseFloat(item.estoque_disponivel || 0),
-                0
-              );
-              handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotal, 3));
-              count++;
-            }
-          } catch (e) {
-            console.warn(`Erro ao buscar saldo SAP para ${excipient}:`, e);
-          }
-        })
-      );
+      const allAgingData: any[] = await fetchAgingData();
+      if (!Array.isArray(allAgingData) || allAgingData.length === 0) {
+        toast.error("Nenhum dado de estoque SAP encontrado.");
+        return;
+      }
 
-      toast.success(`${count} matérias-primas atualizadas com sucesso pelo SAP!`);
+      let count = 0;
+      entries.forEach(([excipient, data]) => {
+        const rawCode = String(data.codigo || '').trim();
+        const digits = rawCode.replace(/\D/g, '');
+        const padded6 = digits ? digits.padStart(6, '0') : '';
+        const stripped = digits ? digits.replace(/^0+/, '') : '';
+
+        const matchingItems = allAgingData.filter((item) => {
+          const itemMat = String(item.material || '').trim();
+          const itemDigits = itemMat.replace(/\D/g, '');
+          const itemPadded = itemDigits ? itemDigits.padStart(6, '0') : '';
+          const itemStripped = itemDigits ? itemDigits.replace(/^0+/, '') : '';
+
+          const matchesCode =
+            itemMat.toUpperCase() === rawCode.toUpperCase() ||
+            (digits && (itemDigits === digits || itemPadded === padded6 || itemStripped === stripped));
+
+          return matchesCode && isItemInPesagemArea(item);
+        });
+
+        const saldoTotalKg = matchingItems.reduce(
+          (sum: number, item: any) => sum + converterParaKg(parseFloat(item.estoque_disponivel || 0), item.unidade_medida),
+          0
+        );
+
+        handleMateriaisNaAreaChange(excipient, formatNumber(saldoTotalKg, 3));
+        if (saldoTotalKg > 0) {
+          count++;
+        }
+      });
+
+      toast.success(`Saldos SAP atualizados (${count} matérias-primas com saldo disponível na área PES)!`);
     } catch (err) {
       console.error("Erro ao sincronizar tudo com SAP:", err);
       toast.error("Erro ao sincronizar com SAP");

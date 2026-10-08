@@ -136,10 +136,28 @@ export async function uploadExcelAging(data: any[]): Promise<{ success: boolean;
   return { success: true, count: data.length };
 }
 
-export async function fetchSapMaterialStock(codigo: string) {
-  const res = await fetch(`${getApiBaseUrl()}/api/aging?material=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Erro ao buscar estoque SAP');
-  return res.json();
+export async function fetchSapMaterialStock(codigo: string): Promise<AgingData[]> {
+  const allData: AgingData[] = await fetchAgingData();
+  if (!Array.isArray(allData) || allData.length === 0) return [];
+
+  const raw = String(codigo || '').trim();
+  if (!raw) return [];
+
+  const digits = raw.replace(/\D/g, '');
+  const padded6 = digits ? digits.padStart(6, '0') : '';
+  const stripped = digits ? digits.replace(/^0+/, '') : '';
+
+  return allData.filter((item) => {
+    const itemMat = String(item.material || '').trim();
+    const itemDigits = itemMat.replace(/\D/g, '');
+    const itemPadded = itemDigits ? itemDigits.padStart(6, '0') : '';
+    const itemStripped = itemDigits ? itemDigits.replace(/^0+/, '') : '';
+
+    return (
+      itemMat.toUpperCase() === raw.toUpperCase() ||
+      (digits && (itemDigits === digits || itemPadded === padded6 || itemStripped === stripped))
+    );
+  });
 }
 
 export async function fetchSaldoMP(): Promise<{ mp_codigo: string; mp_nome: string; saldo_total: number; total_lotes: number }[]> {
