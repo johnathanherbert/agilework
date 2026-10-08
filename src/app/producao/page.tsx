@@ -15,6 +15,7 @@ import {
   MoreVertical,
   Trash2,
   RotateCcw,
+  Clock,
 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
@@ -186,7 +187,7 @@ function ProducaoPageContent() {
       toast.error('Este item está travado por divisão de ordem.');
       return;
     }
-    const newReal = Math.max(0, Math.min(item.prog, item.real + delta));
+    const newReal = Math.max(0, item.real + delta);
     if (newReal === item.real) return;
 
     try {
@@ -396,18 +397,32 @@ function ProducaoPageContent() {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 main-content-area" id="main-scroll">
           {/* Cabeçalho da Página */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-1 no-print">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-1 no-print">
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">
-                Painel de produção
-              </h1>
-              <p className="text-xs text-[var(--text-3)] mt-0.5 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold tracking-tight text-[var(--text)]">
+                  Painel de produção
+                </h1>
+                {currentShift && (
+                  <span className="px-2.5 py-0.5 rounded-[4px] border border-[var(--green)]/30 bg-[var(--green)]/10 text-[var(--green)] font-bold text-xs font-mono">
+                    {currentShift.l}
+                  </span>
+                )}
+              </div>
+              <p className="text-[13px] text-[var(--text-3)] mt-1 flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse" />
                 <span>
-                  Programação de {DIAS_CURTO[now.getDay()]}, {String(now.getDate()).padStart(2, '0')}/{String(now.getMonth() + 1).padStart(2, '0')} · úmida, seca e PD/PA ·{' '}
-                  <b className="font-medium text-[var(--text-2)]">
+                  Programação de {DIAS_CURTO[now.getDay()]}, {String(now.getDate()).padStart(2, '0')}/{String(now.getMonth() + 1).padStart(2, '0')}/{now.getFullYear()} · úmida, seca e PD/PA ·{' '}
+                  <b className="font-semibold text-[var(--text-2)]">
                     {currentShift ? `${currentShift.l} em andamento` : 'fora de turno'}
                   </b>
+                  {' · '}
+                  <span className="text-[var(--text-3)]">{items.filter((x) => x.tipo === 'ordem').length} ordens monitoradas</span>
+                </span>
+                <span className="text-[var(--border-strong)] hidden sm:inline">|</span>
+                <span className="font-mono text-xs font-semibold text-[var(--text-2)] flex items-center gap-1">
+                  <Clock size={12} className="text-[var(--accent)]" />
+                  {String(now.getHours()).padStart(2, '0')}:{String(now.getMinutes()).padStart(2, '0')}:{String(now.getSeconds()).padStart(2, '0')}
                 </span>
               </p>
             </div>
@@ -543,14 +558,14 @@ function ProducaoPageContent() {
           </div>
 
           {/* Toolbar de Filtros e Modos */}
-          <div className="flex items-center gap-2 flex-wrap no-print toolbar-container text-xs">
+          <div className="flex items-center gap-2 flex-wrap no-print toolbar-container text-[13px]">
             {/* Seletor de Modo: Lado a Lado (Desabilitado) | Detalhado */}
             <div className="inline-flex border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 disabled
                 title="Modo Lado a Lado temporariamente desabilitado"
-                className="h-7 px-3 font-medium border-r border-[var(--border-strong)] opacity-40 text-[var(--text-3)] cursor-not-allowed bg-transparent select-none"
+                className="h-8 px-3 font-medium border-r border-[var(--border-strong)] opacity-40 text-[var(--text-3)] cursor-not-allowed bg-transparent select-none text-xs"
               >
                 Lado a lado
               </button>
@@ -558,7 +573,7 @@ function ProducaoPageContent() {
                 type="button"
                 onClick={() => handleSetViewMode('list')}
                 className={cn(
-                  "h-7 px-3 font-medium transition-colors cursor-pointer",
+                  "h-8 px-3.5 font-medium transition-colors cursor-pointer text-xs",
                   viewMode === 'list'
                     ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
                     : "text-[var(--text-3)] hover:text-[var(--text)]"
@@ -571,24 +586,24 @@ function ProducaoPageContent() {
             <span className="w-[1px] h-5 bg-[var(--border)] mx-1" />
 
             {/* Chips de Turno */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => handleToggleShiftChip('all')}
                 className={cn(
-                  "h-7 px-2.5 rounded-full border border-[var(--border-strong)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+                  "h-8 px-3 rounded-full border border-[var(--border-strong)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
                   visibleShifts.length === 3
-                    ? "bg-[var(--hover)] text-[var(--text)]"
+                    ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
                     : "text-[var(--text-3)] hover:text-[var(--text)]"
                 )}
               >
                 <span
                   className={cn(
-                    "w-3 h-3 rounded-[3px] border border-[var(--text-3)] flex items-center justify-center text-[9px]",
+                    "w-3.5 h-3.5 rounded-[3px] border border-[var(--text-3)] flex items-center justify-center text-[9px]",
                     visibleShifts.length === 3 && "bg-[var(--text)] border-[var(--text)] text-[var(--bg)] font-bold"
                   )}
                 >
-                  {visibleShifts.length === 3 && <Check size={8} strokeWidth={3} />}
+                  {visibleShifts.length === 3 && <Check size={9} strokeWidth={3} />}
                 </span>
                 <span>Todos</span>
               </button>
@@ -601,19 +616,19 @@ function ProducaoPageContent() {
                     type="button"
                     onClick={() => handleToggleShiftChip(s.n)}
                     className={cn(
-                      "h-7 px-2.5 rounded-full border border-[var(--border-strong)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+                      "h-8 px-3 rounded-full border border-[var(--border-strong)] text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer",
                       isActive
-                        ? "bg-[var(--hover)] text-[var(--text)]"
-                        : "text-[v1ar(--text-3)] hover:text-[var(--text)]"
+                        ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
+                        : "text-[var(--text-3)] hover:text-[var(--text)]"
                     )}
                   >
                     <span
                       className={cn(
-                        "w-3 h-3 rounded-[3px] border border-[var(--text-3)] flex items-center justify-center text-[9px]",
+                        "w-3.5 h-3.5 rounded-[3px] border border-[var(--text-3)] flex items-center justify-center text-[9px]",
                         isActive && "bg-[var(--text)] border-[var(--text)] text-[var(--bg)] font-bold"
                       )}
                     >
-                      {isActive && <Check size={8} strokeWidth={3} />}
+                      {isActive && <Check size={9} strokeWidth={3} />}
                     </span>
                     <span>{s.l}</span>
                   </button>
@@ -624,8 +639,8 @@ function ProducaoPageContent() {
             <span className="w-[1px] h-5 bg-[var(--border)] mx-1" />
 
             {/* Busca Rápida */}
-            <label className="h-8 px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--surface)] flex items-center gap-2 text-[var(--text-3)] focus-within:border-[var(--accent)] w-56 transition-colors shadow-2xs">
-              <Search size={13} className="shrink-0" />
+            <label className="h-8 px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--surface)] flex items-center gap-2 text-[var(--text-3)] focus-within:border-[var(--accent)] w-60 transition-colors shadow-2xs">
+              <Search size={14} className="shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
@@ -639,7 +654,7 @@ function ProducaoPageContent() {
             <select
               value={selectedFamily}
               onChange={(e) => setSelectedFamily(e.target.value)}
-              className="h-8 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text-2)] focus:border-[var(--accent)] outline-none cursor-pointer shadow-2xs"
+              className="h-8 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text-2)] focus:border-[var(--accent)] outline-none cursor-pointer shadow-2xs font-medium"
             >
               <option value="">Todas as famílias</option>
               {familiesAvailable.map((fam) => (
@@ -653,7 +668,7 @@ function ProducaoPageContent() {
             <select
               value={selectedVia}
               onChange={(e) => setSelectedVia(e.target.value)}
-              className="h-8 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text-2)] focus:border-[var(--accent)] outline-none cursor-pointer shadow-2xs"
+              className="h-8 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text-2)] focus:border-[var(--accent)] outline-none cursor-pointer shadow-2xs font-medium"
             >
               <option value="">Úmida e seca</option>
               <option value="umida">Só úmida</option>
@@ -661,7 +676,7 @@ function ProducaoPageContent() {
             </select>
 
             {/* Checkbox Ocultar Concluídas */}
-            <label className="inline-flex items-center gap-1.5 text-xs text-[var(--text-2)] cursor-pointer select-none ml-1">
+            <label className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-2)] cursor-pointer select-none ml-1">
               <input
                 type="checkbox"
                 checked={hideCompleted}
@@ -674,56 +689,19 @@ function ProducaoPageContent() {
 
           {/* Área Principal de Relatório e Visualização */}
           <div id="report-panel" className="space-y-4">
-            {/* Carimbo Estratégico de Data e Hora da Produção (Visível no Painel, Imagem e Impressão) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 px-4 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-[6px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] grid place-items-center font-bold text-xs font-mono shrink-0">
-                  AW
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-semibold text-[var(--text)] leading-none">
-                      Painel de Produção · Pesagem
-                    </h2>
-                    {currentShift && (
-                      <span className="px-2 py-0.5 rounded-[4px] border border-[var(--green)]/30 bg-[var(--green)]/10 text-[var(--green)] font-semibold text-[10.5px] font-mono leading-none">
-                        {currentShift.l}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11.5px] text-[var(--text-3)] mt-1 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-                    <span>Programação do dia · {items.filter(x => x.tipo === 'ordem').length} ordens monitoradas</span>
-                  </p>
-                </div>
+            {/* Header visível apenas na impressão / PDF */}
+            <div className="hidden print:flex items-center justify-between pb-2 mb-1 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <b className="font-bold text-base text-[var(--text)]">Painel de Produção · Pesagem</b>
+                {currentShift && (
+                  <span className="px-2 py-0.5 rounded text-xs font-bold border border-slate-300">
+                    {currentShift.l}
+                  </span>
+                )}
               </div>
-
-              {/* Data e Hora em Destaque */}
-              <div className="flex items-start sm:items-end flex-col bg-[var(--surface-2)] sm:bg-transparent p-2 sm:p-0 rounded-[6px] border sm:border-0 border-[var(--border)]">
-                <div className="flex items-center gap-1.5 text-xs text-[var(--text-2)]">
-                  <svg className="w-3.5 h-3.5 text-[var(--text-3)] stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                    <line x1="16" x2="16" y1="2" y2="6" />
-                    <line x1="8" x2="8" y1="2" y2="6" />
-                    <line x1="3" x2="21" y1="10" y2="10" />
-                  </svg>
-                  <span className="font-medium text-[var(--text)]">
-                    {DIAS[now.getDay()]}, {String(now.getDate()).padStart(2, '0')}/{String(now.getMonth() + 1).padStart(2, '0')}/{now.getFullYear()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <svg className="w-3.5 h-3.5 text-[var(--accent)] stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <span className="font-mono text-sm font-bold text-[var(--text)] tracking-wider">
-                    {String(now.getHours()).padStart(2, '0')}:{String(now.getMinutes()).padStart(2, '0')}:{String(now.getSeconds()).padStart(2, '0')}
-                  </span>
-                  <span className="text-[10px] text-[var(--text-3)] font-mono">
-                    (Ao vivo)
-                  </span>
-                </div>
-              </div>
+              <span className="font-mono text-xs text-[var(--text-3)]">
+                {DIAS[now.getDay()]}, {String(now.getDate()).padStart(2, '0')}/{String(now.getMonth() + 1).padStart(2, '0')}/{now.getFullYear()} {String(now.getHours()).padStart(2, '0')}:{String(now.getMinutes()).padStart(2, '0')}
+              </span>
             </div>
 
             {/* 1. Totais do Dia (Daybar) */}

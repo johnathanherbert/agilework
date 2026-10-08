@@ -369,7 +369,6 @@ export function ProductionItemModal({
     const newErrors: { codigo?: boolean; produto?: boolean; real?: boolean } = {};
     if (!codigo.trim()) newErrors.codigo = true;
     if (!produto.trim()) newErrors.produto = true;
-    if (real > prog) newErrors.real = true;
 
     setErrors(newErrors);
     if (newErrors.codigo || newErrors.produto) {
@@ -388,7 +387,7 @@ export function ProductionItemModal({
 
     setIsSubmitting(true);
     try {
-      const cleanReal = Math.min(Math.max(0, real), prog);
+      const cleanReal = Math.max(0, real);
       const cleanProd = produto.trim().toUpperCase();
       const cleanCod = codigo.trim().toUpperCase();
       const cleanFam = familia.trim().toUpperCase() || undefined;
@@ -479,16 +478,27 @@ export function ProductionItemModal({
   // Progress Bar e status da ordem na prévia
   const statusInfo = useMemo(() => {
     const p = Math.max(1, prog);
-    const r = Math.min(Math.max(0, real), p);
+    const r = Math.max(0, real);
     const pct = Math.round((r / p) * 100);
     const isDone = r >= p;
+    const isExcedente = r > p;
     const isProgress = r > 0 && !isDone;
+
+    let label = 'Entra como pendente.';
+    if (isExcedente) {
+      label = `Superou a meta! +${r - p} OP(s) de excedente / oportunidade (${pct}%).`;
+    } else if (isDone) {
+      label = 'Entra como concluída (100% da meta).';
+    } else if (isProgress) {
+      label = 'Entra como em andamento.';
+    }
 
     return {
       pct,
       isDone,
+      isExcedente,
       isProgress,
-      label: isDone ? 'Entra como concluída.' : isProgress ? 'Entra como em andamento.' : 'Entra como pendente.',
+      label,
     };
   }, [prog, real]);
 
@@ -759,7 +769,7 @@ export function ProductionItemModal({
                 <div
                   className={cn(
                     "flex items-center border rounded-[var(--radius)] bg-[var(--bg)] h-[34px] overflow-hidden",
-                    errors.real || real > prog ? "border-[var(--red)]" : "border-[var(--border-strong)]"
+                    errors.real ? "border-[var(--red)]" : real > prog ? "border-[var(--green)]" : "border-[var(--border-strong)]"
                   )}
                 >
                   <button
@@ -804,19 +814,20 @@ export function ProductionItemModal({
                       style={{ width: `${Math.min(statusInfo.pct, 100)}%` }}
                     />
                   </div>
-                  <small className="font-mono text-[11px] text-[var(--text-3)] shrink-0">
+                  <small className={cn(
+                    "font-mono text-[11px] shrink-0",
+                    real > prog ? "text-[var(--green)] font-semibold" : "text-[var(--text-3)]"
+                  )}>
                     {real}/{prog} ({statusInfo.pct}%)
                   </small>
                 </div>
                 <span
                   className={cn(
                     "text-[11.5px] block mt-1",
-                    real > prog ? "text-[var(--red)]" : "text-[var(--text-3)]"
+                    real > prog ? "text-[var(--green)] font-medium" : "text-[var(--text-3)]"
                   )}
                 >
-                  {real > prog
-                    ? `A realizada não pode passar da programada — será salva como ${prog}.`
-                    : statusInfo.label}
+                  {statusInfo.label}
                 </span>
               </div>
             </div>

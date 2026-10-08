@@ -419,10 +419,6 @@ export default function PesagemPage() {
 
       totalValor += vt;
 
-      if ((item.tipo_deposito === 'TR-ZONE' || item.tipo_deposito === '922') && qtd < 0) {
-        trzNegativoLotes++;
-      }
-
       if (dias > diasCritico) {
         criticoLotes++;
         criticoValor += vt;
@@ -450,6 +446,29 @@ export default function PesagemPage() {
       }
     }
 
+    // 922 TR-ZONE negativo é métrica de alerta global em toda a base
+    for (const item of data) {
+      const tipo = (item.tipo_deposito || '').trim().toUpperCase();
+      const pos = (item.posicao_deposito || '').trim().toUpperCase();
+      const dep = (item.deposito || '').trim().toUpperCase();
+      const qtd = Number(item.estoque_disponivel) || 0;
+      const is922OrTrZone =
+        tipo === '922' ||
+        tipo.includes('922') ||
+        tipo === 'TR-ZONE' ||
+        tipo.includes('TR-ZONE') ||
+        tipo.includes('TRZONE') ||
+        pos.includes('TR-ZONE') ||
+        pos.includes('TR_ZONE') ||
+        pos.includes('TRZONE') ||
+        pos.includes('TR ZONE') ||
+        dep === '922' ||
+        dep === 'TR-ZONE';
+      if (is922OrTrZone && qtd < 0) {
+        trzNegativoLotes++;
+      }
+    }
+
     return {
       total: { count: totalLotes, valor: totalValor },
       trzNeg: { count: trzNegativoLotes },
@@ -460,7 +479,7 @@ export default function PesagemPage() {
       cfa: { count: cfaLotes, valor: cfaValor },
       vence30: { count: vence30Lotes, valor: vence30Valor },
     };
-  }, [baseData, valores, configResiduais]);
+  }, [baseData, data, valores, configResiduais]);
 
   // Contagem de Residuais para badge da aba
   const totalResiduaisCount = useMemo(() => {
@@ -475,6 +494,9 @@ export default function PesagemPage() {
   // Filtragem adicional de dados por KPI especial
   const displayData = useMemo(() => {
     if (!selectedSpec) return baseData;
+
+    const isTrz = ['trz', 'tr-zone', 'trzone', 'negativo', '922'].includes(selectedSpec.toLowerCase());
+    const source = isTrz ? data : baseData;
 
     const diasAlerta = configResiduais?.dias_alerta ?? 7;
     const diasCritico = configResiduais?.dias_critico ?? 15;
@@ -491,13 +513,31 @@ export default function PesagemPage() {
       return isNaN(d.getTime()) ? null : d;
     };
 
-    return baseData.filter((item) => {
+    return source.filter((item) => {
       const dias = item.dias_aging || 0;
       const qtd = Number(item.estoque_disponivel) || 0;
+      const spec = selectedSpec.toLowerCase();
+
+      if (['trz', 'tr-zone', 'trzone', 'negativo', '922'].includes(spec)) {
+        const tipo = (item.tipo_deposito || '').trim().toUpperCase();
+        const pos = (item.posicao_deposito || '').trim().toUpperCase();
+        const dep = (item.deposito || '').trim().toUpperCase();
+        const is922OrTrZone =
+          tipo === '922' ||
+          tipo.includes('922') ||
+          tipo === 'TR-ZONE' ||
+          tipo.includes('TR-ZONE') ||
+          tipo.includes('TRZONE') ||
+          pos.includes('TR-ZONE') ||
+          pos.includes('TR_ZONE') ||
+          pos.includes('TRZONE') ||
+          pos.includes('TR ZONE') ||
+          dep === '922' ||
+          dep === 'TR-ZONE';
+        return is922OrTrZone && qtd < 0;
+      }
 
       switch (selectedSpec) {
-        case 'trz':
-          return (item.tipo_deposito === 'TR-ZONE' || item.tipo_deposito === '922') && qtd < 0;
         case 'ok':
           return dias < diasAlerta;
         case 'al':
@@ -518,7 +558,7 @@ export default function PesagemPage() {
           return true;
       }
     });
-  }, [baseData, selectedSpec, configResiduais]);
+  }, [baseData, data, selectedSpec, configResiduais]);
 
   const formatBRLK = (v: number) => {
     const a = Math.abs(v);

@@ -14,8 +14,8 @@ export function AttentionPoints({ insights, onSelectInsight }: AttentionPointsPr
   return (
     <section className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] overflow-hidden shadow-xs">
       <div className="flex justify-between items-center px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
-        <h2 className="text-[13px] font-semibold text-[var(--text)]">Pontos de atenção</h2>
-        <span className="text-xs text-[var(--text-3)] font-mono">
+        <h2 className="text-sm font-bold text-[var(--text)]">Pontos de atenção</h2>
+        <span className="text-[12.5px] text-[var(--text-3)] font-mono">
           {insights.length} {insights.length === 1 ? 'item' : 'itens'} · gerados automaticamente
         </span>
       </div>
@@ -31,19 +31,19 @@ export function AttentionPoints({ insights, onSelectInsight }: AttentionPointsPr
             )}
           >
             <i
-              className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+              className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
               style={{ backgroundColor: insight.color }}
             />
             <div className="min-w-0 pr-2">
-              <b className="font-semibold text-xs text-[var(--text)] block leading-snug">
+              <b className="font-semibold text-[13.5px] text-[var(--text)] block leading-snug">
                 {insight.title}
               </b>
-              <p className="text-xs text-[var(--text-3)] mt-0.5 leading-relaxed">
+              <p className="text-[13px] text-[var(--text-3)] mt-0.5 leading-relaxed">
                 {insight.desc}
               </p>
             </div>
             {insight.tag && (
-              <em className="not-italic text-[11px] font-mono text-[var(--text-3)] whitespace-nowrap mt-0.5">
+              <em className="not-italic text-xs font-mono text-[var(--text-3)] whitespace-nowrap mt-0.5">
                 {insight.tag}
               </em>
             )}

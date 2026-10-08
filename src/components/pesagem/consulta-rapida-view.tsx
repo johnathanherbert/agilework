@@ -6,18 +6,12 @@ import { AgingData, RemessaData } from '@/types/aging';
 import { fetchAgingData, fetchRemessas, fetchMaterialValores, triggerSapAutomation, checkSapAutomationStatus } from '@/lib/dashpesagem-api';
 import { parseBarcode, ParsedBarcode } from '@/lib/barcode-parser';
 import {
+  SapPipelineModal,
   generateDevolverZwm296Vbs,
   DevolverVolumeItem,
-  generateBloquearMigoVbs,
-  generateDesbloquearMigoVbs,
-  generateMoverLt10Vbs,
   BloquearItemParam,
-  MoverItemParam,
-  PREDEFINED_MOVER_ROUTES,
   MacroActionType,
-  MacroActionItem,
-  AVAILABLE_MACROS,
-} from '@/components/pesagem/residuais-view';
+} from '@/components/pesagem/sap-pipeline-modal';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn, copyToClipboard } from '@/lib/utils';
 import {
@@ -211,9 +205,7 @@ export function ConsultaRapidaView({
   // Pipeline SAP
   const [bloquearMigoOpen, setBloquearMigoOpen] = useState(false);
   const [bloquearSelectedItems, setBloquearSelectedItems] = useState<BloquearItemParam[]>([]);
-  const [macroPipeline, setMacroPipeline] = useState<MacroActionItem[]>([{ id: 'step-1', actionType: 'bloquear_migo' }]);
-  const [isBloquearMigoRunning, setIsBloquearMigoRunning] = useState(false);
-  const [runState, setRunState] = useState<Record<string, StepRun>>({});
+  const [pipelinePreset, setPipelinePreset] = useState<MacroActionType[]>(['bloquear_migo']);
 
   // Leitura
   const [scannerActive, setScannerActive] = useState(false);
@@ -783,89 +775,6 @@ export function ConsultaRapidaView({
     }
   };
 
-  /* ============================================================================
-   * Pipeline SAP
-   * ========================================================================== */
-  const makeSteps = (types: MacroActionType[]): MacroActionItem[] =>
-    types.map((actionType, i) => ({
-      id: `${actionType}-${Date.now()}-${i}`,
-      actionType,
-      routeId: actionType === 'mover_lt10' ? 'pes_pesagem' : undefined,
-    }));
-
-  const openPipeline = (item: AgingData | null, steps: MacroActionType[], qty?: number) => {
-    const mat = item?.material || materialCode;
-    const lot = item?.lote || loteCode;
-    if (!mat || !lot) return;
-    setBloquearSelectedItems([
-      {
-        material: mat,
-        lote: lot,
-        quantidade: fmtInput(qty ?? num(item?.estoque_disponivel)),
-        unidade: item?.unidade_medida || unidadeMedida || 'KG',
-        descricao: item?.texto_breve_material || materialDescription,
-      },
-    ]);
-    setMacroPipeline(makeSteps(steps));
-    setRunState({});
-    setBloquearMigoOpen(true);
-  };
-
-  const handleToggleMigoMode = (mode: 'bloquear' | 'desbloquear') => {
-    const target: MacroActionType = mode === 'bloquear' ? 'bloquear_migo' : 'desbloquear_migo';
-    setMacroPipeline((prev) => {
-      const hasMigo = prev.some((m) => m.actionType === 'bloquear_migo' || m.actionType === 'desbloquear_migo');
-      if (!hasMigo) return [{ id: `step-${Date.now()}`, actionType: target }, ...prev];
-      return prev.map((m) =>
-        m.actionType === 'bloquear_migo' || m.actionType === 'desbloquear_migo' ? { ...m, actionType: target } : m
-      );
-    });
-  };
-  const updateItem = (field: keyof BloquearItemParam, value: string) =>
-    setBloquearSelectedItems((prev) => {
-      if (!prev.length) return prev;
-      const c = [...prev];
-      c[0] = { ...c[0], [field]: value };
-      return c;
-    });
-  const addStep = (t: MacroActionType) =>
-    setMacroPipeline((prev) => {
-      const step: MacroActionItem = {
-        id: `${t}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        actionType: t,
-        routeId: t === 'mover_lt10' ? 'pes_pesagem' : undefined,
-      };
-      // "Atualizar DB" fica sempre por último
-      const dbIdx = prev.findIndex((s) => s.actionType === 'atualizar_db');
-      if (t !== 'atualizar_db' && dbIdx === prev.length - 1 && dbIdx >= 0) {
-        const c = [...prev];
-        c.splice(dbIdx, 0, step);
-        return c;
-      }
-      return [...prev, step];
-    });
-  const removeStep = (i: number) => setMacroPipeline((p) => p.filter((_, idx) => idx !== i));
-  const moveStep = (from: number, to: number) =>
-    setMacroPipeline((p) => {
-      if (to < 0 || to >= p.length) return p;
-      const c = [...p];
-      const [m] = c.splice(from, 1);
-      c.splice(to, 0, m);
-      return c;
-    });
-  const setStepRoute = (id: string, routeId: string) =>
-    setMacroPipeline((p) => p.map((s) => (s.id === id ? { ...s, routeId } : s)));
-
-  const PRESETS: { label: string; steps: MacroActionType[] }[] = [
-    { label: 'Mover p/ PESAGEM', steps: ['mover_lt10', 'atualizar_db'] },
-    { label: 'Completo', steps: ['bloquear_migo', 'mover_lt10', 'atualizar_db'] },
-    { label: 'Só bloquear', steps: ['bloquear_migo'] },
-    { label: 'Desbloquear + DB', steps: ['desbloquear_migo', 'atualizar_db'] },
-  ];
-  const pipelineKey = macroPipeline.map((s) => s.actionType + (s.routeId || '')).join(',');
-  const presetKey = (steps: MacroActionType[]) =>
-    steps.map((t) => t + (t === 'mover_lt10' ? 'pes_pesagem' : '')).join(',');
-
   const executeSapJobAndWait = (
     action: string,
     user: string,
@@ -905,88 +814,24 @@ export function ConsultaRapidaView({
       }
     });
 
-  const runStep = async (step: MacroActionItem, user: string, n: number) => {
-    const items = bloquearSelectedItems;
-    switch (step.actionType) {
-      case 'bloquear_migo':
-        return executeSapJobAndWait('bloquear_migo', user, generateBloquearMigoVbs(items), Math.max(60, n * 25));
-      case 'desbloquear_migo':
-        return executeSapJobAndWait('desbloquear_migo', user, generateDesbloquearMigoVbs(items), Math.max(60, n * 25));
-      case 'mover_lt10': {
-        const route =
-          PREDEFINED_MOVER_ROUTES.find((r) => r.id === (step.routeId || 'pes_pesagem')) || PREDEFINED_MOVER_ROUTES[0];
-        const moverItems: MoverItemParam[] = items.map((it) => ({
-          material: it.material,
-          lote: it.lote,
-          quantidade: it.quantidade,
-          unidade: it.unidade,
-          depositoOrigem: it.depositoOrigem || 'PES',
-          descricao: it.descricao,
-        }));
-        return executeSapJobAndWait(
-          'mover_lt10',
-          user,
-          generateMoverLt10Vbs(moverItems, { tipo: route.tipo, posicao: route.posicao }),
-          Math.max(60, n * 25)
-        );
-      }
-      case 'mover_ajuste':
-        return executeSapJobAndWait('movermigo', user, undefined, 60);
-      case 'atualizar_db':
-        return executeSapJobAndWait('atualizar_db', user, undefined, 180);
-      case 'devolver':
-        return executeSapJobAndWait(
-          'devolver',
-          user,
-          generateDevolverZwm296Vbs(
-            items[0]?.material || '',
-            items[0]?.lote || '',
-            items.map((it, idx) => ({ quantidade: it.quantidade, volume: String(idx + 1) }))
-          ),
-          90
-        );
-      default:
-        return { success: true };
-    }
-  };
-
-  const handleExecutePipeline = async () => {
-    if (!macroPipeline.length) {
-      toast.error('Adicione ao menos uma ação ao pipeline.');
-      return;
-    }
-    const it = bloquearSelectedItems[0];
-    if (!it || !it.material.trim() || !it.lote.trim() || parseQtd(it.quantidade) <= 0) {
-      toast.error('Informe material, lote e uma quantidade válida.');
-      return;
-    }
-    setIsBloquearMigoRunning(true);
-    setRunState({});
-    const user = currentUserEmail || 'Mobile / Consulta';
-    const steps = [...macroPipeline];
-
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      setRunState((p) => ({ ...p, [step.id]: { s: 'run' } }));
-      const res = await runStep(step, user, bloquearSelectedItems.length);
-      if (!res.success) {
-        setRunState((p) => {
-          const nx: Record<string, StepRun> = { ...p, [step.id]: { s: 'fail', msg: res.message } };
-          steps.slice(i + 1).forEach((s) => (nx[s.id] = { s: 'skip', msg: 'Não executada' }));
-          return nx;
-        });
-        setIsBloquearMigoRunning(false);
-        playScanFeedback(false);
-        toast.error(`Etapa ${i + 1} falhou: ${res.message || 'erro no SAP'}`, { duration: 8000 });
-        return;
-      }
-      setRunState((p) => ({ ...p, [step.id]: { s: 'ok', msg: res.message } }));
-    }
-
-    setIsBloquearMigoRunning(false);
-    toast.success('Pipeline concluído no SAP');
-    loadStockData(true);
-    setTimeout(() => setBloquearMigoOpen(false), 900);
+  /* ============================================================================
+   * Pipeline SAP
+   * ========================================================================== */
+  const openPipeline = (item: AgingData | null, steps: MacroActionType[], qty?: number) => {
+    const mat = item?.material || materialCode;
+    const lot = item?.lote || loteCode;
+    if (!mat || !lot) return;
+    setBloquearSelectedItems([
+      {
+        material: mat,
+        lote: lot,
+        quantidade: fmtInput(qty ?? num(item?.estoque_disponivel)),
+        unidade: item?.unidade_medida || unidadeMedida || 'KG',
+        descricao: item?.texto_breve_material || materialDescription,
+      },
+    ]);
+    setPipelinePreset(steps.length ? steps : ['bloquear_migo']);
+    setBloquearMigoOpen(true);
   };
 
   /* ============================================================================
@@ -1563,7 +1408,6 @@ export function ConsultaRapidaView({
                   <button
                     type="button"
                     onClick={() => openPipeline(activeLoteItem, ['mover_lt10', 'atualizar_db'])}
-                    disabled={isBloquearMigoRunning}
                     className={cn(actBtn, 'bg-[var(--text)] text-[var(--bg)] border-[var(--text)]')}
                   >
                     <ArrowRightLeft className="h-4 w-4" />
@@ -1594,17 +1438,15 @@ export function ConsultaRapidaView({
                   <button
                     type="button"
                     onClick={() => openPipeline(activeLoteItem, ['bloquear_migo'], saldoLote)}
-                    disabled={isBloquearMigoRunning}
                     className={cn(actBtn, 'bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]')}
                   >
-                    {isBloquearMigoRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                    <Lock className="h-4 w-4" />
                     Bloquear
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => openPipeline(activeLoteItem, primaryIsMove ? ['bloquear_migo'] : [], saldoLote)}
-                  disabled={isBloquearMigoRunning}
                   className={cn(actBtn, 'w-11 lg:w-auto bg-[var(--surface)] border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]')}
                   title="Mais ações no SAP (pipeline)"
                 >
@@ -1812,223 +1654,16 @@ export function ConsultaRapidaView({
       </Dialog>
 
       {/* ================= PIPELINE SAP ================= */}
-      <Dialog open={bloquearMigoOpen} onOpenChange={(o) => !isBloquearMigoRunning && setBloquearMigoOpen(o)}>
-        <DialogContent className="sm:max-w-xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] p-0 gap-0 rounded-[8px] max-h-[92vh] flex flex-col">
-          <DialogHeader className="px-5 pt-4 pb-3 border-b border-[var(--border)] text-left">
-            <DialogTitle className="text-[15px] font-semibold">Execução no SAP</DialogTitle>
-            <DialogDescription className="text-xs text-[var(--text-3)]">
-              Ações executadas em sequência no SAP GUI via Planilha Sync
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto px-5">
-            {/* Item */}
-            <div className="py-3 border-b border-[var(--border)]">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-mono text-[15px] font-semibold">{bloquearSelectedItems[0]?.lote || '—'}</span>
-                <span className="font-mono text-xs text-[var(--accent)]">{bloquearSelectedItems[0]?.material}</span>
-              </div>
-              <p className="text-xs text-[var(--text-3)] truncate">{bloquearSelectedItems[0]?.descricao}</p>
-              <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-2 mt-2.5">
-                <label className="text-[11px] text-[var(--text-3)]">
-                  Quantidade
-                  <input
-                    value={bloquearSelectedItems[0]?.quantidade ?? ''}
-                    onChange={(e) => updateItem('quantidade', e.target.value)}
-                    disabled={isBloquearMigoRunning}
-                    inputMode="decimal"
-                    placeholder="0,000"
-                    className="mt-1 w-full h-10 px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] outline-none focus:border-[var(--accent)] font-mono text-sm text-right text-[var(--text)]"
-                  />
-                </label>
-                <label className="text-[11px] text-[var(--text-3)]">
-                  UMB
-                  <input
-                    value={bloquearSelectedItems[0]?.unidade ?? ''}
-                    onChange={(e) => updateItem('unidade', e.target.value.toUpperCase())}
-                    disabled={isBloquearMigoRunning}
-                    className="mt-1 w-full h-10 px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] outline-none focus:border-[var(--accent)] font-mono text-sm uppercase text-center text-[var(--text)]"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Modo MIGO + presets */}
-            <div className="py-3 border-b border-[var(--border)] space-y-2.5">
-              <div className="grid grid-cols-2 border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden">
-                {(['bloquear', 'desbloquear'] as const).map((m) => {
-                  const on =
-                    m === 'desbloquear'
-                      ? macroPipeline.some((s) => s.actionType === 'desbloquear_migo')
-                      : macroPipeline.some((s) => s.actionType === 'bloquear_migo');
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      disabled={isBloquearMigoRunning}
-                      onClick={() => handleToggleMigoMode(m)}
-                      className={cn(
-                        'h-10 text-[13px] font-medium inline-flex items-center justify-center gap-1.5',
-                        m === 'desbloquear' && 'border-l border-[var(--border-strong)]',
-                        on ? 'bg-[var(--hover)] text-[var(--text)]' : 'text-[var(--text-3)]'
-                      )}
-                    >
-                      {m === 'bloquear' ? 'Bloquear' : 'Desbloquear'}
-                      <span className="font-mono text-[11px] text-[var(--text-3)]">{m === 'bloquear' ? 'Y84' : 'Y83'}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    disabled={isBloquearMigoRunning}
-                    onClick={() => {
-                      setMacroPipeline(makeSteps(p.steps));
-                      setRunState({});
-                    }}
-                    className={cn(
-                      'h-8 px-3 rounded-full border text-xs whitespace-nowrap',
-                      presetKey(p.steps) === pipelineKey
-                        ? 'border-[var(--text-3)] bg-[var(--hover)] text-[var(--text)]'
-                        : 'border-[var(--border-strong)] text-[var(--text-2)]'
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Etapas */}
-            <div className="py-2">
-              {macroPipeline.length === 0 && (
-                <p className="py-4 text-center text-xs text-[var(--text-3)]">Pipeline vazio. Escolha um atalho ou adicione ações abaixo.</p>
-              )}
-              {macroPipeline.map((step, idx) => {
-                const def = AVAILABLE_MACROS.find((m) => m.type === step.actionType);
-                if (!def) return null;
-                const st = runState[step.id];
-                return (
-                  <div key={step.id} className="py-2 border-b border-[var(--border)] last:border-0">
-                    <div className="grid grid-cols-[26px_minmax(0,1fr)_auto] gap-2.5 items-center">
-                      <span
-                        className={cn(
-                          'h-6 w-6 rounded-full border inline-flex items-center justify-center font-mono text-[11px]',
-                          !st && 'border-[var(--border-strong)] text-[var(--text-2)]',
-                          st?.s === 'run' && 'border-[var(--accent)] text-[var(--accent)]',
-                          st?.s === 'ok' && 'border-[var(--green)] bg-[var(--green)] text-[var(--bg)]',
-                          st?.s === 'fail' && 'border-[var(--red)] bg-[var(--red)] text-white',
-                          st?.s === 'skip' && 'border-dashed border-[var(--border-strong)] text-[var(--text-3)]'
-                        )}
-                      >
-                        {st?.s === 'run' ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : st?.s === 'ok' ? (
-                          <Check className="h-3 w-3" />
-                        ) : st?.s === 'fail' ? (
-                          '!'
-                        ) : (
-                          idx + 1
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[13px] font-medium truncate">{def.label}</span>
-                        <span className={cn('block text-[11.5px] truncate', st?.s === 'fail' ? 'text-[var(--red)]' : 'text-[var(--text-3)]')}>
-                          {st?.msg || def.description}
-                        </span>
-                      </span>
-                      {!isBloquearMigoRunning && (
-                        <span className="flex items-center">
-                          <button type="button" disabled={idx === 0} onClick={() => moveStep(idx, idx - 1)} className="h-8 w-8 inline-flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25" title="Subir">
-                            <ChevronUp className="h-4 w-4" />
-                          </button>
-                          <button type="button" disabled={idx === macroPipeline.length - 1} onClick={() => moveStep(idx, idx + 1)} className="h-8 w-8 inline-flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25" title="Descer">
-                            <ChevronDown className="h-4 w-4" />
-                          </button>
-                          <button type="button" onClick={() => removeStep(idx)} className="h-8 w-8 inline-flex items-center justify-center text-[var(--text-3)] hover:text-[var(--red)]" title="Remover">
-                            <X className="h-4 w-4" />
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                    {step.actionType === 'mover_lt10' && (
-                      <div className="mt-2 ml-[36px] flex gap-1.5 overflow-x-auto no-scrollbar">
-                        {PREDEFINED_MOVER_ROUTES.map((route) => {
-                          const on = (step.routeId || 'pes_pesagem') === route.id;
-                          return (
-                            <button
-                              key={route.id}
-                              type="button"
-                              disabled={isBloquearMigoRunning}
-                              onClick={() => setStepRoute(step.id, route.id)}
-                              className={cn(
-                                'h-7 px-2.5 rounded border font-mono text-[11px] whitespace-nowrap',
-                                on ? 'border-[var(--accent)] text-[var(--text)] bg-[var(--accent-weak)]' : 'border-[var(--border-strong)] text-[var(--text-3)]'
-                              )}
-                            >
-                              {route.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {!isBloquearMigoRunning && (
-              <div className="pb-3">
-                <p className="text-[11px] text-[var(--text-3)] mb-1.5">Adicionar ação</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {AVAILABLE_MACROS.map((m) => (
-                    <button
-                      key={m.type}
-                      type="button"
-                      onClick={() => addStep(m.type)}
-                      className="h-8 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] text-xs text-[var(--text-2)] hover:text-[var(--text)] inline-flex items-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" /> {m.shortLabel}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <p className="pb-3 text-[11.5px] text-[var(--text-3)] flex items-center gap-2">
-              <Dot color="var(--amber)" /> SAP GUI aberto e Planilha Sync conectado nesta estação.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-[var(--border)]">
-            <span className="text-xs text-[var(--text-3)] font-mono">
-              {macroPipeline.length} etapa{macroPipeline.length === 1 ? '' : 's'}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={isBloquearMigoRunning}
-                onClick={() => setBloquearMigoOpen(false)}
-                className="h-10 px-4 rounded-[var(--radius)] border border-[var(--border-strong)] text-sm text-[var(--text-2)] hover:text-[var(--text)] disabled:opacity-40"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleExecutePipeline}
-                disabled={isBloquearMigoRunning || macroPipeline.length === 0}
-                className="h-10 px-4 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-40"
-              >
-                {isBloquearMigoRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {isBloquearMigoRunning ? 'Executando…' : 'Executar no SAP'}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SapPipelineModal
+        open={bloquearMigoOpen}
+        onOpenChange={setBloquearMigoOpen}
+        items={bloquearSelectedItems}
+        initialPreset={pipelinePreset}
+        currentUserEmail={currentUserEmail}
+        onSuccess={() => {
+          loadStockData(true);
+        }}
+      />
     </div>
   );
 }

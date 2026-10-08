@@ -43,6 +43,7 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
     const dProg = direta.reduce((a, c) => a + c.prog, 0);
 
     const openBalance = ordens.filter((x) => x.real < x.prog).reduce((a, c) => a + (c.prog - c.real), 0);
+    const excedenteTotal = items.filter((x) => x.real > x.prog).reduce((a, c) => a + (c.real - c.prog), 0);
     const naoConcluidas = ordens
       .filter((x) => getItemStatus(x, now).k === 'nao')
       .reduce((a, c) => a + (c.prog - c.real), 0);
@@ -79,6 +80,7 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
       dReal,
       dProg,
       openBalance,
+      excedenteTotal,
       naoConcluidas,
       lpCount,
       shiftSplits,
@@ -90,19 +92,19 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
       {/* Bloco 1: Ordens do Dia */}
       <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-[var(--border)] min-w-0 flex flex-col justify-between">
         <div>
-          <div className="flex justify-between items-center text-xs text-[var(--text-3)] mb-1.5">
-            <span className="font-medium">Ordens entregues no dia</span>
-            <span className="font-mono">{totals.lots} {totals.lots === 1 ? 'lote' : 'lotes'}</span>
+          <div className="flex justify-between items-center text-[13px] text-[var(--text-3)] mb-1.5">
+            <span className="font-semibold text-[var(--text-2)]">Ordens entregues no dia</span>
+            <span className="font-mono text-xs text-[var(--text-3)]">{totals.lots} {totals.lots === 1 ? 'lote' : 'lotes'}</span>
           </div>
 
           <div className="flex items-baseline gap-1.5 mb-2.5">
-            <strong className="text-3xl lg:text-[34px] font-semibold tracking-tight leading-none text-[var(--text)] font-mono">
+            <strong className="text-3xl lg:text-[36px] font-bold tracking-tight leading-none text-[var(--text)] font-mono">
               {totals.ordensReal}
             </strong>
-            <span className="text-lg text-[var(--text-3)] font-medium font-mono">
+            <span className="text-xl text-[var(--text-3)] font-semibold font-mono">
               /{totals.ordensProg}
             </span>
-            <em className="not-italic ml-auto font-mono text-sm lg:text-[15px] font-medium text-[var(--text-2)]">
+            <em className="not-italic ml-auto font-mono text-base lg:text-[17px] font-bold text-[var(--text-2)]">
               {totals.ordensPct}%
             </em>
           </div>
@@ -120,12 +122,18 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
           </div>
         </div>
 
-        <div className="flex gap-3.5 mt-3 pt-2 text-xs text-[var(--text-3)] flex-wrap border-t border-[var(--border)]/60">
+        <div className="flex gap-3.5 mt-3 pt-2 text-[13px] text-[var(--text-3)] flex-wrap border-t border-[var(--border)]/60">
           {totals.shiftSplits.map(({ shift, ordensProg, ordensReal }) => (
             <span key={shift.n} className="flex items-center gap-1">
-              <span>{shift.short}</span>
-              <b className="font-mono font-medium text-[var(--text-2)]">
-                {ordensProg > 0 ? `${ordensReal}/${ordensProg}` : '—'}
+              <span className="font-medium text-xs text-[var(--text-3)]">{shift.short}:</span>
+              <b className="font-mono text-[14px] font-bold text-[var(--text)]">
+                {ordensProg > 0 ? (
+                  <>
+                    {ordensReal}<span className="text-xs font-medium text-[var(--text-3)]">/{ordensProg}</span>
+                  </>
+                ) : (
+                  '—'
+                )}
               </b>
             </span>
           ))}
@@ -135,19 +143,19 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
       {/* Bloco 2: PD/PA do Dia */}
       <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-[var(--border)] min-w-0 flex flex-col justify-between">
         <div>
-          <div className="flex justify-between items-center text-xs text-[var(--text-3)] mb-1.5">
-            <span className="font-medium">PD/PA entregues no dia</span>
-            <span className="font-mono">{totals.pdpaCount} {totals.pdpaCount === 1 ? 'item' : 'itens'}</span>
+          <div className="flex justify-between items-center text-[13px] text-[var(--text-3)] mb-1.5">
+            <span className="font-semibold text-[var(--text-2)]">PD/PA entregues no dia</span>
+            <span className="font-mono text-xs text-[var(--text-3)]">{totals.pdpaCount} {totals.pdpaCount === 1 ? 'item' : 'itens'}</span>
           </div>
 
           <div className="flex items-baseline gap-1.5 mb-2.5">
-            <strong className="text-3xl lg:text-[34px] font-semibold tracking-tight leading-none text-[var(--text)] font-mono">
+            <strong className="text-3xl lg:text-[36px] font-bold tracking-tight leading-none text-[var(--text)] font-mono">
               {totals.pdpaReal}
             </strong>
-            <span className="text-lg text-[var(--text-3)] font-medium font-mono">
+            <span className="text-xl text-[var(--text-3)] font-semibold font-mono">
               /{totals.pdpaProg}
             </span>
-            <em className="not-italic ml-auto font-mono text-sm lg:text-[15px] font-medium text-[var(--text-2)]">
+            <em className="not-italic ml-auto font-mono text-base lg:text-[17px] font-bold text-[var(--text-2)]">
               {totals.pdpaPct}%
             </em>
           </div>
@@ -165,12 +173,18 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
           </div>
         </div>
 
-        <div className="flex gap-3.5 mt-3 pt-2 text-xs text-[var(--text-3)] flex-wrap border-t border-[var(--border)]/60">
+        <div className="flex gap-3.5 mt-3 pt-2 text-[13px] text-[var(--text-3)] flex-wrap border-t border-[var(--border)]/60">
           {totals.shiftSplits.map(({ shift, pdpaProg, pdpaReal }) => (
             <span key={shift.n} className="flex items-center gap-1">
-              <span>{shift.short}</span>
-              <b className="font-mono font-medium text-[var(--text-2)]">
-                {pdpaProg > 0 ? `${pdpaReal}/${pdpaProg}` : '—'}
+              <span className="font-medium text-xs text-[var(--text-3)]">{shift.short}:</span>
+              <b className="font-mono text-[14px] font-bold text-[var(--text)]">
+                {pdpaProg > 0 ? (
+                  <>
+                    {pdpaReal}<span className="text-xs font-medium text-[var(--text-3)]">/{pdpaProg}</span>
+                  </>
+                ) : (
+                  '—'
+                )}
               </b>
             </span>
           ))}
@@ -179,32 +193,43 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
 
       {/* Bloco 3: Detalhamento Operacional */}
       <div className="p-4 md:p-5 min-w-0 flex flex-col justify-center">
-        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1.5 text-xs">
-          <dt className="text-[var(--text-3)]">Úmida</dt>
-          <dd className="font-mono text-right text-[var(--text-2)]">
-            {totals.uReal}/{totals.uProg} <span className="text-[var(--text-3)]">·</span> {totals.uPct}%
+        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-[13px]">
+          <dt className="text-[var(--text-3)] font-medium">Úmida</dt>
+          <dd className="font-mono text-right font-bold text-[var(--text)]">
+            <span className="text-[14px]">{totals.uReal}</span><span className="text-xs font-medium text-[var(--text-3)]">/{totals.uProg}</span> <span className="text-[var(--text-3)] font-normal">·</span> <span className="text-[13px] text-[var(--text-2)]">{totals.uPct}%</span>
           </dd>
 
-          <dt className="text-[var(--text-3)]">Seca</dt>
-          <dd className="font-mono text-right text-[var(--text-2)]">
-            {totals.sReal}/{totals.sProg} <span className="text-[var(--text-3)]">·</span> {totals.sPct}%
+          <dt className="text-[var(--text-3)] font-medium">Seca</dt>
+          <dd className="font-mono text-right font-bold text-[var(--text)]">
+            <span className="text-[14px]">{totals.sReal}</span><span className="text-xs font-medium text-[var(--text-3)]">/{totals.sProg}</span> <span className="text-[var(--text-3)] font-normal">·</span> <span className="text-[13px] text-[var(--text-2)]">{totals.sPct}%</span>
           </dd>
 
-          <dt className="text-[var(--text-3)]">PD/PA automática · direta</dt>
-          <dd className="font-mono text-right text-[var(--text-2)]">
-            {totals.aReal}/{totals.aProg} <span className="text-[var(--text-3)]">·</span> {totals.dReal}/{totals.dProg}
+          <dt className="text-[var(--text-3)] font-medium">PD/PA automática · direta</dt>
+          <dd className="font-mono text-right font-bold text-[var(--text)]">
+            <span className="text-[14px]">{totals.aReal}</span><span className="text-xs font-medium text-[var(--text-3)]">/{totals.aProg}</span> <span className="text-[var(--text-3)] font-normal">·</span> <span className="text-[14px]">{totals.dReal}</span><span className="text-xs font-medium text-[var(--text-3)]">/{totals.dProg}</span>
           </dd>
 
-          <dt className="text-[var(--text-3)]">Saldo a produzir</dt>
-          <dd className="font-mono text-right text-[var(--text-2)]">{totals.openBalance}</dd>
+          <dt className="text-[var(--text-3)] font-medium">Saldo a produzir</dt>
+          <dd className="font-mono text-right text-[14px] font-bold text-[var(--text)]">{totals.openBalance}</dd>
 
-          <dt className="text-[var(--text-3)]">Não concluídas (turnos encerrados)</dt>
-          <dd className={cn("font-mono text-right font-medium", totals.naoConcluidas > 0 ? "text-[var(--red)]" : "text-[var(--text-2)]")}>
+          {totals.excedenteTotal > 0 && (
+            <>
+              <dt className="text-[var(--green)] font-medium flex items-center gap-1">
+                Excedente (oportunidade)
+              </dt>
+              <dd className="font-mono text-right text-[14px] font-bold text-[var(--green)]">
+                +{totals.excedenteTotal} OP{totals.excedenteTotal > 1 ? 's' : ''}
+              </dd>
+            </>
+          )}
+
+          <dt className="text-[var(--text-3)] font-medium">Não concluídas (turnos encerrados)</dt>
+          <dd className={cn("font-mono text-right text-[14px] font-bold", totals.naoConcluidas > 0 ? "text-[var(--red)]" : "text-[var(--text)]")}>
             {totals.naoConcluidas}
           </dd>
 
-          <dt className="text-[var(--text-3)]">Lotes piloto</dt>
-          <dd className="font-mono text-right text-[var(--text-2)]">{totals.lpCount}</dd>
+          <dt className="text-[var(--text-3)] font-medium">Lotes piloto</dt>
+          <dd className="font-mono text-right text-[14px] font-bold text-[var(--text)]">{totals.lpCount}</dd>
         </dl>
       </div>
     </section>

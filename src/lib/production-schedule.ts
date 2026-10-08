@@ -102,6 +102,10 @@ export function getCurrentActiveShift(now: Date = new Date()): typeof SHIFT_SCHE
 export function getItemStatus(item: ProductionItem, now: Date = new Date()): ItemStatusInfo {
   const ph = getShiftPhase(item.turno, now);
 
+  if (item.prog > 0 && item.real > item.prog) {
+    const excedente = item.real - item.prog;
+    return { k: 'ok', l: `Concluída (+${excedente} excedente)` };
+  }
   if (item.prog > 0 && item.real >= item.prog) {
     return { k: 'ok', l: 'Concluída' };
   }

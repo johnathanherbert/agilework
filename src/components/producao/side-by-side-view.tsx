@@ -141,20 +141,20 @@ export function SideBySideView({
             {/* Cabeçalho da Coluna */}
             <div className="p-3 border-b border-[var(--border)] bg-[var(--surface-2)]">
               <div className="flex items-center gap-2">
-                <h2 className="text-[15px] font-semibold text-[var(--text)]">{shift.l}</h2>
-                <span className="font-mono text-xs text-[var(--text-3)]">
+                <h2 className="text-base font-bold text-[var(--text)]">{shift.l}</h2>
+                <span className="font-mono text-[13px] text-[var(--text-3)] font-medium">
                   {String(shift.ini[1] < 0 ? 24 + shift.ini[1] : shift.ini[1]).padStart(2, '0')}:{String(shift.ini[2]).padStart(2, '0')}–{String(shift.fim[1]).padStart(2, '0')}:{String(shift.fim[2]).padStart(2, '0')}
                 </span>
                 <span className="flex-1" />
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs whitespace-nowrap",
+                    "inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap",
                     phase.k === 'now' ? "text-[var(--text)] font-semibold" : "text-[var(--text-3)]"
                   )}
                 >
                   <i
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full inline-block",
+                      "w-2 h-2 rounded-full inline-block",
                       phase.k === 'now' && "bg-[var(--accent)] animate-pulse",
                       phase.k === 'done' && "bg-[var(--text-3)]",
                       phase.k === 'next' && "border border-[var(--text-3)] bg-transparent"
@@ -168,21 +168,21 @@ export function SideBySideView({
                   className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
                   title="Adicionar ordem neste turno"
                 >
-                  <Plus size={14} />
+                  <Plus size={15} />
                 </button>
               </div>
 
               {/* KPIs com barras */}
               <div className="grid grid-cols-2 gap-3 mt-2.5">
                 <div>
-                  <div className="flex justify-between text-[11.5px] text-[var(--text-3)] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--text-3)] mb-1 font-medium">
                     <span>Ordens</span>
-                    <span className="font-mono">{stats.prog > 0 ? `${stats.pct}%` : ''}</span>
+                    <span className="font-mono font-bold text-[var(--text)]">{stats.prog > 0 ? `${stats.pct}%` : ''}</span>
                   </div>
-                  <b className="font-mono text-base font-semibold text-[var(--text)] leading-none block">
-                    {stats.real}<small className="text-xs text-[var(--text-3)] font-normal">/{stats.prog}</small>
+                  <b className="font-mono text-xl font-bold text-[var(--text)] leading-none block">
+                    {stats.real}<small className="text-[13.5px] text-[var(--text-3)] font-semibold">/{stats.prog}</small>
                   </b>
-                  <div className="h-1.5 w-full bg-[var(--track)] rounded-full overflow-hidden relative mt-1.5">
+                  <div className="h-2 w-full bg-[var(--track)] rounded-full overflow-hidden relative mt-1.5">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-300",
@@ -201,14 +201,14 @@ export function SideBySideView({
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11.5px] text-[var(--text-3)] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--text-3)] mb-1 font-medium">
                     <span>PD/PA</span>
-                    <span className="font-mono">{stats.pdpaTotal[1] > 0 ? `${stats.pdpaPct}%` : ''}</span>
+                    <span className="font-mono font-bold text-[var(--text)]">{stats.pdpaTotal[1] > 0 ? `${stats.pdpaPct}%` : ''}</span>
                   </div>
-                  <b className="font-mono text-base font-semibold text-[var(--text)] leading-none block">
-                    {stats.pdpaTotal[0]}<small className="text-xs text-[var(--text-3)] font-normal">/{stats.pdpaTotal[1]}</small>
+                  <b className="font-mono text-xl font-bold text-[var(--text)] leading-none block">
+                    {stats.pdpaTotal[0]}<small className="text-[13.5px] text-[var(--text-3)] font-semibold">/{stats.pdpaTotal[1]}</small>
                   </b>
-                  <div className="h-1.5 w-full bg-[var(--track)] rounded-full overflow-hidden relative mt-1.5">
+                  <div className="h-2 w-full bg-[var(--track)] rounded-full overflow-hidden relative mt-1.5">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-300",
@@ -223,7 +223,7 @@ export function SideBySideView({
               {paceText && (
                 <div
                   className={cn(
-                    "mt-2.5 text-xs",
+                    "mt-2.5 text-[12.5px]",
                     isBadPace ? "text-[var(--red)] font-medium" : "text-[var(--text-2)]"
                   )}
                 >
@@ -244,7 +244,7 @@ export function SideBySideView({
                   <col style={{ width: '22px' }} />
                   <col style={{ width: '86px' }} />
                   <col />
-                  <col style={{ width: '56px' }} />
+                  <col style={{ width: '64px' }} />
                 </colgroup>
                 <tbody>
                   {/* Seção ÚMIDA */}
@@ -252,24 +252,24 @@ export function SideBySideView({
                     <React.Fragment>
                       <tr
                         className={cn(
-                          "bg-[var(--surface-2)] text-[11.5px] font-semibold text-[var(--text)] border-b border-[var(--border)]",
+                          "bg-[var(--surface-2)] text-[13px] font-bold text-[var(--text)] border-b border-[var(--border)]",
                           dragOverKey === `${shift.n}-UMIDA` && "bg-[var(--accent-weak)]"
                         )}
                         onDragOver={(e) => handleDragOver(e, `${shift.n}-UMIDA`)}
                         onDrop={(e) => handleDrop(e, shift.n, 'UMIDA')}
                       >
-                        <td colSpan={4} className="py-1.5 px-3">
+                        <td colSpan={4} className="py-2 px-3">
                           <div className="flex items-center justify-between">
                             <span>
                               ÚMIDA
-                              <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                              <span className="font-mono font-bold text-[var(--text-3)] ml-2">
                                 {umidaOrders.reduce((a, c) => a + c.real, 0)}/{umidaOrders.reduce((a, c) => a + c.prog, 0)}
                               </span>
                             </span>
                             <button
                               type="button"
                               onClick={() => onAddClick(shift.n, 'UMIDA')}
-                              className="text-[11px] font-normal text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
+                              className="text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
                             >
                               + add
                             </button>
@@ -289,10 +289,10 @@ export function SideBySideView({
                             onClick={() => onItemClick(x)}
                             className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group leading-snug"
                           >
-                            <td className="py-2 pl-3 pr-0 align-top">
+                            <td className="py-2.5 pl-3 pr-0 align-top">
                               <i
                                 className={cn(
-                                  "w-2 h-2 rounded-full block mt-1",
+                                  "w-2.5 h-2.5 rounded-full block mt-1",
                                   st.k === 'ok' && "bg-[var(--green)]",
                                   st.k === 'and' && "bg-[var(--amber)]",
                                   st.k === 'nao' && "bg-[var(--red)]",
@@ -301,29 +301,29 @@ export function SideBySideView({
                                 )}
                               />
                             </td>
-                            <td className="py-2 px-2 align-top">
-                              <div className={cn("font-mono text-xs truncate", x.familia ? "text-[var(--text-2)]" : "text-[var(--amber)]")}>
+                            <td className="py-2.5 px-2 align-top">
+                              <div className={cn("font-mono text-[12.5px] font-semibold truncate", x.familia ? "text-[var(--text-2)]" : "text-[var(--amber)]")}>
                                 {x.familia || 'Sem máq.'}
                               </div>
                             </td>
-                            <td className="py-2 px-2 align-top min-w-0">
-                              <div className="text-xs font-medium text-[var(--text)] leading-tight">
+                            <td className="py-2.5 px-2 align-top min-w-0">
+                              <div className="text-[13.5px] font-semibold text-[var(--text)] leading-snug">
                                 {x.lp && (
-                                  <span className="inline-block text-[10px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1 mr-1.5 leading-tight">
+                                  <span className="inline-block text-[11px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1.5 mr-1.5 leading-tight">
                                     LP
                                   </span>
                                 )}
-                                {x.locked && <Lock size={11} className="inline mr-1 text-[var(--amber)]" />}
-                                {x.splitParentId && <GitBranch size={11} className="inline mr-1 text-[var(--accent)]" />}
+                                {x.locked && <Lock size={12} className="inline mr-1 text-[var(--amber)]" />}
+                                {x.splitParentId && <GitBranch size={12} className="inline mr-1 text-[var(--accent)]" />}
                                 {x.produto}
                               </div>
                               {note && (
-                                <span className={cn("text-[11px] block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
+                                <span className={cn("text-xs font-medium block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
                                   {note.text}
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 pr-3 pl-1 align-top text-right whitespace-nowrap">
+                            <td className="py-2.5 pr-3 pl-1 align-top text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   type="button"
@@ -332,19 +332,22 @@ export function SideBySideView({
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                   title="Diminuir 1"
                                 >
-                                  <Minus size={10} />
+                                  <Minus size={11} />
                                 </button>
-                                <span className={cn("font-mono text-xs font-medium", st.k === 'nao' ? "text-[var(--red)]" : "text-[var(--text)]")}>
-                                  {x.real}<small className="text-[var(--text-3)] font-normal">/{x.prog}</small>
+                                <span className={cn(
+                                  "font-mono text-[14.5px] font-bold tracking-tight",
+                                  x.real > x.prog ? "text-[var(--green)]" : st.k === 'nao' ? "text-[var(--red)]" : "text-[var(--text)]"
+                                )}>
+                                  {x.real}<small className="text-[12px] text-[var(--text-3)] font-semibold">/{x.prog}</small>
                                 </span>
                                 <button
                                   type="button"
                                   onClick={(e) => onUpdateQty(x, 1, e)}
-                                  disabled={x.locked || x.real >= x.prog}
+                                  disabled={x.locked}
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                  title="Aumentar 1"
+                                  title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                 >
-                                  <Plus size={10} />
+                                  <Plus size={11} />
                                 </button>
                               </div>
                             </td>
@@ -359,24 +362,24 @@ export function SideBySideView({
                     <React.Fragment>
                       <tr
                         className={cn(
-                          "bg-[var(--surface-2)] text-[11.5px] font-semibold text-[var(--text)] border-b border-[var(--border)]",
+                          "bg-[var(--surface-2)] text-[13px] font-bold text-[var(--text)] border-b border-[var(--border)]",
                           dragOverKey === `${shift.n}-SECA` && "bg-[var(--accent-weak)]"
                         )}
                         onDragOver={(e) => handleDragOver(e, `${shift.n}-SECA`)}
                         onDrop={(e) => handleDrop(e, shift.n, 'SECA')}
                       >
-                        <td colSpan={4} className="py-1.5 px-3">
+                        <td colSpan={4} className="py-2 px-3">
                           <div className="flex items-center justify-between">
                             <span>
                               SECA
-                              <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                              <span className="font-mono font-bold text-[var(--text-3)] ml-2">
                                 {secaOrders.reduce((a, c) => a + c.real, 0)}/{secaOrders.reduce((a, c) => a + c.prog, 0)}
                               </span>
                             </span>
                             <button
                               type="button"
                               onClick={() => onAddClick(shift.n, 'SECA')}
-                              className="text-[11px] font-normal text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
+                              className="text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer"
                             >
                               + add
                             </button>
@@ -396,10 +399,10 @@ export function SideBySideView({
                             onClick={() => onItemClick(x)}
                             className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group leading-snug"
                           >
-                            <td className="py-2 pl-3 pr-0 align-top">
+                            <td className="py-2.5 pl-3 pr-0 align-top">
                               <i
                                 className={cn(
-                                  "w-2 h-2 rounded-full block mt-1",
+                                  "w-2.5 h-2.5 rounded-full block mt-1",
                                   st.k === 'ok' && "bg-[var(--green)]",
                                   st.k === 'and' && "bg-[var(--amber)]",
                                   st.k === 'nao' && "bg-[var(--red)]",
@@ -408,29 +411,29 @@ export function SideBySideView({
                                 )}
                               />
                             </td>
-                            <td className="py-2 px-2 align-top">
-                              <div className={cn("font-mono text-xs truncate", x.familia ? "text-[var(--text-2)]" : "text-[var(--amber)]")}>
+                            <td className="py-2.5 px-2 align-top">
+                              <div className={cn("font-mono text-[12.5px] font-semibold truncate", x.familia ? "text-[var(--text-2)]" : "text-[var(--amber)]")}>
                                 {x.familia || 'Sem máq.'}
                               </div>
                             </td>
-                            <td className="py-2 px-2 align-top min-w-0">
-                              <div className="text-xs font-medium text-[var(--text)] leading-tight">
+                            <td className="py-2.5 px-2 align-top min-w-0">
+                              <div className="text-[13.5px] font-semibold text-[var(--text)] leading-snug">
                                 {x.lp && (
-                                  <span className="inline-block text-[10px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1 mr-1.5 leading-tight">
+                                  <span className="inline-block text-[11px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1.5 mr-1.5 leading-tight">
                                     LP
                                   </span>
                                 )}
-                                {x.locked && <Lock size={11} className="inline mr-1 text-[var(--amber)]" />}
-                                {x.splitParentId && <GitBranch size={11} className="inline mr-1 text-[var(--accent)]" />}
+                                {x.locked && <Lock size={12} className="inline mr-1 text-[var(--amber)]" />}
+                                {x.splitParentId && <GitBranch size={12} className="inline mr-1 text-[var(--accent)]" />}
                                 {x.produto}
                               </div>
                               {note && (
-                                <span className={cn("text-[11px] block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
+                                <span className={cn("text-xs font-medium block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
                                   {note.text}
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 pr-3 pl-1 align-top text-right whitespace-nowrap">
+                            <td className="py-2.5 pr-3 pl-1 align-top text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   type="button"
@@ -439,19 +442,22 @@ export function SideBySideView({
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                   title="Diminuir 1"
                                 >
-                                  <Minus size={10} />
+                                  <Minus size={11} />
                                 </button>
-                                <span className={cn("font-mono text-xs font-medium", st.k === 'nao' ? "text-[var(--red)]" : "text-[var(--text)]")}>
-                                  {x.real}<small className="text-[var(--text-3)] font-normal">/{x.prog}</small>
+                                <span className={cn(
+                                  "font-mono text-[14.5px] font-bold tracking-tight",
+                                  x.real > x.prog ? "text-[var(--green)]" : st.k === 'nao' ? "text-[var(--red)]" : "text-[var(--text)]"
+                                )}>
+                                  {x.real}<small className="text-[12px] text-[var(--text-3)] font-semibold">/{x.prog}</small>
                                 </span>
                                 <button
                                   type="button"
                                   onClick={(e) => onUpdateQty(x, 1, e)}
-                                  disabled={x.locked || x.real >= x.prog}
+                                  disabled={x.locked}
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                  title="Aumentar 1"
+                                  title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                 >
-                                  <Plus size={10} />
+                                  <Plus size={11} />
                                 </button>
                               </div>
                             </td>
@@ -464,12 +470,12 @@ export function SideBySideView({
                   {/* Seção PD/PA Automática */}
                   {autoPdpa.length > 0 && (
                     <React.Fragment>
-                      <tr className="bg-[var(--surface-2)] text-[11.5px] font-semibold text-[var(--text)] border-t-2 border-b border-[var(--border)]">
-                        <td colSpan={4} className="py-1.5 px-3">
+                      <tr className="bg-[var(--surface-2)] text-[13px] font-bold text-[var(--text)] border-t-2 border-b border-[var(--border)]">
+                        <td colSpan={4} className="py-2 px-3">
                           <div className="flex items-center justify-between">
                             <span>
                               PD/PA · AUTOMÁTICA
-                              <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                              <span className="font-mono font-bold text-[var(--text-3)] ml-2">
                                 {autoPdpa.reduce((a, c) => a + c.real, 0)}/{autoPdpa.reduce((a, c) => a + c.prog, 0)}
                               </span>
                             </span>
@@ -487,10 +493,10 @@ export function SideBySideView({
                             onClick={() => onItemClick(x)}
                             className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group leading-snug"
                           >
-                            <td className="py-2 pl-3 pr-0 align-top">
+                            <td className="py-2.5 pl-3 pr-0 align-top">
                               <i
                                 className={cn(
-                                  "w-2 h-2 rounded-full block mt-1",
+                                  "w-2.5 h-2.5 rounded-full block mt-1",
                                   isDone && "bg-[var(--green)]",
                                   !isDone && x.real > 0 && "bg-[var(--amber)]",
                                   isNao && "bg-[var(--red)]",
@@ -498,12 +504,12 @@ export function SideBySideView({
                                 )}
                               />
                             </td>
-                            <td colSpan={2} className="py-2 px-2 align-top min-w-0">
-                              <div className="text-xs font-normal text-[var(--text)] leading-tight">
+                            <td colSpan={2} className="py-2.5 px-2 align-top min-w-0">
+                              <div className="text-[13.5px] font-semibold text-[var(--text)] leading-snug">
                                 {x.produto}
                               </div>
                             </td>
-                            <td className="py-2 pr-3 pl-1 align-top text-right whitespace-nowrap">
+                            <td className="py-2.5 pr-3 pl-1 align-top text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   type="button"
@@ -512,19 +518,21 @@ export function SideBySideView({
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                   title="Diminuir 1"
                                 >
-                                  <Minus size={10} />
+                                  <Minus size={11} />
                                 </button>
-                                <span className={cn("font-mono text-xs font-medium", isNao ? "text-[var(--red)]" : "text-[var(--text)]")}>
-                                  {x.real}<small className="text-[var(--text-3)] font-normal">/{x.prog}</small>
+                                <span className={cn(
+                                  "font-mono text-[14.5px] font-bold tracking-tight",
+                                  x.real > x.prog ? "text-[var(--green)]" : isNao ? "text-[var(--red)]" : "text-[var(--text)]"
+                                )}>
+                                  {x.real}<small className="text-[12px] text-[var(--text-3)] font-semibold">/{x.prog}</small>
                                 </span>
                                 <button
                                   type="button"
                                   onClick={(e) => onUpdateQty(x, 1, e)}
-                                  disabled={x.real >= x.prog}
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                  title="Aumentar 1"
+                                  title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                 >
-                                  <Plus size={10} />
+                                  <Plus size={11} />
                                 </button>
                               </div>
                             </td>
@@ -537,12 +545,12 @@ export function SideBySideView({
                   {/* Seção PD/PA Direta */}
                   {diretaPdpa.length > 0 && (
                     <React.Fragment>
-                      <tr className="bg-[var(--surface-2)] text-[11.5px] font-semibold text-[var(--text)] border-t-2 border-b border-[var(--border)]">
-                        <td colSpan={4} className="py-1.5 px-3">
+                      <tr className="bg-[var(--surface-2)] text-[13px] font-bold text-[var(--text)] border-t-2 border-b border-[var(--border)]">
+                        <td colSpan={4} className="py-2 px-3">
                           <div className="flex items-center justify-between">
                             <span>
                               PD/PA · DIRETA
-                              <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                              <span className="font-mono font-bold text-[var(--text-3)] ml-2">
                                 {diretaPdpa.reduce((a, c) => a + c.real, 0)}/{diretaPdpa.reduce((a, c) => a + c.prog, 0)}
                               </span>
                             </span>
@@ -560,10 +568,10 @@ export function SideBySideView({
                             onClick={() => onItemClick(x)}
                             className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group leading-snug"
                           >
-                            <td className="py-2 pl-3 pr-0 align-top">
+                            <td className="py-2.5 pl-3 pr-0 align-top">
                               <i
                                 className={cn(
-                                  "w-2 h-2 rounded-full block mt-1",
+                                  "w-2.5 h-2.5 rounded-full block mt-1",
                                   isDone && "bg-[var(--green)]",
                                   !isDone && x.real > 0 && "bg-[var(--amber)]",
                                   isNao && "bg-[var(--red)]",
@@ -571,12 +579,12 @@ export function SideBySideView({
                                 )}
                               />
                             </td>
-                            <td colSpan={2} className="py-2 px-2 align-top min-w-0">
-                              <div className="text-xs font-normal text-[var(--text)] leading-tight">
+                            <td colSpan={2} className="py-2.5 px-2 align-top min-w-0">
+                              <div className="text-[13.5px] font-semibold text-[var(--text)] leading-snug">
                                 {x.produto}
                               </div>
                             </td>
-                            <td className="py-2 pr-3 pl-1 align-top text-right whitespace-nowrap">
+                            <td className="py-2.5 pr-3 pl-1 align-top text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1">
                                 <button
                                   type="button"
@@ -585,19 +593,21 @@ export function SideBySideView({
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                   title="Diminuir 1"
                                 >
-                                  <Minus size={10} />
+                                  <Minus size={11} />
                                 </button>
-                                <span className={cn("font-mono text-xs font-medium", isNao ? "text-[var(--red)]" : "text-[var(--text)]")}>
-                                  {x.real}<small className="text-[var(--text-3)] font-normal">/{x.prog}</small>
+                                <span className={cn(
+                                  "font-mono text-[14.5px] font-bold tracking-tight",
+                                  x.real > x.prog ? "text-[var(--green)]" : isNao ? "text-[var(--red)]" : "text-[var(--text)]"
+                                )}>
+                                  {x.real}<small className="text-[12px] text-[var(--text-3)] font-semibold">/{x.prog}</small>
                                 </span>
                                 <button
                                   type="button"
                                   onClick={(e) => onUpdateQty(x, 1, e)}
-                                  disabled={x.real >= x.prog}
                                   className="w-4 h-4 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                  title="Aumentar 1"
+                                  title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                 >
-                                  <Plus size={10} />
+                                  <Plus size={11} />
                                 </button>
                               </div>
                             </td>

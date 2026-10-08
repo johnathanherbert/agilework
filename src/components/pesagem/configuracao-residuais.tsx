@@ -1,23 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Clock,
-  Scale,
-  ShieldAlert,
-  RotateCcw,
-  Sparkles,
-  Save,
-  Loader2,
-  Plus,
-  X,
-  AlertTriangle,
-  Flame,
-  CheckCircle2,
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, X, RotateCcw } from 'lucide-react';
 import { ConfiguracaoResiduais } from '@/types/aging';
 import { fetchConfiguracaoResiduais, saveConfiguracaoResiduais } from '@/lib/dashpesagem-api';
 import toast from 'react-hot-toast';
+import { cn } from '@/lib/utils';
 
 interface ConfiguracaoResiduaisProps {
   onConfigChange?: () => void;
@@ -34,449 +22,417 @@ const DEFAULT_CONFIG: ConfiguracaoResiduais = {
   dias_vencimento_proximo: 30,
 };
 
-export function ConfiguracaoResiduaisComponent({ onConfigChange }: ConfiguracaoResiduaisProps) {
-  const [config, setConfig] = useState<ConfiguracaoResiduais>(DEFAULT_CONFIG);
-  const [novoMaterial, setNovoMaterial] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+const same = (a: ConfiguracaoResiduais, b: ConfiguracaoResiduais) => JSON.stringify(a) === JSON.stringify(b);
+const toInt = (v: string) => {
+  const n = parseInt(v.replace(/\D/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+};
+const fmtG = (g: number) => (g >= 1000 ? `${(g / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg` : `${g} g`);
 
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
-  const loadConfig = async () => {
-    try {
-      const data = await fetchConfiguracaoResiduais();
-      setConfig({
-        ...DEFAULT_CONFIG,
-        ...data,
-      });
-    } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
-      toast.error('Erro ao carregar configurações');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    // Validações de integridade
-    const diasAlerta = Number(config.dias_alerta ?? 7);
-    const diasCritico = Number(config.dias_critico ?? 20);
-
-    if (diasAlerta >= diasCritico) {
-      toast.error('O número de dias para Alerta deve ser menor que o de Crítico.');
-      return;
-    }
-
-    if (config.limite_verde >= config.limite_amarelo || config.limite_amarelo >= config.limite_maximo) {
-      toast.error('Os limites em gramas devem seguir a ordem: Verde < Amarelo < Vermelho (Máximo).');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await saveConfiguracaoResiduais(config);
-      toast.success('Configurações salvas com sucesso!');
-      if (onConfigChange) {
-        onConfigChange();
-      }
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      toast.error('Erro ao salvar configuração.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleRestoreDefaults = () => {
-    setConfig({
-      ...DEFAULT_CONFIG,
-      materiais_alto_valor: config.materiais_alto_valor, // preserva materiais já cadastrados
-    });
-    toast.success('Valores padrão restaurados (clique em Salvar para persistir).');
-  };
-
-  const handleAddMaterial = () => {
-    const materialTrimmed = novoMaterial.trim().toUpperCase();
-    if (!materialTrimmed) return;
-
-    if (config.materiais_alto_valor.includes(materialTrimmed)) {
-      toast.error('Material já está na lista.');
-      return;
-    }
-
-    setConfig({
-      ...config,
-      materiais_alto_valor: [...config.materiais_alto_valor, materialTrimmed],
-    });
-    setNovoMaterial('');
-  };
-
-  const handleRemoveMaterial = (material: string) => {
-    setConfig({
-      ...config,
-      materiais_alto_valor: config.materiais_alto_valor.filter((m) => m !== material),
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12 bg-[var(--surface)] rounded-lg border border-[var(--border-strong)]">
-        <Loader2 className="h-6 w-6 animate-spin text-[var(--accent)]" />
-        <span className="ml-3 text-xs text-[var(--text-3)] font-mono">Carregando parâmetros operacionais...</span>
-      </div>
-    );
-  }
-
-  const diasAlerta = Number(config.dias_alerta ?? 7);
-  const diasCritico = Number(config.dias_critico ?? 20);
-  const diasVencimento = Number(config.dias_vencimento_proximo ?? 30);
-
+/* ---------------------------------------------------------------------------
+ * Linha de configuração: rótulo + explicação à esquerda, controle à direita
+ * ------------------------------------------------------------------------- */
+function Row({
+  label,
+  hint,
+  dot,
+  children,
+  error,
+}: {
+  label: string;
+  hint?: React.ReactNode;
+  dot?: string;
+  children: React.ReactNode;
+  error?: string | null;
+}) {
   return (
-    <div className="space-y-4">
-      {/* SEÇÃO 1: FAIXAS DE AGING (DIAS DE ESTOQUE) */}
-      <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-2)]/50 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-weak)] border border-[var(--accent)]/30 text-[var(--accent)] grid place-items-center">
-              <Clock size={15} />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">
-                Faixas de Aging (Dias em Estoque)
-              </h3>
-              <p className="text-[11px] text-[var(--text-3)] font-mono">
-                Limites de dias para classificação de criticidade dos lotes e alertas
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)]">
-            AGING TIMING
-          </span>
-        </div>
-
-        <div className="p-5 space-y-4">
-          {/* Grid de Inputs de Dias */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* 1. Dias para Alerta */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Início Alerta</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/30">
-                  ALERTA
-                </span>
-              </div>
-              <input
-                id="dias-alerta"
-                type="number"
-                min="1"
-                max={diasCritico - 1}
-                value={diasAlerta}
-                onChange={(e) => setConfig({ ...config, dias_alerta: parseInt(e.target.value) || 0 })}
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">
-                Normal: &lt;{diasAlerta}d • Alerta: <span className="text-[var(--amber)]">{diasAlerta} a {diasCritico - 1}d</span>
-              </p>
-            </div>
-
-            {/* 2. Dias para Crítico */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Início Crítico</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--red)]/10 text-[var(--red)] border border-[var(--red)]/30">
-                  CRÍTICO
-                </span>
-              </div>
-              <input
-                id="dias-critico"
-                type="number"
-                min={diasAlerta + 1}
-                value={diasCritico}
-                onChange={(e) => setConfig({ ...config, dias_critico: parseInt(e.target.value) || 0 })}
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">
-                Lotes em estado crítico: <span className="text-[var(--red)] font-bold">≥ {diasCritico} dias</span>
-              </p>
-            </div>
-
-            {/* 3. Dias de Vencimento Próximo */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Vencimento Próximo</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                  VALIDADE
-                </span>
-              </div>
-              <input
-                id="dias-vencimento"
-                type="number"
-                min="1"
-                value={diasVencimento}
-                onChange={(e) => setConfig({ ...config, dias_vencimento_proximo: parseInt(e.target.value) || 0 })}
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">
-                Vencendo nos próximos <span className="text-purple-400 font-bold">{diasVencimento} dias</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Visualizador da Barra de Aging */}
-          <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-mono text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
-                Régua de Classificação Visual de Aging
-              </span>
-              <span className="text-[var(--text-3)] font-mono text-[10.5px]">
-                Normal: &lt;{diasAlerta}d • Alerta: {diasAlerta}–{diasCritico - 1}d • Crítico: ≥{diasCritico}d
-              </span>
-            </div>
-
-            <div className="h-6 w-full rounded-md overflow-hidden flex border border-[var(--border-strong)] shadow-inner font-mono text-[10.5px] font-bold text-center leading-6">
-              <div
-                style={{ width: `${Math.max(25, (diasAlerta / (diasCritico * 1.3)) * 100)}%` }}
-                className="bg-[var(--accent)] text-[var(--bg)] transition-all flex items-center justify-center truncate px-2"
-                title={`Normal: 0 a ${diasAlerta - 1} dias`}
-              >
-                Normal (&lt;{diasAlerta}d)
-              </div>
-              <div
-                style={{ width: `${Math.max(30, ((diasCritico - diasAlerta) / (diasCritico * 1.3)) * 100)}%` }}
-                className="bg-[var(--amber)] text-[#0e1014] transition-all flex items-center justify-center truncate px-2"
-                title={`Alerta: ${diasAlerta} a ${diasCritico - 1} dias`}
-              >
-                Alerta ({diasAlerta}–{diasCritico - 1}d)
-              </div>
-              <div
-                className="bg-[var(--red)] text-white flex-1 transition-all flex items-center justify-center truncate px-2"
-                title={`Crítico: ≥ ${diasCritico} dias`}
-              >
-                Crítico (≥{diasCritico}d)
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-1 items-center py-3.5 border-b border-[var(--border)] last:border-b-0">
+      <div className="min-w-0">
+        <span className="flex items-center gap-2 text-[13px] font-medium text-[var(--text)]">
+          {dot && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: dot }} />}
+          {label}
+        </span>
+        {hint && <span className="block text-[12px] text-[var(--text-3)] mt-0.5 leading-snug">{hint}</span>}
+        {error && <span className="block text-[12px] text-[var(--red)] mt-0.5">{error}</span>}
       </div>
+      <div className="flex items-center gap-2 justify-end">{children}</div>
+    </div>
+  );
+}
 
-      {/* SEÇÃO 2: FAIXAS DE SALDOS RESIDUAIS (GRAMAS) */}
-      <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-2)]/50 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-weak)] border border-[var(--accent)]/30 text-[var(--accent)] grid place-items-center">
-              <Scale size={15} />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">
-                Faixas de Saldos Residuais (Gramas)
-              </h3>
-              <p className="text-[11px] text-[var(--text-3)] font-mono">
-                Limites em gramas para classificação de sobras no depósito PES
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)]">
-            SOBRAS PES
-          </span>
+function NumField({
+  value,
+  onChange,
+  unit,
+  invalid,
+  id,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  unit: string;
+  invalid?: boolean;
+  id: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center h-9 w-[124px] border rounded-[var(--radius)] bg-[var(--bg)] focus-within:border-[var(--accent)]',
+        invalid ? 'border-[var(--red)]' : 'border-[var(--border-strong)]'
+      )}
+    >
+      <input
+        id={id}
+        inputMode="numeric"
+        value={String(value ?? '')}
+        onChange={(e) => onChange(toInt(e.target.value))}
+        className="flex-1 min-w-0 bg-transparent outline-none px-2.5 font-mono text-[13px] text-right text-[var(--text)]"
+      />
+      <span className="pr-2.5 text-[12px] text-[var(--text-3)]">{unit}</span>
+    </div>
+  );
+}
+
+function Section({ title, desc, right, children }: { title: string; desc: string; right?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="mb-8">
+      <div className="flex items-end justify-between gap-3 pb-2.5 border-b border-[var(--border-strong)]">
+        <div>
+          <h3 className="text-[15px] font-semibold text-[var(--text)]">{title}</h3>
+          <p className="text-[12.5px] text-[var(--text-3)] mt-0.5">{desc}</p>
         </div>
-
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Verde */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Verde / Leve</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--green)]/10 text-[var(--green)] border border-[var(--green)]/30">
-                  Até {config.limite_verde}g
-                </span>
-              </div>
-              <input
-                id="limite-verde"
-                type="number"
-                value={config.limite_verde}
-                onChange={(e) => setConfig({ ...config, limite_verde: parseInt(e.target.value) || 0 })}
-                min="0"
-                step="10"
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">0g até {config.limite_verde}g</p>
-            </div>
-
-            {/* Amarelo */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Amarelo / Médio</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/30">
-                  Até {config.limite_amarelo}g
-                </span>
-              </div>
-              <input
-                id="limite-amarelo"
-                type="number"
-                value={config.limite_amarelo}
-                onChange={(e) => setConfig({ ...config, limite_amarelo: parseInt(e.target.value) || 0 })}
-                min={config.limite_verde}
-                step="50"
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">{config.limite_verde}g a {config.limite_amarelo}g</p>
-            </div>
-
-            {/* Vermelho / Máximo Residual */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Vermelho / Alto</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--red)]/10 text-[var(--red)] border border-[var(--red)]/30">
-                  Até {config.limite_maximo}g
-                </span>
-              </div>
-              <input
-                id="limite-maximo"
-                type="number"
-                value={config.limite_maximo}
-                onChange={(e) => setConfig({ ...config, limite_maximo: parseInt(e.target.value) || 0 })}
-                min={config.limite_amarelo}
-                step="50"
-                className="w-full bg-[var(--surface)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 outline-none"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">{config.limite_amarelo}g a {config.limite_maximo}g</p>
-            </div>
-
-            {/* Estoque Normal */}
-            <div className="p-3.5 rounded-lg bg-[var(--surface-2)]/60 border border-[var(--border)] space-y-2 opacity-80">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)]">Estoque Normal</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface)] text-[var(--text-3)] border border-[var(--border)]">
-                  PADRÃO
-                </span>
-              </div>
-              <input
-                value={`> ${config.limite_maximo}g (≥ 1 KG)`}
-                disabled
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--accent)] font-mono font-bold text-xs rounded-[var(--radius)] px-3 py-1.5 cursor-not-allowed opacity-75"
-              />
-              <p className="text-[10.5px] font-mono text-[var(--text-3)]">Estoque padrão de produção</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-[var(--radius)] text-xs text-[var(--text-2)] font-mono">
-            <AlertTriangle className="h-4 w-4 text-[var(--amber)] mt-0.5 shrink-0" />
-            <div>
-              <strong className="text-[var(--text)] font-sans">Regra de Conversão:</strong> Apenas saldos de pesagem até{' '}
-              <span className="text-[var(--accent)] font-bold">{config.limite_maximo}g</span> são analisados na esteira de
-              residuais. Lotes com saldo superior são considerados estoque integral de produção.
-            </div>
-          </div>
-        </div>
+        {right}
       </div>
+      {children}
+    </section>
+  );
+}
 
-      {/* SEÇÃO 3: MATERIAIS DE EXTREMA ATENÇÃO / ALTO VALOR */}
-      <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-2)]/50 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-weak)] border border-[var(--accent)]/30 text-[var(--accent)] grid place-items-center">
-              <ShieldAlert size={15} />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">
-                Materiais de Extrema Atenção (Alto Valor)
-              </h3>
-              <p className="text-[11px] text-[var(--text-3)] font-mono">
-                Materiais nobres e de altíssimo valor que exigem monitoramento contínuo
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)]">
-            {config.materiais_alto_valor.length} CADASTRADOS
-          </span>
-        </div>
-
-        <div className="p-5 space-y-4">
-          <div className="flex gap-2 max-w-md">
-            <input
-              placeholder="Código do material (ex: 011370)"
-              value={novoMaterial}
-              onChange={(e) => setNovoMaterial(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddMaterial();
-                }
-              }}
-              className="flex-1 bg-[var(--surface-2)] border border-[var(--border-strong)] focus:border-[var(--accent)] text-[var(--text)] font-mono text-xs rounded-[var(--radius)] px-3 py-2 outline-none placeholder:text-[var(--text-3)]"
-            />
-            <button
-              type="button"
-              onClick={handleAddMaterial}
-              className="px-3.5 py-2 rounded-[var(--radius)] bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-bold text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Plus size={13} className="text-[var(--accent)]" />
-              Adicionar
-            </button>
-          </div>
-
-          {config.materiais_alto_valor.length > 0 ? (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {config.materiais_alto_valor.map((material) => (
-                <div
-                  key={material}
-                  className="bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] px-2.5 py-1 rounded-[var(--radius)] text-xs font-mono font-semibold flex items-center gap-2 shadow-2xs"
-                >
-                  <span className="text-[var(--accent)]">{material}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveMaterial(material)}
-                    className="text-[var(--text-3)] hover:text-[var(--red)] transition-colors p-0.5 rounded cursor-pointer"
-                    title="Remover material"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-[var(--text-3)] font-mono italic pt-1">
-              Nenhum material cadastrado nesta lista de atenção especial.
-            </p>
-          )}
-        </div>
+/** Régua proporcional com marcações reais (não decorativa) */
+function Ruler({ cuts, max, unit, colors }: { cuts: number[]; max: number; unit: (n: number) => string; colors: string[] }) {
+  const pts = [0, ...cuts.map((c) => Math.min(c, max)), max];
+  return (
+    <div className="pt-4 pb-1">
+      <div className="flex h-2 rounded-full overflow-hidden bg-[var(--border)]">
+        {colors.map((c, i) => (
+          <span key={i} style={{ width: `${Math.max(0, ((pts[i + 1] - pts[i]) / max) * 100)}%`, background: c }} />
+        ))}
       </div>
-
-      {/* BARRA DE AÇÕES: SALVAR / RESTAURAR */}
-      <div className="flex items-center justify-between p-4 bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xs flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={handleRestoreDefaults}
-          disabled={saving}
-          className="px-3 py-2 rounded-[var(--radius)] bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text-3)] hover:text-[var(--text)] font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RotateCcw size={13} />
-          Restaurar Padrões
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 rounded-[var(--radius)] bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 text-[var(--bg)] font-bold text-xs tracking-wide shadow-xs transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer"
-        >
-          {saving ? (
-            <>
-              <Loader2 size={14} className="animate-spin" />
-              Salvando Parâmetros...
-            </>
-          ) : (
-            <>
-              <Save size={14} />
-              Salvar Todas as Configurações
-            </>
-          )}
-        </button>
+      <div className="relative h-5 mt-1">
+        {cuts.map((c, i) => (
+          <span
+            key={i}
+            className="absolute -translate-x-1/2 font-mono text-[11px] text-[var(--text-3)] whitespace-nowrap"
+            style={{ left: `${Math.min(100, (c / max) * 100)}%` }}
+          >
+            {unit(c)}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
+export function ConfiguracaoResiduaisComponent({ onConfigChange }: ConfiguracaoResiduaisProps) {
+  const [config, setConfig] = useState<ConfiguracaoResiduais>(DEFAULT_CONFIG);
+  const [saved, setSaved] = useState<ConfiguracaoResiduais>(DEFAULT_CONFIG);
+  const [novoMaterial, setNovoMaterial] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchConfiguracaoResiduais();
+        const merged = { ...DEFAULT_CONFIG, ...data, materiais_alto_valor: data?.materiais_alto_valor || [] };
+        setConfig(merged);
+        setSaved(merged);
+      } catch (error) {
+        console.error('Erro ao carregar configuração:', error);
+        toast.error('Não foi possível carregar as configurações');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const set = <K extends keyof ConfiguracaoResiduais>(k: K, v: ConfiguracaoResiduais[K]) => setConfig((c) => ({ ...c, [k]: v }));
+
+  const diasAlerta = Number(config.dias_alerta ?? 7);
+  const diasCritico = Number(config.dias_critico ?? 20);
+  const diasVenc = Number(config.dias_vencimento_proximo ?? 30);
+  const { limite_verde: gV, limite_amarelo: gA, limite_maximo: gM } = config;
+
+  // Validação ao vivo
+  const errDias = diasAlerta < 1 ? 'Use pelo menos 1 dia.' : diasAlerta >= diasCritico ? 'Precisa ser menor que o início do crítico.' : null;
+  const errVenc = diasVenc < 1 ? 'Use pelo menos 1 dia.' : null;
+  const errVerde = gV >= gA ? 'Precisa ser menor que o limite amarelo.' : null;
+  const errAmarelo = gA >= gM ? 'Precisa ser menor que o limite máximo.' : null;
+  const valid = !errDias && !errVenc && !errVerde && !errAmarelo;
+  const dirty = !same(config, saved);
+
+  const dirtySections = useMemo(() => {
+    const s: string[] = [];
+    if (config.dias_alerta !== saved.dias_alerta || config.dias_critico !== saved.dias_critico || config.dias_vencimento_proximo !== saved.dias_vencimento_proximo) s.push('aging');
+    if (gV !== saved.limite_verde || gA !== saved.limite_amarelo || gM !== saved.limite_maximo) s.push('residuais');
+    if (JSON.stringify(config.materiais_alto_valor) !== JSON.stringify(saved.materiais_alto_valor)) s.push('materiais');
+    return s;
+  }, [config, saved, gV, gA, gM]);
+
+  const handleSave = async () => {
+    if (!valid) {
+      toast.error('Corrija os campos em vermelho antes de salvar');
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveConfiguracaoResiduais(config);
+      setSaved(config);
+      toast.success('Configurações salvas');
+      onConfigChange?.();
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+      toast.error('Não foi possível salvar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Ctrl+S salva
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (dirty && !saving) handleSave();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, saving, config]);
+
+  const isDefault = same({ ...DEFAULT_CONFIG, materiais_alto_valor: config.materiais_alto_valor }, config);
+  const handleRestoreDefaults = () => setConfig({ ...DEFAULT_CONFIG, materiais_alto_valor: config.materiais_alto_valor });
+
+  /* ---------- materiais de alto valor ---------- */
+  const parseCodes = (raw: string) =>
+    Array.from(new Set(raw.split(/[\s,;]+/).map((s) => s.trim().toUpperCase()).filter(Boolean)));
+
+  const handleAddMaterial = () => {
+    const codes = parseCodes(novoMaterial);
+    if (!codes.length) return;
+    const novos = codes.filter((c) => !config.materiais_alto_valor.includes(c));
+    const repetidos = codes.length - novos.length;
+    if (novos.length) set('materiais_alto_valor', [...config.materiais_alto_valor, ...novos]);
+    setNovoMaterial('');
+    if (repetidos && !novos.length) toast.error(codes.length === 1 ? 'Material já está na lista' : 'Todos já estão na lista');
+    else if (repetidos) toast(`${novos.length} adicionado(s) · ${repetidos} já estavam na lista`);
+  };
+
+  const handleRemoveMaterial = (m: string) => set('materiais_alto_valor', config.materiais_alto_valor.filter((x) => x !== m));
+
+  if (loading) {
+    return (
+      <p className="py-16 flex items-center justify-center gap-2 text-[12.5px] text-[var(--text-3)]">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando configurações…
+      </p>
+    );
+  }
+
+  const rulerDiasMax = Math.max(diasCritico + Math.ceil(diasCritico * 0.5), diasVenc, 10);
+
+  return (
+    <div className="max-w-[880px] text-[var(--text)] pb-20">
+      {/* ======================= AGING ======================= */}
+      <Section
+        title="Faixas de aging"
+        desc="Dias em estoque que classificam os lotes como normal, alerta ou crítico."
+        right={dirtySections.includes('aging') && <span className="text-[11.5px] text-[var(--amber)]">alterado</span>}
+      >
+        <Row
+          label="Alerta a partir de"
+          dot="var(--amber)"
+          hint={<>Lotes com <span className="font-mono">{diasAlerta}</span> dias ou mais. Normal fica abaixo disso.</>}
+          error={errDias}
+        >
+          <NumField id="dias-alerta" value={diasAlerta} onChange={(n) => set('dias_alerta', n)} unit="dias" invalid={!!errDias} />
+        </Row>
+        <Row
+          label="Crítico a partir de"
+          dot="var(--red)"
+          hint={<>Lotes com <span className="font-mono">{diasCritico}</span> dias ou mais.</>}
+        >
+          <NumField id="dias-critico" value={diasCritico} onChange={(n) => set('dias_critico', n)} unit="dias" invalid={!!errDias} />
+        </Row>
+        <Row
+          label="Vencimento próximo"
+          hint={<>Destaca lotes que vencem nos próximos <span className="font-mono">{diasVenc}</span> dias.</>}
+          error={errVenc}
+        >
+          <NumField id="dias-vencimento" value={diasVenc} onChange={(n) => set('dias_vencimento_proximo', n)} unit="dias" invalid={!!errVenc} />
+        </Row>
+
+        {!errDias && (
+          <>
+            <Ruler
+              cuts={[diasAlerta, diasCritico]}
+              max={rulerDiasMax}
+              unit={(n) => `${n} d`}
+              colors={['var(--green)', 'var(--amber)', 'var(--red)']}
+            />
+            <p className="text-[12px] text-[var(--text-3)]">
+              Normal <span className="font-mono text-[var(--text-2)]">0–{diasAlerta - 1} d</span> · Alerta{' '}
+              <span className="font-mono text-[var(--text-2)]">{diasAlerta}–{diasCritico - 1} d</span> · Crítico{' '}
+              <span className="font-mono text-[var(--text-2)]">≥ {diasCritico} d</span>
+            </p>
+          </>
+        )}
+      </Section>
+
+      {/* ======================= RESIDUAIS ======================= */}
+      <Section
+        title="Saldos residuais"
+        desc="Sobras pequenas no depósito PES, em gramas. Acima do limite máximo o lote é tratado como estoque normal."
+        right={dirtySections.includes('residuais') && <span className="text-[11.5px] text-[var(--amber)]">alterado</span>}
+      >
+        <Row label="Verde até" dot="var(--green)" hint={<>Sobras de <span className="font-mono">0</span> a <span className="font-mono">{fmtG(gV)}</span>.</>} error={errVerde}>
+          <NumField id="limite-verde" value={gV} onChange={(n) => set('limite_verde', n)} unit="g" invalid={!!errVerde} />
+        </Row>
+        <Row
+          label="Amarelo até"
+          dot="var(--amber)"
+          hint={<>Acima de <span className="font-mono">{fmtG(gV)}</span> até <span className="font-mono">{fmtG(gA)}</span>.</>}
+          error={errAmarelo}
+        >
+          <NumField id="limite-amarelo" value={gA} onChange={(n) => set('limite_amarelo', n)} unit="g" invalid={!!errVerde || !!errAmarelo} />
+        </Row>
+        <Row
+          label="Limite máximo do residual"
+          dot="var(--red)"
+          hint={<>Vermelho de <span className="font-mono">{fmtG(gA)}</span> até <span className="font-mono">{fmtG(gM)}</span>. Acima disso não entra na análise de residuais.</>}
+        >
+          <NumField id="limite-maximo" value={gM} onChange={(n) => set('limite_maximo', n)} unit="g" invalid={!!errAmarelo} />
+        </Row>
+
+        {!errVerde && !errAmarelo && (
+          <>
+            <Ruler
+              cuts={[gV, gA, gM]}
+              max={Math.max(gM * 1.15, gM + 100)}
+              unit={fmtG}
+              colors={['var(--green)', 'var(--amber)', 'var(--red)', 'var(--text-3)']}
+            />
+            <p className="text-[12px] text-[var(--text-3)]">
+              Estoque normal acima de <span className="font-mono text-[var(--text-2)]">{fmtG(gM)}</span>
+            </p>
+          </>
+        )}
+      </Section>
+
+      {/* ======================= MATERIAIS ======================= */}
+      <Section
+        title="Materiais de alto valor"
+        desc="Recebem destaque e monitoramento nos residuais, independente da faixa."
+        right={
+          <span className="text-[12px] text-[var(--text-3)]">
+            {dirtySections.includes('materiais') && <span className="text-[var(--amber)] mr-2">alterado</span>}
+            <span className="font-mono text-[var(--text-2)]">{config.materiais_alto_valor.length}</span> cadastrado(s)
+          </span>
+        }
+      >
+        <form
+          className="flex gap-2 pt-3.5 max-w-[520px]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAddMaterial();
+          }}
+        >
+          <input
+            value={novoMaterial}
+            onChange={(e) => setNovoMaterial(e.target.value)}
+            placeholder="Código do material · cole vários separados por espaço ou vírgula"
+            className="flex-1 min-w-0 h-9 px-3 bg-[var(--bg)] border border-[var(--border-strong)] rounded-[var(--radius)] font-mono text-[13px] text-[var(--text)] placeholder:font-sans placeholder:text-[var(--text-3)] outline-none focus:border-[var(--accent)]"
+          />
+          <button
+            type="submit"
+            disabled={!novoMaterial.trim()}
+            className="h-9 px-3.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-[13px] font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] disabled:opacity-40"
+          >
+            Adicionar
+          </button>
+        </form>
+
+        {config.materiais_alto_valor.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 pt-3">
+            {config.materiais_alto_valor.map((m) => (
+              <span
+                key={m}
+                className={cn(
+                  'inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full border text-[12.5px] font-mono',
+                  saved.materiais_alto_valor.includes(m) ? 'border-[var(--border-strong)] text-[var(--text)]' : 'border-[var(--accent)] text-[var(--text)]'
+                )}
+                title={saved.materiais_alto_valor.includes(m) ? undefined : 'Novo · ainda não salvo'}
+              >
+                {m}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveMaterial(m)}
+                  className="h-5 w-5 grid place-items-center rounded-full text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--hover)]"
+                  title="Remover"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="pt-3 text-[12.5px] text-[var(--text-3)]">Nenhum material na lista.</p>
+        )}
+      </Section>
+
+      {/* ======================= RODAPÉ ======================= */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <button
+          type="button"
+          onClick={handleRestoreDefaults}
+          disabled={saving || isDefault}
+          className="text-[12.5px] text-[var(--text-3)] hover:text-[var(--text)] inline-flex items-center gap-1.5 disabled:opacity-40 disabled:hover:text-[var(--text-3)]"
+          title="Volta faixas de aging e residuais ao padrão. A lista de materiais é mantida."
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Restaurar padrões
+        </button>
+      </div>
+
+      {/* Barra de salvar: só aparece com alterações */}
+      {dirty && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-5 z-40 flex items-center gap-3 pl-4 pr-2 py-2 rounded-[8px] border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_16px_40px_rgba(0,0,0,.45)] min-w-[min(520px,92vw)]">
+          <span className="w-[7px] h-[7px] rounded-full bg-[var(--amber)] shrink-0" />
+          <span className="flex-1 text-[13px] text-[var(--text-2)]">
+            {valid ? (
+              <>Alterações não salvas em {dirtySections.length} seç{dirtySections.length > 1 ? 'ões' : 'ão'}</>
+            ) : (
+              <span className="text-[var(--red)]">Corrija os campos em vermelho</span>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => setConfig(saved)}
+            disabled={saving}
+            className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] text-[12.5px] font-medium text-[var(--text-2)] hover:text-[var(--text)] disabled:opacity-40"
+          >
+            Descartar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !valid}
+            className="h-8 px-3.5 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-[12.5px] font-medium inline-flex items-center gap-1.5 disabled:opacity-40"
+          >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {saving ? 'Salvando…' : 'Salvar'}
+            {!saving && <kbd className="font-mono text-[10px] opacity-60 border border-current rounded px-1">Ctrl S</kbd>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -96,21 +96,21 @@ export function DetailedReportView({
             {/* Cabeçalho do Turno */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3.5 sm:px-4 border-b border-[var(--border)] bg-[var(--surface-2)]">
               <div className="flex items-baseline gap-3">
-                <h2 className="text-base font-semibold tracking-tight text-[var(--text)]">
+                <h2 className="text-lg font-bold tracking-tight text-[var(--text)]">
                   {shift.l}
                 </h2>
-                <span className="font-mono text-xs text-[var(--text-3)]">
+                <span className="font-mono text-[13px] text-[var(--text-3)]">
                   {String(shift.ini[1] < 0 ? 24 + shift.ini[1] : shift.ini[1]).padStart(2, '0')}:{String(shift.ini[2]).padStart(2, '0')}–{String(shift.fim[1]).padStart(2, '0')}:{String(shift.fim[2]).padStart(2, '0')}
                 </span>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap ml-1",
+                    "inline-flex items-center gap-1.5 text-[13px] font-medium whitespace-nowrap ml-1",
                     phase.k === 'now' ? "text-[var(--text)] font-semibold" : "text-[var(--text-3)]"
                   )}
                 >
                   <i
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full inline-block",
+                      "w-2 h-2 rounded-full inline-block",
                       phase.k === 'now' && "bg-[var(--accent)] animate-pulse",
                       phase.k === 'done' && "bg-[var(--text-3)]",
                       phase.k === 'next' && "border border-[var(--text-3)] bg-transparent"
@@ -122,13 +122,13 @@ export function DetailedReportView({
 
               <div className="flex items-center gap-4 sm:gap-6 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
                 {/* KPI Ordens */}
-                <div className="grid grid-cols-[auto_90px] gap-x-2 gap-y-0.5 items-center text-xs">
-                  <label className="col-span-2 text-[11.5px] text-[var(--text-3)]">Ordens</label>
-                  <b className="font-mono font-medium text-sm text-[var(--text)]">
-                    {stats.real}<small className="text-xs text-[var(--text-3)]">/{stats.prog}</small>{' '}
-                    <span className="text-xs font-normal text-[var(--text-2)]">· {stats.pct}%</span>
+                <div className="grid grid-cols-[auto_105px] gap-x-2.5 gap-y-0.5 items-center text-xs">
+                  <label className="col-span-2 text-xs font-semibold text-[var(--text-3)]">Ordens</label>
+                  <b className="font-mono text-lg font-bold text-[var(--text)] leading-none">
+                    {stats.real}<small className="text-[13.5px] text-[var(--text-3)] font-semibold">/{stats.prog}</small>{' '}
+                    <span className="text-xs font-semibold text-[var(--text-2)]">· {stats.pct}%</span>
                   </b>
-                  <div className="h-1.5 w-full bg-[var(--track)] rounded-full overflow-hidden relative">
+                  <div className="h-2 w-full bg-[var(--track)] rounded-full overflow-hidden relative">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-300",
@@ -147,13 +147,13 @@ export function DetailedReportView({
                 </div>
 
                 {/* KPI PD/PA */}
-                <div className="grid grid-cols-[auto_90px] gap-x-2 gap-y-0.5 items-center text-xs">
-                  <label className="col-span-2 text-[11.5px] text-[var(--text-3)]">PD/PA</label>
-                  <b className="font-mono font-medium text-sm text-[var(--text)]">
-                    {stats.pdpaTotal[0]}<small className="text-xs text-[var(--text-3)]">/{stats.pdpaTotal[1]}</small>{' '}
-                    <span className="text-xs font-normal text-[var(--text-2)]">· {stats.pdpaPct}%</span>
+                <div className="grid grid-cols-[auto_105px] gap-x-2.5 gap-y-0.5 items-center text-xs">
+                  <label className="col-span-2 text-xs font-semibold text-[var(--text-3)]">PD/PA</label>
+                  <b className="font-mono text-lg font-bold text-[var(--text)] leading-none">
+                    {stats.pdpaTotal[0]}<small className="text-[13.5px] text-[var(--text-3)] font-semibold">/{stats.pdpaTotal[1]}</small>{' '}
+                    <span className="text-xs font-semibold text-[var(--text-2)]">· {stats.pdpaPct}%</span>
                   </b>
-                  <div className="h-1.5 w-full bg-[var(--track)] rounded-full overflow-hidden relative">
+                  <div className="h-2 w-full bg-[var(--track)] rounded-full overflow-hidden relative">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-300",
@@ -167,9 +167,9 @@ export function DetailedReportView({
                 <button
                   type="button"
                   onClick={() => onAddClick(shift.n)}
-                  className="h-7 px-2.5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 no-print cursor-pointer shrink-0"
+                  className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5 no-print cursor-pointer shrink-0"
                 >
-                  <Plus size={13} />
+                  <Plus size={14} />
                   <span>Ordem</span>
                 </button>
               </div>
@@ -177,42 +177,42 @@ export function DetailedReportView({
 
             {/* Corpo do Turno com 2 painéis (Ordens e PD/PA) */}
             {!stats.lots && !shiftPdpa.length ? (
-              <div className="p-6 text-center text-xs text-[var(--text-3)]">
+              <div className="p-6 text-center text-[13px] text-[var(--text-3)]">
                 Nenhuma ordem programada para este turno.
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)]">
                 {/* Tabela de Ordens */}
                 <div className="overflow-x-auto min-w-0">
-                  <table className="w-full border-collapse table-fixed text-left text-xs">
+                  <table className="w-full border-collapse table-fixed text-left">
                     <colgroup>
-                      <col style={{ width: '120px' }} />
-                      <col style={{ width: '86px' }} />
+                      <col style={{ width: '130px' }} />
+                      <col style={{ width: '92px' }} />
                       <col />
-                      <col style={{ width: '170px' }} />
-                      <col style={{ width: '96px' }} />
-                      <col style={{ width: '110px' }} />
+                      <col style={{ width: '175px' }} />
+                      <col style={{ width: '115px' }} />
+                      <col style={{ width: '115px' }} />
                     </colgroup>
                     <thead>
-                      <tr className="border-b border-[var(--border)] text-[11.5px] font-medium text-[var(--text-3)] h-8">
-                        <th className="pl-4 pr-2 font-medium">Máquina</th>
-                        <th className="px-2 font-medium">Código</th>
-                        <th className="px-2 font-medium">Produto</th>
-                        <th className="px-2 font-medium">Status</th>
-                        <th className="px-2 font-medium text-right">Real/Prog</th>
-                        <th className="pr-4 pl-2 font-medium">Avanço</th>
+                      <tr className="border-b border-[var(--border)] text-xs font-semibold text-[var(--text-3)] h-9">
+                        <th className="pl-4 pr-2 font-semibold">Máquina</th>
+                        <th className="px-2 font-semibold">Código</th>
+                        <th className="px-2 font-semibold">Produto</th>
+                        <th className="px-2 font-semibold">Status</th>
+                        <th className="px-2 font-semibold text-right">Real/Prog</th>
+                        <th className="pr-4 pl-2 font-semibold">Avanço</th>
                       </tr>
                     </thead>
                     <tbody>
                       {/* Grupo ÚMIDA */}
                       {(!selectedVia || selectedVia === 'umida') && (
                         <React.Fragment>
-                          <tr className="bg-[var(--surface-2)] font-semibold text-[12px] text-[var(--text)] border-b border-[var(--border)]">
-                            <td colSpan={6} className="py-2 pl-4 pr-4">
+                          <tr className="bg-[var(--surface-2)] font-bold text-[13.5px] text-[var(--text)] border-b border-[var(--border)]">
+                            <td colSpan={6} className="py-2.5 pl-4 pr-4">
                               <div className="flex items-center justify-between">
                                 <span>
                                   ÚMIDA
-                                  <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                                  <span className="font-mono font-bold text-[var(--text-2)] text-[13px] ml-2">
                                     {umidaOrders.reduce((a, c) => a + c.real, 0)}/{umidaOrders.reduce((a, c) => a + c.prog, 0)}{' '}
                                     ·{' '}
                                     {umidaOrders.reduce((a, c) => a + c.prog, 0) > 0
@@ -228,7 +228,7 @@ export function DetailedReportView({
                                 <button
                                   type="button"
                                   onClick={() => onAddClick(shift.n, 'UMIDA')}
-                                  className="text-xs font-normal text-[var(--text-3)] hover:text-[var(--text)] no-print cursor-pointer"
+                                  className="text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text)] no-print cursor-pointer"
                                 >
                                   + adicionar
                                 </button>
@@ -238,7 +238,7 @@ export function DetailedReportView({
 
                           {umidaOrders.filter(filterItem).length === 0 ? (
                             <tr className="border-b border-[var(--border)] text-[var(--text-3)] text-center">
-                              <td colSpan={6} className="py-3 text-xs">
+                              <td colSpan={6} className="py-3 text-[13px]">
                                 {umidaOrders.length > 0 ? 'Nenhuma ordem no filtro' : 'Sem ordens'}
                               </td>
                             </tr>
@@ -255,44 +255,44 @@ export function DetailedReportView({
                                   onClick={() => onItemClick(x)}
                                   className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group"
                                 >
-                                  <td className="py-2 pl-4 pr-2 align-middle">
-                                    <span className={cn("font-mono text-xs whitespace-nowrap", x.familia ? "text-[var(--text)]" : "text-[var(--amber)]")}>
+                                  <td className="py-2.5 pl-4 pr-2 align-middle">
+                                    <span className={cn("font-mono text-[13px] font-semibold whitespace-nowrap", x.familia ? "text-[var(--text)]" : "text-[var(--amber)]")}>
                                       {x.familia || 'Sem máquina'}
                                     </span>
                                   </td>
-                                  <td className="py-2 px-2 align-middle font-mono text-xs text-[var(--text-3)] whitespace-nowrap">
+                                  <td className="py-2.5 px-2 align-middle font-mono text-[12.5px] text-[var(--text-3)] whitespace-nowrap">
                                     {x.codigoReceita || '—'}
                                   </td>
-                                  <td className="py-2 px-2 align-middle min-w-0">
-                                    <div className="font-medium text-[var(--text)] leading-snug">
+                                  <td className="py-2.5 px-2 align-middle min-w-0">
+                                    <div className="font-semibold text-sm text-[var(--text)] leading-snug">
                                       {x.lp && (
-                                        <span className="inline-block text-[10.5px] font-semibold text-[var(--purple)] border border-[var(--purple)] rounded px-1 mr-1.5 leading-tight">
+                                        <span className="inline-block text-[11px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1.5 mr-1.5 leading-tight">
                                           LP
                                         </span>
                                       )}
-                                      {x.locked && <Lock size={12} className="inline mr-1 text-[var(--amber)]" />}
-                                      {x.splitParentId && <GitBranch size={12} className="inline mr-1 text-[var(--accent)]" />}
+                                      {x.locked && <Lock size={13} className="inline mr-1 text-[var(--amber)]" />}
+                                      {x.splitParentId && <GitBranch size={13} className="inline mr-1 text-[var(--accent)]" />}
                                       {x.produto}
                                     </div>
                                     {note && (
-                                      <span className={cn("text-[11.5px] block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
+                                      <span className={cn("text-xs font-medium block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
                                         {note.text}
                                       </span>
                                     )}
                                   </td>
-                                  <td className="py-2 px-2 align-middle whitespace-nowrap">
+                                  <td className="py-2.5 px-2 align-middle whitespace-nowrap">
                                     <span
                                       className={cn(
-                                        "inline-flex items-center gap-1.5 text-xs",
-                                        st.k === 'ok' && "text-[var(--text-2)]",
-                                        st.k === 'and' && "text-[var(--text)]",
-                                        st.k === 'nao' && "text-[var(--red)] font-medium",
+                                        "inline-flex items-center gap-1.5 text-[13px]",
+                                        st.k === 'ok' && "text-[var(--text-2)] font-medium",
+                                        st.k === 'and' && "text-[var(--text)] font-semibold",
+                                        st.k === 'nao' && "text-[var(--red)] font-semibold",
                                         (st.k === 'pend' || st.k === 'prog') && "text-[var(--text-3)]"
                                       )}
                                     >
                                       <i
                                         className={cn(
-                                          "w-1.5 h-1.5 rounded-full inline-block shrink-0",
+                                          "w-2 h-2 rounded-full inline-block shrink-0",
                                           st.k === 'ok' && "bg-[var(--green)]",
                                           st.k === 'and' && "bg-[var(--amber)]",
                                           st.k === 'nao' && "bg-[var(--red)]",
@@ -302,8 +302,8 @@ export function DetailedReportView({
                                       {st.l}
                                     </span>
                                   </td>
-                                  <td className="py-2 px-2 align-middle text-right whitespace-nowrap">
-                                    <div className="flex items-center justify-end gap-1 font-mono text-xs">
+                                  <td className="py-2.5 px-2 align-middle text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-1 font-mono">
                                       <button
                                         type="button"
                                         onClick={(e) => onUpdateQty(x, -1, e)}
@@ -311,24 +311,29 @@ export function DetailedReportView({
                                         className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                         title="Diminuir 1"
                                       >
-                                        <Minus size={11} />
+                                        <Minus size={12} />
                                       </button>
-                                      <span className="font-semibold text-[var(--text)]">{x.real}</span>
-                                      <small className="text-[var(--text-3)]">/{x.prog}</small>
+                                      <span className={cn(
+                                        "text-[15.5px] font-bold tracking-tight",
+                                        x.real > x.prog ? "text-[var(--green)]" : "text-[var(--text)]"
+                                      )}>
+                                        {x.real}
+                                      </span>
+                                      <span className="text-[13px] font-semibold text-[var(--text-3)]">/{x.prog}</span>
                                       <button
                                         type="button"
                                         onClick={(e) => onUpdateQty(x, 1, e)}
-                                        disabled={x.locked || x.real >= x.prog}
+                                        disabled={x.locked}
                                         className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                        title="Aumentar 1"
+                                        title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                       >
-                                        <Plus size={11} />
+                                        <Plus size={12} />
                                       </button>
                                     </div>
                                   </td>
-                                  <td className="py-2 pr-4 pl-2 align-middle">
+                                  <td className="py-2.5 pr-4 pl-2 align-middle">
                                     <div className="flex items-center gap-2">
-                                      <div className="h-1 flex-1 bg-[var(--track)] rounded-full overflow-hidden">
+                                      <div className="h-1.5 flex-1 bg-[var(--track)] rounded-full overflow-hidden">
                                         <div
                                           className={cn(
                                             "h-full rounded-full transition-all duration-300",
@@ -337,7 +342,10 @@ export function DetailedReportView({
                                           style={{ width: `${Math.min(pct, 100)}%` }}
                                         />
                                       </div>
-                                      <span className="font-mono text-[11px] text-[var(--text-3)] w-8 text-right">
+                                      <span className={cn(
+                                        "font-mono text-xs font-semibold w-9 text-right",
+                                        pct > 100 ? "text-[var(--green)] font-bold" : "text-[var(--text-3)]"
+                                      )}>
                                         {pct}%
                                       </span>
                                     </div>
@@ -352,12 +360,12 @@ export function DetailedReportView({
                       {/* Grupo SECA */}
                       {(!selectedVia || selectedVia === 'seca') && (
                         <React.Fragment>
-                          <tr className="bg-[var(--surface-2)] font-semibold text-[12px] text-[var(--text)] border-b border-[var(--border)]">
-                            <td colSpan={6} className="py-2 pl-4 pr-4">
+                          <tr className="bg-[var(--surface-2)] font-bold text-[13.5px] text-[var(--text)] border-b border-[var(--border)]">
+                            <td colSpan={6} className="py-2.5 pl-4 pr-4">
                               <div className="flex items-center justify-between">
                                 <span>
                                   SECA
-                                  <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                                  <span className="font-mono font-bold text-[var(--text-2)] text-[13px] ml-2">
                                     {secaOrders.reduce((a, c) => a + c.real, 0)}/{secaOrders.reduce((a, c) => a + c.prog, 0)}{' '}
                                     ·{' '}
                                     {secaOrders.reduce((a, c) => a + c.prog, 0) > 0
@@ -373,7 +381,7 @@ export function DetailedReportView({
                                 <button
                                   type="button"
                                   onClick={() => onAddClick(shift.n, 'SECA')}
-                                  className="text-xs font-normal text-[var(--text-3)] hover:text-[var(--text)] no-print cursor-pointer"
+                                  className="text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text)] no-print cursor-pointer"
                                 >
                                   + adicionar
                                 </button>
@@ -383,7 +391,7 @@ export function DetailedReportView({
 
                           {secaOrders.filter(filterItem).length === 0 ? (
                             <tr className="border-b border-[var(--border)] text-[var(--text-3)] text-center">
-                              <td colSpan={6} className="py-3 text-xs">
+                              <td colSpan={6} className="py-3 text-[13px]">
                                 {secaOrders.length > 0 ? 'Nenhuma ordem no filtro' : 'Sem ordens'}
                               </td>
                             </tr>
@@ -400,44 +408,44 @@ export function DetailedReportView({
                                   onClick={() => onItemClick(x)}
                                   className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group"
                                 >
-                                  <td className="py-2 pl-4 pr-2 align-middle">
-                                    <span className={cn("font-mono text-xs whitespace-nowrap", x.familia ? "text-[var(--text)]" : "text-[var(--amber)]")}>
+                                  <td className="py-2.5 pl-4 pr-2 align-middle">
+                                    <span className={cn("font-mono text-[13px] font-semibold whitespace-nowrap", x.familia ? "text-[var(--text)]" : "text-[var(--amber)]")}>
                                       {x.familia || 'Sem máquina'}
                                     </span>
                                   </td>
-                                  <td className="py-2 px-2 align-middle font-mono text-xs text-[var(--text-3)] whitespace-nowrap">
+                                  <td className="py-2.5 px-2 align-middle font-mono text-[12.5px] text-[var(--text-3)] whitespace-nowrap">
                                     {x.codigoReceita || '—'}
                                   </td>
-                                  <td className="py-2 px-2 align-middle min-w-0">
-                                    <div className="font-medium text-[var(--text)] leading-snug">
+                                  <td className="py-2.5 px-2 align-middle min-w-0">
+                                    <div className="font-semibold text-sm text-[var(--text)] leading-snug">
                                       {x.lp && (
-                                        <span className="inline-block text-[10.5px] font-semibold text-[var(--purple)] border border-[var(--purple)] rounded px-1 mr-1.5 leading-tight">
+                                        <span className="inline-block text-[11px] font-bold text-[var(--purple)] border border-[var(--purple)] rounded px-1.5 mr-1.5 leading-tight">
                                           LP
                                         </span>
                                       )}
-                                      {x.locked && <Lock size={12} className="inline mr-1 text-[var(--amber)]" />}
-                                      {x.splitParentId && <GitBranch size={12} className="inline mr-1 text-[var(--accent)]" />}
+                                      {x.locked && <Lock size={13} className="inline mr-1 text-[var(--amber)]" />}
+                                      {x.splitParentId && <GitBranch size={13} className="inline mr-1 text-[var(--accent)]" />}
                                       {x.produto}
                                     </div>
                                     {note && (
-                                      <span className={cn("text-[11.5px] block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
+                                      <span className={cn("text-xs font-medium block mt-0.5", note.type === 'warn' ? "text-[var(--amber)]" : "text-[var(--text-3)]")}>
                                         {note.text}
                                       </span>
                                     )}
                                   </td>
-                                  <td className="py-2 px-2 align-middle whitespace-nowrap">
+                                  <td className="py-2.5 px-2 align-middle whitespace-nowrap">
                                     <span
                                       className={cn(
-                                        "inline-flex items-center gap-1.5 text-xs",
-                                        st.k === 'ok' && "text-[var(--text-2)]",
-                                        st.k === 'and' && "text-[var(--text)]",
-                                        st.k === 'nao' && "text-[var(--red)] font-medium",
+                                        "inline-flex items-center gap-1.5 text-[13px]",
+                                        st.k === 'ok' && "text-[var(--text-2)] font-medium",
+                                        st.k === 'and' && "text-[var(--text)] font-semibold",
+                                        st.k === 'nao' && "text-[var(--red)] font-semibold",
                                         (st.k === 'pend' || st.k === 'prog') && "text-[var(--text-3)]"
                                       )}
                                     >
                                       <i
                                         className={cn(
-                                          "w-1.5 h-1.5 rounded-full inline-block shrink-0",
+                                          "w-2 h-2 rounded-full inline-block shrink-0",
                                           st.k === 'ok' && "bg-[var(--green)]",
                                           st.k === 'and' && "bg-[var(--amber)]",
                                           st.k === 'nao' && "bg-[var(--red)]",
@@ -447,8 +455,8 @@ export function DetailedReportView({
                                       {st.l}
                                     </span>
                                   </td>
-                                  <td className="py-2 px-2 align-middle text-right whitespace-nowrap">
-                                    <div className="flex items-center justify-end gap-1 font-mono text-xs">
+                                  <td className="py-2.5 px-2 align-middle text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-1 font-mono">
                                       <button
                                         type="button"
                                         onClick={(e) => onUpdateQty(x, -1, e)}
@@ -456,24 +464,29 @@ export function DetailedReportView({
                                         className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                         title="Diminuir 1"
                                       >
-                                        <Minus size={11} />
+                                        <Minus size={12} />
                                       </button>
-                                      <span className="font-semibold text-[var(--text)]">{x.real}</span>
-                                      <small className="text-[var(--text-3)]">/{x.prog}</small>
+                                      <span className={cn(
+                                        "text-[15.5px] font-bold tracking-tight",
+                                        x.real > x.prog ? "text-[var(--green)]" : "text-[var(--text)]"
+                                      )}>
+                                        {x.real}
+                                      </span>
+                                      <span className="text-[13px] font-semibold text-[var(--text-3)]">/{x.prog}</span>
                                       <button
                                         type="button"
                                         onClick={(e) => onUpdateQty(x, 1, e)}
-                                        disabled={x.locked || x.real >= x.prog}
+                                        disabled={x.locked}
                                         className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                        title="Aumentar 1"
+                                        title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                       >
-                                        <Plus size={11} />
+                                        <Plus size={12} />
                                       </button>
                                     </div>
                                   </td>
-                                  <td className="py-2 pr-4 pl-2 align-middle">
+                                  <td className="py-2.5 pr-4 pl-2 align-middle">
                                     <div className="flex items-center gap-2">
-                                      <div className="h-1 flex-1 bg-[var(--track)] rounded-full overflow-hidden">
+                                      <div className="h-1.5 flex-1 bg-[var(--track)] rounded-full overflow-hidden">
                                         <div
                                           className={cn(
                                             "h-full rounded-full transition-all duration-300",
@@ -482,7 +495,10 @@ export function DetailedReportView({
                                           style={{ width: `${Math.min(pct, 100)}%` }}
                                         />
                                       </div>
-                                      <span className="font-mono text-[11px] text-[var(--text-3)] w-8 text-right">
+                                      <span className={cn(
+                                        "font-mono text-xs font-semibold w-9 text-right",
+                                        pct > 100 ? "text-[var(--green)] font-bold" : "text-[var(--text-3)]"
+                                      )}>
                                         {pct}%
                                       </span>
                                     </div>
@@ -499,24 +515,24 @@ export function DetailedReportView({
 
                 {/* Tabela de PD/PA */}
                 <div className="overflow-x-auto min-w-0">
-                  <table className="w-full border-collapse table-fixed text-left text-xs">
+                  <table className="w-full border-collapse table-fixed text-left">
                     <colgroup>
                       <col />
-                      <col style={{ width: '96px' }} />
+                      <col style={{ width: '115px' }} />
                     </colgroup>
                     <thead>
-                      <tr className="border-b border-[var(--border)] text-[11.5px] font-medium text-[var(--text-3)] h-8">
-                        <th className="pl-4 pr-2 font-medium">Entregas PD/PA</th>
-                        <th className="pr-4 pl-2 font-medium text-right">Real/Prog</th>
+                      <tr className="border-b border-[var(--border)] text-xs font-semibold text-[var(--text-3)] h-9">
+                        <th className="pl-4 pr-2 font-semibold">Entregas PD/PA</th>
+                        <th className="pr-4 pl-2 font-semibold text-right">Real/Prog</th>
                       </tr>
                     </thead>
                     <tbody>
                       {/* Automática */}
-                      <tr className="bg-[var(--surface-2)] font-semibold text-[12px] text-[var(--text)] border-b border-[var(--border)]">
-                        <td colSpan={2} className="py-2 pl-4 pr-4">
+                      <tr className="bg-[var(--surface-2)] font-bold text-[13.5px] text-[var(--text)] border-b border-[var(--border)]">
+                        <td colSpan={2} className="py-2.5 pl-4 pr-4">
                           <span>
                             AUTOMÁTICA
-                            <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                            <span className="font-mono font-bold text-[var(--text-2)] text-[13px] ml-2">
                               {autoPdpa.reduce((a, c) => a + c.real, 0)}/{autoPdpa.reduce((a, c) => a + c.prog, 0)} · {autoPdpa.length} {autoPdpa.length === 1 ? 'item' : 'itens'}
                             </span>
                           </span>
@@ -525,7 +541,7 @@ export function DetailedReportView({
 
                       {autoPdpa.filter(filterItem).length === 0 ? (
                         <tr className="border-b border-[var(--border)] text-[var(--text-3)] text-center">
-                          <td colSpan={2} className="py-2.5 text-xs">
+                          <td colSpan={2} className="py-3 text-[13px]">
                             Nenhum registro
                           </td>
                         </tr>
@@ -541,22 +557,22 @@ export function DetailedReportView({
                               onClick={() => onItemClick(x)}
                               className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group"
                             >
-                              <td className="py-2 pl-4 pr-2 align-middle min-w-0">
+                              <td className="py-2.5 pl-4 pr-2 align-middle min-w-0">
                                 <span
                                   className={cn(
-                                    "inline-block w-2 h-2 rounded-full mr-2",
+                                    "inline-block w-2.5 h-2.5 rounded-full mr-2 shrink-0 align-middle",
                                     isDone && "bg-[var(--green)]",
                                     !isDone && x.real > 0 && "bg-[var(--amber)]",
                                     isNao && "bg-[var(--red)]",
                                     !isDone && x.real === 0 && !isNao && "border border-[var(--text-3)] bg-transparent"
                                   )}
                                 />
-                                <span className="font-normal text-[var(--text)] leading-snug">
+                                <span className="font-medium text-sm text-[var(--text)] leading-snug">
                                   {x.produto}
                                 </span>
                               </td>
-                              <td className="py-2 pr-4 pl-2 align-middle text-right whitespace-nowrap">
-                                <div className="flex items-center justify-end gap-1 font-mono text-xs">
+                              <td className="py-2.5 pr-4 pl-2 align-middle text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1 font-mono">
                                   <button
                                     type="button"
                                     onClick={(e) => onUpdateQty(x, -1, e)}
@@ -564,18 +580,22 @@ export function DetailedReportView({
                                     className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                     title="Diminuir 1"
                                   >
-                                    <Minus size={11} />
+                                    <Minus size={12} />
                                   </button>
-                                  <span className="font-semibold text-[var(--text)]">{x.real}</span>
-                                  <small className="text-[var(--text-3)]">/{x.prog}</small>
+                                  <span className={cn(
+                                    "text-[15.5px] font-bold tracking-tight",
+                                    x.real > x.prog ? "text-[var(--green)]" : "text-[var(--text)]"
+                                  )}>
+                                    {x.real}
+                                  </span>
+                                  <span className="text-[13px] font-semibold text-[var(--text-3)]">/{x.prog}</span>
                                   <button
                                     type="button"
                                     onClick={(e) => onUpdateQty(x, 1, e)}
-                                    disabled={x.real >= x.prog}
                                     className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                    title="Aumentar 1"
+                                    title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                   >
-                                    <Plus size={11} />
+                                    <Plus size={12} />
                                   </button>
                                 </div>
                               </td>
@@ -585,11 +605,11 @@ export function DetailedReportView({
                       )}
 
                       {/* Direta */}
-                      <tr className="bg-[var(--surface-2)] font-semibold text-[12px] text-[var(--text)] border-t-2 border-b border-[var(--border)]">
-                        <td colSpan={2} className="py-2 pl-4 pr-4">
+                      <tr className="bg-[var(--surface-2)] font-bold text-[13.5px] text-[var(--text)] border-t-2 border-b border-[var(--border)]">
+                        <td colSpan={2} className="py-2.5 pl-4 pr-4">
                           <span>
                             DIRETA
-                            <span className="font-mono font-normal text-[var(--text-3)] ml-2">
+                            <span className="font-mono font-bold text-[var(--text-2)] text-[13px] ml-2">
                               {diretaPdpa.reduce((a, c) => a + c.real, 0)}/{diretaPdpa.reduce((a, c) => a + c.prog, 0)} · {diretaPdpa.length} {diretaPdpa.length === 1 ? 'item' : 'itens'}
                             </span>
                           </span>
@@ -598,7 +618,7 @@ export function DetailedReportView({
 
                       {diretaPdpa.filter(filterItem).length === 0 ? (
                         <tr className="border-b border-[var(--border)] text-[var(--text-3)] text-center">
-                          <td colSpan={2} className="py-2.5 text-xs">
+                          <td colSpan={2} className="py-3 text-[13px]">
                             Nenhum registro
                           </td>
                         </tr>
@@ -614,22 +634,22 @@ export function DetailedReportView({
                               onClick={() => onItemClick(x)}
                               className="border-b border-[var(--border)] hover:bg-[var(--hover)] transition-colors cursor-pointer group"
                             >
-                              <td className="py-2 pl-4 pr-2 align-middle min-w-0">
+                              <td className="py-2.5 pl-4 pr-2 align-middle min-w-0">
                                 <span
                                   className={cn(
-                                    "inline-block w-2 h-2 rounded-full mr-2",
+                                    "inline-block w-2.5 h-2.5 rounded-full mr-2 shrink-0 align-middle",
                                     isDone && "bg-[var(--green)]",
                                     !isDone && x.real > 0 && "bg-[var(--amber)]",
                                     isNao && "bg-[var(--red)]",
                                     !isDone && x.real === 0 && !isNao && "border border-[var(--text-3)] bg-transparent"
                                   )}
                                 />
-                                <span className="font-normal text-[var(--text)] leading-snug">
+                                <span className="font-medium text-sm text-[var(--text)] leading-snug">
                                   {x.produto}
                                 </span>
                               </td>
-                              <td className="py-2 pr-4 pl-2 align-middle text-right whitespace-nowrap">
-                                <div className="flex items-center justify-end gap-1 font-mono text-xs">
+                              <td className="py-2.5 pr-4 pl-2 align-middle text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1 font-mono">
                                   <button
                                     type="button"
                                     onClick={(e) => onUpdateQty(x, -1, e)}
@@ -637,18 +657,22 @@ export function DetailedReportView({
                                     className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
                                     title="Diminuir 1"
                                   >
-                                    <Minus size={11} />
+                                    <Minus size={12} />
                                   </button>
-                                  <span className="font-semibold text-[var(--text)]">{x.real}</span>
-                                  <small className="text-[var(--text-3)]">/{x.prog}</small>
+                                  <span className={cn(
+                                    "text-[15.5px] font-bold tracking-tight",
+                                    x.real > x.prog ? "text-[var(--green)]" : "text-[var(--text)]"
+                                  )}>
+                                    {x.real}
+                                  </span>
+                                  <span className="text-[13px] font-semibold text-[var(--text-3)]">/{x.prog}</span>
                                   <button
                                     type="button"
                                     onClick={(e) => onUpdateQty(x, 1, e)}
-                                    disabled={x.real >= x.prog}
                                     className="w-5 h-5 rounded flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--border)] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                                    title="Aumentar 1"
+                                    title={x.real >= x.prog ? "Adicionar excedente / oportunidade (+1)" : "Aumentar 1"}
                                   >
-                                    <Plus size={11} />
+                                    <Plus size={12} />
                                   </button>
                                 </div>
                               </td>
