@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { AgingData, RemessaData, ConfiguracaoResiduais, LoteInvestigacao } from '@/types/aging';
+import { PesagemTodoItem } from '@/types/pesagem-todo';
+import { createBatchPesagemTodos, CreatePesagemTodoInput } from '@/lib/pesagem-todo-helpers';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
 import { addLoteInvestigacao, removeLoteInvestigacao, triggerSapAutomation, checkSapAutomationStatus } from '@/lib/dashpesagem-api';
@@ -86,6 +88,8 @@ export interface EnrichedRow extends AgingData {
   is_controlado: boolean;
   is_investigacao: boolean;
   is_blocked?: boolean;
+  has_todo?: boolean;
+  todo_item?: PesagemTodoItem;
 }
 
 interface AgingTableProps {
@@ -94,6 +98,7 @@ interface AgingTableProps {
   remessas?: RemessaData[];
   configResiduais?: ConfiguracaoResiduais;
   lotesInvestigacao?: LoteInvestigacao[];
+  todoItems?: PesagemTodoItem[];
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   residuaisActive?: boolean;
@@ -105,6 +110,7 @@ interface AgingTableProps {
   onClearMaterialFilter?: () => void;
   currentUserEmail?: string;
   onAtualizarDb?: () => void;
+  onNavigateToTodo?: (lote: string) => void;
 }
 
 export function AgingTable({
@@ -113,6 +119,7 @@ export function AgingTable({
   remessas = [],
   configResiduais,
   lotesInvestigacao = [],
+  todoItems = [],
   searchTerm = '',
   onSearchChange,
   residuaisActive = false,
@@ -124,6 +131,7 @@ export function AgingTable({
   onClearMaterialFilter,
   currentUserEmail,
   onAtualizarDb,
+  onNavigateToTodo,
 }: AgingTableProps) {
   const [cols, setCols] = useState<ColumnDef[]>(DEFAULT_COLS);
   const [colsPopOpen, setColsPopOpen] = useState(false);
@@ -234,6 +242,16 @@ export function AgingTable({
     return set;
   }, [lotesInvestigacao]);
 
+  const activeTodoMap = useMemo(() => {
+    const map = new Map<string, PesagemTodoItem>();
+    for (const item of todoItems) {
+      if (item.lote && item.status !== 'concluido') {
+        map.set(item.lote.trim().toUpperCase(), item);
+      }
+    }
+    return map;
+  }, [todoItems]);
+
   // Enriquecer dados
   const enrichedData = useMemo<EnrichedRow[]>(() => {
     return data.map((item, idx) => {
@@ -268,6 +286,8 @@ export function AgingTable({
       const is_cfa = especial === 'cfa';
       const is_controlado = (item.texto_breve_material || '').includes('**');
       const is_investigacao = lotesInvSet.has((item.lote || '').trim().toUpperCase());
+      const todo_item = activeTodoMap.get((item.lote || '').trim().toUpperCase());
+      const has_todo = Boolean(todo_item) || is_investigacao;
 
       return {
         ...item,
@@ -283,9 +303,11 @@ export function AgingTable({
         is_cfa,
         is_controlado,
         is_investigacao,
+        has_todo,
+        todo_item,
       };
     });
-  }, [data, valores, remessasCountMap, lotesInvSet, diasAlerta, diasCritico, limiteVerde, limiteAmarelo, limiteMaximo]);
+  }, [data, valores, remessasCountMap, lotesInvSet, activeTodoMap, diasAlerta, diasCritico, limiteVerde, limiteAmarelo, limiteMaximo]);
 
   // Filtragem e Ordenação
   const filteredAndSorted = useMemo(() => {
@@ -537,6 +559,34 @@ export function AgingTable({
       onInvestigacaoChange?.();
     } catch {
       toast.error('Erro ao atualizar investigação', { id: toastId });
+    }
+  };
+
+  const handleBatchAddToTodo = async () => {
+    if (selectedRowsList.length === 0) return;
+    const toastId = toast.loading(`Adicionando ${selectedRowsList.length} lote(s) ao TODO...`);
+    try {
+      const inputs: CreatePesagemTodoInput[] = selectedRowsList.map((row) => ({
+        material: row.material,
+        texto_breve_material: row.texto_breve_material,
+        lote: row.lote,
+        quantidade: row.estoque_disponivel,
+        unidade_medida: row.unidade_medida,
+        deposito: row.deposito,
+        tipo_deposito: row.tipo_deposito,
+        posicao_deposito: row.posicao_deposito,
+        valor_unitario: row.valor_unitario,
+        valor_total: row.valor_total,
+        dias_aging: row.dias_aging,
+        data_vencimento: row.data_vencimento,
+        motivo_inicial: 'Marcado via tabela de aging',
+        prioridade: row.status_crit === 'cr' ? 'critica' : row.status_crit === 'al' ? 'alta' : 'media',
+      }));
+      await createBatchPesagemTodos(inputs);
+      toast.success(`${selectedRowsList.length} lote(s) adicionados ao TODO com sucesso!`, { id: toastId });
+      setSelectedIds({});
+    } catch {
+      toast.error('Erro ao adicionar itens ao TODO', { id: toastId });
     }
   };
 
@@ -968,6 +1018,14 @@ export function AgingTable({
             <Lock size={13} />
             Bloquear / MIGO…
           </button>
+          <button
+            type="button"
+            className="btn sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/30 px-2 flex items-center justify-center transition-colors"
+            onClick={handleBatchAddToTodo}
+            title={`Adicionar ${selectedRowsList.length} lote(s) ao TODO / Investigação`}
+          >
+            <AlertCircle size={14} className="text-rose-400 animate-pulse" />
+          </button>
           <button type="button" className="btn sm" onClick={handleToggleInvestigacao}>
             Investigação
           </button>
@@ -1137,7 +1195,20 @@ export function AgingTable({
                           const isBlocked = blockedMap[row.lote] ?? row.is_blocked;
                           return (
                             <td key={col.k} className="lt">
-                              <span>{highlightText(row.lote)}</span>
+                              <span className="font-mono">{highlightText(row.lote)}</span>
+                              {row.has_todo && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigateToTodo?.(row.lote);
+                                  }}
+                                  className="inline-flex items-center justify-center p-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 ml-1.5 align-middle hover:bg-rose-500/25 transition-colors cursor-pointer"
+                                  title={`Item em TODO/Investigação: ${row.todo_item?.motivo_inicial || 'Acompanhamento ativo'} (Clique para ver no TODO)`}
+                                >
+                                  <AlertCircle size={12} className="text-rose-500 shrink-0" />
+                                </button>
+                              )}
                               {isBlocked && (
                                 <Lock className="lock inline-block w-3 h-3 text-[var(--amber)] ml-1 align-text-bottom" />
                               )}

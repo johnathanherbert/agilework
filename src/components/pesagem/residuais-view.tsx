@@ -9,6 +9,8 @@ import {
   NivelResidual,
   LoteInvestigacao,
 } from '@/types/aging';
+import { PesagemTodoItem } from '@/types/pesagem-todo';
+import { createBatchPesagemTodos, CreatePesagemTodoInput } from '@/lib/pesagem-todo-helpers';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
 import {
@@ -263,6 +265,8 @@ export interface EnrichedResidualRow extends AgingData {
   is_controlado: boolean;
   is_investigacao: boolean;
   is_blocked?: boolean;
+  has_todo?: boolean;
+  todo_item?: PesagemTodoItem;
 }
 
 export interface ResiduaisViewProps {
@@ -273,12 +277,14 @@ export interface ResiduaisViewProps {
   configResiduais?: ConfiguracaoResiduais;
   onNavigateToRemessas?: (material: string) => void;
   lotesInvestigacao?: LoteInvestigacao[];
+  todoItems?: PesagemTodoItem[];
   onInvestigacaoChange?: () => void;
   currentUserEmail?: string;
   selectedCriticality?: string | null;
   onCriticalityChange?: (crit: string | null) => void;
   onAtualizarDb?: () => void;
   isAtualizandoDb?: boolean;
+  onNavigateToTodo?: (lote: string) => void;
 }
 
 export function ResiduaisView({
@@ -289,12 +295,14 @@ export function ResiduaisView({
   configResiduais,
   onNavigateToRemessas,
   lotesInvestigacao = [],
+  todoItems = [],
   onInvestigacaoChange,
   currentUserEmail,
   selectedCriticality,
   onCriticalityChange,
   onAtualizarDb,
   isAtualizandoDb,
+  onNavigateToTodo,
 }: ResiduaisViewProps) {
   const [cols, setCols] = useState<ColumnDefConfig[]>(DEFAULT_COLS);
   const [colsPopOpen, setColsPopOpen] = useState(false);
@@ -408,6 +416,16 @@ export function ResiduaisView({
     return set;
   }, [lotesInvestigacao]);
 
+  const activeTodoMap = useMemo(() => {
+    const map = new Map<string, PesagemTodoItem>();
+    for (const item of todoItems) {
+      if (item.lote && item.status !== 'concluido') {
+        map.set(item.lote.trim().toUpperCase(), item);
+      }
+    }
+    return map;
+  }, [todoItems]);
+
   // Enriquecer dados da Pesagem com Regras de Residuais
   const isTrzCritSelected = useMemo(() => {
     if (!selectedCriticality) return false;
@@ -451,6 +469,8 @@ export function ResiduaisView({
       const is_cfa = especial === 'cfa';
       const is_controlado = (item.texto_breve_material || '').includes('**');
       const is_investigacao = lotesInvSet.has((item.lote || '').trim().toUpperCase());
+      const todo_item = activeTodoMap.get((item.lote || '').trim().toUpperCase());
+      const has_todo = Boolean(todo_item) || is_investigacao;
 
       return {
         ...item,
@@ -466,9 +486,11 @@ export function ResiduaisView({
         is_cfa,
         is_controlado,
         is_investigacao,
+        has_todo,
+        todo_item,
       };
     });
-  }, [agingData, allData, isTrzCritSelected, valores, remessasCountMap, lotesInvSet, diasAlerta, diasCritico, limiteVerde, limiteAmarelo, limiteMaximo]);
+  }, [agingData, allData, isTrzCritSelected, valores, remessasCountMap, lotesInvSet, activeTodoMap, diasAlerta, diasCritico, limiteVerde, limiteAmarelo, limiteMaximo]);
 
   // Estatísticas de Residuais
   const residualStats = useMemo(() => {
@@ -778,6 +800,34 @@ export function ResiduaisView({
       toast.error('Erro ao atualizar investigação');
     } finally {
       setIsApplyingInvestigacao(false);
+    }
+  };
+
+  const handleBatchAddToTodo = async () => {
+    if (selectedRowsList.length === 0) return;
+    const toastId = toast.loading(`Adicionando ${selectedRowsList.length} lote(s) ao TODO...`);
+    try {
+      const inputs: CreatePesagemTodoInput[] = selectedRowsList.map((row) => ({
+        material: row.material,
+        texto_breve_material: row.texto_breve_material,
+        lote: row.lote,
+        quantidade: Number(row.estoque_disponivel) || 0,
+        unidade_medida: row.unidade_medida,
+        deposito: row.deposito,
+        tipo_deposito: row.tipo_deposito,
+        posicao_deposito: row.posicao_deposito,
+        valor_unitario: row.valor_unitario,
+        valor_total: row.valor_total,
+        dias_aging: row.dias_aging,
+        data_vencimento: row.data_vencimento,
+        motivo_inicial: 'Marcado via análise de residuais',
+        prioridade: row.status_crit === 'cr' ? 'critica' : row.status_crit === 'al' ? 'alta' : 'media',
+      }));
+      await createBatchPesagemTodos(inputs);
+      toast.success(`${selectedRowsList.length} lote(s) adicionados ao TODO com sucesso!`, { id: toastId });
+      setSelectedIds({});
+    } catch {
+      toast.error('Erro ao adicionar itens ao TODO', { id: toastId });
     }
   };
 
@@ -1245,6 +1295,14 @@ export function ResiduaisView({
             <Lock size={13} />
             Bloquear / desbloquear
           </button>
+          <button
+            type="button"
+            className="btn sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/30 px-2 flex items-center justify-center transition-colors"
+            onClick={handleBatchAddToTodo}
+            title={`Adicionar ${selectedRowsList.length} lote(s) ao TODO / Investigação`}
+          >
+            <AlertCircle size={14} className="text-rose-400" />
+          </button>
           <button type="button" className="btn sm" onClick={handleOpenMoverModal}>
             <ArrowRightLeft size={13} />
             Mover…
@@ -1435,11 +1493,24 @@ export function ResiduaisView({
                                   copyToClipboard(row.lote);
                                   toast.success(`Lote ${row.lote} copiado`);
                                 }}
-                                className="hover:text-[var(--amber)] transition-colors cursor-pointer text-left font-mono font-bold text-[var(--amber)]"
+                                className="hover:text-[var(--amber)] transition-colors cursor-pointer text-left font-mono font-bold text-[var(--amber)] inline-flex items-center"
                                 title="Clique para copiar"
                               >
                                 <span>{highlightText(row.lote)}</span>
                               </button>
+                              {row.has_todo && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigateToTodo?.(row.lote);
+                                  }}
+                                  className="inline-flex items-center justify-center p-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 ml-1.5 align-middle hover:bg-rose-500/25 transition-colors cursor-pointer"
+                                  title={`Item em TODO/Investigação: ${row.todo_item?.motivo_inicial || 'Acompanhamento ativo'} (Clique para ver no TODO)`}
+                                >
+                                  <AlertCircle size={12} className="text-rose-500 shrink-0" />
+                                </button>
+                              )}
                               {isBlocked && (
                                 <Lock className="lock inline-block w-3 h-3 text-[var(--amber)] ml-1 align-text-bottom" />
                               )}

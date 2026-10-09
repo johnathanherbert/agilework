@@ -176,6 +176,7 @@ interface ConsultaRapidaViewProps {
   valores?: Record<string, number>;
   currentUserEmail?: string;
   onNavigateToTab?: (tab: string) => void;
+  onAtualizarDb?: () => void;
   isEmbedded?: boolean;
 }
 
@@ -185,6 +186,7 @@ export function ConsultaRapidaView({
   valores: initialValores,
   currentUserEmail,
   onNavigateToTab,
+  onAtualizarDb,
   isEmbedded = false,
 }: ConsultaRapidaViewProps) {
   const [agingList, setAgingList] = useState<AgingData[]>(initialAging || []);
@@ -765,11 +767,12 @@ export function ConsultaRapidaView({
     setIsDevolverRunning(true);
     const toastId = toast.loading(`Enviando devolução de ${devolverLote} (${devolverVolumes.length} volume(s))…`);
     const vbsCode = generateDevolverZwm296Vbs(devolverMaterial, devolverLote, devolverVolumes);
-    const res = await executeSapJobAndWait('devolver', currentUserEmail || 'Mobile / Consulta', vbsCode, 80);
+    const res = await executeSapJobAndWait('devolver_zwm296', currentUserEmail || 'Mobile / Consulta', vbsCode, 80);
     setIsDevolverRunning(false);
     if (res.success) {
       toast.success(`Devolução do lote ${devolverLote} executada no SAP`, { id: toastId });
       loadStockData(true);
+      onAtualizarDb?.();
     } else {
       toast.error(`Devolução falhou: ${res.message || 'erro no SAP'}`, { id: toastId, duration: 8000 });
     }

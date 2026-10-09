@@ -162,6 +162,14 @@ service cloud.firestore {
       allow delete: if canAccessSolicitacoes();
     }
 
+    // Pesagem Todos collection - Pendências de Estoque e Investigação de Lotes
+    match /pesagem_todos/{todoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
     // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && 

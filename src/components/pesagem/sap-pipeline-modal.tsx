@@ -391,38 +391,48 @@ If IsObject(WScript) Then
 End If
 session.findById("wnd[0]").maximize
 session.findById("wnd[0]/tbar[0]/okcd").text = "/nzwm296"
-session.findById("wnd[0]").sendVKey 0`;
+session.findById("wnd[0]").sendVKey 0
+session.findById("wnd[0]/usr/btnCTR_CREATE").press
+session.findById("wnd[0]/usr/ctxtLTAK-BWLVS").text = "996"
+session.findById("wnd[0]/usr/ctxtT001L-LGORT").text = "pes"
+session.findById("wnd[0]/usr/ctxtT001W-WERKS").text = "600"
+session.findById("wnd[0]/usr/ctxtT301-LGTYP").text = "pes"
+session.findById("wnd[0]/usr/ctxtLTBK-VLPLA").text = "pesagem"
+session.findById("wnd[0]/usr/txtW_DEP_DEPOSITO").text = "alm"
+session.findById("wnd[0]/usr/txtLTAP-LETYP").text = "e1"
+`;
 
   const matnrLines = items.map((item, idx) => {
     const cleanMat = item.material.trim();
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,${idx}]").text = "${cleanMat}"`;
+    return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MATNR[0,${idx}]").text = "${cleanMat}"`;
   }).join('\n');
 
   const chargLines = items.map((item, idx) => {
     const cleanLote = item.lote.trim();
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-CHARG[1,${idx}]").text = "${cleanLote}"`;
+    return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/ctxtT_ZWMTB296I-CHARG[1,${idx}]").text = "${cleanLote}"`;
   }).join('\n');
 
   const mengeLines = items.map((item, idx) => {
     const cleanQtd = item.quantidade.trim().replace('.', ',');
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/txtZWMS_DEVOLUCAO-MENGE[2,${idx}]").text = "${cleanQtd}"`;
+    return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MENGE[2,${idx}]").text = "${cleanQtd}"`;
   }).join('\n');
 
   const mengeVolLines = items.map((item, idx) => {
     const cleanVol = (item.volume || '1').trim().replace('.', ',');
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/txtZWMS_DEVOLUCAO-MENGE_VOL[3,${idx}]").text = "${cleanVol}"`;
+    return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MENGE_VOL[4,${idx}]").text = "${cleanVol}"`;
   }).join('\n');
 
   const palletLines = items.map((_, idx) => {
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-LETYP[5,${idx}]").text = "IP"`;
+    return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${idx}]").text = "1"`;
   }).join('\n');
 
-  const vbsFooter = `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,0]").setFocus
-session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,0]").caretPosition = 0
-session.findById("wnd[0]").sendVKey 0
-session.findById("wnd[0]/tbar[0]/btn[11]").press
+  const lastIdx = items.length - 1;
+  const vbsFooter = `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${lastIdx}]").setFocus
+session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${lastIdx}]").caretPosition = 1
+session.findById("wnd[0]/tbar[1]/btn[13]").press
 session.findById("wnd[0]/tbar[0]/okcd").text = "/n"
-session.findById("wnd[0]").sendVKey 0`;
+session.findById("wnd[0]").sendVKey 0
+`;
 
   return [
     vbsHeader,
@@ -467,36 +477,50 @@ If IsObject(WScript) Then
 End If
 session.findById("wnd[0]").maximize
 session.findById("wnd[0]/tbar[0]/okcd").text = "/nzwm296"
-session.findById("wnd[0]").sendVKey 0`;
-
-  const matnrLines = volumes.map((_, idx) =>
-    `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,${idx}]").text = "${mat}"`
-  ).join('\n');
-
-  const chargLines = volumes.map((_, idx) =>
-    `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-CHARG[1,${idx}]").text = "${lot}"`
-  ).join('\n');
-
-  const mengeLines = volumes.map((v, idx) => {
-    const qtd = v.quantidade.trim().replace('.', ',');
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/txtZWMS_DEVOLUCAO-MENGE[2,${idx}]").text = "${qtd}"`;
-  }).join('\n');
-
-  const mengeVolLines = volumes.map((v, idx) => {
-    const vol = (v.volume || '1').trim().replace('.', ',');
-    return `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/txtZWMS_DEVOLUCAO-MENGE_VOL[3,${idx}]").text = "${vol}"`;
-  }).join('\n');
-
-  const palletLines = volumes.map((_, idx) =>
-    `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-LETYP[5,${idx}]").text = "IP"`
-  ).join('\n');
-
-  const vbsFooter = `session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,0]").setFocus
-session.findById("wnd[0]/usr/tblSAPMZWMS_DEVOLUCAOTBL_DADOS/ctxtZWMS_DEVOLUCAO-MATNR[0,0]").caretPosition = 0
 session.findById("wnd[0]").sendVKey 0
-session.findById("wnd[0]/tbar[0]/btn[11]").press
+session.findById("wnd[0]/usr/btnCTR_CREATE").press
+session.findById("wnd[0]/usr/ctxtLTAK-BWLVS").text = "996"
+session.findById("wnd[0]/usr/ctxtT001L-LGORT").text = "pes"
+session.findById("wnd[0]/usr/ctxtT001W-WERKS").text = "600"
+session.findById("wnd[0]/usr/ctxtT301-LGTYP").text = "pes"
+session.findById("wnd[0]/usr/ctxtLTBK-VLPLA").text = "pesagem"
+session.findById("wnd[0]/usr/txtW_DEP_DEPOSITO").text = "alm"
+session.findById("wnd[0]/usr/txtLTAP-LETYP").text = "e1"
+`;
+
+  const matnrLines = volumes
+    .map((_, idx) => `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MATNR[0,${idx}]").text = "${mat}"`)
+    .join('\n');
+
+  const chargLines = volumes
+    .map((_, idx) => `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/ctxtT_ZWMTB296I-CHARG[1,${idx}]").text = "${lot}"`)
+    .join('\n');
+
+  const mengeLines = volumes
+    .map((v, idx) => {
+      const qtdStr = (v.quantidade || '').trim().replace('.', ',');
+      return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MENGE[2,${idx}]").text = "${qtdStr}"`;
+    })
+    .join('\n');
+
+  const mengeVolLines = volumes
+    .map((v, idx) => {
+      const volStr = (v.volume || '1').trim();
+      return `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-MENGE_VOL[4,${idx}]").text = "${volStr}"`;
+    })
+    .join('\n');
+
+  const palletLines = volumes
+    .map((_, idx) => `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${idx}]").text = "1"`)
+    .join('\n');
+
+  const lastIdx = volumes.length - 1;
+  const vbsFooter = `session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${lastIdx}]").setFocus
+session.findById("wnd[0]/usr/tblSAPMZ_296TC_ITEM/txtT_ZWMTB296I-PALLET[5,${lastIdx}]").caretPosition = 1
+session.findById("wnd[0]/tbar[1]/btn[13]").press
 session.findById("wnd[0]/tbar[0]/okcd").text = "/n"
-session.findById("wnd[0]").sendVKey 0`;
+session.findById("wnd[0]").sendVKey 0
+`;
 
   return [
     vbsHeader,
@@ -739,7 +763,7 @@ export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
           result = await executeSapJobAndWait('extrair_relatorio', currentUserEmail, undefined, 180);
         } else if (step.actionType === 'devolver') {
           const vbsCode = generateDevolverVbs(selectedItems);
-          result = await executeSapJobAndWait('devolver', currentUserEmail, vbsCode, 120);
+          result = await executeSapJobAndWait('devolver_zwm296', currentUserEmail, vbsCode, 120);
         }
       } catch (err: any) {
         result = { success: false, message: err?.message || 'Erro inesperado na execução' };

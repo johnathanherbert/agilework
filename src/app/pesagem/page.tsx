@@ -23,6 +23,7 @@ import { RemessasView } from '@/components/pesagem/remessas-view';
 import { ConsultaRapidaView } from '@/components/pesagem/consulta-rapida-view';
 import { ToolsView } from '@/components/pesagem/tools-view';
 import { ResiduaisView } from '@/components/pesagem/residuais-view';
+import { TodoView } from '@/components/pesagem/todo-view';
 import { ValorUpload } from '@/components/pesagem/valor-upload';
 import { RemessaUpload } from '@/components/pesagem/remessa-upload';
 import { ConfiguracaoResiduaisComponent } from '@/components/pesagem/configuracao-residuais';
@@ -32,6 +33,8 @@ import { Sidebar } from '@/components/layout/sidebar';
 import ProtectedRoute from '@/components/auth/protected-route';
 import { cn } from '@/lib/utils';
 import { MoverModal } from '@/components/pesagem/mover-modal';
+import { PesagemTodoItem } from '@/types/pesagem-todo';
+import { subscribePesagemTodos } from '@/lib/pesagem-todo-helpers';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,6 +49,7 @@ import {
   TrendingUp,
   FileText,
   AlertTriangle,
+  AlertCircle,
   Truck,
   QrCode,
   Wrench,
@@ -84,16 +88,24 @@ export default function PesagemPage() {
     dias_critico: 15,
   });
   const [lotesInvestigacao, setLotesInvestigacao] = useState<LoteInvestigacao[]>([]);
+  const [todoItems, setTodoItems] = useState<PesagemTodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Navegação e Filtros
-  const [activeTab, setActiveTab] = useState<'fin' | 'one' | 'res' | 'rem' | 'scan' | 'tools' | 'settings'>('fin');
+  const [activeTab, setActiveTab] = useState<'fin' | 'one' | 'res' | 'todo' | 'rem' | 'scan' | 'tools' | 'settings'>('fin');
   const [selectedDep, setSelectedDep] = useState<string>('all');
   const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
   const [selectedMaterialFilter, setSelectedMaterialFilter] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [residuaisActive, setResiduaisActive] = useState<boolean>(false);
+  const [selectedTodoLote, setSelectedTodoLote] = useState<string | null>(null);
+
+  const handleNavigateToTodo = (lote: string) => {
+    setSelectedTodoLote(lote);
+    setActiveTab('todo');
+    setResiduaisActive(false);
+  };
 
   // Relógio e Timestamps
   const [clockTime, setClockTime] = useState<string>('');
@@ -127,9 +139,22 @@ export default function PesagemPage() {
     if (typeof window === 'undefined') return;
     const checkUrlAndStorage = () => {
       const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab');
+      const tabParam = params.get('tab')?.toLowerCase();
       if (tabParam === 'scan' || params.get('code')) {
         setActiveTab('scan');
+      } else if (tabParam === 'todo' || tabParam === 'tarefas' || tabParam === 'investigacao') {
+        setActiveTab('todo');
+      } else if (tabParam === 'res' || tabParam === 'residuais') {
+        setActiveTab('res');
+        setResiduaisActive(true);
+      } else if (tabParam === 'one' || tabParam === 'onepage') {
+        setActiveTab('one');
+      } else if (tabParam === 'rem' || tabParam === 'remessas') {
+        setActiveTab('rem');
+      } else if (tabParam === 'tools') {
+        setActiveTab('tools');
+      } else if (tabParam === 'settings' || tabParam === 'config') {
+        setActiveTab('settings');
       }
     };
     checkUrlAndStorage();
@@ -264,6 +289,30 @@ export default function PesagemPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Escuta em tempo real os itens de TODO salvos no Firestore
+  useEffect(() => {
+    const unsub = subscribePesagemTodos(
+      (items) => setTodoItems(items),
+      (err) => console.warn('Erro ao escutar Firestore TODOs:', err)
+    );
+    return () => unsub();
+  }, []);
+
+  const activeTodoCount = useMemo(() => {
+    const activeLotes = new Set<string>();
+    for (const t of todoItems) {
+      if (t.status !== 'concluido' && t.lote) {
+        activeLotes.add(t.lote.trim().toUpperCase());
+      }
+    }
+    for (const inv of lotesInvestigacao) {
+      if (inv.lote) {
+        activeLotes.add(inv.lote.trim().toUpperCase());
+      }
+    }
+    return activeLotes.size;
+  }, [todoItems, lotesInvestigacao]);
 
   // Atalhos de teclado ( '/' para busca, 'Esc' para limpar )
   useEffect(() => {
@@ -649,8 +698,8 @@ export default function PesagemPage() {
           <main className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-5 pb-24 md:pb-5 min-w-0">
             {/* Topbar de Sub-Navegação e Ações Integradas */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 mb-4 border-b border-[var(--border)]">
-              {/* Seletor Segmentado de Abas (Visível apenas em Desktop md:) */}
-              <div className="seg hidden md:flex overflow-x-auto no-scrollbar flex-nowrap max-w-full pb-0.5">
+              {/* Seletor Segmentado de Abas */}
+              <div className="seg flex overflow-x-auto no-scrollbar flex-nowrap max-w-full pb-0.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -684,6 +733,27 @@ export default function PesagemPage() {
                   <AlertTriangle size={14} />
                   Residuais
                   <span className="n">{totalResiduaisCount}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('todo');
+                    setResiduaisActive(false);
+                  }}
+                  className={cn(
+                    activeTab === 'todo' ? 'on' : '',
+                    "text-rose-400 font-bold hover:text-rose-300"
+                  )}
+                >
+                  <AlertCircle size={14} className="text-rose-400 shrink-0" />
+                  TODO
+                  {activeTodoCount > 0 ? (
+                    <span className="n bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full text-[10px] leading-none">
+                      {activeTodoCount}
+                    </span>
+                  ) : (
+                    <span className="n text-[10px] opacity-60">0</span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -733,11 +803,6 @@ export default function PesagemPage() {
 
               {/* Status Operacional & Disparadores */}
               <div className="flex items-center gap-3 text-xs flex-wrap justify-end">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius)] bg-[var(--green)]/10 text-[var(--green)] border border-[var(--green)]/20 text-[11px] font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-                  
-                </span>
-
                 <div className="text-right leading-tight hidden xl:block">
                   <span className="text-[11px] text-[var(--text-3)] block">Última sincronização</span>
                   <b className="font-mono text-[var(--text)] text-xs">{formatLastUpdate(lastUpdate)}</b>
@@ -1037,6 +1102,7 @@ export default function PesagemPage() {
                 remessas={remessas}
                 configResiduais={configResiduais}
                 lotesInvestigacao={lotesInvestigacao}
+                todoItems={todoItems}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 residuaisActive={residuaisActive}
@@ -1047,6 +1113,7 @@ export default function PesagemPage() {
                 onClearMaterialFilter={() => setSelectedMaterialFilter(undefined)}
                 currentUserEmail={user?.email || 'Web Pesagem'}
                 onAtualizarDb={handleAtualizarDb}
+                onNavigateToTodo={handleNavigateToTodo}
               />
             </div>
           )}
@@ -1067,10 +1134,34 @@ export default function PesagemPage() {
                   setActiveTab('rem');
                 }}
                 lotesInvestigacao={lotesInvestigacao}
+                todoItems={todoItems}
                 onInvestigacaoChange={loadData}
                 currentUserEmail={user?.email || userData?.email}
                 onAtualizarDb={handleAtualizarDb}
                 isAtualizandoDb={isAtualizandoDb}
+                onNavigateToTodo={handleNavigateToTodo}
+              />
+            </div>
+          )}
+
+          {/* ABA TODO & INVESTIGAÇÃO */}
+          {activeTab === 'todo' && (
+            <div className="space-y-4">
+              <TodoView
+                agingData={data}
+                valores={valores}
+                todoItems={todoItems}
+                lotesInvestigacao={lotesInvestigacao}
+                currentUserEmail={user?.email || userData?.email}
+                onNavigateToMaterial={(mat) => {
+                  setSelectedMaterialFilter(mat);
+                  setActiveTab('fin');
+                }}
+                onAtualizarDb={handleAtualizarDb}
+                isAtualizandoDb={isAtualizandoDb}
+                onInvestigacaoChange={loadData}
+                selectedLote={selectedTodoLote}
+                onClearSelectedLote={() => setSelectedTodoLote(null)}
               />
             </div>
           )}
@@ -1113,6 +1204,7 @@ export default function PesagemPage() {
                 remessas={remessas}
                 valores={valores}
                 currentUserEmail={user?.email || userData?.email}
+                onAtualizarDb={handleAtualizarDb}
                 isEmbedded={true}
               />
             </div>
@@ -1242,6 +1334,27 @@ export default function PesagemPage() {
               {totalResiduaisCount > 0 && (
                 <span className="absolute top-0 right-1 px-1 rounded-full bg-[var(--red)] text-white text-[9px] font-mono leading-none py-0.5">
                   {totalResiduaisCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('todo');
+                setResiduaisActive(false);
+              }}
+              className={cn(
+                "relative flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
+                activeTab === 'todo'
+                  ? "text-rose-400 font-bold bg-rose-500/10"
+                  : "text-[var(--text-3)] hover:text-[var(--text)]"
+              )}
+            >
+              <AlertCircle size={15} className={activeTab === 'todo' ? "text-rose-400" : ""} />
+              <span className="truncate">TODO</span>
+              {activeTodoCount > 0 && (
+                <span className="absolute top-0 right-1 px-1 rounded-full bg-rose-500 text-white text-[9px] font-mono leading-none py-0.5">
+                  {activeTodoCount}
                 </span>
               )}
             </button>
