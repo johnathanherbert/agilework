@@ -13,6 +13,7 @@ import { PesagemTodoItem } from '@/types/pesagem-todo';
 import { createBatchPesagemTodos, CreatePesagemTodoInput } from '@/lib/pesagem-todo-helpers';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
+import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
 import {
   triggerSapAutomation,
   checkSapAutomationStatus,
@@ -426,6 +427,15 @@ export function ResiduaisView({
     return map;
   }, [todoItems]);
 
+  useEffect(() => {
+    if (agingData && agingData.length > 0) {
+      rememberMaterialDescriptions(agingData);
+    }
+    if (allData && allData.length > 0) {
+      rememberMaterialDescriptions(allData);
+    }
+  }, [agingData, allData]);
+
   // Enriquecer dados da Pesagem com Regras de Residuais
   const isTrzCritSelected = useMemo(() => {
     if (!selectedCriticality) return false;
@@ -444,6 +454,7 @@ export function ResiduaisView({
       const qtd = Number(item.estoque_disponivel) || 0;
       const vt = Math.max(0, qtd) * vu;
       const dias = item.dias_aging || 0;
+      const desc = item.texto_breve_material || getMaterialDescription(item.material) || '';
 
       let status_crit: 'ok' | 'al' | 'cr' = 'ok';
       let status_label = 'Normal';
@@ -467,13 +478,14 @@ export function ResiduaisView({
       const especial = isMaterialEspecial(item.material);
       const is_inf = especial === 'inf';
       const is_cfa = especial === 'cfa';
-      const is_controlado = (item.texto_breve_material || '').includes('**');
+      const is_controlado = desc.includes('**');
       const is_investigacao = lotesInvSet.has((item.lote || '').trim().toUpperCase());
       const todo_item = activeTodoMap.get((item.lote || '').trim().toUpperCase());
       const has_todo = Boolean(todo_item) || is_investigacao;
 
       return {
         ...item,
+        texto_breve_material: desc,
         id_row,
         valor_unitario: vu,
         valor_total: vt,

@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { MoverModal } from '@/components/pesagem/mover-modal';
 import { PesagemTodoItem } from '@/types/pesagem-todo';
 import { subscribePesagemTodos } from '@/lib/pesagem-todo-helpers';
+import { rememberMaterialDescriptions } from '@/lib/material-descriptions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -197,6 +198,9 @@ export default function PesagemPage() {
       setConfigResiduais(configData);
       setLotesInvestigacao(lotesInv);
 
+      rememberMaterialDescriptions(agingData);
+      rememberMaterialDescriptions(remessasData);
+
       const latestTimestamp = agingData[0]?.created_at || historico[0]?.snapshot_at || new Date().toISOString();
       setLastUpdate(latestTimestamp);
       if (agingData[0]?.created_at) {
@@ -293,7 +297,10 @@ export default function PesagemPage() {
   // Escuta em tempo real os itens de TODO salvos no Firestore
   useEffect(() => {
     const unsub = subscribePesagemTodos(
-      (items) => setTodoItems(items),
+      (items) => {
+        setTodoItems(items);
+        rememberMaterialDescriptions(items);
+      },
       (err) => console.warn('Erro ao escutar Firestore TODOs:', err)
     );
     return () => unsub();

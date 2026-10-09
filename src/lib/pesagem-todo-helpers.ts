@@ -65,6 +65,7 @@ const mapDocToPesagemTodo = (docId: string, data: any): PesagemTodoItem => ({
   prioridade: (data.prioridade as PesagemTodoPriority) || 'media',
   motivo_inicial: data.motivo_inicial || '',
   notas: Array.isArray(data.notas) ? data.notas : [],
+  acoes: Array.isArray(data.acoes) ? data.acoes : [],
   tags: Array.isArray(data.tags) ? data.tags : [],
 
   resolvido_em: data.resolvido_em?.toDate ? data.resolvido_em.toDate().toISOString() : data.resolvido_em,

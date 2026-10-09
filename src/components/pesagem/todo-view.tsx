@@ -7,6 +7,7 @@ import {
   PesagemTodoItemEnriched,
   PesagemTodoStatus,
   PesagemTodoPriority,
+  PesagemTodoAcao,
   EstoqueDiffStatus,
 } from '@/types/pesagem-todo';
 import {
@@ -19,7 +20,8 @@ import {
 } from '@/lib/pesagem-todo-helpers';
 import { removeLoteInvestigacao } from '@/lib/dashpesagem-api';
 import { copyToClipboard, cn } from '@/lib/utils';
-import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight } from 'lucide-react';
+import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
+import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import toast from 'react-hot-toast';
 
@@ -101,6 +103,33 @@ const statusMeta = (s: PesagemTodoStatus) => STATUS.find((x) => x.k === s) || ST
 const prioMeta = (p: PesagemTodoPriority) => PRIO.find((x) => x.k === p) || PRIO[1];
 const clean = (s?: string) => (s || '').replace(/\*\*/g, '');
 
+/* Plano de ação: prazos em YYYY-MM-DD (data local) */
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const addDaysISO = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const prazoFmt = (p?: string) => {
+  if (!p) return 'sem prazo';
+  const t = todayISO();
+  if (p === t) return 'hoje';
+  if (p === addDaysISO(1)) return 'amanhã';
+  const [y, m, d] = p.split('-');
+  return `${d}/${m}${y !== t.slice(0, 4) ? `/${y.slice(2)}` : ''}`;
+};
+const prazoTone = (a: PesagemTodoAcao): string | undefined => {
+  if (a.feito || !a.prazo) return undefined;
+  const t = todayISO();
+  if (a.prazo < t) return 'var(--red)';
+  if (a.prazo === t) return 'var(--amber)';
+  return undefined;
+};
+const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
 function Dot({ c, className }: { c: string; className?: string }) {
   return <span className={cn('inline-block w-[7px] h-[7px] rounded-full shrink-0', className)} style={{ background: c }} />;
 }
@@ -113,6 +142,7 @@ export function TodoView({
   valores,
   todoItems,
   lotesInvestigacao = [],
+  currentUserEmail,
   onNavigateToMaterial,
   onAtualizarDb,
   isAtualizandoDb,
@@ -120,7 +150,7 @@ export function TodoView({
   selectedLote,
   onClearSelectedLote,
 }: TodoViewProps) {
-  const [tab, setTab] = useState<'atencao' | 'abertos' | 'concluidos' | 'todos'>('atencao');
+  const [tab, setTab] = useState<'atencao' | 'abertos' | 'plano' | 'concluidos' | 'todos'>('atencao');
   const [q, setQ] = useState('');
   const [prio, setPrio] = useState<'all' | PesagemTodoPriority>('all');
   const [sortBy, setSortBy] = useState<'atencao' | 'valor' | 'parado' | 'recente'>('atencao');
@@ -133,8 +163,15 @@ export function TodoView({
   const [desfecho, setDesfecho] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Plano de ação
+  const [acaoTexto, setAcaoTexto] = useState('');
+  const [acaoPrazo, setAcaoPrazo] = useState('');
+  const [acaoResp, setAcaoResp] = useState('');
+  const [planoFiltro, setPlanoFiltro] = useState<'abertas' | 'minhas' | 'feitas'>('abertas');
+
   const searchRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
+  const acaoRef = useRef<HTMLInputElement>(null);
 
   /* ---------------- dados ---------------- */
   const estoqueMap = useMemo(() => {
@@ -147,6 +184,8 @@ export function TodoView({
 
   // Itens do Firestore + lotes marcados em investigação que ainda não viraram item
   const allItems = useMemo<PesagemTodoItem[]>(() => {
+    rememberMaterialDescriptions(agingData);
+    rememberMaterialDescriptions(todoItems);
     const has = new Set(todoItems.map((t) => up(t.lote)));
     const synth: PesagemTodoItem[] = [];
     (lotesInvestigacao || []).forEach((inv) => {
@@ -156,10 +195,11 @@ export function TodoView({
       const qtd = Number(s?.estoque_disponivel) || 0;
       const mat = inv.material || s?.material || '';
       const vu = priceOf(mat);
+      const desc = s?.texto_breve_material || getMaterialDescription(mat);
       synth.push({
         id: `inv-${k}`,
         material: mat,
-        texto_breve_material: s?.texto_breve_material || '',
+        texto_breve_material: desc,
         lote: inv.lote,
         unidade_medida: s?.unidade_medida || 'KG',
         quantidade_inicial: qtd,
@@ -181,7 +221,7 @@ export function TodoView({
       } as PesagemTodoItem);
     });
     return [...todoItems, ...synth].filter((t) => !locallyDeletedKeys.has(up(t.lote)));
-  }, [todoItems, lotesInvestigacao, estoqueMap, valores, locallyDeletedKeys]);
+  }, [todoItems, lotesInvestigacao, estoqueMap, valores, locallyDeletedKeys, agingData]);
 
   // Enriquecimento com o estoque atual + motivos de atenção
   const rows = useMemo<Row[]>(() => {
@@ -232,6 +272,10 @@ export function TodoView({
         else if (diff_status === 'posicao_alterada')
           reasons.push({ k: 'pos', tone: 'amber', text: `Mudou para ${posicao_atual || deposito_atual}`, w: 5 });
         if (todo.prioridade === 'critica') reasons.push({ k: 'prio', tone: 'red', text: 'Prioridade crítica', w: 6 });
+        const hoje = todayISO();
+        const atrasadas = (todo.acoes || []).filter((a) => !a.feito && a.prazo && a.prazo < hoje);
+        if (atrasadas.length)
+          reasons.push({ k: 'acao', tone: 'red', text: atrasadas.length === 1 ? `Ação atrasada: ${atrasadas[0].texto}` : `${atrasadas.length} ações atrasadas`, w: 5 });
         if (!todo.notas.length && diasAberto >= DIAS_SEM_NOTA)
           reasons.push({ k: 'nota', tone: 'amber', text: `Sem nota há ${diasAberto} d`, w: 4 });
         else if (diasSemAtividade >= DIAS_PARADO)
@@ -243,8 +287,11 @@ export function TodoView({
       const score =
         reasons.reduce((s, r) => s + r.w, 0) + prioMeta(todo.prioridade).w + Math.min(3, Math.log10(1 + valorRef / 1000));
 
+      const desc = todo.texto_breve_material || cur?.texto_breve_material || getMaterialDescription(todo.material) || '';
+
       return {
         ...todo,
+        texto_breve_material: desc,
         key: up(todo.lote) || todo.id,
         estoque_atual,
         valor_total_atual,
@@ -330,7 +377,11 @@ export function TodoView({
   }, [rows.length, stats.att]);
 
   const sel = useMemo(() => (selKey ? rows.find((r) => r.key === selKey) || null : null), [rows, selKey]);
-  useEffect(() => setNote(''), [selKey]);
+  useEffect(() => {
+    setNote('');
+    setAcaoTexto('');
+    setAcaoPrazo('');
+  }, [selKey]);
 
   // Seletor externo de lote (navegação direta a partir de tabelas)
   useEffect(() => {
@@ -490,6 +541,100 @@ export function TodoView({
     );
   };
 
+  /* ---------------- plano de ação ---------------- */
+  const saveAcoes = (r: Row, acoes: PesagemTodoAcao[], ok: string, err: string) =>
+    run(
+      async () => {
+        const id = await ensureReal(r);
+        await updatePesagemTodo(id, { acoes });
+      },
+      ok,
+      err
+    );
+
+  const addAcao = (r: Row) => {
+    const texto = acaoTexto.trim();
+    if (!texto) return;
+    const a: PesagemTodoAcao = {
+      id: newId(),
+      texto,
+      responsavel: acaoResp.trim() || undefined,
+      prazo: acaoPrazo || undefined,
+      feito: false,
+      created_at: new Date().toISOString(),
+      created_by_name: currentUserEmail || undefined,
+    };
+    setAcaoTexto('');
+    setAcaoPrazo('');
+    saveAcoes(r, [...(r.acoes || []), a], 'Ação adicionada', 'Não foi possível adicionar a ação');
+    requestAnimationFrame(() => acaoRef.current?.focus());
+  };
+
+  const toggleAcao = (r: Row, id: string) => {
+    const acoes = (r.acoes || []).map((a) =>
+      a.id === id ? { ...a, feito: !a.feito, feito_em: !a.feito ? new Date().toISOString() : undefined } : a
+    );
+    saveAcoes(r, acoes, '', 'Não foi possível atualizar a ação');
+  };
+
+  const removeAcao = (r: Row, id: string) =>
+    saveAcoes(r, (r.acoes || []).filter((a) => a.id !== id), '', 'Não foi possível remover a ação');
+
+  // Base para o plano de ação: respeita busca e prioridade, ignora a aba
+  const baseRows = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (prio !== 'all' && r.prioridade !== prio) return false;
+      if (s) {
+        const hay = [r.material, r.texto_breve_material, r.lote, r.motivo_inicial, r.desfecho, ...(r.tags || []), ...r.notas.map((n) => n.texto), ...(r.acoes || []).map((a) => `${a.texto} ${a.responsavel || ''}`)]
+          .join(' ')
+          .toLowerCase();
+        if (!hay.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [rows, q, prio]);
+
+  const meKeys = useMemo(() => {
+    const e = (currentUserEmail || '').trim().toLowerCase();
+    return e ? [e, e.split('@')[0]] : [];
+  }, [currentUserEmail]);
+
+  const plano = useMemo(() => {
+    const t = todayISO();
+    const em7 = addDaysISO(7);
+    const all = baseRows.flatMap((r) => (r.acoes || []).map((a) => ({ a, r })));
+    const abertas = all.filter((x) => !x.a.feito && x.r.status !== 'concluido');
+    const minhas = abertas.filter((x) => {
+      const resp = (x.a.responsavel || '').trim().toLowerCase();
+      return resp && meKeys.some((k) => resp === k || resp.includes(k));
+    });
+    const feitas = all
+      .filter((x) => x.a.feito)
+      .sort((x, y) => (y.a.feito_em || '').localeCompare(x.a.feito_em || ''))
+      .slice(0, 100);
+    const src = planoFiltro === 'minhas' ? minhas : abertas;
+    const byPrazo = (x: { a: PesagemTodoAcao }, y: { a: PesagemTodoAcao }) => (x.a.prazo || '9999').localeCompare(y.a.prazo || '9999');
+    const groups =
+      planoFiltro === 'feitas'
+        ? [{ k: 'feitas', l: 'Concluídas', c: 'var(--green)', items: feitas }]
+        : [
+            { k: 'atrasadas', l: 'Atrasadas', c: 'var(--red)', items: src.filter((x) => x.a.prazo && x.a.prazo < t).sort(byPrazo) },
+            { k: 'hoje', l: 'Hoje', c: 'var(--amber)', items: src.filter((x) => x.a.prazo === t) },
+            { k: 'semana', l: 'Próximos 7 dias', c: 'var(--accent)', items: src.filter((x) => x.a.prazo && x.a.prazo > t && x.a.prazo <= em7).sort(byPrazo) },
+            { k: 'depois', l: 'Depois', c: 'var(--text-3)', items: src.filter((x) => x.a.prazo && x.a.prazo > em7).sort(byPrazo) },
+            { k: 'sem', l: 'Sem prazo', c: 'var(--text-3)', items: src.filter((x) => !x.a.prazo) },
+          ];
+    return {
+      groups,
+      nAbertas: abertas.length,
+      nMinhas: minhas.length,
+      nFeitas: all.filter((x) => x.a.feito).length,
+      nAtrasadas: abertas.filter((x) => x.a.prazo && x.a.prazo < t).length,
+      semPlano: baseRows.filter((r) => r.status !== 'concluido' && !(r.acoes || []).some((a) => !a.feito)).length,
+    };
+  }, [baseRows, planoFiltro, meKeys]);
+
   /* ---------------- teclado ---------------- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -567,6 +712,14 @@ export function TodoView({
         return;
       }
 
+      if (e.key === 't' || e.key === 'T') {
+        if (sel && sel.status !== 'concluido') {
+          e.preventDefault();
+          acaoRef.current?.focus();
+        }
+        return;
+      }
+
       // Atalhos operacionais com item selecionado
       if (sel && sel.status !== 'concluido') {
         if (e.key === '1') {
@@ -618,6 +771,7 @@ export function TodoView({
   const TABS = [
     { k: 'atencao' as const, l: 'Precisam de você', n: stats.att, alert: stats.att > 0 },
     { k: 'abertos' as const, l: 'Abertos', n: stats.open },
+    { k: 'plano' as const, l: 'Plano de ação', n: plano.nAbertas, alert: plano.nAtrasadas > 0 },
     { k: 'concluidos' as const, l: 'Concluídos', n: stats.done },
     { k: 'todos' as const, l: 'Todos', n: stats.total },
   ];
@@ -627,6 +781,8 @@ export function TodoView({
       ? 'Nada pedindo sua atenção agora. Os lotes abertos estão estáveis e com notas recentes.'
       : tab === 'abertos'
       ? 'Nenhum lote em acompanhamento.'
+      : tab === 'plano'
+      ? 'Nenhuma ação registrada no plano de ação.'
       : tab === 'concluidos'
       ? 'Nenhum acompanhamento concluído ainda.'
       : 'Nenhum registro.';
@@ -724,6 +880,20 @@ export function TodoView({
             </button>
           ))}
         </div>
+        {tab === 'plano' && (
+          <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface)]">
+            {[
+              { k: 'abertas' as const, l: 'Em aberto', n: plano.nAbertas },
+              { k: 'minhas' as const, l: 'Comigo', n: plano.nMinhas },
+              { k: 'feitas' as const, l: 'Feitas', n: plano.nFeitas },
+            ].map((t) => (
+              <button key={t.k} type="button" onClick={() => setPlanoFiltro(t.k)} className={seg(planoFiltro === t.k)}>
+                {t.l}
+                <span className="font-mono text-[10.5px] text-[var(--text-3)]">{t.n}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <label className="flex items-center gap-2 h-8 px-2.5 border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--surface)] text-[var(--text-3)] focus-within:border-[var(--accent)] flex-1 min-w-[200px] max-w-[320px]">
           <Search className="h-3.5 w-3.5 shrink-0" />
           <input
@@ -753,7 +923,7 @@ export function TodoView({
             </option>
           ))}
         </select>
-        {tab !== 'concluidos' && (
+        {tab !== 'concluidos' && tab !== 'plano' && (
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
@@ -770,6 +940,8 @@ export function TodoView({
           <span>·</span>
           <span><kbd className="font-mono">n</kbd> nota (<kbd className="font-mono">Enter</kbd> envia)</span>
           <span>·</span>
+          <span><kbd className="font-mono">t</kbd> ação</span>
+          <span>·</span>
           <span><kbd className="font-mono">r</kbd> resolve</span>
           <span>·</span>
           <span><kbd className="font-mono">1-3</kbd> status</span>
@@ -785,7 +957,86 @@ export function TodoView({
       {/* ---------- Lista + detalhe ---------- */}
       <div className={cn('grid gap-6', sel && 'xl:grid-cols-[minmax(0,1fr)_440px]')}>
         <section className="min-w-0">
-          {list.length === 0 ? (
+          {tab === 'plano' ? (
+            /* ---------- Plano de ação ---------- */
+            <div className="border-t border-[var(--border-strong)]">
+              {planoFiltro !== 'feitas' && plano.semPlano > 0 && (
+                <p className="flex items-center gap-2 px-3 py-2 text-[12px] text-[var(--text-3)] border-b border-[var(--border)]">
+                  <Dot c="var(--amber)" />
+                  {plano.semPlano} lote(s) em aberto sem próximo passo definido · abra o lote e use <kbd className="font-mono">t</kbd> para adicionar
+                </p>
+              )}
+              {plano.groups.every((g) => g.items.length === 0) ? (
+                <div className="py-16 text-center">
+                  <p className="text-[13px] text-[var(--text-2)]">
+                    {planoFiltro === 'feitas'
+                      ? 'Nenhuma ação concluída ainda.'
+                      : planoFiltro === 'minhas'
+                      ? 'Nenhuma ação atribuída a você.'
+                      : 'Nenhuma ação planejada. Selecione um lote e defina os próximos passos.'}
+                  </p>
+                </div>
+              ) : (
+                plano.groups
+                  .filter((g) => g.items.length > 0)
+                  .map((g) => (
+                    <div key={g.k}>
+                      <div className="flex items-center gap-2 h-8 px-3 text-[11.5px] text-[var(--text-3)] border-b border-[var(--border)] bg-[var(--surface-2)]">
+                        <Dot c={g.c} />
+                        <span className="font-medium text-[var(--text-2)]">{g.l}</span>
+                        <span className="font-mono">{g.items.length}</span>
+                      </div>
+                      {g.items.map(({ a, r }) => {
+                        const on = selKey === r.key;
+                        const tone = prazoTone(a);
+                        return (
+                          <div
+                            key={`${r.key}-${a.id}`}
+                            className={cn(
+                              'group grid grid-cols-[18px_minmax(0,1fr)_auto] md:grid-cols-[18px_minmax(0,1fr)_140px_80px_20px] gap-x-3 items-center px-3 py-2 border-b border-[var(--border)]',
+                              on ? 'bg-[var(--accent-weak)]' : 'hover:bg-[var(--surface-2)]'
+                            )}
+                          >
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => toggleAcao(r, a.id)}
+                              title={a.feito ? 'Marcar como pendente' : 'Marcar como feita'}
+                              className={cn(
+                                'h-[16px] w-[16px] rounded-[4px] border grid place-items-center',
+                                a.feito ? 'bg-[var(--green)] border-[var(--green)] text-[var(--bg)]' : 'border-[var(--text-3)] hover:border-[var(--text)]'
+                              )}
+                            >
+                              {a.feito && <Check className="h-3 w-3" strokeWidth={3} />}
+                            </button>
+                            <button type="button" onClick={() => setSelKey(on ? null : r.key)} className="min-w-0 text-left">
+                              <span className={cn('block text-[13px] truncate', a.feito && 'line-through text-[var(--text-3)]')}>{a.texto}</span>
+                              <span className="block text-[11.5px] text-[var(--text-3)] truncate">
+                                <span className="font-mono text-[var(--text-2)]">{r.lote}</span> · {clean(r.texto_breve_material) || getMaterialDescription(r.material) || r.material}
+                                <span className="md:hidden"> · {prazoFmt(a.prazo)}</span>
+                              </span>
+                            </button>
+                            <span className="hidden md:block text-[12px] text-[var(--text-2)] truncate">{a.responsavel || <span className="text-[var(--text-3)]">—</span>}</span>
+                            <span className="hidden md:block text-right font-mono text-[12px] whitespace-nowrap" style={{ color: tone || 'var(--text-3)' }}>
+                              {a.feito ? ago(days(a.feito_em)) : prazoFmt(a.prazo)}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => removeAcao(r, a.id)}
+                              className="hidden md:grid place-items-center text-[var(--text-3)] opacity-0 group-hover:opacity-100 hover:text-[var(--red)]"
+                              title="Remover ação"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
+              )}
+            </div>
+          ) : list.length === 0 ? (
             <div className="py-16 text-center border-t border-[var(--border-strong)]">
               <p className="text-[13px] text-[var(--text-2)]">{emptyText}</p>
               {tab === 'atencao' && stats.open > 0 && (
@@ -838,9 +1089,21 @@ export function TodoView({
                             {prioMeta(r.prioridade).l}
                           </span>
                         )}
+                        {(r.acoes || []).length > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] text-[var(--text-3)]"
+                            style={{ color: (r.acoes || []).every((a) => a.feito) ? 'var(--green)' : undefined }}
+                            title="Ações do plano feitas / total"
+                          >
+                            <ListChecks className="h-3 w-3" />
+                            <span className="font-mono">
+                              {(r.acoes || []).filter((a) => a.feito).length}/{(r.acoes || []).length}
+                            </span>
+                          </span>
+                        )}
                       </span>
                       <span className="block text-[12px] text-[var(--text-3)] truncate">
-                        <span className="font-mono text-[var(--text-2)]">{r.material}</span> · {clean(r.texto_breve_material) || 'sem descrição'}
+                        <span className="font-mono text-[var(--text-2)]">{r.material}</span> · {clean(r.texto_breve_material) || getMaterialDescription(r.material) || 'sem descrição'}
                       </span>
                     </span>
 
@@ -903,7 +1166,7 @@ export function TodoView({
                   <Copy className="inline h-3.5 w-3.5 ml-2 text-[var(--text-3)] opacity-60 group-hover:opacity-100" />
                 </button>
                 <p className="text-[12.5px] text-[var(--text-2)]">
-                  <span className="font-mono text-[var(--text)]">{sel.material}</span> · {clean(sel.texto_breve_material) || 'sem descrição'}
+                  <span className="font-mono text-[var(--text)]">{sel.material}</span> · {clean(sel.texto_breve_material) || getMaterialDescription(sel.material) || 'sem descrição'}
                 </p>
               </div>
               <button type="button" onClick={() => setSelKey(null)} className="h-8 w-8 grid place-items-center rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)]" title="Fechar (Esc)">
@@ -991,6 +1254,135 @@ export function TodoView({
               </tbody>
             </table>
             {sel.data_vencimento && <p className="mt-1.5 text-[11.5px] text-[var(--text-3)]">Validade <span className="font-mono">{sel.data_vencimento}</span></p>}
+
+            {/* Plano de ação */}
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <b className="text-[12px] font-semibold text-[var(--text-2)]">Plano de ação</b>
+                {(sel.acoes || []).length > 0 && (
+                  <span className="font-mono text-[11px] text-[var(--text-3)]">
+                    {(sel.acoes || []).filter((a) => a.feito).length}/{(sel.acoes || []).length}
+                  </span>
+                )}
+                {(sel.acoes || []).length > 0 && (
+                  <span className="flex-1 h-[3px] rounded-full bg-[var(--border)] overflow-hidden max-w-[120px]">
+                    <span
+                      className="block h-full bg-[var(--green)] transition-all"
+                      style={{ width: `${((sel.acoes || []).filter((a) => a.feito).length / (sel.acoes || []).length) * 100}%` }}
+                    />
+                  </span>
+                )}
+              </div>
+              {(sel.acoes || []).length === 0 && sel.status === 'concluido' && (
+                <p className="text-[12px] text-[var(--text-3)]">Nenhuma ação registrada.</p>
+              )}
+              {(sel.acoes || []).length > 0 && (
+                <ul className="border-t border-[var(--border)]">
+                  {(sel.acoes || [])
+                    .slice()
+                    .sort((a, b) => Number(a.feito) - Number(b.feito) || (a.prazo || '9999').localeCompare(b.prazo || '9999'))
+                    .map((a) => {
+                      const tone = prazoTone(a);
+                      return (
+                        <li key={a.id} className="group flex items-start gap-2.5 py-2 border-b border-[var(--border)]">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => toggleAcao(sel, a.id)}
+                            title={a.feito ? 'Marcar como pendente' : 'Marcar como feita'}
+                            className={cn(
+                              'mt-[2px] h-[15px] w-[15px] shrink-0 rounded-[4px] border grid place-items-center',
+                              a.feito ? 'bg-[var(--green)] border-[var(--green)] text-[var(--bg)]' : 'border-[var(--text-3)] hover:border-[var(--text)]'
+                            )}
+                          >
+                            {a.feito && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                          </button>
+                          <span className="flex-1 min-w-0">
+                            <span className={cn('block text-[12.5px] leading-snug', a.feito && 'line-through text-[var(--text-3)]')}>{a.texto}</span>
+                            <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-3)]">
+                              <span className="font-mono" style={{ color: tone }}>
+                                {a.feito ? `feito ${ago(days(a.feito_em))}` : prazoFmt(a.prazo)}
+                              </span>
+                              {a.responsavel && <span>· {a.responsavel}</span>}
+                            </span>
+                          </span>
+                          {sel.status !== 'concluido' && (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => removeAcao(sel, a.id)}
+                              className="opacity-0 group-hover:opacity-100 text-[var(--text-3)] hover:text-[var(--red)]"
+                              title="Remover ação"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
+              )}
+              {sel.status !== 'concluido' && (
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <input
+                    ref={acaoRef}
+                    value={acaoTexto}
+                    onChange={(e) => setAcaoTexto(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addAcao(sel);
+                      }
+                    }}
+                    placeholder="Próximo passo… (Enter adiciona)"
+                    className="h-8 w-full px-2.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[12.5px] text-[var(--text)] placeholder:text-[var(--text-3)] outline-none focus:border-[var(--accent)]"
+                  />
+                  {(acaoTexto || acaoPrazo || acaoResp) && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {[
+                        { l: 'Hoje', v: todayISO() },
+                        { l: 'Amanhã', v: addDaysISO(1) },
+                        { l: '+3 d', v: addDaysISO(3) },
+                        { l: '+7 d', v: addDaysISO(7) },
+                      ].map((p) => (
+                        <button
+                          key={p.l}
+                          type="button"
+                          onClick={() => setAcaoPrazo(acaoPrazo === p.v ? '' : p.v)}
+                          className={cn(
+                            'h-6 px-2 rounded-full border text-[11px]',
+                            acaoPrazo === p.v ? 'border-[var(--text-3)] bg-[var(--hover)] text-[var(--text)]' : 'border-[var(--border-strong)] text-[var(--text-3)] hover:text-[var(--text)]'
+                          )}
+                        >
+                          {p.l}
+                        </button>
+                      ))}
+                      <input
+                        type="date"
+                        value={acaoPrazo}
+                        onChange={(e) => setAcaoPrazo(e.target.value)}
+                        className="h-6 px-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[11px] text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
+                      />
+                      <input
+                        value={acaoResp}
+                        onChange={(e) => setAcaoResp(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addAcao(sel);
+                          }
+                        }}
+                        placeholder="Responsável"
+                        className="h-6 flex-1 min-w-[90px] px-2 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[11px] text-[var(--text)] placeholder:text-[var(--text-3)] outline-none focus:border-[var(--accent)]"
+                      />
+                      <button type="button" onClick={() => addAcao(sel)} disabled={!acaoTexto.trim() || busy} className={cn(btn, 'h-6 px-2 text-[11px]')}>
+                        <Plus className="h-3 w-3" /> Adicionar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Histórico */}
             <div className="mt-5">
@@ -1093,7 +1485,7 @@ export function TodoView({
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-[var(--border)] text-left">
             <DialogTitle className="text-[15px] font-semibold">Resolver lote {resolving?.lote}</DialogTitle>
             <DialogDescription className="text-[12.5px] text-[var(--text-3)]">
-              {resolving?.material} · {clean(resolving?.texto_breve_material)} · sai da lista de pendências e fica no histórico
+              {resolving?.material} · {clean(resolving?.texto_breve_material) || getMaterialDescription(resolving?.material)} · sai da lista de pendências e fica no histórico
             </DialogDescription>
           </DialogHeader>
           <div className="px-5 py-4">
@@ -1205,7 +1597,7 @@ function CreateDialog({
     const f = estoqueMap.get(up(v));
     if (f) {
       setMaterial(f.material);
-      setDesc(f.texto_breve_material || '');
+      setDesc(f.texto_breve_material || getMaterialDescription(f.material));
       setQtd(String(f.estoque_disponivel ?? ''));
       setPosicao(f.posicao_deposito || '');
     }
@@ -1214,7 +1606,7 @@ function CreateDialog({
     setMaterial(v);
     if (!desc) {
       const f = agingData.find((x) => x.material === v.trim());
-      if (f) setDesc(f.texto_breve_material || '');
+      setDesc(f?.texto_breve_material || getMaterialDescription(v.trim()));
     }
   };
 
@@ -1229,7 +1621,7 @@ function CreateDialog({
     try {
       await createPesagemTodo({
         material: material.trim(),
-        texto_breve_material: desc.trim(),
+        texto_breve_material: desc.trim() || getMaterialDescription(material.trim()),
         lote: lote.trim(),
         quantidade: q,
         unidade_medida: found?.unidade_medida || 'KG',

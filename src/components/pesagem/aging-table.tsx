@@ -6,6 +6,7 @@ import { PesagemTodoItem } from '@/types/pesagem-todo';
 import { createBatchPesagemTodos, CreatePesagemTodoInput } from '@/lib/pesagem-todo-helpers';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
+import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
 import { addLoteInvestigacao, removeLoteInvestigacao, triggerSapAutomation, checkSapAutomationStatus } from '@/lib/dashpesagem-api';
 import {
   SapPipelineModal,
@@ -252,6 +253,12 @@ export function AgingTable({
     return map;
   }, [todoItems]);
 
+  useEffect(() => {
+    if (data && data.length > 0) {
+      rememberMaterialDescriptions(data);
+    }
+  }, [data]);
+
   // Enriquecer dados
   const enrichedData = useMemo<EnrichedRow[]>(() => {
     return data.map((item, idx) => {
@@ -260,6 +267,7 @@ export function AgingTable({
       const qtd = Number(item.estoque_disponivel) || 0;
       const vt = Math.max(0, qtd) * vu;
       const dias = item.dias_aging || 0;
+      const desc = item.texto_breve_material || getMaterialDescription(item.material) || '';
 
       let status_crit: 'ok' | 'al' | 'cr' = 'ok';
       let status_label = 'Normal';
@@ -284,13 +292,14 @@ export function AgingTable({
       const especial = isMaterialEspecial(item.material);
       const is_inf = especial === 'inf';
       const is_cfa = especial === 'cfa';
-      const is_controlado = (item.texto_breve_material || '').includes('**');
+      const is_controlado = desc.includes('**');
       const is_investigacao = lotesInvSet.has((item.lote || '').trim().toUpperCase());
       const todo_item = activeTodoMap.get((item.lote || '').trim().toUpperCase());
       const has_todo = Boolean(todo_item) || is_investigacao;
 
       return {
         ...item,
+        texto_breve_material: desc,
         id_row,
         valor_unitario: vu,
         valor_total: vt,

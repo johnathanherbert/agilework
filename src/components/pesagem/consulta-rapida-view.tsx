@@ -14,6 +14,7 @@ import {
 } from '@/components/pesagem/sap-pipeline-modal';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn, copyToClipboard } from '@/lib/utils';
+import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
 import {
   QrCode,
   Camera,
@@ -249,12 +250,16 @@ export function ConsultaRapidaView({
   useEffect(() => {
     if (initialAging && initialAging.length > 0) {
       setAgingList(initialAging);
+      rememberMaterialDescriptions(initialAging);
       setLoadingData(false);
     }
   }, [initialAging]);
 
   useEffect(() => {
-    if (initialRemessas && initialRemessas.length > 0) setRemessasList(initialRemessas);
+    if (initialRemessas && initialRemessas.length > 0) {
+      setRemessasList(initialRemessas);
+      rememberMaterialDescriptions(initialRemessas);
+    }
   }, [initialRemessas]);
 
   useEffect(() => {
@@ -266,6 +271,7 @@ export function ConsultaRapidaView({
   // force=true recarrega mesmo quando os dados vieram por props (ex.: depois de executar no SAP)
   const loadStockData = async (force = false) => {
     if (!force && initialAging && initialAging.length > 0) {
+      rememberMaterialDescriptions(initialAging);
       if (!initialValores || Object.keys(initialValores).length === 0) {
         fetchMaterialValores().then((v) => { if (v && Object.keys(v).length) setValoresList(v); }).catch(() => {});
       }
@@ -278,8 +284,14 @@ export function ConsultaRapidaView({
         fetchRemessas().catch(() => [] as RemessaData[]),
         fetchMaterialValores().catch(() => ({} as Record<string, number>)),
       ]);
-      if (aging.length) setAgingList(aging);
-      if (remessas.length) setRemessasList(remessas);
+      if (aging.length) {
+        setAgingList(aging);
+        rememberMaterialDescriptions(aging);
+      }
+      if (remessas.length) {
+        setRemessasList(remessas);
+        rememberMaterialDescriptions(remessas);
+      }
       if (vals && Object.keys(vals).length) setValoresList(vals);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
@@ -630,9 +642,23 @@ export function ConsultaRapidaView({
       .slice(0, 30);
   }, [scannedResult, allMaterialItems.length, loteRows.length, agingList]);
 
+  const materialRemessas = useMemo(() => {
+    if (!matKey) return [];
+    return remessasList.filter((r) => normMat(r.material) === matKey);
+  }, [remessasList, matKey]);
+  const remessasQtd = useMemo(() => materialRemessas.reduce((s, r) => s + num(r.quantidade), 0), [materialRemessas]);
+
   const materialDescription =
-    activeLoteItem?.texto_breve_material || allMaterialItems[0]?.texto_breve_material || '';
-  const unidadeMedida = activeLoteItem?.unidade_medida || allMaterialItems[0]?.unidade_medida || 'KG';
+    activeLoteItem?.texto_breve_material ||
+    allMaterialItems[0]?.texto_breve_material ||
+    materialRemessas[0]?.descricao_material ||
+    getMaterialDescription(materialCode) ||
+    '';
+  const unidadeMedida =
+    activeLoteItem?.unidade_medida ||
+    allMaterialItems[0]?.unidade_medida ||
+    materialRemessas[0]?.unidade_medida ||
+    'KG';
 
   const saldoLote = num(activeLoteItem?.estoque_disponivel);
 
@@ -692,12 +718,6 @@ export function ConsultaRapidaView({
       }) || null
     );
   }, [otherLots, vencDate, activePos]);
-
-  const materialRemessas = useMemo(() => {
-    if (!matKey) return [];
-    return remessasList.filter((r) => normMat(r.material) === matKey);
-  }, [remessasList, matKey]);
-  const remessasQtd = useMemo(() => materialRemessas.reduce((s, r) => s + num(r.quantidade), 0), [materialRemessas]);
 
   /* ============================================================================
    * Devolver

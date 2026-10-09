@@ -9,6 +9,17 @@ export interface PesagemTodoNote {
   created_by_name?: string;
 }
 
+export interface PesagemTodoAcao {
+  id: string;
+  texto: string;
+  responsavel?: string;
+  prazo?: string; // YYYY-MM-DD
+  feito: boolean;
+  feito_em?: string;
+  created_at: string;
+  created_by_name?: string;
+}
+
 export interface PesagemTodoItem {
   id: string;
   material: string;
@@ -31,6 +42,7 @@ export interface PesagemTodoItem {
   prioridade: PesagemTodoPriority;
   motivo_inicial?: string;
   notas: PesagemTodoNote[];
+  acoes?: PesagemTodoAcao[];
   tags?: string[];
 
   // Desfecho e conclusão
