@@ -755,7 +755,10 @@ export default function PesagemPage() {
                   <AlertCircle size={14} className="text-rose-400 shrink-0" />
                   TODO
                   {activeTodoCount > 0 ? (
-                    <span className="n bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full text-[10px] leading-none">
+                    <span
+                      style={{ color: '#000000' }}
+                      className="n bg-rose-500 !text-black font-extrabold px-1.5 py-0.5 rounded-full text-[10px] leading-none"
+                    >
                       {activeTodoCount}
                     </span>
                   ) : (
@@ -1360,7 +1363,10 @@ export default function PesagemPage() {
               <AlertCircle size={15} className={activeTab === 'todo' ? "text-rose-400" : ""} />
               <span className="truncate">TODO</span>
               {activeTodoCount > 0 && (
-                <span className="absolute top-0 right-1 px-1 rounded-full bg-rose-500 text-white text-[9px] font-mono leading-none py-0.5">
+                <span
+                  style={{ color: '#000000' }}
+                  className="absolute top-0 right-1 px-1 rounded-full bg-rose-500 !text-black text-[9px] font-mono font-extrabold leading-none py-0.5"
+                >
                   {activeTodoCount}
                 </span>
               )}

@@ -21,16 +21,29 @@ import {
 import { removeLoteInvestigacao } from '@/lib/dashpesagem-api';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
-import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check } from 'lucide-react';
+import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import toast from 'react-hot-toast';
 
 /* ============================================================================
  * Configuração das regras de atenção
  * ========================================================================== */
-const DIAS_SEM_NOTA = 2; // aberto há X dias sem nenhuma nota
-const DIAS_PARADO = 7; // sem atividade (nota/status) há X dias
-const DIAS_SAP = 3; // aguardando SAP há mais de X dias
+const DIAS_NOVO = 2; // aberto há até X dias e ainda sem comentário → "Novo"
+const DIAS_PARADO = 3; // sem comentário há X dias → "Parado"
+const DIAS_ATRASO = 7; // sem comentário há X dias → "Em atraso"
+const DIAS_SUPERVISAO = 3; // aguardando supervisão há mais de X dias
+const HORAS_RECENTE = 24; // destaque de "mudou recentemente"
+
+/* Andamento automático (calculado a partir dos comentários, nunca manual) */
+type Andamento = 'novo' | 'andamento' | 'parado' | 'atraso' | 'concluido';
+const ANDAMENTO: { k: Andamento; l: string; c: string; hint: string }[] = [
+  { k: 'novo', l: 'Novo', c: 'var(--accent)', hint: `aberto há menos de ${DIAS_PARADO} d, ainda sem comentário` },
+  { k: 'andamento', l: 'Em andamento', c: 'var(--green)', hint: `comentado nos últimos ${DIAS_PARADO} d` },
+  { k: 'parado', l: 'Parado', c: 'var(--amber)', hint: `sem comentário há ${DIAS_PARADO}+ d` },
+  { k: 'atraso', l: 'Em atraso', c: 'var(--red)', hint: `sem comentário há ${DIAS_ATRASO}+ d` },
+  { k: 'concluido', l: 'Concluído', c: 'var(--text-3)', hint: 'resolvido' },
+];
+const andMeta = (a: Andamento) => ANDAMENTO.find((x) => x.k === a) || ANDAMENTO[0];
 
 /* ============================================================================
  * Tipos e helpers
@@ -59,15 +72,22 @@ type Row = PesagemTodoItemEnriched & {
   diasSemAtividade: number;
   ultimaAtividade: Date;
   valorRef: number;
+  andamento: Andamento;
+  diasSemComentario: number;
+  ultimoComentario?: string;
+  recente: { k: 'aberto' | 'comentado' | 'estoque'; text: string } | null;
 };
 
 const TONE: Record<Tone, string> = { red: 'var(--red)', amber: 'var(--amber)', muted: 'var(--text-3)' };
-const STATUS: { k: PesagemTodoStatus; l: string; c: string }[] = [
-  { k: 'pendente', l: 'Pendente', c: 'var(--text-3)' },
-  { k: 'em_investigacao', l: 'Em investigação', c: 'var(--amber)' },
-  { k: 'aguardando_sap', l: 'Aguardando SAP', c: 'var(--accent)' },
-  { k: 'concluido', l: 'Concluído', c: 'var(--green)' },
+// Etapa do fluxo. As chaves são mantidas por compatibilidade com os dados já gravados.
+const STATUS: { k: PesagemTodoStatus; l: string; short: string; c: string }[] = [
+  { k: 'pendente', l: 'Pendente de análise', short: 'pend. análise', c: 'var(--text-3)' },
+  { k: 'aguardando_chamado', l: 'Aguardando chamado', short: 'aguard. chamado', c: 'var(--text-2)' },
+  { k: 'em_investigacao', l: 'Chamado aberto', short: 'chamado', c: 'var(--amber)' },
+  { k: 'aguardando_sap', l: 'Aguardando supervisão', short: 'supervisão', c: 'var(--accent)' },
+  { k: 'concluido', l: 'Concluído', short: 'concl.', c: 'var(--green)' },
 ];
+const OPEN_STATUS = STATUS.filter((s) => s.k !== 'concluido');
 const PRIO: { k: PesagemTodoPriority; l: string; w: number }[] = [
   { k: 'baixa', l: 'Baixa', w: 0 },
   { k: 'media', l: 'Média', w: 1 },
@@ -153,7 +173,12 @@ export function TodoView({
   const [tab, setTab] = useState<'atencao' | 'abertos' | 'plano' | 'concluidos' | 'todos'>('atencao');
   const [q, setQ] = useState('');
   const [prio, setPrio] = useState<'all' | PesagemTodoPriority>('all');
-  const [sortBy, setSortBy] = useState<'atencao' | 'valor' | 'parado' | 'recente'>('atencao');
+  const [sortBy, setSortBy] = useState<'atencao' | 'valor' | 'parado' | 'recente' | 'atividade'>('atencao');
+  const [etapa, setEtapa] = useState<'all' | PesagemTodoStatus>('all');
+  const [andF, setAndF] = useState<Set<Andamento>>(new Set());
+  const [estoqueF, setEstoqueF] = useState<'all' | 'mudou' | 'saiu' | 'igual'>('all');
+  const [periodo, setPeriodo] = useState<'all' | 1 | 7 | 30>('all');
+  const [soRecentes, setSoRecentes] = useState(false);
   const [selKey, setSelKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [locallyDeletedKeys, setLocallyDeletedKeys] = useState<Set<string>>(new Set());
@@ -210,7 +235,7 @@ export function TodoView({
         posicao_deposito_inicial: s?.posicao_deposito || '',
         dias_aging_inicial: s?.dias_aging ?? 0,
         data_vencimento: s?.data_vencimento || '',
-        status: 'em_investigacao',
+        status: 'pendente',
         prioridade: 'alta',
         motivo_inicial: inv.motivo || 'Marcado em investigação',
         notas: [],
@@ -220,7 +245,16 @@ export function TodoView({
         created_by_name: inv.created_by || 'Investigação',
       } as PesagemTodoItem);
     });
-    return [...todoItems, ...synth].filter((t) => !locallyDeletedKeys.has(up(t.lote)));
+    // Um único card por lote: prioriza o item real em aberto e, entre iguais, o mais recente
+    const byLote = new Map<string, PesagemTodoItem>();
+    const rank = (t: PesagemTodoItem) => (t.id.startsWith('inv-') ? 0 : 2) + (t.status !== 'concluido' ? 1 : 0);
+    [...todoItems, ...synth].forEach((t) => {
+      const k = up(t.lote) || t.id;
+      if (locallyDeletedKeys.has(k)) return;
+      const prev = byLote.get(k);
+      if (!prev || rank(t) > rank(prev) || (rank(t) === rank(prev) && (t.updated_at || '') > (prev.updated_at || ''))) byLote.set(k, t);
+    });
+    return Array.from(byLote.values());
   }, [todoItems, lotesInvestigacao, estoqueMap, valores, locallyDeletedKeys, agingData]);
 
   // Enriquecimento com o estoque atual + motivos de atenção
@@ -260,9 +294,32 @@ export function TodoView({
       const lastAct = [todo.updated_at, lastNote, todo.created_at].filter(Boolean).sort().pop() as string;
       const diasAberto = days(todo.created_at);
       const diasSemAtividade = days(lastAct);
+      const diasSemComentario = days(lastNote || todo.created_at);
+      const done = todo.status === 'concluido';
+
+      // Andamento automático: só comentários contam como avanço
+      const andamento: Andamento = done
+        ? 'concluido'
+        : diasSemComentario >= DIAS_ATRASO
+        ? 'atraso'
+        : diasSemComentario >= DIAS_PARADO
+        ? 'parado'
+        : lastNote
+        ? 'andamento'
+        : 'novo';
+
+      // O que mudou recentemente (últimas HORAS_RECENTE horas)
+      const hrs = (s?: string) => (s ? (Date.now() - new Date(s).getTime()) / 3600000 : Infinity);
+      const recente: Row['recente'] = done
+        ? null
+        : hrs(lastNote) <= HORAS_RECENTE
+        ? { k: 'comentado', text: 'Comentado ' + (hrs(lastNote) < 1 ? 'agora' : `há ${Math.floor(hrs(lastNote))} h`) }
+        : hrs(todo.created_at) <= HORAS_RECENTE
+        ? { k: 'aberto', text: 'Aberto ' + (hrs(todo.created_at) < 1 ? 'agora' : `há ${Math.floor(hrs(todo.created_at))} h`) }
+        : null;
 
       const reasons: Reason[] = [];
-      if (todo.status !== 'concluido') {
+      if (!done) {
         if (diff_status === 'saiu_do_estoque')
           reasons.push({ k: 'saiu', tone: 'red', text: 'Saiu do estoque · confirme e resolva', w: 10 });
         else if (diff_status === 'quantidade_reduziu')
@@ -276,12 +333,12 @@ export function TodoView({
         const atrasadas = (todo.acoes || []).filter((a) => !a.feito && a.prazo && a.prazo < hoje);
         if (atrasadas.length)
           reasons.push({ k: 'acao', tone: 'red', text: atrasadas.length === 1 ? `Ação atrasada: ${atrasadas[0].texto}` : `${atrasadas.length} ações atrasadas`, w: 5 });
-        if (!todo.notas.length && diasAberto >= DIAS_SEM_NOTA)
-          reasons.push({ k: 'nota', tone: 'amber', text: `Sem nota há ${diasAberto} d`, w: 4 });
-        else if (diasSemAtividade >= DIAS_PARADO)
-          reasons.push({ k: 'parado', tone: 'amber', text: `Parado há ${diasSemAtividade} d`, w: 4 });
-        if (todo.status === 'aguardando_sap' && diasSemAtividade >= DIAS_SAP)
-          reasons.push({ k: 'sap', tone: 'amber', text: `No SAP há ${diasSemAtividade} d`, w: 3 });
+        if (andamento === 'atraso')
+          reasons.push({ k: 'parado', tone: 'red', text: `Em atraso · sem comentário há ${diasSemComentario} d`, w: 5 });
+        else if (andamento === 'parado')
+          reasons.push({ k: 'parado', tone: 'amber', text: `Parado · sem comentário há ${diasSemComentario} d`, w: 3 });
+        if (todo.status === 'aguardando_sap' && diasSemComentario >= DIAS_SUPERVISAO)
+          reasons.push({ k: 'sup', tone: 'amber', text: `Aguardando supervisão há ${diasSemComentario} d`, w: 3 });
       }
       const valorRef = localizado ? valor_total_atual : todo.valor_total_inicial;
       const score =
@@ -309,6 +366,10 @@ export function TodoView({
         diasSemAtividade,
         ultimaAtividade: new Date(lastAct),
         valorRef,
+        andamento,
+        diasSemComentario,
+        ultimoComentario: lastNote,
+        recente,
       } as Row;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,10 +380,12 @@ export function TodoView({
     const open = rows.filter((r) => r.status !== 'concluido');
     const att = open.filter((r) => r.reasons.length);
     const saiu = open.filter((r) => r.diff_status === 'saiu_do_estoque');
-    const parados = open.filter((r) => r.diasSemAtividade >= DIAS_PARADO);
+    const parados = open.filter((r) => r.andamento === 'parado' || r.andamento === 'atraso');
     const done = rows.filter((r) => r.status === 'concluido');
     const done30 = done.filter((r) => days(r.resolvido_em) <= 30);
-    const byStatus = STATUS.slice(0, 3).map((s) => ({ ...s, n: open.filter((r) => r.status === s.k).length }));
+    const byStatus = OPEN_STATUS.map((s) => ({ ...s, n: open.filter((r) => r.status === s.k).length }));
+    const byAndamento = ANDAMENTO.slice(0, 4).map((a) => ({ ...a, n: open.filter((r) => r.andamento === a.k).length }));
+    const recentes = open.filter((r) => r.recente).length;
     const tempoMedio = done30.length
       ? Math.round(done30.reduce((s, r) => s + Math.max(0, (new Date(r.resolvido_em || r.updated_at).getTime() - new Date(r.created_at).getTime()) / 86400000), 0) / done30.length)
       : null;
@@ -337,35 +400,71 @@ export function TodoView({
       done30: done30.length,
       tempoMedio,
       byStatus,
+      byAndamento,
+      recentes,
       total: rows.length,
     };
   }, [rows]);
 
   /* ---------------- lista ---------------- */
-  const list = useMemo(() => {
+  // Todos os filtros, exceto o de andamento (para contar os chips de andamento)
+  const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return rows
-      .filter((r) => {
-        if (tab === 'atencao' && (r.status === 'concluido' || !r.reasons.length)) return false;
-        if (tab === 'abertos' && r.status === 'concluido') return false;
-        if (tab === 'concluidos' && r.status !== 'concluido') return false;
-        if (prio !== 'all' && r.prioridade !== prio) return false;
-        if (s) {
-          const hay = [r.material, r.texto_breve_material, r.lote, r.motivo_inicial, r.desfecho, ...(r.tags || []), ...r.notas.map((n) => n.texto)]
-            .join(' ')
-            .toLowerCase();
-          if (!hay.includes(s)) return false;
-        }
-        return true;
-      })
+    return rows.filter((r) => {
+      if (tab === 'atencao' && (r.status === 'concluido' || !r.reasons.length)) return false;
+      if (tab === 'abertos' && r.status === 'concluido') return false;
+      if (tab === 'concluidos' && r.status !== 'concluido') return false;
+      if (prio !== 'all' && r.prioridade !== prio) return false;
+      if (etapa !== 'all' && r.status !== etapa) return false;
+      if (soRecentes && !r.recente) return false;
+      if (estoqueF === 'mudou' && r.diff_status === 'ativo_sem_alteracao') return false;
+      if (estoqueF === 'saiu' && r.diff_status !== 'saiu_do_estoque') return false;
+      if (estoqueF === 'igual' && r.diff_status !== 'ativo_sem_alteracao') return false;
+      if (periodo !== 'all' && r.diasAberto > periodo) return false;
+      if (s) {
+        const hay = [r.material, r.texto_breve_material, r.lote, r.motivo_inicial, r.desfecho, ...(r.tags || []), ...r.notas.map((n) => n.texto)]
+          .join(' ')
+          .toLowerCase();
+        if (!hay.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [rows, tab, q, prio, etapa, soRecentes, estoqueF, periodo]);
+
+  const andCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    filtered.forEach((r) => (m[r.andamento] = (m[r.andamento] || 0) + 1));
+    return m;
+  }, [filtered]);
+
+  const list = useMemo(() => {
+    return filtered
+      .filter((r) => !andF.size || andF.has(r.andamento))
       .sort((a, b) => {
         if (tab === 'concluidos') return new Date(b.resolvido_em || b.updated_at).getTime() - new Date(a.resolvido_em || a.updated_at).getTime();
         if (sortBy === 'valor') return b.valorRef - a.valorRef;
-        if (sortBy === 'parado') return b.diasSemAtividade - a.diasSemAtividade;
+        if (sortBy === 'parado') return b.diasSemComentario - a.diasSemComentario;
         if (sortBy === 'recente') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (sortBy === 'atividade') return b.ultimaAtividade.getTime() - a.ultimaAtividade.getTime();
         return b.score - a.score || b.valorRef - a.valorRef;
       });
-  }, [rows, tab, q, prio, sortBy]);
+  }, [filtered, andF, tab, sortBy]);
+
+  const nFiltros = (prio !== 'all' ? 1 : 0) + (etapa !== 'all' ? 1 : 0) + (estoqueF !== 'all' ? 1 : 0) + (periodo !== 'all' ? 1 : 0) + (soRecentes ? 1 : 0) + andF.size;
+  const limparFiltros = () => {
+    setPrio('all');
+    setEtapa('all');
+    setEstoqueF('all');
+    setPeriodo('all');
+    setSoRecentes(false);
+    setAndF(new Set());
+  };
+  const toggleAnd = (k: Andamento) =>
+    setAndF((prev) => {
+      const n = new Set(prev);
+      n.has(k) ? n.delete(k) : n.add(k);
+      return n;
+    });
 
   // Sem nada pedindo atenção, abre direto em "Abertos"
   const firstLoad = useRef(true);
@@ -479,8 +578,8 @@ export function TodoView({
           await updatePesagemTodoStatus(r.id, s);
         }
       },
-      `Status: ${statusMeta(s).l}`,
-      'Não foi possível alterar o status'
+      `Etapa: ${statusMeta(s).l}`,
+      'Não foi possível alterar a etapa'
     );
   };
 
@@ -722,19 +821,10 @@ export function TodoView({
 
       // Atalhos operacionais com item selecionado
       if (sel && sel.status !== 'concluido') {
-        if (e.key === '1') {
+        const idx = ['1', '2', '3', '4'].indexOf(e.key);
+        if (idx >= 0 && OPEN_STATUS[idx]) {
           e.preventDefault();
-          setStatus(sel, 'pendente');
-          return;
-        }
-        if (e.key === '2') {
-          e.preventDefault();
-          setStatus(sel, 'em_investigacao');
-          return;
-        }
-        if (e.key === '3') {
-          e.preventDefault();
-          setStatus(sel, 'aguardando_sap');
+          setStatus(sel, OPEN_STATUS[idx].k);
           return;
         }
         if (e.key === 'p' || e.key === 'P') {
@@ -766,6 +856,12 @@ export function TodoView({
     cn(
       'h-[30px] px-3 text-[12px] font-medium inline-flex items-center gap-1.5 whitespace-nowrap border-r border-[var(--border-strong)] last:border-r-0',
       on ? 'bg-[var(--hover)] text-[var(--text)]' : 'text-[var(--text-3)] hover:text-[var(--text)]'
+    );
+
+  const fsel = (on: boolean) =>
+    cn(
+      'h-7 px-2 bg-[var(--surface)] border rounded-[var(--radius)] text-[12px] outline-none',
+      on ? 'border-[var(--accent)] text-[var(--text)]' : 'border-[var(--border-strong)] text-[var(--text-2)]'
     );
 
   const TABS = [
@@ -803,9 +899,9 @@ export function TodoView({
               <RefreshCw className={cn('h-3.5 w-3.5', isAtualizandoDb && 'animate-spin')} /> Atualizar estoque
             </button>
           )}
-          <button type="button" onClick={() => setCreateOpen(true)} className={primary}>
+          {/* <button type="button" onClick={() => setCreateOpen(true)} className={primary}>
             <Plus className="h-3.5 w-3.5" /> Acompanhar lote
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -825,10 +921,10 @@ export function TodoView({
             v: stats.open,
             s: (
               <>
-                {stats.byStatus.map((b, i) => (
+                {stats.byAndamento.map((b, i) => (
                   <span key={b.k}>
                     {i > 0 && ' · '}
-                    <span className="font-mono">{b.n}</span> {b.k === 'pendente' ? 'pend.' : b.k === 'em_investigacao' ? 'invest.' : 'SAP'}
+                    <span className="font-mono" style={{ color: b.n && (b.k === 'atraso' || b.k === 'parado') ? b.c : undefined }}>{b.n}</span> {b.l.toLowerCase()}
                   </span>
                 ))}
               </>
@@ -876,7 +972,18 @@ export function TodoView({
           {TABS.map((t) => (
             <button key={t.k} type="button" onClick={() => setTab(t.k)} className={seg(tab === t.k)}>
               {t.l}
-              <span className={cn('font-mono text-[10.5px]', t.alert ? 'text-[var(--red)]' : 'text-[var(--text-3)]')}>{t.n}</span>
+              <span
+                className={cn(
+                  'font-mono text-[11px] px-1.5 py-0.2 rounded-full font-semibold leading-tight',
+                  t.alert
+                    ? 'bg-rose-500/20 text-[var(--red)] font-bold'
+                    : tab === t.k
+                    ? 'bg-[var(--border-strong)]/40 text-[var(--text)]'
+                    : 'bg-[var(--hover)] text-[var(--text-2)] group-hover:text-[var(--text)]'
+                )}
+              >
+                {t.n}
+              </span>
             </button>
           ))}
         </div>
@@ -889,7 +996,16 @@ export function TodoView({
             ].map((t) => (
               <button key={t.k} type="button" onClick={() => setPlanoFiltro(t.k)} className={seg(planoFiltro === t.k)}>
                 {t.l}
-                <span className="font-mono text-[10.5px] text-[var(--text-3)]">{t.n}</span>
+                <span
+                  className={cn(
+                    'font-mono text-[11px] px-1.5 py-0.2 rounded-full font-semibold leading-tight',
+                    planoFiltro === t.k
+                      ? 'bg-[var(--border-strong)]/40 text-[var(--text)]'
+                      : 'bg-[var(--hover)] text-[var(--text-2)]'
+                  )}
+                >
+                  {t.n}
+                </span>
               </button>
             ))}
           </div>
@@ -930,9 +1046,10 @@ export function TodoView({
             className="h-8 px-2 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[var(--radius)] text-[12.5px] text-[var(--text-2)] outline-none"
           >
             <option value="atencao">Mais urgentes</option>
+            <option value="atividade">Atividade mais recente</option>
             <option value="valor">Maior valor</option>
-            <option value="parado">Mais tempo parado</option>
-            <option value="recente">Mais recentes</option>
+            <option value="parado">Mais tempo sem comentário</option>
+            <option value="recente">Abertos mais recentes</option>
           </select>
         )}
         <span className="ml-auto text-[11px] text-[var(--text-3)] hidden lg:flex items-center gap-1.5 flex-wrap">
@@ -944,7 +1061,7 @@ export function TodoView({
           <span>·</span>
           <span><kbd className="font-mono">r</kbd> resolve</span>
           <span>·</span>
-          <span><kbd className="font-mono">1-3</kbd> status</span>
+          <span><kbd className="font-mono">1-4</kbd> etapa</span>
           <span>·</span>
           <span><kbd className="font-mono">p</kbd> prioridade</span>
           <span>·</span>
@@ -953,6 +1070,91 @@ export function TodoView({
           <span><kbd className="font-mono">a</kbd> novo</span>
         </span>
       </div>
+
+      {/* ---------- Filtros ---------- */}
+      {tab !== 'plano' && (
+        <div className="flex items-center gap-2 flex-wrap pb-3 -mt-1">
+          {tab !== 'concluidos' &&
+            ANDAMENTO.slice(0, 4).map((a) => {
+              const on = andF.has(a.k);
+              const n = andCounts[a.k] || 0;
+              return (
+                <button
+                  key={a.k}
+                  type="button"
+                  onClick={() => toggleAnd(a.k)}
+                  title={a.hint}
+                  className={cn(
+                    'h-7 px-2.5 rounded-full border text-[12px] inline-flex items-center gap-1.5 whitespace-nowrap',
+                    on ? 'border-[var(--text-3)] bg-[var(--hover)] text-[var(--text)]' : 'border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]',
+                    !n && !on && 'opacity-50'
+                  )}
+                >
+                  <Dot c={a.c} /> {a.l}
+                  <span
+                    className={cn(
+                      'font-mono text-[11px] px-1.5 py-0.2 rounded-full font-semibold',
+                      on ? 'bg-[var(--surface)] text-[var(--text)]' : 'bg-[var(--surface-2)] text-[var(--text-2)]'
+                    )}
+                  >
+                    {n}
+                  </span>
+                </button>
+              );
+            })}
+          {tab !== 'concluidos' && (
+            <button
+              type="button"
+              onClick={() => setSoRecentes((v) => !v)}
+              title={`Abertos ou comentados nas últimas ${HORAS_RECENTE} h`}
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-[12px] inline-flex items-center gap-1.5 whitespace-nowrap',
+                soRecentes ? 'border-[var(--accent)] bg-[var(--accent-weak)] text-[var(--text)]' : 'border-[var(--border-strong)] text-[var(--text-2)] hover:text-[var(--text)]'
+              )}
+            >
+              Mudou nas últimas {HORAS_RECENTE} h
+              <span
+                className={cn(
+                  'font-mono text-[11px] px-1.5 py-0.2 rounded-full font-semibold',
+                  soRecentes ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-2)]'
+                )}
+              >
+                {stats.recentes}
+              </span>
+            </button>
+          )}
+          <span className="w-px h-5 bg-[var(--border)] mx-1" />
+          <select value={etapa} onChange={(e) => setEtapa(e.target.value as any)} className={fsel(etapa !== 'all')}>
+            <option value="all">Todas as etapas</option>
+            {(tab === 'todos' ? STATUS : OPEN_STATUS).map((s) => (
+              <option key={s.k} value={s.k}>
+                {s.l}
+              </option>
+            ))}
+          </select>
+          <select value={estoqueF} onChange={(e) => setEstoqueF(e.target.value as any)} className={fsel(estoqueF !== 'all')}>
+            <option value="all">Estoque: qualquer</option>
+            <option value="mudou">Estoque mudou</option>
+            <option value="saiu">Saiu do estoque</option>
+            <option value="igual">Sem alteração</option>
+          </select>
+          <select
+            value={String(periodo)}
+            onChange={(e) => setPeriodo(e.target.value === 'all' ? 'all' : (Number(e.target.value) as 1 | 7 | 30))}
+            className={fsel(periodo !== 'all')}
+          >
+            <option value="all">Aberto: qualquer data</option>
+            <option value="1">Aberto hoje/ontem</option>
+            <option value="7">Aberto nos últimos 7 d</option>
+            <option value="30">Aberto nos últimos 30 d</option>
+          </select>
+          {nFiltros > 0 && (
+            <button type="button" onClick={limparFiltros} className="h-7 px-2 text-[12px] text-[var(--accent)] font-medium inline-flex items-center gap-1">
+              <X className="h-3 w-3" /> Limpar filtros ({nFiltros})
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ---------- Lista + detalhe ---------- */}
       <div className={cn('grid gap-6', sel && 'xl:grid-cols-[minmax(0,1fr)_440px]')}>
@@ -1052,7 +1254,7 @@ export function TodoView({
                 <span>{tab === 'concluidos' ? 'Desfecho' : 'O que mudou'}</span>
                 <span className="text-right">Saldo: registro → agora</span>
                 <span className="text-right">Valor</span>
-                <span className="text-right">{tab === 'concluidos' ? 'Resolvido' : 'Última ação'}</span>
+                <span className="text-right">{tab === 'concluidos' ? 'Resolvido' : 'Últ. comentário'}</span>
                 <span />
               </div>
               {list.map((r) => {
@@ -1078,9 +1280,23 @@ export function TodoView({
                     <span className="min-w-0">
                       <span className="flex items-center gap-2">
                         <span className="font-mono text-[13.5px] font-semibold">{r.lote}</span>
+                        {!done && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-1.5 leading-[18px] whitespace-nowrap"
+                            style={{ color: andMeta(r.andamento).c, background: `color-mix(in srgb, ${andMeta(r.andamento).c} 12%, transparent)` }}
+                            title={`Automático · ${andMeta(r.andamento).hint}`}
+                          >
+                            {andMeta(r.andamento).l}
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 text-[11.5px] text-[var(--text-3)] whitespace-nowrap">
                           <Dot c={st.c} /> {st.l}
                         </span>
+                        {r.recente && (
+                          <span className="inline-flex items-center text-[11px] text-[var(--accent)] whitespace-nowrap" title="Mudança recente">
+                            {r.recente.text}
+                          </span>
+                        )}
                         {(r.prioridade === 'critica' || r.prioridade === 'alta') && !done && (
                           <span
                             className="text-[10.5px] font-medium border border-[var(--border-strong)] rounded px-1 leading-4"
@@ -1111,14 +1327,14 @@ export function TodoView({
                     <span className="min-w-0 max-md:col-span-2 max-md:order-last">
                       {done ? (
                         <span className="block text-[12.5px] text-[var(--text-2)] truncate">{r.desfecho || 'Sem desfecho informado'}</span>
-                      ) : r.reasons.length ? (
+                      ) : r.reasons.filter((x) => x.k !== "parado").length ? (
                         <span className="flex flex-wrap gap-x-3 gap-y-0.5">
-                          {r.reasons.slice(0, 2).map((x) => (
+                          {r.reasons.filter((x) => x.k !== "parado").slice(0, 2).map((x) => (
                             <span key={x.k} className="inline-flex items-center gap-1.5 text-[12.5px]" style={{ color: x.tone === 'muted' ? undefined : TONE[x.tone] }}>
                               <Dot c={TONE[x.tone]} /> {x.text}
                             </span>
                           ))}
-                          {r.reasons.length > 2 && <span className="text-[11.5px] text-[var(--text-3)]">+{r.reasons.length - 2}</span>}
+                          {r.reasons.filter((x) => x.k !== "parado").length > 2 && <span className="text-[11.5px] text-[var(--text-3)]">+{r.reasons.filter((x) => x.k !== "parado").length - 2}</span>}
                         </span>
                       ) : (
                         <span className="block text-[12.5px] text-[var(--text-3)] truncate">
@@ -1142,14 +1358,14 @@ export function TodoView({
 
                     {/* Atividade */}
                     <span className="hidden md:block text-right text-[12px] text-[var(--text-3)] whitespace-nowrap">
-                      {done ? ago(days(r.resolvido_em || r.updated_at)) : <span style={{ color: r.diasSemAtividade >= DIAS_PARADO ? 'var(--amber)' : undefined }}>{ago(r.diasSemAtividade)}</span>}
+                      {done ? ago(days(r.resolvido_em || r.updated_at)) : <span style={{ color: r.andamento === 'atraso' || r.andamento === 'parado' ? andMeta(r.andamento).c : undefined }}>{r.ultimoComentario ? ago(r.diasSemComentario) : 'sem coment.'}</span>}
                     </span>
                     <ChevronRight className={cn('hidden md:block h-3.5 w-3.5 text-[var(--text-3)] transition-transform', on && 'rotate-90 xl:rotate-0')} />
                   </button>
                 );
               })}
-              <p className="px-3 pt-2 text-[11.5px] text-[var(--text-3)]">
-                {list.length} lote(s) · {brl(list.reduce((s, r) => s + r.valorRef, 0))}
+              <p className="px-3 pt-2 text-[12px] text-[var(--text-2)] font-medium">
+                <span className="font-mono text-[var(--text)] font-semibold">{list.length}</span> lote(s) · <span className="font-mono text-[var(--text)] font-semibold">{brl(list.reduce((s, r) => s + r.valorRef, 0))}</span>
               </p>
             </div>
           )}
@@ -1177,8 +1393,18 @@ export function TodoView({
             {/* Status e prioridade */}
             {sel.status !== 'concluido' ? (
               <div className="mt-4 space-y-2.5">
+                <p className="flex items-center gap-2 text-[12.5px]">
+                  <Dot c={andMeta(sel.andamento).c} />
+                  <b className="font-medium" style={{ color: andMeta(sel.andamento).c }}>{andMeta(sel.andamento).l}</b>
+                  <span className="text-[var(--text-3)]">
+                    · {sel.ultimoComentario ? `último comentário ${ago(sel.diasSemComentario)}` : `sem comentário · aberto ${ago(sel.diasAberto)}`}
+                  </span>
+                  <span className="ml-auto text-[11px] text-[var(--text-3)]" title="Comentar coloca o lote em andamento; sem comentários ele fica parado e depois em atraso">
+                    automático
+                  </span>
+                </p>
                 <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface)]">
-                  {STATUS.slice(0, 3).map((s) => (
+                  {OPEN_STATUS.map((s) => (
                     <button key={s.k} type="button" disabled={busy} onClick={() => setStatus(sel, s.k)} className={cn(seg(sel.status === s.k), 'flex-1 justify-center')}>
                       <Dot c={s.c} /> {s.l}
                     </button>

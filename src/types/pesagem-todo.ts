@@ -1,4 +1,4 @@
-export type PesagemTodoStatus = 'pendente' | 'em_investigacao' | 'aguardando_sap' | 'concluido';
+export type PesagemTodoStatus = 'pendente' | 'aguardando_chamado' | 'em_investigacao' | 'aguardando_sap' | 'concluido';
 export type PesagemTodoPriority = 'baixa' | 'media' | 'alta' | 'critica';
 
 export interface PesagemTodoNote {
