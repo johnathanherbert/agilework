@@ -21,7 +21,7 @@ import {
 import { removeLoteInvestigacao } from '@/lib/dashpesagem-api';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
-import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check, Sparkles } from 'lucide-react';
+import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import toast from 'react-hot-toast';
 
