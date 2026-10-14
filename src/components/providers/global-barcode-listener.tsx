@@ -51,6 +51,8 @@ export function GlobalBarcodeListener() {
     };
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (!e || !e.key) return;
+
       // Ignora teclas modificadoras
       if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) {
         return;
@@ -114,7 +116,7 @@ export function GlobalBarcodeListener() {
       }
 
       // Captura caractere de entrada
-      if (e.key.length === 1) {
+      if (e.key && e.key.length === 1) {
         if (timeDiff > 0 && timeDiff < 450) {
           keyIntervalsRef.current.push(timeDiff);
           if (keyIntervalsRef.current.length > 30) {

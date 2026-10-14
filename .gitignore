@@ -35,3 +35,8 @@ next-env.d.ts
 
 #temp
 temporario.txt
+
+# firebase service account keys
+*firebase-adminsdk*.json
+*serviceAccount*.json
+serviceAccountKey.json

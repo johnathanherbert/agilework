@@ -23,6 +23,7 @@ import { copyToClipboard, cn } from '@/lib/utils';
 import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
 import { Search, Plus, X, Copy, RefreshCw, Loader2, ChevronRight, Trash2, RotateCcw, ArrowUpRight, ListChecks, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import toast from 'react-hot-toast';
 
 /* ============================================================================
@@ -884,7 +885,8 @@ export function TodoView({
       : 'Nenhum registro.';
 
   return (
-    <div className="text-[var(--text)]">
+    <TooltipProvider delayDuration={150}>
+      <div className="text-[var(--text)]">
       {/* ---------- Cabeçalho ---------- */}
       <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
         <div>
@@ -1306,16 +1308,66 @@ export function TodoView({
                           </span>
                         )}
                         {(r.acoes || []).length > 0 && (
-                          <span
-                            className="inline-flex items-center gap-1 text-[11px] text-[var(--text-3)]"
-                            style={{ color: (r.acoes || []).every((a) => a.feito) ? 'var(--green)' : undefined }}
-                            title="Ações do plano feitas / total"
-                          >
-                            <ListChecks className="h-3 w-3" />
-                            <span className="font-mono">
-                              {(r.acoes || []).filter((a) => a.feito).length}/{(r.acoes || []).length}
-                            </span>
-                          </span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className="inline-flex items-center gap-1 text-[11px] text-[var(--text-3)] cursor-help hover:text-[var(--text)] transition-colors"
+                                style={{ color: (r.acoes || []).every((a) => a.feito) ? 'var(--green)' : undefined }}
+                                onClick={(e) => {
+                                  // Permite clicar para selecionar o item normalmente sem fechar o tooltip abruptamente
+                                  e.stopPropagation();
+                                  setSelKey(on ? null : r.key);
+                                }}
+                              >
+                                <ListChecks className="h-3.5 w-3.5" />
+                                <span className="font-mono">
+                                  {(r.acoes || []).filter((a) => a.feito).length}/{(r.acoes || []).length}
+                                </span>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              align="start"
+                              className="max-w-[320px] p-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border-strong)] shadow-xl rounded-[6px]"
+                            >
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-1">
+                                  <span className="font-semibold text-[11.5px] text-[var(--text-2)]">Plano de ação</span>
+                                  <span className="font-mono text-[10.5px] text-[var(--text-3)]">
+                                    {(r.acoes || []).filter((a) => a.feito).length} de {(r.acoes || []).length} concluída(s)
+                                  </span>
+                                </div>
+                                <ul className="space-y-1 text-[11.5px] max-h-[160px] overflow-y-auto pr-1">
+                                  {(r.acoes || []).map((a) => {
+                                    const tone = prazoTone(a);
+                                    return (
+                                      <li key={a.id} className="flex items-start gap-1.5 leading-snug">
+                                        <span className={cn('mt-0.5 shrink-0 inline-flex items-center justify-center w-3 h-3 rounded-[3px] border text-[9px]', a.feito ? 'bg-[var(--green)] border-[var(--green)] text-[var(--bg)]' : 'border-[var(--text-3)]')}>
+                                          {a.feito && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                          <p className={cn('truncate', a.feito && 'line-through text-[var(--text-3)]')}>
+                                            {a.texto}
+                                          </p>
+                                          {(a.prazo || a.responsavel) && (
+                                            <p className="text-[10px] text-[var(--text-3)] flex items-center gap-1 font-mono">
+                                              {a.prazo && (
+                                                <span style={{ color: tone }}>
+                                                  {prazoFmt(a.prazo)}
+                                                </span>
+                                              )}
+                                              {a.prazo && a.responsavel && <span>·</span>}
+                                              {a.responsavel && <span>{a.responsavel}</span>}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </span>
                       <span className="block text-[12px] text-[var(--text-3)] truncate">
@@ -1775,7 +1827,8 @@ export function TodoView({
           setSelKey(up(lote));
         }}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
 

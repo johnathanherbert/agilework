@@ -415,6 +415,7 @@ export function ConsultaRapidaView({
     };
 
     const onKey = (e: KeyboardEvent) => {
+      if (!e || !e.key) return;
       if (blockedRef.current) return; // modal aberto: não intercepta
       if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -440,7 +441,7 @@ export function ConsultaRapidaView({
         clearRef.current();
         return;
       }
-      if (e.key.length === 1) {
+      if (e.key && e.key.length === 1) {
         // Digitação manual no campo: deixa o usuário digitar e confirmar com Enter
         if (inScanInput && manualRef.current) return;
         e.stopPropagation(); // impede atalhos globais (ex.: "m") de capturar o bipe

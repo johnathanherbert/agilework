@@ -25,6 +25,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   NOTIFICATIONS: 'notifications',
   SYSTEM_SETTINGS: 'system_settings',
+  PASSWORD_RESET_TOKENS: 'password_reset_tokens',
 };
 
 // Helper to get current user info
@@ -119,7 +120,7 @@ export const deleteUserDb = async (uid: string): Promise<void> => {
   }
 };
 
-export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean; allowedSolicitacoes: boolean; allowedPesagem: boolean; pinMaoDeObra?: string | null }>): Promise<void> => {
+export const editUserDb = async (uid: string, data: Partial<{ name: string; email: string; isApproved: boolean; role: UserRole; turno: ProductionTurno | null; allowedMaoDeObra: boolean; allowedSolicitacoes: boolean; allowedPesagem: boolean; pinMaoDeObra?: string | null; passwordResetAllowed?: boolean; passwordResetAllowedAt?: string; passwordResetExpiresAt?: string; passwordResetAllowedBy?: string }>): Promise<void> => {
   try {
     const userRef = doc(db, COLLECTIONS.USERS, uid);
     await updateDoc(userRef, {
@@ -159,6 +160,62 @@ export const resetUserMaoDeObraPin = async (uid: string): Promise<void> => {
     console.log(`✅ resetUserMaoDeObraPin: PIN resetado com sucesso (UID: ${uid})`);
   } catch (error) {
     console.error('❌ resetUserMaoDeObraPin: Erro ao resetar PIN:', error);
+    throw error;
+  }
+};
+
+/**
+ * Habilita ou desabilita a permissão de redefinição de senha para um usuário específico.
+ * A permissão é temporária e expira em exatamente 10 minutos.
+ * Cria/atualiza também um registro em password_reset_tokens para consulta na tela de login.
+ */
+export const setUserPasswordResetAllowed = async (
+  uid: string,
+  email: string,
+  allowed: boolean,
+  adminName?: string
+): Promise<{ allowedAt?: string; expiresAt?: string }> => {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    const tokenDocId = normalizedEmail.replace(/[^a-z0-9]/g, '_');
+    const now = new Date();
+    const nowIso = now.toISOString();
+    // Expira em no máximo 10 minutos
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000).toISOString();
+
+    const batch = writeBatch(db);
+
+    // 1. Atualiza o documento do usuário
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    batch.update(userRef, {
+      passwordResetAllowed: allowed,
+      passwordResetAllowedAt: allowed ? nowIso : null,
+      passwordResetExpiresAt: allowed ? expiresAt : null,
+      passwordResetAllowedBy: allowed ? (adminName || 'Administrador') : null,
+      updated_at: nowIso,
+    });
+
+    // 2. Cria/atualiza ou remove a permissão em password_reset_tokens (legível para verificação no login)
+    const tokenRef = doc(db, COLLECTIONS.PASSWORD_RESET_TOKENS, tokenDocId);
+    if (allowed) {
+      batch.set(tokenRef, {
+        uid,
+        email: normalizedEmail,
+        allowed: true,
+        allowedAt: nowIso,
+        expiresAt,
+        allowedBy: adminName || 'Administrador',
+        updatedAt: nowIso,
+      });
+    } else {
+      batch.delete(tokenRef);
+    }
+
+    await batch.commit();
+    console.log(`✅ setUserPasswordResetAllowed: Permissão de reset ${allowed ? 'habilitada por 10 min' : 'revogada'} para ${email}`);
+    return allowed ? { allowedAt: nowIso, expiresAt } : {};
+  } catch (error) {
+    console.error('❌ setUserPasswordResetAllowed: Erro ao atualizar permissão de reset:', error);
     throw error;
   }
 };

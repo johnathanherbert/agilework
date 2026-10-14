@@ -202,5 +202,12 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && 
                       resource.data.senderId == request.auth.uid;
     }
+
+    // Password reset tokens (gerenciados pelo Admin para auto-redefinição na tela de login)
+    match /password_reset_tokens/{tokenId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
   }
 }
+

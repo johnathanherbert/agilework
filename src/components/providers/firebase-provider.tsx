@@ -29,6 +29,10 @@ export interface UserData {
   allowedPesagem?: boolean; // Permissão explícita de acesso ao módulo Pesagem & Estoque
   pinMaoDeObra?: string | null; // PIN numérico para autenticação em Mão de Obra
   pinMaoDeObraUpdatedAt?: string;
+  passwordResetAllowed?: boolean; // Permissão do Administrador para redefinir senha na tela de login
+  passwordResetAllowedAt?: string;
+  passwordResetExpiresAt?: string;
+  passwordResetAllowedBy?: string;
 }
 
 export const ADMIN_EMAIL = 'johnathan.herbert47@gmail.com';

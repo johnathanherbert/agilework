@@ -8,7 +8,8 @@ import {
   deleteUserDb, 
   editUserDb, 
   wipeDataByCategory, 
-  resetUserMaoDeObraPin 
+  resetUserMaoDeObraPin,
+  setUserPasswordResetAllowed
 } from "@/lib/firestore-helpers";
 import {
   Shield,
@@ -68,6 +69,10 @@ interface UserItem {
   allowedPesagem?: boolean;
   pinMaoDeObra?: string | null;
   pinMaoDeObraUpdatedAt?: string;
+  passwordResetAllowed?: boolean;
+  passwordResetAllowedAt?: string;
+  passwordResetExpiresAt?: string;
+  passwordResetAllowedBy?: string;
   created_at?: string;
   lastActive?: any;
 }
@@ -509,8 +514,10 @@ export default function AdminControlPanelPage() {
     }
   };
 
-  // Ações da Gaveta: Aprovar / Desativar / Reativar
-  const handleDrawerAction = async (action: "approve" | "block" | "unblock" | "pinreset" | "delete") => {
+  // Ações da Gaveta: Aprovar / Desativar / Reativar / Reset
+  const handleDrawerAction = async (
+    action: "approve" | "block" | "unblock" | "pinreset" | "delete" | "allow_reset" | "revoke_reset"
+  ) => {
     if (!editingUser) return;
     const isSelf = editingUser.email === ADMIN_EMAIL;
     if (isSelf && (action === "block" || action === "delete")) {
@@ -543,6 +550,63 @@ export default function AdminControlPanelPage() {
       addAuditLog(`Redefiniu o PIN de ${editingUser.name || editingUser.email}`);
       toast.success(`PIN redefinido — ${(editingUser.name || editingUser.email).split(" ")[0]} cadastrará um novo no próximo acesso`);
       setEditingUser((prev) => (prev ? { ...prev, pinMaoDeObra: null } : null));
+    } else if (action === "allow_reset") {
+      const adminName = userData?.name || "Administrador";
+      const { allowedAt, expiresAt } = await setUserPasswordResetAllowed(editingUser.uid, editingUser.email, true, adminName);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.uid === editingUser.uid
+            ? {
+                ...u,
+                passwordResetAllowed: true,
+                passwordResetAllowedAt: allowedAt,
+                passwordResetExpiresAt: expiresAt,
+                passwordResetAllowedBy: adminName,
+              }
+            : u
+        )
+      );
+      setEditingUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              passwordResetAllowed: true,
+              passwordResetAllowedAt: allowedAt,
+              passwordResetExpiresAt: expiresAt,
+              passwordResetAllowedBy: adminName,
+            }
+          : null
+      );
+      addAuditLog(`Liberou redefinição de senha por 10 min para ${editingUser.name || editingUser.email}`);
+      toast.success(`Redefinição liberada por 10 min para ${(editingUser.name || editingUser.email).split(" ")[0]}`);
+    } else if (action === "revoke_reset") {
+      await setUserPasswordResetAllowed(editingUser.uid, editingUser.email, false);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.uid === editingUser.uid
+            ? {
+                ...u,
+                passwordResetAllowed: false,
+                passwordResetAllowedAt: undefined,
+                passwordResetExpiresAt: undefined,
+                passwordResetAllowedBy: undefined,
+              }
+            : u
+        )
+      );
+      setEditingUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              passwordResetAllowed: false,
+              passwordResetAllowedAt: undefined,
+              passwordResetExpiresAt: undefined,
+              passwordResetAllowedBy: undefined,
+            }
+          : null
+      );
+      addAuditLog(`Revogou liberação de redefinição de senha de ${editingUser.name || editingUser.email}`);
+      toast.success("Liberação de redefinição revogada");
     } else if (action === "delete") {
       setUserToDelete(editingUser);
       closeDrawer();
@@ -1077,9 +1141,35 @@ export default function AdminControlPanelPage() {
                                     {getInitials(u.name || u.email)}
                                   </span>
                                   <div className="min-w-0">
-                                    <b className="flex items-center">
+                                    <b className="flex items-center gap-1.5 flex-wrap">
                                       <span className="truncate">{u.name || "Sem Nome Definido"}</span>
                                       {isSelf && <span className="adm-you">você</span>}
+                                      {u.passwordResetAllowed && (() => {
+                                        const isExpired = u.passwordResetExpiresAt && new Date(u.passwordResetExpiresAt).getTime() < Date.now();
+                                        const minsLeft = u.passwordResetExpiresAt
+                                          ? Math.max(0, Math.ceil((new Date(u.passwordResetExpiresAt).getTime() - Date.now()) / 60000))
+                                          : 0;
+
+                                        if (isExpired) {
+                                          return (
+                                            <span
+                                              className="text-[10px] font-semibold text-[var(--text-3)] bg-[var(--surface-2)] px-1.5 py-0.2 rounded border border-[var(--border)]"
+                                              title="Liberação de redefinição expirou (passou de 10 min)"
+                                            >
+                                              Reset expirado (10m)
+                                            </span>
+                                          );
+                                        }
+
+                                        return (
+                                          <span
+                                            className="text-[10px] font-semibold text-[var(--amber)] bg-[var(--amber)]/10 px-1.5 py-0.2 rounded border border-[var(--amber)]/20 animate-pulse"
+                                            title={`Redefinição liberada pelo Admin — restam aprox. ${minsLeft} min`}
+                                          >
+                                            Reset liberado ({minsLeft}m)
+                                          </span>
+                                        );
+                                      })()}
                                     </b>
                                     <small className="truncate">{u.email}</small>
                                   </div>
@@ -1494,7 +1584,91 @@ export default function AdminControlPanelPage() {
 
               {/* Segurança e PIN */}
               <div className="adm-dr-sec">
-                <h3>Segurança</h3>
+                <h3>Segurança e Credenciais</h3>
+
+                {/* Permissão de Redefinição de Senha no Login */}
+                <div className="p-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface-2)] mb-3 space-y-2">
+                  {(() => {
+                    const isAllowed = Boolean(editingUser.passwordResetAllowed);
+                    const isExpired =
+                      isAllowed &&
+                      editingUser.passwordResetExpiresAt &&
+                      new Date(editingUser.passwordResetExpiresAt).getTime() < Date.now();
+                    const minsLeft =
+                      isAllowed && editingUser.passwordResetExpiresAt
+                        ? Math.max(0, Math.ceil((new Date(editingUser.passwordResetExpiresAt).getTime() - Date.now()) / 60000))
+                        : 0;
+
+                    let statusText = "Bloqueado";
+                    let badgeClass = "bg-[var(--border-strong)]/40 text-[var(--text-3)]";
+                    let subtitle = "Bloqueado — requer liberação do Admin para trocar";
+
+                    if (isAllowed && !isExpired) {
+                      statusText = `Liberado (${minsLeft}m rest.)`;
+                      badgeClass = "bg-emerald-500/15 text-[var(--green)] border border-emerald-500/30";
+                      subtitle = `Liberado por ${editingUser.passwordResetAllowedBy || "Admin"}. Usuário pode definir nova senha diretamente no app sem e-mail.`;
+                    } else if (isAllowed && isExpired) {
+                      statusText = "Expirado (10m)";
+                      badgeClass = "bg-amber-500/15 text-[var(--amber)] border border-amber-500/30";
+                      subtitle = "A autorização de 10 min expirou. Libere novamente para permitir que o usuário defina a senha.";
+                    }
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <b className="text-xs font-semibold text-[var(--text)] block">
+                              Redefinição de Senha (Login)
+                            </b>
+                            <small className="text-[11px] text-[var(--text-3)] block mt-0.5">
+                              {subtitle}
+                            </small>
+                          </div>
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                              badgeClass
+                            )}
+                          >
+                            {statusText}
+                          </span>
+                        </div>
+
+                        <div className="pt-1 flex items-center gap-2">
+                          {isAllowed && !isExpired ? (
+                            <>
+                              <button
+                                type="button"
+                                className="btn sm"
+                                onClick={() => handleDrawerAction("revoke_reset")}
+                              >
+                                Revogar agora
+                              </button>
+                              <button
+                                type="button"
+                                className="btn sm secondary"
+                                onClick={() => handleDrawerAction("allow_reset")}
+                                title="Renova a permissão por mais 10 minutos"
+                              >
+                                Renovar (+10 min)
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              onClick={() => handleDrawerAction("allow_reset")}
+                            >
+                              <Key className="w-3.5 h-3.5" />
+                              {isExpired ? "Liberar novamente (10 min)" : "Liberar por 10 min no login"}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
                 <div className="adm-kv">
                   <span>PIN de Mão de Obra</span>
                   <b>{editingUser.pinMaoDeObra ? "Ativo" : "Não cadastrado"}</b>

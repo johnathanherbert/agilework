@@ -6,8 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirebase } from '@/components/providers/firebase-provider';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { COLLECTIONS } from '@/lib/firestore-helpers';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle, AlertCircle, Sparkles, User, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle, AlertCircle, Sparkles, User, Sun, Moon, Key, ShieldAlert } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +45,19 @@ export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  // Estados de Verificação e Redefinição de Senha
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetVerified, setResetVerified] = useState(false);
+  const [resetChecking, setResetChecking] = useState(false);
+  const [resetExpiresMins, setResetExpiresMins] = useState<number>(10);
+  const [resetBlockedMessage, setResetBlockedMessage] = useState<string | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetErrorMessage, setResetErrorMessage] = useState<string | null>(null);
+  const [showEmailFallback, setShowEmailFallback] = useState(false);
 
   // Relógio e turno em tempo real
   const [timeStr, setTimeStr] = useState('--:--:--');
@@ -233,27 +249,141 @@ export const LoginForm = () => {
     }
   };
 
-  const onForgotPassword = async () => {
-    const email = getLoginValues('email');
+  // 1. Verifica se o Admin liberou a redefinição para este e-mail dentro do prazo de 10 min
+  const onCheckResetPermission = async () => {
+    const email = (resetEmail || getLoginValues('email') || '').trim().toLowerCase();
     if (!email || !email.includes('@')) {
-      toast.error('Informe um e-mail válido para redefinição.');
+      toast.error('Informe um e-mail válido.');
+      return;
+    }
+
+    setResetChecking(true);
+    setResetBlockedMessage(null);
+
+    try {
+      const tokenDocId = email.replace(/[^a-z0-9]/g, '_');
+      const tokenRef = doc(db, COLLECTIONS.PASSWORD_RESET_TOKENS, tokenDocId);
+      const tokenSnap = await getDoc(tokenRef);
+
+      if (tokenSnap.exists()) {
+        const data = tokenSnap.data();
+        const expiresAt = data?.expiresAt ? new Date(data.expiresAt).getTime() : 0;
+        const now = Date.now();
+
+        if (data?.allowed === true) {
+          if (expiresAt && now > expiresAt) {
+            setResetVerified(false);
+            setResetBlockedMessage(
+              'A autorização do administrador expirou (limite de 10 minutos). Solicite ao administrador no Painel de Administração para liberar novamente.'
+            );
+          } else {
+            const minsLeft = expiresAt ? Math.max(1, Math.ceil((expiresAt - now) / 60000)) : 10;
+            setResetExpiresMins(minsLeft);
+            setResetVerified(true);
+            setResetBlockedMessage(null);
+            toast.success(`Autorização confirmada! Restam ~${minsLeft} min para concluir.`);
+          }
+          return;
+        }
+      }
+
+      setResetVerified(false);
+      setResetBlockedMessage(
+        'A redefinição de senha para este e-mail não está habilitada. Solicite a liberação ao administrador no Painel de Administração.'
+      );
+    } catch (err) {
+      console.error('Erro ao verificar permissão de reset:', err);
+      setResetBlockedMessage(
+        'Não foi possível validar a autorização no momento. Entre em contato com o administrador do sistema.'
+      );
+    } finally {
+      setResetChecking(false);
+    }
+  };
+
+  // 2. Executa a redefinição de senha diretamente no app (SEM e-mail)
+  const onConfirmInlinePasswordReset = async () => {
+    const email = (resetEmail || getLoginValues('email') || '').trim().toLowerCase();
+    if (!resetVerified) {
+      toast.error('A redefinição precisa ser verificada primeiro.');
+      return;
+    }
+
+    if (!resetNewPassword || resetNewPassword.length < 6) {
+      toast.error('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      toast.error('As senhas digitadas não coincidem.');
       return;
     }
 
     setIsLoading(true);
+    setResetErrorMessage(null);
+    setShowEmailFallback(false);
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword: resetNewPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || 'Falha ao redefinir senha.');
+        setResetErrorMessage(data.message || 'Falha ao processar redefinição no servidor.');
+
+        if (data.error === 'EXPIRED') {
+          setResetVerified(false);
+          setResetBlockedMessage(data.message);
+        } else if (data.error === 'ADMIN_SETUP_REQUIRED') {
+          setShowEmailFallback(true);
+        }
+        return;
+      }
+
+      toast.success('Senha alterada com sucesso! Conectando...');
+      setResetSuccess(true);
+
+      // Conecta o usuário automaticamente com as novas credenciais
+      try {
+        const { error: loginError } = await signIn(email, resetNewPassword);
+        if (!loginError) {
+          router.push('/dashboard');
+          return;
+        }
+      } catch (err) {}
+
+      // Se falhar o login automático, volta para login com os dados preenchidos
+      setMode('login');
+      setLoginValue('email', email);
+      setLoginValue('password', resetNewPassword);
+    } catch (e: any) {
+      console.error('Erro na redefinição:', e);
+      toast.error('Erro ao conectar ao servidor para redefinir senha.');
+      setResetErrorMessage('Não foi possível conectar ao servidor para alterar a senha.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fallback opcional por e-mail se o servidor não tiver as credenciais de admin configuradas
+  const onSendEmailFallback = async () => {
+    const email = (resetEmail || getLoginValues('email') || '').trim().toLowerCase();
+    setIsLoading(true);
     try {
       const { error } = await resetPassword(email);
       if (error) {
-        toast.error('Falha ao enviar e-mail de recuperação.');
+        toast.error('Falha ao enviar e-mail de redefinição.');
       } else {
-        toast.success(`Link de redefinição enviado para ${email}!`);
-        setAlertMessage({
-          text: `Enviamos as instruções de redefinição para ${email}. Verifique sua caixa de entrada.`,
-          type: 'success',
-        });
+        toast.success(`E-mail com link de redefinição enviado para ${email}!`);
+        setResetSuccess(true);
       }
     } catch (e) {
-      toast.error('Erro na solicitação.');
+      toast.error('Erro na solicitação de e-mail.');
     } finally {
       setIsLoading(false);
     }
@@ -481,48 +611,188 @@ export const LoginForm = () => {
             </div>
           )}
 
-          {/* VISTA 2: ESQUECI A SENHA */}
+          {/* VISTA 2: ESQUECI A SENHA (PROTEGIDA POR LIBERAÇÃO DO ADM) */}
           {mode === 'forgot' && (
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-                Redefinir senha
-              </h1>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-[5px] bg-[var(--accent-weak)] text-[var(--accent)] grid place-items-center">
+                  <Key size={13} />
+                </div>
+                <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+                  Redefinir senha
+                </h1>
+              </div>
               <p className="text-xs text-[var(--text-3)] mt-1 mb-5">
-                Informe seu e-mail corporativo. Enviaremos um link seguro para criar uma nova senha.
+                Por política de segurança, a redefinição deve ser previamente habilitada pelo administrador no Painel de Administração.
               </p>
 
-              <div className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-[var(--text-2)]">
-                    E-mail cadastrado
-                  </label>
-                  <input
-                    type="email"
-                    {...registerLogin('email')}
-                    placeholder="nome@ems.com.br"
-                    disabled={isLoading}
-                    className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-all"
-                  />
+              {resetSuccess ? (
+                <div className="p-4 rounded-[var(--radius)] border border-emerald-500/30 bg-emerald-500/10 text-center space-y-3">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-emerald-500/20 text-[var(--green)] grid place-items-center">
+                    <CheckCircle size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-[var(--text)]">
+                      Solicitação Processada!
+                    </h2>
+                    <p className="text-xs text-[var(--text-2)] mt-1">
+                      As instruções e o link seguro de criação de nova senha foram enviados para seu e-mail.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('login');
+                      setResetSuccess(false);
+                      setResetVerified(false);
+                    }}
+                    className="w-full h-8 mt-2 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    Voltar para o Login
+                  </button>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Passo 1: Informar e-mail e checar autorização */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-[var(--text-2)]">
+                      E-mail corporativo
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={resetEmail || getLoginValues('email')}
+                        onChange={(e) => {
+                          setResetEmail(e.target.value);
+                          setResetVerified(false);
+                          setResetBlockedMessage(null);
+                        }}
+                        placeholder="nome@ems.com.br"
+                        disabled={resetChecking || isLoading || resetVerified}
+                        className="flex-1 h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                      />
+                      {!resetVerified && (
+                        <button
+                          type="button"
+                          onClick={onCheckResetPermission}
+                          disabled={resetChecking || isLoading}
+                          className="h-9 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
+                        >
+                          {resetChecking ? (
+                            <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                          ) : (
+                            'Verificar'
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={onForgotPassword}
-                  disabled={isLoading}
-                  className="w-full h-9 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
-                  ) : (
-                    'Enviar link de redefinição'
+                  {/* Mensagem de Bloqueio se não liberado no painel */}
+                  {resetBlockedMessage && (
+                    <div className="p-3 rounded-[var(--radius)] border border-[var(--red)]/30 bg-[var(--red)]/10 flex items-start gap-2.5 text-xs text-[var(--text)] animate-in fade-in">
+                      <ShieldAlert size={16} className="text-[var(--red)] shrink-0 mt-0.5" />
+                      <div className="space-y-1 leading-snug">
+                        <b className="font-semibold text-[var(--red)] block">Acesso Bloqueado</b>
+                        <p className="text-[var(--text-2)]">{resetBlockedMessage}</p>
+                      </div>
+                    </div>
                   )}
-                </button>
-              </div>
+
+                  {/* Passo 2: Liberado pelo Adm -> Permitir definir nova senha no próprio app */}
+                  {resetVerified && (
+                    <div className="p-3.5 rounded-[var(--radius)] border border-emerald-500/30 bg-emerald-500/10 space-y-3 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-[var(--green)] font-semibold">
+                          <CheckCircle size={15} />
+                          <span>Autorização ativa</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[var(--amber)] bg-[var(--amber)]/10 px-1.5 py-0.5 rounded border border-[var(--amber)]/20 animate-pulse">
+                          Expira em ~{resetExpiresMins} min
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-2)] leading-relaxed">
+                        Crie sua nova senha abaixo. Não é necessário acessar o e-mail corporativo.
+                      </p>
+
+                      <div className="space-y-2.5 pt-1">
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-[var(--text-2)]">
+                            Nova Senha
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showResetPassword ? 'text' : 'password'}
+                              value={resetNewPassword}
+                              onChange={(e) => setResetNewPassword(e.target.value)}
+                              placeholder="Mínimo 6 caracteres"
+                              className="w-full h-9 px-3 pr-9 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowResetPassword(!showResetPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-3)] hover:text-[var(--text)]"
+                            >
+                              {showResetPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-[var(--text-2)]">
+                            Confirmar Nova Senha
+                          </label>
+                          <input
+                            type={showResetPassword ? 'text' : 'password'}
+                            value={resetConfirmPassword}
+                            onChange={(e) => setResetConfirmPassword(e.target.value)}
+                            placeholder="Repita a nova senha"
+                            className="w-full h-9 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs text-[var(--text)] placeholder-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={onConfirmInlinePasswordReset}
+                          disabled={isLoading}
+                          className="w-full mt-2 h-9 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] font-medium text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                        >
+                          {isLoading ? (
+                            <span className="w-3.5 h-3.5 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                          ) : (
+                            'Salvar Nova Senha e Entrar'
+                          )}
+                        </button>
+
+                        {resetErrorMessage && (
+                          <div className="p-2.5 rounded-[var(--radius)] border border-[var(--red)]/30 bg-[var(--red)]/10 text-xs text-[var(--text)] leading-snug space-y-2">
+                            <p className="text-[var(--red)] font-medium">{resetErrorMessage}</p>
+                            {showEmailFallback && (
+                              <button
+                                type="button"
+                                onClick={onSendEmailFallback}
+                                disabled={isLoading}
+                                className="w-full h-8 px-2 rounded-[var(--radius)] bg-[var(--surface)] text-[var(--text)] border border-[var(--border-strong)] hover:bg-[var(--surface-2)] font-medium text-[11px] flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                Enviar link por e-mail como alternativa
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="mt-6 pt-5 border-t border-[var(--border)] text-center text-xs text-[var(--text-3)]">
                 <button
                   type="button"
-                  onClick={() => setMode('login')}
+                  onClick={() => {
+                    setMode('login');
+                    setResetVerified(false);
+                    setResetBlockedMessage(null);
+                  }}
                   className="text-[var(--accent)] font-medium hover:underline cursor-pointer"
                 >
                   Voltar para o login
