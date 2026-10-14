@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import ProtectedRoute from '@/components/auth/protected-route';
+import { PageLoader } from '@/components/line-loader';
 import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
 import { 
   getHeijunkaHistory, 
@@ -1094,11 +1095,7 @@ export default function HeijunkaPage() {
   };
 
   if (authLoading || !userData || !isLeaderOrAdmin) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-      </div>
-    );
+    return <PageLoader fullScreen label="Carregando Heijunka…" />;
   }
 
   return (

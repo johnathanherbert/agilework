@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Loader2, X, RotateCcw } from 'lucide-react';
+import { PageLoader } from '@/components/line-loader';
 import { ConfiguracaoResiduais } from '@/types/aging';
 import { fetchConfiguracaoResiduais, saveConfiguracaoResiduais } from '@/lib/dashpesagem-api';
 import toast from 'react-hot-toast';
@@ -231,11 +232,7 @@ export function ConfiguracaoResiduaisComponent({ onConfigChange }: ConfiguracaoR
   const handleRemoveMaterial = (m: string) => set('materiais_alto_valor', config.materiais_alto_valor.filter((x) => x !== m));
 
   if (loading) {
-    return (
-      <p className="py-16 flex items-center justify-center gap-2 text-[12.5px] text-[var(--text-3)]">
-        <Loader2 className="h-4 w-4 animate-spin" /> Carregando configurações…
-      </p>
-    );
+    return <PageLoader label="Carregando configurações…" />;
   }
 
   const rulerDiasMax = Math.max(diasCritico + Math.ceil(diasCritico * 0.5), diasVenc, 10);

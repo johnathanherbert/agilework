@@ -23,6 +23,7 @@ import {
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import ProtectedRoute from '@/components/auth/protected-route';
+import { PageLoader } from '@/components/line-loader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -114,11 +115,7 @@ export default function MaoDeObraPage() {
 
   // Loading state
   if (authLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
-      </div>
-    );
+    return <PageLoader fullScreen label="Carregando mão de obra…" />;
   }
 
   // Acesso negado

@@ -4,6 +4,8 @@ import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { PageLoader } from '@/components/line-loader';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -21,26 +23,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Show loading state while checking authentication
   if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
-          <p className="text-lg text-gray-500 dark:text-gray-400">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader fullScreen label="Carregando..." />;
   }
 
   // Se temos um user mas userData ainda está carregando, seguramos a tela
   if (user && !userData) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
-          <p className="text-lg text-gray-500 dark:text-gray-400">Verificando conta...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader fullScreen label="Verificando conta..." />;
   }
 
   // Verifica se o usuário tem a flag de aprovado

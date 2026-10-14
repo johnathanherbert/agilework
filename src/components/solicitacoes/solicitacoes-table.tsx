@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Solicitacao } from "@/types/solicitacao";
 import { SolicitacaoStatusDialog } from "./solicitacao-status-dialog";
+import { PageLoader } from "@/components/line-loader";
 import { Trash2, ArrowUpDown, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -89,8 +90,7 @@ export function SolicitacoesTable({
     return (
       <Card>
         <CardContent className="flex items-center justify-center p-8">
-          <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-          Carregando solicitações...
+          <PageLoader label="Carregando solicitações…" />
         </CardContent>
       </Card>
     );

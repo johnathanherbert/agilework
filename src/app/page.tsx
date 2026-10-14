@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/components/providers/supabase-provider';
 
+import { PageLoader } from '@/components/line-loader';
+
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useSupabase();
@@ -18,12 +20,5 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Carregando...</h2>
-        <p className="text-gray-500 mt-2">Aguarde um momento</p>
-      </div>
-    </div>
-  );
+  return <PageLoader fullScreen label="Carregando AgileWork…" />;
 }

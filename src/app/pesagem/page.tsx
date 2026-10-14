@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { AgingData, RemessaData, ConfiguracaoResiduais, DashboardSnapshot, LoteInvestigacao } from '@/types/aging';
+import { useRouter } from 'next/navigation';
+import { AgingData, RemessaData, ConfiguracaoResiduais, LoteInvestigacao } from '@/types/aging';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
 import {
   fetchAgingData,
@@ -28,24 +29,16 @@ import { ValorUpload } from '@/components/pesagem/valor-upload';
 import { RemessaUpload } from '@/components/pesagem/remessa-upload';
 import { ConfiguracaoResiduaisComponent } from '@/components/pesagem/configuracao-residuais';
 import { ExcelUpload } from '@/components/pesagem/excel-upload';
+import { MoverModal } from '@/components/pesagem/mover-modal';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
 import ProtectedRoute from '@/components/auth/protected-route';
-import { cn } from '@/lib/utils';
-import { MoverModal } from '@/components/pesagem/mover-modal';
 import { PesagemTodoItem } from '@/types/pesagem-todo';
 import { subscribePesagemTodos } from '@/lib/pesagem-todo-helpers';
 import { rememberMaterialDescriptions } from '@/lib/material-descriptions';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import {
   TrendingUp,
   FileText,
@@ -57,635 +50,459 @@ import {
   Settings as SettingsIcon,
   RefreshCw,
   Upload,
-  Clock,
-  Calendar,
   X,
-  Scale,
   Loader2,
-  Shield,
+  MoreHorizontal,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useFirebase, ADMIN_EMAIL } from '@/components/providers/firebase-provider';
+import { PageLoader } from '@/components/line-loader';
 
+/* ============================================================================
+ * Regras compartilhadas (uma fonte só para a página inteira)
+ * ========================================================================== */
+type Tab = 'fin' | 'one' | 'res' | 'todo' | 'rem' | 'scan' | 'tools' | 'settings';
+type Spec = 'trz' | 'ok' | 'al' | 'cr' | 'INF' | 'CFA' | 'v30';
+
+const DEFAULT_CONFIG: ConfiguracaoResiduais = {
+  limite_verde: 100,
+  limite_amarelo: 900,
+  limite_maximo: 999,
+  materiais_alto_valor: [],
+  dias_atencao: 3,
+  dias_alerta: 7,
+  dias_critico: 15,
+};
+
+const SPEC_LABEL: Record<Spec, string> = {
+  trz: 'TR-ZONE negativo',
+  ok: 'Normal',
+  al: 'Alerta',
+  cr: 'Crítico',
+  INF: 'INF',
+  CFA: 'CFA',
+  v30: 'Vence em 30 d',
+};
+
+const TAB_ALIASES: Record<string, Tab> = {
+  fin: 'fin', financeiro: 'fin',
+  one: 'one', onepage: 'one',
+  res: 'res', residuais: 'res',
+  todo: 'todo', tarefas: 'todo', investigacao: 'todo', pendencias: 'todo',
+  rem: 'rem', remessas: 'rem',
+  scan: 'scan', scanner: 'scan',
+  tools: 'tools', ferramentas: 'tools',
+  settings: 'settings', config: 'settings',
+};
+
+const POLL_MS = 8000;
+const BASE_STALE_H = 12;
+
+const U = (s?: string | null) => String(s ?? '').trim().toUpperCase();
+
+/** Data local: aceita DD/MM/AAAA e AAAA-MM-DD sem cair no fuso UTC */
+function parseDate(s?: string | null): Date | null {
+  if (!s) return null;
+  let m = String(s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  return null;
+}
+
+function isTrZone(item: Pick<AgingData, 'deposito' | 'tipo_deposito' | 'posicao_deposito'>) {
+  const t = U(item.tipo_deposito);
+  const p = U(item.posicao_deposito).replace(/[\s_]/g, '-');
+  const d = U(item.deposito);
+  return t.includes('922') || t.includes('TR-ZONE') || t.includes('TRZONE') || p.includes('TR-ZONE') || p.includes('TRZONE') || d === '922' || d === 'TR-ZONE';
+}
+
+/** Agrupamento operacional: PES · 999 (AJUSTE/AJU-SAÍDA) · TR-ZONE · DEP */
+function depGroup(item: Pick<AgingData, 'deposito' | 'tipo_deposito' | 'posicao_deposito'>): string {
+  if (isTrZone(item)) return 'TR-ZONE';
+  const t = U(item.tipo_deposito);
+  const p = U(item.posicao_deposito);
+  const d = U(item.deposito);
+  if (t === '999' || p.includes('AJU')) return '999';
+  if (t === 'DEP' || p.includes('DEVOL') || (d === 'DEP' && t !== 'PES' && !p.includes('PESAGEM'))) return 'DEP';
+  if (t === 'PES' || p.includes('PES')) return 'PES';
+  return t || 'PES';
+}
+
+/** Onepage manda posições (PESAGEM, AJUSTE…); o filtro da página trabalha com grupos */
+const posToGroup = (pos: string) => depGroup({ posicao_deposito: pos, tipo_deposito: '', deposito: '' });
+
+const brlK = (v: number) => {
+  const a = Math.abs(v);
+  if (a >= 1e6) return `R$ ${(v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
+  if (a >= 1e4) return `R$ ${(v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+/* ============================================================================
+ * Página
+ * ========================================================================== */
 export default function PesagemPage() {
   const router = useRouter();
   const { userData, user } = useFirebase();
+  const userEmail = user?.email || userData?.email || undefined;
 
   const isAdmin = userData?.email === ADMIN_EMAIL || userData?.role === 'admin';
-  const isSupervisor = userData?.role === 'supervisor';
-  const isAuthorized = Boolean(userData?.allowedPesagem);
-  const canAccess = isAdmin || isSupervisor || isAuthorized;
+  const canAccess = isAdmin || userData?.role === 'supervisor' || Boolean(userData?.allowedPesagem);
 
+  /* ---------------- dados ---------------- */
   const [data, setData] = useState<AgingData[]>([]);
   const [valores, setValores] = useState<Record<string, number>>({});
   const [remessas, setRemessas] = useState<RemessaData[]>([]);
-  const [configResiduais, setConfigResiduais] = useState<ConfiguracaoResiduais>({
-    limite_verde: 100,
-    limite_amarelo: 900,
-    limite_maximo: 999,
-    materiais_alto_valor: [],
-    dias_atencao: 3,
-    dias_alerta: 7,
-    dias_critico: 15,
-  });
+  const [config, setConfig] = useState<ConfiguracaoResiduais>(DEFAULT_CONFIG);
   const [lotesInvestigacao, setLotesInvestigacao] = useState<LoteInvestigacao[]>([]);
   const [todoItems, setTodoItems] = useState<PesagemTodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<string | Date | null>(null);
+  const lastSyncRef = useRef<string | null>(null);
 
-  // Navegação e Filtros
-  const [activeTab, setActiveTab] = useState<'fin' | 'one' | 'res' | 'todo' | 'rem' | 'scan' | 'tools' | 'settings'>('fin');
-  const [selectedDep, setSelectedDep] = useState<string>('all');
+  /* ---------------- navegação e filtros ---------------- */
+  const [activeTab, setActiveTab] = useState<Tab>('fin');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [selectedDep, setSelectedDep] = useState('all');
   const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
   const [selectedMaterialFilter, setSelectedMaterialFilter] = useState<string | undefined>(undefined);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [residuaisActive, setResiduaisActive] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [residuaisActive, setResiduaisActive] = useState(false);
   const [selectedTodoLote, setSelectedTodoLote] = useState<string | null>(null);
 
-  const handleNavigateToTodo = (lote: string) => {
-    setSelectedTodoLote(lote);
-    setActiveTab('todo');
-    setResiduaisActive(false);
-  };
-
-  // Relógio e Timestamps
-  const [clockTime, setClockTime] = useState<string>('');
-  const [lastUpdate, setLastUpdate] = useState<string | Date | null>(null);
-  const lastSyncTimestampRef = useRef<string | null>(null);
-
-  // Modais
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [moverModalOpen, setMoverModalOpen] = useState(false);
-  const [moverSelectedItems, setMoverSelectedItems] = useState<EnrichedRow[]>([]);
+  /* ---------------- modais ---------------- */
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [moverOpen, setMoverOpen] = useState(false);
+  const [moverItems, setMoverItems] = useState<EnrichedRow[]>([]);
   const [isAtualizandoDb, setIsAtualizandoDb] = useState(false);
+  const syncPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Relógio ao vivo
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      setClockTime(
-        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(
-          2,
-          '0'
-        )}:${String(now.getSeconds()).padStart(2, '0')}`
-      );
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
+  const diasAlerta = config?.dias_alerta ?? 7;
+  const diasCritico = config?.dias_critico ?? 15;
+  // Mesma regra de Configurações e Onepage: crítico a partir de N dias (inclusive)
+  const classify = useCallback((d: number) => (d >= diasCritico ? 'cr' : d >= diasAlerta ? 'al' : 'ok'), [diasAlerta, diasCritico]);
+  const priceOf = useCallback((mat: string) => valores[mat] ?? valores[mat.replace(/^0+/, '')] ?? 0, [valores]);
+
+  /* ---------------- abas sincronizadas com a URL ---------------- */
+  const goTab = useCallback((t: Tab) => {
+    setActiveTab(t);
+    setResiduaisActive(t === 'res');
+    setMoreOpen(false);
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (t === 'fin') p.delete('tab');
+      else p.set('tab', t);
+      const qs = p.toString();
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
+    }
   }, []);
 
-  // Sincroniza aba e leitura do leitor de código de barras global
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const checkUrlAndStorage = () => {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab')?.toLowerCase();
-      if (tabParam === 'scan' || params.get('code')) {
-        setActiveTab('scan');
-      } else if (tabParam === 'todo' || tabParam === 'tarefas' || tabParam === 'investigacao') {
-        setActiveTab('todo');
-      } else if (tabParam === 'res' || tabParam === 'residuais') {
-        setActiveTab('res');
-        setResiduaisActive(true);
-      } else if (tabParam === 'one' || tabParam === 'onepage') {
-        setActiveTab('one');
-      } else if (tabParam === 'rem' || tabParam === 'remessas') {
-        setActiveTab('rem');
-      } else if (tabParam === 'tools') {
-        setActiveTab('tools');
-      } else if (tabParam === 'settings' || tabParam === 'config') {
-        setActiveTab('settings');
-      }
-    };
-    checkUrlAndStorage();
-
-    const handleGlobalBarcode = () => {
-      setActiveTab('scan');
-    };
-
-    window.addEventListener('agilework:barcode_scanned', handleGlobalBarcode);
-    return () => {
-      window.removeEventListener('agilework:barcode_scanned', handleGlobalBarcode);
-    };
+    const p = new URLSearchParams(window.location.search);
+    const t = TAB_ALIASES[p.get('tab')?.toLowerCase() || ''];
+    if (p.get('code')) setActiveTab('scan');
+    else if (t) {
+      setActiveTab(t);
+      setResiduaisActive(t === 'res');
+    }
+    const onScan = () => setActiveTab('scan');
+    window.addEventListener('agilework:barcode_scanned', onScan);
+    return () => window.removeEventListener('agilework:barcode_scanned', onScan);
   }, []);
 
-  // Carregamento de dados da base
-  const loadData = async (showLoadingSpinner = true) => {
+  /* ---------------- carregamento ---------------- */
+  const loadData = useCallback(async (showSpinner = true) => {
     try {
-      if (showLoadingSpinner) setLoading(true);
+      if (showSpinner) setLoading(true);
       setError(null);
-
-      const [agingData, valoresData, remessasData, configData, historico, lotesInv] = await Promise.all([
+      const [aging, vals, rems, cfg, historico, inv] = await Promise.all([
         fetchAgingData(),
         fetchMaterialValores(),
-        fetchRemessas().catch(() => []),
-        fetchConfiguracaoResiduais().catch(() => ({
-          limite_verde: 100,
-          limite_amarelo: 900,
-          limite_maximo: 999,
-          materiais_alto_valor: [],
-          dias_alerta: 7,
-          dias_critico: 15,
-        })),
-        fetchDashboardHistorico(2).catch(() => []),
-        fetchLotesInvestigacao().catch(() => []),
+        fetchRemessas().catch(() => [] as RemessaData[]),
+        fetchConfiguracaoResiduais().catch(() => DEFAULT_CONFIG),
+        fetchDashboardHistorico(2).catch(() => [] as any[]),
+        fetchLotesInvestigacao().catch(() => [] as LoteInvestigacao[]),
       ]);
-
-      setData(agingData);
-      setValores(valoresData);
-      setRemessas(remessasData);
-      setConfigResiduais(configData);
-      setLotesInvestigacao(lotesInv);
-
-      rememberMaterialDescriptions(agingData);
-      rememberMaterialDescriptions(remessasData);
-
-      const latestTimestamp = agingData[0]?.created_at || historico[0]?.snapshot_at || new Date().toISOString();
-      setLastUpdate(latestTimestamp);
-      if (agingData[0]?.created_at) {
-        lastSyncTimestampRef.current = String(agingData[0].created_at);
-      }
+      setData(aging);
+      setValores(vals);
+      setRemessas(rems);
+      setConfig({ ...DEFAULT_CONFIG, ...cfg });
+      setLotesInvestigacao(inv);
+      rememberMaterialDescriptions(aging);
+      rememberMaterialDescriptions(rems);
+      const ts = aging[0]?.created_at || historico[0]?.snapshot_at || null;
+      setLastUpdate(ts);
+      if (aging[0]?.created_at) lastSyncRef.current = String(aging[0].created_at);
     } catch (err) {
       console.error('Erro ao carregar dados de pesagem:', err);
-      if (showLoadingSpinner) {
-        setError('Erro ao carregar dados. Verifique a conexão com a base PostgreSQL.');
-      }
+      setError('Não foi possível carregar o estoque. Verifique a conexão com a base.');
     } finally {
-      if (showLoadingSpinner) setLoading(false);
+      if (showSpinner) setLoading(false);
     }
-  };
-
-  const handleAtualizarDb = async () => {
-    if (isAtualizandoDb) return;
-    setIsAtualizandoDb(true);
-    const toastId = toast.loading('Solicitando extração SAP ao Planilha Sync...');
-
-    try {
-      const res = await triggerSapAutomation('extrair_relatorio', user?.email || userData?.email || 'AgileWork');
-      if (!res.success || !res.job) {
-        toast.error(`Falha ao disparar extração: ${res.error || 'Erro desconhecido'}`, { id: toastId });
-        setIsAtualizandoDb(false);
-        return;
-      }
-
-      const jobId = res.job.id;
-      toast.loading('Planilha Sync executando extração SAP e sincronização...', { id: toastId });
-
-      let attempts = 0;
-      const maxAttempts = 60;
-      const interval = setInterval(async () => {
-        attempts++;
-        try {
-          const statusJob = await checkSapAutomationStatus(jobId);
-          if (statusJob?.status === 'completed') {
-            clearInterval(interval);
-            setIsAtualizandoDb(false);
-            toast.success('Relatório extraído e estoque atualizado com sucesso!', { id: toastId, icon: '🚀' });
-            loadData(false);
-          } else if (statusJob?.status === 'failed') {
-            clearInterval(interval);
-            setIsAtualizandoDb(false);
-            toast.error(`Falha na extração: ${statusJob.result_message || 'Erro no script'}`, { id: toastId });
-          } else if (attempts >= maxAttempts) {
-            clearInterval(interval);
-            setIsAtualizandoDb(false);
-            toast('Tempo limite aguardando o Planilha Sync. Verifique se o app está aberto.', { id: toastId, icon: '⚠️' });
-          }
-        } catch {
-          if (attempts >= maxAttempts) {
-            clearInterval(interval);
-            setIsAtualizandoDb(false);
-          }
-        }
-      }, 2000);
-    } catch (err: any) {
-      toast.error(`Erro: ${err?.message || err}`, { id: toastId });
-      setIsAtualizandoDb(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData(true);
-
-    const interval = setInterval(async () => {
-      try {
-        const status = await fetchAgingStatus();
-        if (status?.last_updated) {
-          const currentTimestamp = String(status.last_updated);
-          if (lastSyncTimestampRef.current && lastSyncTimestampRef.current !== currentTimestamp) {
-            lastSyncTimestampRef.current = currentTimestamp;
-            setLastUpdate(currentTimestamp);
-            toast.success(`Estoque atualizado via integração! (${status.total_rows} itens)`, {
-              duration: 5000,
-              icon: '🔄',
-            });
-            loadData(false);
-          } else if (!lastSyncTimestampRef.current) {
-            lastSyncTimestampRef.current = currentTimestamp;
-            setLastUpdate(currentTimestamp);
-          }
-        }
-      } catch {
-        // Silencioso em polling
-      }
-    }, 8000);
-
-    return () => clearInterval(interval);
   }, []);
 
-  // Escuta em tempo real os itens de TODO salvos no Firestore
+  // Carga inicial + verificação de nova base (pausa com a aba do navegador oculta)
+  useEffect(() => {
+    loadData(true);
+    const check = async () => {
+      if (document.hidden) return;
+      try {
+        const st = await fetchAgingStatus();
+        if (!st?.last_updated) return;
+        const ts = String(st.last_updated);
+        if (lastSyncRef.current && lastSyncRef.current !== ts) {
+          lastSyncRef.current = ts;
+          setLastUpdate(ts);
+          toast.success(`Estoque atualizado · ${Number(st.total_rows || 0).toLocaleString('pt-BR')} lotes`);
+          loadData(false);
+        } else if (!lastSyncRef.current) {
+          lastSyncRef.current = ts;
+          setLastUpdate(ts);
+        }
+      } catch {
+        /* silencioso */
+      }
+    };
+    const iv = setInterval(check, POLL_MS);
+    const onVis = () => !document.hidden && check();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener('visibilitychange', onVis);
+      if (syncPollRef.current) clearInterval(syncPollRef.current);
+    };
+  }, [loadData]);
+
   useEffect(() => {
     const unsub = subscribePesagemTodos(
       (items) => {
         setTodoItems(items);
         rememberMaterialDescriptions(items);
       },
-      (err) => console.warn('Erro ao escutar Firestore TODOs:', err)
+      (err) => console.warn('Erro ao escutar pendências:', err)
     );
     return () => unsub();
   }, []);
 
-  const activeTodoCount = useMemo(() => {
-    const activeLotes = new Set<string>();
-    for (const t of todoItems) {
-      if (t.status !== 'concluido' && t.lote) {
-        activeLotes.add(t.lote.trim().toUpperCase());
+  /* ---------------- extração SAP ---------------- */
+  const handleAtualizarDb = async () => {
+    if (isAtualizandoDb) return;
+    setIsAtualizandoDb(true);
+    const id = toast.loading('Pedindo extração ao Planilha Sync…');
+    try {
+      const res = await triggerSapAutomation('extrair_relatorio', userEmail || 'AgileWork');
+      if (!res.success || !res.job) {
+        toast.error(`Não foi possível iniciar: ${res.error || 'erro desconhecido'}`, { id });
+        setIsAtualizandoDb(false);
+        return;
       }
-    }
-    for (const inv of lotesInvestigacao) {
-      if (inv.lote) {
-        activeLotes.add(inv.lote.trim().toUpperCase());
-      }
-    }
-    return activeLotes.size;
-  }, [todoItems, lotesInvestigacao]);
-
-  // Atalhos de teclado ( '/' para busca, 'Esc' para limpar )
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (selectedSpec || selectedMaterialFilter || searchTerm) {
-          setSelectedSpec(null);
-          setSelectedMaterialFilter(undefined);
-          setSearchTerm('');
+      const jobId = res.job.id;
+      toast.loading('Extraindo do SAP e sincronizando…', { id });
+      let n = 0;
+      if (syncPollRef.current) clearInterval(syncPollRef.current);
+      syncPollRef.current = setInterval(async () => {
+        n++;
+        const stop = () => {
+          if (syncPollRef.current) clearInterval(syncPollRef.current);
+          syncPollRef.current = null;
+          setIsAtualizandoDb(false);
+        };
+        try {
+          const st = await checkSapAutomationStatus(jobId);
+          if (st?.status === 'completed') {
+            stop();
+            toast.success('Estoque atualizado a partir do SAP', { id });
+            loadData(false);
+          } else if (st?.status === 'failed') {
+            stop();
+            toast.error(`Extração falhou: ${st.result_message || 'erro no script'}`, { id });
+          } else if (n >= 60) {
+            stop();
+            toast.error('Sem resposta do Planilha Sync em 2 min. Confira se o app está aberto.', { id });
+          }
+        } catch {
+          if (n >= 60) stop();
         }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedSpec, selectedMaterialFilter, searchTerm]);
-
-  // Categorização padronizada de depósitos operacionais:
-  // - 'PES': PES PESAGEM
-  // - '999': 999 AJUSTE e AJU-SAIDA
-  // - 'TR-ZONE': 922 TR-ZONE
-  // - 'DEP': DEP / DEVOLUCAO
-  const getItemDepositoGroup = (item: {
-    deposito?: string;
-    tipo_deposito?: string;
-    posicao_deposito?: string;
-  }): string => {
-    const tipo = (item.tipo_deposito || '').trim().toUpperCase();
-    const pos = (item.posicao_deposito || '').trim().toUpperCase();
-    const dep = (item.deposito || '').trim().toUpperCase();
-
-    // 1. TR-ZONE (922 TR-ZONE)
-    if (
-      tipo === 'TR-ZONE' ||
-      tipo === '922' ||
-      pos.includes('TR-ZONE') ||
-      pos.includes('TRZONE') ||
-      pos.includes('TR_ZONE') ||
-      dep === '922' ||
-      dep === 'TR-ZONE'
-    ) {
-      return 'TR-ZONE';
+      }, 2000);
+    } catch (err: any) {
+      toast.error(`Erro: ${err?.message || err}`, { id });
+      setIsAtualizandoDb(false);
     }
-
-    // 2. 999 (AJUSTE e AJU-SAIDA)
-    if (
-      tipo === '999' ||
-      pos.includes('AJUSTE') ||
-      pos.includes('AJU-SAIDA') ||
-      pos.includes('AJU_SAIDA') ||
-      pos.includes('AJU')
-    ) {
-      return '999';
-    }
-
-    // 3. DEP (DEVOLUCAO)
-    if (
-      tipo === 'DEP' ||
-      pos.includes('DEVOL') ||
-      (dep === 'DEP' && tipo !== 'PES' && !pos.includes('PESAGEM'))
-    ) {
-      return 'DEP';
-    }
-
-    // 4. PES (PES PESAGEM)
-    if (
-      tipo === 'PES' ||
-      pos.includes('PESAGEM') ||
-      pos.includes('PES')
-    ) {
-      return 'PES';
-    }
-
-    if (tipo) return tipo;
-    return 'PES';
   };
 
-  // Lista base filtrada por depósito
-  const baseData = useMemo(() => {
-    if (selectedDep === 'all') return data;
-    return data.filter((item) => getItemDepositoGroup(item) === selectedDep);
-  }, [data, selectedDep]);
+  /* ---------------- derivados ---------------- */
+  const activeTodoCount = useMemo(() => {
+    const s = new Set<string>();
+    todoItems.forEach((t) => t.status !== 'concluido' && t.lote && s.add(U(t.lote)));
+    lotesInvestigacao.forEach((i) => i.lote && s.add(U(i.lote)));
+    return s.size;
+  }, [todoItems, lotesInvestigacao]);
 
-  // Contagem de lotes por depósito
+  const groups = useMemo(() => data.map((i) => depGroup(i)), [data]);
+
+  const baseData = useMemo(
+    () => (selectedDep === 'all' ? data : data.filter((_, i) => groups[i] === selectedDep)),
+    [data, groups, selectedDep]
+  );
+
   const depCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: data.length };
-    for (const item of data) {
-      const group = getItemDepositoGroup(item);
-      counts[group] = (counts[group] || 0) + 1;
-    }
-    return counts;
-  }, [data]);
+    const c: Record<string, number> = { all: data.length };
+    groups.forEach((g) => (c[g] = (c[g] || 0) + 1));
+    return c;
+  }, [data, groups]);
 
   const uniqueDeps = useMemo(() => {
-    const preferredOrder = ['999', 'DEP', 'PES', 'TR-ZONE'];
-    const foundDeps = new Set(data.map((item) => getItemDepositoGroup(item)));
-    const sorted: string[] = [];
-    for (const p of preferredOrder) {
-      if (foundDeps.has(p)) {
-        sorted.push(p);
-        foundDeps.delete(p);
-      }
-    }
-    Array.from(foundDeps).sort().forEach((d) => sorted.push(d));
-    return sorted;
-  }, [data]);
+    const order = ['PES', '999', 'TR-ZONE', 'DEP'];
+    const found = Array.from(new Set(groups));
+    return [...order.filter((d) => found.includes(d)), ...found.filter((d) => !order.includes(d)).sort()];
+  }, [groups]);
 
-  // Cálculo dos 8 KPIs
-  const kpis = useMemo(() => {
-    const diasAlerta = configResiduais?.dias_alerta ?? 7;
-    const diasCritico = configResiduais?.dias_critico ?? 15;
-
-    let totalLotes = baseData.length;
-    let totalValor = 0;
-
-    let trzNegativoLotes = 0;
-
-    let normalLotes = 0;
-    let normalValor = 0;
-
-    let alertaLotes = 0;
-    let alertaValor = 0;
-
-    let criticoLotes = 0;
-    let criticoValor = 0;
-
-    let infLotes = 0;
-    let infValor = 0;
-
-    let cfaLotes = 0;
-    let cfaValor = 0;
-
-    let vence30Lotes = 0;
-    let vence30Valor = 0;
-
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const em30Dias = new Date(hoje);
-    em30Dias.setDate(hoje.getDate() + 30);
-
-    const parseDate = (dateStr?: string): Date | null => {
-      if (!dateStr) return null;
-      const m = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-      const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? null : d;
-    };
-
-    for (const item of baseData) {
-      const vu = valores[item.material] || valores[item.material.replace(/^0+/, '')] || 0;
-      const qtd = Number(item.estoque_disponivel) || 0;
-      const vt = Math.max(0, qtd) * vu;
-      const dias = item.dias_aging || 0;
-
-      totalValor += vt;
-
-      if (dias > diasCritico) {
-        criticoLotes++;
-        criticoValor += vt;
-      } else if (dias >= diasAlerta) {
-        alertaLotes++;
-        alertaValor += vt;
-      } else {
-        normalLotes++;
-        normalValor += vt;
-      }
-
-      const especial = isMaterialEspecial(item.material);
-      if (especial === 'inf') {
-        infLotes++;
-        infValor += vt;
-      } else if (especial === 'cfa') {
-        cfaLotes++;
-        cfaValor += vt;
-      }
-
-      const dtVenc = parseDate(item.data_vencimento);
-      if (dtVenc && dtVenc >= hoje && dtVenc <= em30Dias) {
-        vence30Lotes++;
-        vence30Valor += vt;
-      }
-    }
-
-    // 922 TR-ZONE negativo é métrica de alerta global em toda a base
-    for (const item of data) {
-      const tipo = (item.tipo_deposito || '').trim().toUpperCase();
-      const pos = (item.posicao_deposito || '').trim().toUpperCase();
-      const dep = (item.deposito || '').trim().toUpperCase();
-      const qtd = Number(item.estoque_disponivel) || 0;
-      const is922OrTrZone =
-        tipo === '922' ||
-        tipo.includes('922') ||
-        tipo === 'TR-ZONE' ||
-        tipo.includes('TR-ZONE') ||
-        tipo.includes('TRZONE') ||
-        pos.includes('TR-ZONE') ||
-        pos.includes('TR_ZONE') ||
-        pos.includes('TRZONE') ||
-        pos.includes('TR ZONE') ||
-        dep === '922' ||
-        dep === 'TR-ZONE';
-      if (is922OrTrZone && qtd < 0) {
-        trzNegativoLotes++;
-      }
-    }
-
-    return {
-      total: { count: totalLotes, valor: totalValor },
-      trzNeg: { count: trzNegativoLotes },
-      normal: { count: normalLotes, valor: normalValor },
-      alerta: { count: alertaLotes, valor: alertaValor },
-      critico: { count: criticoLotes, valor: criticoValor },
-      inf: { count: infLotes, valor: infValor },
-      cfa: { count: cfaLotes, valor: cfaValor },
-      vence30: { count: vence30Lotes, valor: vence30Valor },
-    };
-  }, [baseData, data, valores, configResiduais]);
-
-  // Contagem de Residuais para badge da aba
-  const totalResiduaisCount = useMemo(() => {
-    const limiteMaximo = (configResiduais?.limite_maximo ?? 999) / 1000;
-    return baseData.filter((item) => {
-      const isKg = (item.unidade_medida || 'KG').toUpperCase() === 'KG';
-      const qtd = Number(item.estoque_disponivel) || 0;
-      return isKg && qtd > 0 && qtd <= limiteMaximo;
-    }).length;
-  }, [baseData, configResiduais]);
-
-  // Filtragem adicional de dados por KPI especial
-  const displayData = useMemo(() => {
-    if (!selectedSpec) return baseData;
-
-    const isTrz = ['trz', 'tr-zone', 'trzone', 'negativo', '922'].includes(selectedSpec.toLowerCase());
-    const source = isTrz ? data : baseData;
-
-    const diasAlerta = configResiduais?.dias_alerta ?? 7;
-    const diasCritico = configResiduais?.dias_critico ?? 15;
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const em30Dias = new Date(hoje);
-    em30Dias.setDate(hoje.getDate() + 30);
-
-    const parseDate = (dateStr?: string): Date | null => {
-      if (!dateStr) return null;
-      const m = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-      const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? null : d;
-    };
-
-    return source.filter((item) => {
-      const dias = item.dias_aging || 0;
-      const qtd = Number(item.estoque_disponivel) || 0;
-      const spec = selectedSpec.toLowerCase();
-
-      if (['trz', 'tr-zone', 'trzone', 'negativo', '922'].includes(spec)) {
-        const tipo = (item.tipo_deposito || '').trim().toUpperCase();
-        const pos = (item.posicao_deposito || '').trim().toUpperCase();
-        const dep = (item.deposito || '').trim().toUpperCase();
-        const is922OrTrZone =
-          tipo === '922' ||
-          tipo.includes('922') ||
-          tipo === 'TR-ZONE' ||
-          tipo.includes('TR-ZONE') ||
-          tipo.includes('TRZONE') ||
-          pos.includes('TR-ZONE') ||
-          pos.includes('TR_ZONE') ||
-          pos.includes('TRZONE') ||
-          pos.includes('TR ZONE') ||
-          dep === '922' ||
-          dep === 'TR-ZONE';
-        return is922OrTrZone && qtd < 0;
-      }
-
-      switch (selectedSpec) {
+  const matchesSpec = useCallback(
+    (item: AgingData, spec: string) => {
+      const d = item.dias_aging || 0;
+      switch (spec) {
+        case 'trz':
+          return isTrZone(item) && (Number(item.estoque_disponivel) || 0) < 0;
         case 'ok':
-          return dias < diasAlerta;
         case 'al':
-          return dias >= diasAlerta && dias <= diasCritico;
         case 'cr':
-          return dias > diasCritico;
+          return classify(d) === spec;
         case 'INF':
-        case 'inf':
           return isMaterialEspecial(item.material) === 'inf';
         case 'CFA':
-        case 'cfa':
           return isMaterialEspecial(item.material) === 'cfa';
         case 'v30': {
-          const dtVenc = parseDate(item.data_vencimento);
-          return !!(dtVenc && dtVenc >= hoje && dtVenc <= em30Dias);
+          const v = parseDate(item.data_vencimento);
+          if (!v) return false;
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+          const lim = new Date(hoje);
+          lim.setDate(hoje.getDate() + 30);
+          return v >= hoje && v <= lim;
         }
         default:
           return true;
       }
-    });
-  }, [baseData, data, selectedSpec, configResiduais]);
+    },
+    [classify]
+  );
 
-  const formatBRLK = (v: number) => {
-    const a = Math.abs(v);
-    if (a >= 1e6) return `R$ ${(v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
-    if (a >= 1e4) return `R$ ${(v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
-    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  const formatLastUpdate = (dt: string | Date | null | undefined) => {
-    if (!dt) return 'Não disponível';
-    try {
-      const d = new Date(dt);
-      if (isNaN(d.getTime())) return String(dt);
-      return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-    } catch {
-      return String(dt);
-    }
-  };
-
-  const handleOpenMover = (selectedRows: EnrichedRow[]) => {
-    setMoverSelectedItems(selectedRows);
-    setMoverModalOpen(true);
-  };
-
-  const handleRemoveMoverItem = (index: number) => {
-    setMoverSelectedItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleDevolver = (selectedRows: EnrichedRow[]) => {
-    if (selectedRows.length === 0) return;
-    if (
-      !window.confirm(
-        `Devolver ${selectedRows.length} lote(s)? Eles serão transferidos para a posição DEVOLUCAO no depósito DEP.`
-      )
-    )
-      return;
-
-    setData((prev) =>
-      prev.map((item) => {
-        const isSelected = selectedRows.some(
-          (r) => r.lote === item.lote && r.material === item.material
-        );
-        if (isSelected) {
-          return { ...item, posicao_deposito: 'DEVOLUCAO', tipo_deposito: 'DEP', deposito: 'DEP' };
+  const kpis = useMemo(() => {
+    const k: Record<string, { n: number; v: number }> = {};
+    ['total', 'trz', 'ok', 'al', 'cr', 'INF', 'CFA', 'v30'].forEach((x) => (k[x] = { n: 0, v: 0 }));
+    for (const item of baseData) {
+      const v = Math.max(0, Number(item.estoque_disponivel) || 0) * priceOf(item.material);
+      k.total.n++;
+      k.total.v += v;
+      for (const s of ['ok', 'al', 'cr', 'INF', 'CFA', 'v30']) {
+        if (matchesSpec(item, s)) {
+          k[s].n++;
+          k[s].v += v;
         }
-        return item;
-      })
-    );
-    toast.success(`${selectedRows.length} lote(s) direcionados para DEVOLUCAO`);
+      }
+    }
+    // TR-ZONE negativo é alerta da base inteira, independente do depósito escolhido
+    for (const item of data) if (matchesSpec(item, 'trz')) k.trz.n++;
+    return k;
+  }, [baseData, data, priceOf, matchesSpec]);
+
+  const displayData = useMemo(() => {
+    if (!selectedSpec) return baseData;
+    const src = selectedSpec === 'trz' ? data : baseData;
+    return src.filter((i) => matchesSpec(i, selectedSpec));
+  }, [baseData, data, selectedSpec, matchesSpec]);
+
+  const totalResiduaisCount = useMemo(() => {
+    const max = (config?.limite_maximo ?? 999) / 1000;
+    return baseData.filter((i) => U(i.unidade_medida || 'KG') === 'KG' && (Number(i.estoque_disponivel) || 0) > 0 && (Number(i.estoque_disponivel) || 0) <= max).length;
+  }, [baseData, config]);
+
+  const upd = useMemo(() => {
+    if (!lastUpdate) return null;
+    const d = new Date(lastUpdate);
+    if (isNaN(d.getTime())) return { text: String(lastUpdate), stale: false };
+    return {
+      text: d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+      stale: (Date.now() - d.getTime()) / 3600000 > BASE_STALE_H,
+    };
+  }, [lastUpdate]);
+
+  const hasFilters = selectedDep !== 'all' || !!selectedSpec || !!selectedMaterialFilter || !!searchTerm;
+  const clearFilters = () => {
+    setSelectedSpec(null);
+    setSelectedMaterialFilter(undefined);
+    setSearchTerm('');
+    setSelectedDep('all');
   };
 
-  // Acesso negado para usuários sem liberação de perfil
+  // Esc limpa filtros, mas não enquanto digita ou com modal aberto
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      if (moreOpen) return setMoreOpen(false);
+      if (selectedSpec || selectedMaterialFilter || searchTerm) {
+        setSelectedSpec(null);
+        setSelectedMaterialFilter(undefined);
+        setSearchTerm('');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedSpec, selectedMaterialFilter, searchTerm, moreOpen]);
+
+  /* ---------------- navegação entre telas ---------------- */
+  const handleNavigateToTodo = (lote: string) => {
+    setSelectedTodoLote(lote);
+    goTab('todo');
+  };
+  const filterMaterialOnFin = (mat: string) => {
+    setSelectedMaterialFilter(mat);
+    goTab('fin');
+  };
+
+  /* ---------------- abas ---------------- */
+  const TABS: { k: Tab; l: string; short: string; Icon: any; n?: number; alert?: boolean }[] = [
+    { k: 'fin', l: 'Financeiro', short: 'Financeiro', Icon: TrendingUp },
+    { k: 'one', l: 'Onepage', short: 'Onepage', Icon: FileText },
+    { k: 'res', l: 'Residuais', short: 'Residuais', Icon: AlertTriangle, n: totalResiduaisCount },
+    { k: 'todo', l: 'Pendências', short: 'Pendências', Icon: AlertCircle, n: activeTodoCount, alert: activeTodoCount > 0 },
+    { k: 'rem', l: 'Remessas', short: 'Remessas', Icon: Truck },
+    { k: 'scan', l: 'Scanner', short: 'Scanner', Icon: QrCode },
+    { k: 'tools', l: 'Ferramentas', short: 'Ferramentas', Icon: Wrench },
+    { k: 'settings', l: 'Configurações', short: 'Config.', Icon: SettingsIcon },
+  ];
+  // No celular: o que se usa no chão de fábrica fica à mão; o resto vai para "Mais"
+  const MOBILE_MAIN: Tab[] = ['scan', 'todo', 'res', 'fin'];
+  const mobileMore = TABS.filter((t) => !MOBILE_MAIN.includes(t.k));
+
+  const showKpis = activeTab === 'fin' || activeTab === 'res';
+  const showFilters = activeTab === 'fin' || activeTab === 'res';
+
+  const btn =
+    'h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-[12.5px] font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] inline-flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50';
+  const primary =
+    'h-8 px-3 rounded-[var(--radius)] bg-[var(--text)] text-[var(--bg)] text-[12.5px] font-medium inline-flex items-center gap-1.5 whitespace-nowrap';
+
+  /* ---------------- sem acesso ---------------- */
   if (!canAccess) {
     return (
       <ProtectedRoute>
         <div className="flex h-screen bg-[var(--bg)] text-[var(--text)]">
           <Sidebar />
-          <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
+          <div className="flex-1 flex flex-col md:pl-[52px] min-w-0">
             <Topbar />
-            <main className="flex-1 p-6 flex items-center justify-center">
-              <div className="max-w-md w-full p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
-                  <Shield className="w-8 h-8" />
-                </div>
-                <h2 className="text-xl font-black text-[var(--text)]">Acesso Restrito</h2>
-                <p className="text-xs text-[var(--text-3)]">
-                  Este módulo de Pesagem & Estoque está disponível apenas com liberação de perfil pela administração ou supervisão.
+            <main className="flex-1 grid place-items-center p-6">
+              <div className="max-w-sm text-center">
+                <h2 className="text-[18px] font-semibold">Acesso restrito</h2>
+                <p className="mt-1.5 text-[13px] text-[var(--text-3)] leading-relaxed">
+                  O módulo de Pesagem e Estoque precisa de liberação da administração ou da supervisão.
                 </p>
-                <Button onClick={() => router.push('/dashboard')} className="w-full font-bold rounded-xl">
+                <button type="button" onClick={() => router.push('/dashboard')} className={cn(primary, 'mt-5 h-9')}>
                   Voltar ao Dashboard
-                </Button>
+                </button>
               </div>
             </main>
           </div>
@@ -694,750 +511,413 @@ export default function PesagemPage() {
     );
   }
 
+  /* ============================================================================
+   * Render
+   * ========================================================================== */
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-[var(--bg)] text-[var(--text)] overflow-hidden">
         <Sidebar />
-
-        <div className="flex-1 flex flex-col pl-0 md:pl-[52px] min-w-0 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col md:pl-[52px] min-w-0 h-screen overflow-hidden">
           <Topbar />
 
-          <main className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-5 pb-24 md:pb-5 min-w-0">
-            {/* Topbar de Sub-Navegação e Ações Integradas */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 mb-4 border-b border-[var(--border)]">
-              {/* Seletor Segmentado de Abas */}
-              <div className="seg flex overflow-x-auto no-scrollbar flex-nowrap max-w-full pb-0.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('fin');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'fin' ? 'on' : ''}
-                >
-                  <TrendingUp size={14} />
-                  Financeiro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('one');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'one' ? 'on' : ''}
-                >
-                  <FileText size={14} />
-                  Onepage
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('res');
-                    setResiduaisActive(true);
-                  }}
-                  className={activeTab === 'res' ? 'on' : ''}
-                >
-                  <AlertTriangle size={14} />
-                  Residuais
-                  <span className="n">{totalResiduaisCount}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('todo');
-                    setResiduaisActive(false);
-                  }}
-                  className={cn(
-                    activeTab === 'todo' ? 'on' : '',
-                    "text-rose-400 font-bold hover:text-rose-300"
-                  )}
-                >
-                  <AlertCircle size={14} className="text-rose-400 shrink-0" />
-                  TODO
-                  {activeTodoCount > 0 ? (
-                    <span
-                      style={{ color: '#000000' }}
-                      className="n bg-rose-500 !text-black font-extrabold px-1.5 py-0.5 rounded-full text-[10px] leading-none"
-                    >
-                      {activeTodoCount}
-                    </span>
-                  ) : (
-                    <span className="n text-[10px] opacity-60">0</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('rem');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'rem' ? 'on' : ''}
-                >
-                  <Truck size={14} />
-                  Remessas
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('scan');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'scan' ? 'on' : ''}
-                >
-                  <QrCode size={14} />
-                  Scanner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('tools');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'tools' ? 'on' : ''}
-                >
-                  <Wrench size={14} />
-                  Tools
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('settings');
-                    setResiduaisActive(false);
-                  }}
-                  className={activeTab === 'settings' ? 'on' : ''}
-                >
-                  <SettingsIcon size={14} />
-                  Configurações
-                </button>
-              </div>
+          <main className="flex-1 overflow-y-auto px-3 sm:px-6 pt-0 pb-24 md:pb-8 min-w-0">
+            {/* ---------- Sub-navegação ---------- */}
+            <div className="sticky top-0 z-20 bg-[var(--bg)] flex items-center gap-3 border-b border-[var(--border)] mb-4 -mx-3 sm:-mx-6 px-3 sm:px-6">
+              <nav className="hidden md:flex gap-1 overflow-x-auto no-scrollbar min-w-0">
+                {TABS.map((t) => (
+                  <button
+                    key={t.k}
+                    type="button"
+                    onClick={() => goTab(t.k)}
+                    className={cn(
+                      'relative h-11 px-2.5 text-[13px] font-medium inline-flex items-center gap-1.5 whitespace-nowrap',
+                      activeTab === t.k ? 'text-[var(--text)]' : 'text-[var(--text-3)] hover:text-[var(--text)]'
+                    )}
+                  >
+                    {t.l}
+                    {!!t.n && (
+                      <span className={cn('font-mono text-[11px]', t.alert ? 'text-[var(--red)]' : 'text-[var(--text-3)]')}>{t.n}</span>
+                    )}
+                    {activeTab === t.k && <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-[var(--text)]" />}
+                  </button>
+                ))}
+              </nav>
+              <span className="md:hidden h-11 inline-flex items-center text-[14px] font-semibold">
+                {TABS.find((t) => t.k === activeTab)?.l}
+              </span>
 
-              {/* Status Operacional & Disparadores */}
-              <div className="flex items-center gap-3 text-xs flex-wrap justify-end">
-                <div className="text-right leading-tight hidden xl:block">
-                  <span className="text-[11px] text-[var(--text-3)] block">Última sincronização</span>
-                  <b className="font-mono text-[var(--text)] text-xs">{formatLastUpdate(lastUpdate)}</b>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleAtualizarDb}
-                  disabled={isAtualizandoDb}
-                  className={cn("btn sm", isAtualizandoDb && "spin")}
-                  title="Sincronizar planilha automatizada via SAP"
-                >
-                  <RefreshCw size={13} className={isAtualizandoDb ? "animate-spin text-[var(--accent)]" : ""} />
-                  {isAtualizandoDb ? 'Sincronizando...' : 'Planilha Sync'}
+              <div className="ml-auto flex items-center gap-2 shrink-0">
+                {upd && (
+                  <span
+                    className={cn('hidden lg:inline-flex items-center gap-1.5 text-[12px]', upd.stale ? 'text-[var(--amber)]' : 'text-[var(--text-3)]')}
+                    title={upd.stale ? `Base com mais de ${BASE_STALE_H} h` : 'Última sincronização'}
+                  >
+                    <span className="w-[7px] h-[7px] rounded-full" style={{ background: upd.stale ? 'var(--amber)' : 'var(--green)' }} />
+                    Base de <span className="font-mono">{upd.text}</span>
+                  </span>
+                )}
+                <button type="button" onClick={handleAtualizarDb} disabled={isAtualizandoDb} className={btn} title="Extrair estoque do SAP via Planilha Sync">
+                  <RefreshCw className={cn('h-3.5 w-3.5', isAtualizandoDb && 'animate-spin')} />
+                  <span className="hidden sm:inline">{isAtualizandoDb ? 'Sincronizando…' : 'Sincronizar SAP'}</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setUploadModalOpen(true)}
-                  className="btn primary sm"
-                >
-                  <Upload size={13} />
-                  Upload
+                <button type="button" onClick={() => setUploadOpen(true)} className={cn(primary, 'max-sm:px-2.5')} title="Enviar planilha de estoque">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Upload</span>
                 </button>
               </div>
             </div>
 
-            {/* Banner de Erro caso ocorra */}
-            {error && (
-              <div className="p-3 mb-4 rounded-[var(--radius)] bg-[var(--red)]/10 border border-[var(--red)]/30 text-[var(--red)] flex items-center justify-between text-xs font-mono">
-                <span>{error}</span>
-                <button type="button" onClick={() => setError(null)} className="hover:opacity-70">
-                  <X size={14} />
+            {/* Erro com dados já carregados: aviso discreto */}
+            {error && data.length > 0 && (
+              <p className="mb-4 flex items-center gap-2 text-[12.5px] text-[var(--red)]">
+                <span className="w-[7px] h-[7px] rounded-full bg-[var(--red)]" />
+                {error}
+                <button type="button" onClick={() => loadData(false)} className="font-medium text-[var(--accent)]">
+                  Tentar de novo
                 </button>
-              </div>
+                <button type="button" onClick={() => setError(null)} className="ml-auto text-[var(--text-3)] hover:text-[var(--text)]" title="Fechar">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </p>
             )}
 
-            {/* Faixa Contínua de 8 KPIs Industriais */}
-            {(activeTab === 'fin' || activeTab === 'one' || activeTab === 'res') && (
-              <div className="kpis">
-                {/* KPI 1: Total */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(null)}
-                  className={selectedSpec === null ? 'on' : ''}
-                >
-                  <label>Total lotes</label>
-                  <strong>{kpis.total.count.toLocaleString('pt-BR')}</strong>
-                  <small>{formatBRLK(kpis.total.valor)}</small>
-                </button>
-
-                {/* KPI 2: 922 TR-ZONE < 0 */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'trz' ? null : 'trz')}
-                  className={`${selectedSpec === 'trz' ? 'on' : ''} ${kpis.trzNeg.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    {kpis.trzNeg.count > 0 && <span className="dot" style={{ background: 'var(--red)' }} />}
-                    922 TR-ZONE &lt; 0
-                  </label>
-                  <strong className={kpis.trzNeg.count > 0 ? 'c-cr' : ''}>
-                    {kpis.trzNeg.count}
-                  </strong>
-                  <small className={kpis.trzNeg.count > 0 ? 'c-cr' : ''}>
-                    {kpis.trzNeg.count > 0 ? 'saldo negativo' : 'nenhum negativo'}
-                  </small>
-                </button>
-
-                {/* KPI 3: Normal */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'ok' ? null : 'ok')}
-                  className={`${selectedSpec === 'ok' ? 'on' : ''} ${kpis.normal.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    <span className="dot" style={{ background: 'var(--green)' }} />
-                    Normal (&lt; {configResiduais?.dias_alerta ?? 7} d)
-                  </label>
-                  <strong className="c-ok">{kpis.normal.count}</strong>
-                  <small>{formatBRLK(kpis.normal.valor)}</small>
-                </button>
-
-                {/* KPI 4: Alerta */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'al' ? null : 'al')}
-                  className={`${selectedSpec === 'al' ? 'on' : ''} ${kpis.alerta.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    <span className="dot" style={{ background: 'var(--amber)' }} />
-                    Alerta ({configResiduais?.dias_alerta ?? 7}–{configResiduais?.dias_critico ?? 15} d)
-                  </label>
-                  <strong className="c-al">{kpis.alerta.count}</strong>
-                  <small>{formatBRLK(kpis.alerta.valor)}</small>
-                </button>
-
-                {/* KPI 5: Crítico */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'cr' ? null : 'cr')}
-                  className={`${selectedSpec === 'cr' ? 'on' : ''} ${kpis.critico.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    <span className="dot" style={{ background: 'var(--red)' }} />
-                    Crítico (&gt; {configResiduais?.dias_critico ?? 15} d)
-                  </label>
-                  <strong className="c-cr">{kpis.critico.count}</strong>
-                  <small>{formatBRLK(kpis.critico.valor)}</small>
-                </button>
-
-                {/* KPI 6: INF */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'INF' ? null : 'INF')}
-                  className={`${selectedSpec === 'INF' ? 'on' : ''} ${kpis.inf.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    INF <span className="flag v">INF</span>
-                  </label>
-                  <strong>{kpis.inf.count}</strong>
-                  <small>{formatBRLK(kpis.inf.valor)}</small>
-                </button>
-
-                {/* KPI 7: CFA */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'CFA' ? null : 'CFA')}
-                  className={`${selectedSpec === 'CFA' ? 'on' : ''} ${kpis.cfa.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    CFA <span className="flag b">CFA</span>
-                  </label>
-                  <strong>{kpis.cfa.count}</strong>
-                  <small>{formatBRLK(kpis.cfa.valor)}</small>
-                </button>
-
-                {/* KPI 8: Vencimento em 30d */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedSpec(selectedSpec === 'v30' ? null : 'v30')}
-                  className={`${selectedSpec === 'v30' ? 'on' : ''} ${kpis.vence30.count === 0 ? 'zero' : ''}`}
-                >
-                  <label>
-                    <Calendar size={12} className="text-[var(--text-3)]" />
-                    Vence em 30 d
-                  </label>
-                  <strong className={kpis.vence30.count > 0 ? 'c-al' : ''}>
-                    {kpis.vence30.count}
-                  </strong>
-                  <small>{formatBRLK(kpis.vence30.valor)}</small>
-                </button>
-              </div>
+            {/* ---------- Indicadores ---------- */}
+            {showKpis && !loading && data.length > 0 && (
+              <section className="flex xl:grid xl:grid-cols-8 overflow-x-auto no-scrollbar pb-4 mb-3 border-b border-[var(--border)] -mx-3 px-3 sm:mx-0 sm:px-0">
+                {(
+                  [
+                    { s: null, l: 'Total de lotes', n: kpis.total.n, sub: brlK(kpis.total.v) },
+                    { s: 'trz', l: 'TR-ZONE negativo', n: kpis.trz.n, sub: kpis.trz.n ? 'saldo abaixo de zero' : 'nenhum', c: kpis.trz.n ? 'var(--red)' : '', dot: kpis.trz.n ? 'var(--red)' : '' },
+                    { s: 'ok', l: `Normal · < ${diasAlerta} d`, n: kpis.ok.n, sub: brlK(kpis.ok.v), dot: 'var(--green)' },
+                    { s: 'al', l: `Alerta · ${diasAlerta}–${diasCritico - 1} d`, n: kpis.al.n, sub: brlK(kpis.al.v), dot: 'var(--amber)', c: kpis.al.n ? 'var(--amber)' : '' },
+                    { s: 'cr', l: `Crítico · ≥ ${diasCritico} d`, n: kpis.cr.n, sub: brlK(kpis.cr.v), dot: 'var(--red)', c: kpis.cr.n ? 'var(--red)' : '' },
+                    { s: 'INF', l: 'INF', n: kpis.INF.n, sub: brlK(kpis.INF.v) },
+                    { s: 'CFA', l: 'CFA', n: kpis.CFA.n, sub: brlK(kpis.CFA.v) },
+                    { s: 'v30', l: 'Vence em 30 d', n: kpis.v30.n, sub: brlK(kpis.v30.v), c: kpis.v30.n ? 'var(--amber)' : '' },
+                  ] as { s: string | null; l: string; n: number; sub: string; c?: string; dot?: string }[]
+                ).map((k, i) => {
+                  const on = selectedSpec === k.s;
+                  return (
+                    <button
+                      key={k.l}
+                      type="button"
+                      onClick={() => setSelectedSpec(k.s === null || on ? null : k.s)}
+                      className={cn(
+                        'relative text-left shrink-0 min-w-[132px] xl:min-w-0 px-3.5 group',
+                        i > 0 && 'border-l border-[var(--border)]',
+                        i === 0 && 'pl-0',
+                        k.n === 0 && k.s !== null && 'opacity-55'
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-3)] whitespace-nowrap">
+                        {k.dot && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: k.dot }} />}
+                        {k.l}
+                      </span>
+                      <span className="block font-mono text-[20px] font-semibold tracking-tight leading-tight mt-0.5 group-hover:underline underline-offset-4 decoration-1" style={{ color: k.c || undefined }}>
+                        {k.n.toLocaleString('pt-BR')}
+                      </span>
+                      <span className="block text-[11.5px] text-[var(--text-3)] font-mono truncate">{k.sub}</span>
+                      {on && k.s !== null && <span className={cn('absolute right-3.5 -bottom-4 h-0.5 bg-[var(--accent)]', i === 0 ? 'left-0' : 'left-3.5')} />}
+                    </button>
+                  );
+                })}
+              </section>
             )}
 
-            {/* Barra de Filtros de Depósito e Chips Ativos (.filters) - apenas em abas operacionais */}
-            {(activeTab === 'fin' || activeTab === 'one' || activeTab === 'res' || activeTab === 'rem') && (
-              <div className="filters flex flex-wrap items-center gap-2.5 overflow-x-auto no-scrollbar max-w-full pb-1">
-                {/* Segmented Control de Depósitos (.seg) */}
-                <div className="seg shrink-0 overflow-x-auto no-scrollbar" id="depSeg">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDep('all')}
-                    className={selectedDep === 'all' ? 'on' : ''}
-                  >
-                    Todos
-                    <span className="n">{depCounts.all || 0}</span>
-                  </button>
-                  {uniqueDeps.map((d) => (
+            {/* ---------- Depósito + filtros ativos ---------- */}
+            {showFilters && !loading && data.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap mb-4">
+                <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--surface)] max-w-full overflow-x-auto no-scrollbar">
+                  {['all', ...uniqueDeps].map((d) => (
                     <button
                       key={d}
                       type="button"
                       onClick={() => setSelectedDep(d)}
-                      className={selectedDep === d ? 'on' : ''}
+                      className={cn(
+                        'h-[30px] px-3 text-[12px] font-medium inline-flex items-center gap-1.5 whitespace-nowrap border-r border-[var(--border-strong)] last:border-r-0',
+                        selectedDep === d ? 'bg-[var(--hover)] text-[var(--text)]' : 'text-[var(--text-3)] hover:text-[var(--text)]'
+                      )}
                     >
-                      {d}
-                      <span className="n">{depCounts[d] || 0}</span>
+                      {d === 'all' ? 'Todos' : d}
+                      <span className="font-mono text-[10.5px] text-[var(--text-3)]">{(depCounts[d] || 0).toLocaleString('pt-BR')}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Chips de Filtros Ativos (.chip) */}
-                {(selectedDep !== 'all' || selectedSpec || selectedMaterialFilter || searchTerm) && (
-                  <div id="chips" className="flex flex-wrap items-center gap-2">
-                    {selectedDep !== 'all' && (
-                      <span className="chip">
-                        Depósito: {selectedDep}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDep('all')}
-                          title="Remover"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    )}
-
-                    {selectedSpec && (
-                      <span className="chip">
-                        Especial: {selectedSpec}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedSpec(null)}
-                          title="Remover"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    )}
-
-                    {selectedMaterialFilter && (
-                      <span className="chip">
-                        Material: {selectedMaterialFilter}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedMaterialFilter(undefined)}
-                          title="Remover"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    )}
-
-                    {searchTerm && (
-                      <span className="chip">
-                        Busca: “{searchTerm}”
-                        <button
-                          type="button"
-                          onClick={() => setSearchTerm('')}
-                          title="Remover"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    )}
-
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => {
-                        setSelectedSpec(null);
-                        setSelectedMaterialFilter(undefined);
-                        setSearchTerm('');
-                        setSelectedDep('all');
-                      }}
-                    >
-                      Limpar tudo
-                    </button>
-                  </div>
+                {[
+                  selectedDep !== 'all' && { k: 'dep', t: `Depósito ${selectedDep}`, clear: () => setSelectedDep('all') },
+                  selectedSpec && { k: 'spec', t: SPEC_LABEL[selectedSpec as Spec] || selectedSpec, clear: () => setSelectedSpec(null) },
+                  selectedMaterialFilter && { k: 'mat', t: `Material ${selectedMaterialFilter}`, clear: () => setSelectedMaterialFilter(undefined) },
+                  searchTerm && { k: 'q', t: `“${searchTerm}”`, clear: () => setSearchTerm('') },
+                ]
+                  .filter(Boolean)
+                  .map((c: any) => (
+                    <span key={c.k} className="inline-flex items-center gap-1 h-[26px] pl-2.5 pr-1 rounded-full bg-[var(--accent-weak)] text-[12px]">
+                      {c.t}
+                      <button type="button" onClick={c.clear} className="h-5 w-5 grid place-items-center rounded-full text-[var(--text-2)] hover:bg-[var(--border)]" title="Remover">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                {hasFilters && (
+                  <button type="button" onClick={clearFilters} className="text-[12px] font-medium text-[var(--accent)] px-1">
+                    Limpar filtros
+                  </button>
                 )}
               </div>
             )}
 
-      {/* Estados de Carregamento & Erro */}
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-xs text-muted-foreground">Carregando dados de estoque e pesagem...</p>
-          </div>
-        </div>
-      )}
+            {/* ---------- Estados ---------- */}
+            {loading && (
+              <PageLoader label="Carregando estoque…" />
+            )}
 
-      {error && !loading && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="py-8 text-center space-y-2">
-            <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
-            <p className="text-destructive font-medium text-xs">{error}</p>
-            <Button size="sm" variant="outline" onClick={() => loadData(true)} className="mt-2 text-xs">
-              Tentar Novamente
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+            {!loading && error && data.length === 0 && (
+              <div className="py-20 text-center">
+                <p className="text-[13px] text-[var(--text-2)]">{error}</p>
+                <button type="button" onClick={() => loadData(true)} className={cn(btn, 'mt-3')}>
+                  Tentar de novo
+                </button>
+              </div>
+            )}
 
-      {/* Conteúdo das Abas */}
-      {!loading && !error && (
-        <>
-          {/* ABA 1: FINANCEIRO (Dashboard + Tabela) */}
-          {activeTab === 'fin' && (
-            <div className="space-y-4">
-              <AgingFinancial
-                data={displayData}
-                allData={data}
-                valores={valores}
-                selectedCriticality={selectedSpec}
-                onCriticalityChange={(crit) => setSelectedSpec(crit)}
-                selectedMaterial={selectedMaterialFilter}
-                onMaterialChange={(mat) => setSelectedMaterialFilter(mat)}
-                configResiduais={configResiduais}
-              />
+            {/* ---------- Conteúdo ---------- */}
+            {!loading && (data.length > 0 || !error) && (
+              <>
+                {activeTab === 'fin' && (
+                  <div className="space-y-4">
+                    <AgingFinancial
+                      data={displayData}
+                      allData={data}
+                      valores={valores}
+                      selectedCriticality={selectedSpec}
+                      onCriticalityChange={(c: string | null) => setSelectedSpec(c)}
+                      selectedMaterial={selectedMaterialFilter}
+                      onMaterialChange={(m: string | undefined) => setSelectedMaterialFilter(m)}
+                      configResiduais={config}
+                    />
+                    <AgingTable
+                      data={displayData}
+                      valores={valores}
+                      remessas={remessas}
+                      configResiduais={config}
+                      lotesInvestigacao={lotesInvestigacao}
+                      todoItems={todoItems}
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      residuaisActive={residuaisActive}
+                      onToggleResiduais={() => setResiduaisActive((v) => !v)}
+                      onOpenMoverModal={(rows: EnrichedRow[]) => {
+                        setMoverItems(rows);
+                        setMoverOpen(true);
+                      }}
+                      onInvestigacaoChange={() => loadData(false)}
+                      selectedMaterialFilter={selectedMaterialFilter}
+                      onClearMaterialFilter={() => setSelectedMaterialFilter(undefined)}
+                      currentUserEmail={userEmail || 'Web Pesagem'}
+                      onAtualizarDb={handleAtualizarDb}
+                      onNavigateToTodo={handleNavigateToTodo}
+                    />
+                  </div>
+                )}
 
-              {/* Tabela Integrada */}
-              <AgingTable
-                data={displayData}
-                valores={valores}
-                remessas={remessas}
-                configResiduais={configResiduais}
-                lotesInvestigacao={lotesInvestigacao}
-                todoItems={todoItems}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                residuaisActive={residuaisActive}
-                onToggleResiduais={() => setResiduaisActive(!residuaisActive)}
-                onOpenMoverModal={handleOpenMover}
-                onInvestigacaoChange={loadData}
-                selectedMaterialFilter={selectedMaterialFilter}
-                onClearMaterialFilter={() => setSelectedMaterialFilter(undefined)}
-                currentUserEmail={user?.email || 'Web Pesagem'}
-                onAtualizarDb={handleAtualizarDb}
-                onNavigateToTodo={handleNavigateToTodo}
-              />
-            </div>
-          )}
+                {activeTab === 'res' && (
+                  <ResiduaisView
+                    agingData={baseData}
+                    allData={data}
+                    valores={valores}
+                    remessas={remessas}
+                    configResiduais={config}
+                    selectedCriticality={selectedSpec}
+                    onCriticalityChange={(c: string | null) => setSelectedSpec(c)}
+                    onNavigateToRemessas={(m: string) => {
+                      setSelectedMaterialFilter(m);
+                      goTab('rem');
+                    }}
+                    lotesInvestigacao={lotesInvestigacao}
+                    todoItems={todoItems}
+                    onInvestigacaoChange={() => loadData(false)}
+                    currentUserEmail={userEmail}
+                    onAtualizarDb={handleAtualizarDb}
+                    isAtualizandoDb={isAtualizandoDb}
+                    onNavigateToTodo={handleNavigateToTodo}
+                  />
+                )}
 
-          {/* ABA RESIDUAIS (Instância de Análise Residual & Bloqueio SAP MIGO idêntica ao dashpesagem) */}
-          {activeTab === 'res' && (
-            <div className="space-y-4">
-              <ResiduaisView
-                agingData={baseData}
-                allData={data}
-                valores={valores}
-                remessas={remessas}
-                configResiduais={configResiduais}
-                selectedCriticality={selectedSpec}
-                onCriticalityChange={(crit) => setSelectedSpec(crit)}
-                onNavigateToRemessas={(material) => {
-                  setSelectedMaterialFilter(material);
-                  setActiveTab('rem');
-                }}
-                lotesInvestigacao={lotesInvestigacao}
-                todoItems={todoItems}
-                onInvestigacaoChange={loadData}
-                currentUserEmail={user?.email || userData?.email}
-                onAtualizarDb={handleAtualizarDb}
-                isAtualizandoDb={isAtualizandoDb}
-                onNavigateToTodo={handleNavigateToTodo}
-              />
-            </div>
-          )}
+                {activeTab === 'todo' && (
+                  <TodoView
+                    agingData={data}
+                    valores={valores}
+                    todoItems={todoItems}
+                    lotesInvestigacao={lotesInvestigacao}
+                    currentUserEmail={userEmail}
+                    onNavigateToMaterial={filterMaterialOnFin}
+                    onAtualizarDb={handleAtualizarDb}
+                    isAtualizandoDb={isAtualizandoDb}
+                    onInvestigacaoChange={() => loadData(false)}
+                    selectedLote={selectedTodoLote}
+                    onClearSelectedLote={() => setSelectedTodoLote(null)}
+                  />
+                )}
 
-          {/* ABA TODO & INVESTIGAÇÃO */}
-          {activeTab === 'todo' && (
-            <div className="space-y-4">
-              <TodoView
-                agingData={data}
-                valores={valores}
-                todoItems={todoItems}
-                lotesInvestigacao={lotesInvestigacao}
-                currentUserEmail={user?.email || userData?.email}
-                onNavigateToMaterial={(mat) => {
-                  setSelectedMaterialFilter(mat);
-                  setActiveTab('fin');
-                }}
-                onAtualizarDb={handleAtualizarDb}
-                isAtualizandoDb={isAtualizandoDb}
-                onInvestigacaoChange={loadData}
-                selectedLote={selectedTodoLote}
-                onClearSelectedLote={() => setSelectedTodoLote(null)}
-              />
-            </div>
-          )}
+                {activeTab === 'one' && (
+                  <OnepageView
+                    agingData={data}
+                    valores={valores}
+                    lotesInvestigacao={lotesInvestigacao}
+                    onInvestigacaoChange={() => loadData(false)}
+                    currentUserEmail={userEmail}
+                    lastUpdate={lastUpdate}
+                    configResiduais={config}
+                    onFilterMaterial={filterMaterialOnFin}
+                    onFilterPosicao={(pos: string) => {
+                      setSelectedDep(posToGroup(pos));
+                      goTab('fin');
+                    }}
+                  />
+                )}
 
-          {/* ABA 2: ONEPAGE */}
-          {activeTab === 'one' && (
-            <div className="space-y-4">
-              <OnepageView
-                agingData={data}
-                valores={valores}
-                lotesInvestigacao={lotesInvestigacao}
-                onInvestigacaoChange={loadData}
-                currentUserEmail={user?.email || userData?.email}
-                lastUpdate={lastUpdate}
-                configResiduais={configResiduais}
-                onFilterMaterial={(mat) => {
-                  setSelectedMaterialFilter(mat);
-                  setActiveTab('fin');
-                }}
-                onFilterPosicao={(pos) => {
-                  setSelectedDep(pos);
-                  setActiveTab('fin');
-                }}
-              />
-            </div>
-          )}
+                {activeTab === 'rem' && <RemessasView remessas={remessas} materialFilter={selectedMaterialFilter} />}
 
-          {/* ABA 3: REMESSAS */}
-          {activeTab === 'rem' && (
-            <div className="space-y-4">
-              <RemessasView remessas={remessas} materialFilter={selectedMaterialFilter} />
-            </div>
-          )}
+                {activeTab === 'scan' && (
+                  <ConsultaRapidaView
+                    agingData={data}
+                    remessas={remessas}
+                    valores={valores}
+                    currentUserEmail={userEmail}
+                    onAtualizarDb={handleAtualizarDb}
+                    onNavigateToTab={(t: string) => TAB_ALIASES[t] && goTab(TAB_ALIASES[t])}
+                    isEmbedded
+                  />
+                )}
 
-          {/* ABA 4: SCANNER / CONSULTA RÁPIDA */}
-          {activeTab === 'scan' && (
-            <div className="space-y-4">
-              <ConsultaRapidaView
-                agingData={data}
-                remessas={remessas}
-                valores={valores}
-                currentUserEmail={user?.email || userData?.email}
-                onAtualizarDb={handleAtualizarDb}
-                isEmbedded={true}
-              />
-            </div>
-          )}
+                {activeTab === 'tools' && <ToolsView agingData={data} valores={valores} />}
 
-          {/* ABA 5: TOOLS */}
-          {activeTab === 'tools' && (
-            <div className="space-y-4">
-              <ToolsView agingData={data} valores={valores} />
-            </div>
-          )}
+                {activeTab === 'settings' && (
+                  <div className="max-w-[880px]">
+                    <div className="mb-6">
+                      <h2 className="text-[18px] font-semibold tracking-tight">Configurações do módulo</h2>
+                      <p className="text-[12.5px] text-[var(--text-3)] mt-0.5">Faixas de aging e residuais, tabela de preços e base de remessas.</p>
+                    </div>
+                    <ConfiguracaoResiduaisComponent onConfigChange={() => loadData(false)} />
+                    <ValorUpload onUploadComplete={() => loadData(false)} />
+                    <RemessaUpload onUploadComplete={() => loadData(false)} />
+                  </div>
+                )}
+              </>
+            )}
+          </main>
 
-          {/* ABA 6: CONFIGURAÇÕES */}
-          {activeTab === 'settings' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xs">
-                <div>
-                  <h2 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">
-                    Configurações do Módulo de Pesagem
-                  </h2>
-                  <p className="text-[11px] text-[var(--text-3)] font-mono mt-0.5">
-                    Parâmetros operacionais de aging, tolerâncias de pesagem e tabelas de precificação / remessas SAP.
+          {/* ---------- Navegação inferior (celular) ---------- */}
+          <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--surface)] border-t border-[var(--border)] grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+            {MOBILE_MAIN.map((k) => {
+              const t = TABS.find((x) => x.k === k)!;
+              const on = activeTab === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => goTab(k)}
+                  className={cn('relative h-14 flex flex-col items-center justify-center gap-1 text-[10.5px] font-medium', on ? 'text-[var(--text)]' : 'text-[var(--text-3)]')}
+                >
+                  {on && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-[var(--text)]" />}
+                  <span className="relative">
+                    <t.Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
+                    {!!t.n && (
+                      <span
+                        className={cn(
+                          'absolute -top-1.5 left-3 min-w-[15px] h-[15px] px-[3px] rounded-full text-[9px] font-semibold font-mono grid place-items-center border-2 border-[var(--surface)]',
+                          t.alert ? 'bg-[var(--red)] text-white' : 'bg-[var(--text-3)] text-[var(--bg)]'
+                        )}
+                      >
+                        {t.n > 99 ? '99+' : t.n}
+                      </span>
+                    )}
+                  </span>
+                  {t.short}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              className={cn(
+                'relative h-14 flex flex-col items-center justify-center gap-1 text-[10.5px] font-medium',
+                moreOpen || !MOBILE_MAIN.includes(activeTab) ? 'text-[var(--text)]' : 'text-[var(--text-3)]'
+              )}
+            >
+              {!MOBILE_MAIN.includes(activeTab) && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-[var(--text)]" />}
+              <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.7} />
+              Mais
+            </button>
+          </nav>
+
+          {moreOpen && (
+            <>
+              <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMoreOpen(false)} />
+              <div className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-[var(--surface)] border-t border-[var(--border-strong)] rounded-t-[12px] pb-[max(12px,env(safe-area-inset-bottom))]">
+                <div className="w-9 h-1 rounded-full bg-[var(--border-strong)] mx-auto mt-2 mb-1" />
+                {mobileMore.map((t) => (
+                  <button
+                    key={t.k}
+                    type="button"
+                    onClick={() => goTab(t.k)}
+                    className={cn(
+                      'w-full flex items-center gap-3 h-12 px-5 text-[14px] border-b border-[var(--border)] last:border-b-0',
+                      activeTab === t.k ? 'text-[var(--text)] font-medium' : 'text-[var(--text-2)]'
+                    )}
+                  >
+                    <t.Icon className="h-[18px] w-[18px] text-[var(--text-3)]" strokeWidth={1.7} />
+                    {t.l}
+                    {activeTab === t.k && <span className="ml-auto w-[7px] h-[7px] rounded-full bg-[var(--text)]" />}
+                  </button>
+                ))}
+                {upd && (
+                  <p className={cn('px-5 pt-3 text-[12px] flex items-center gap-1.5', upd.stale ? 'text-[var(--amber)]' : 'text-[var(--text-3)]')}>
+                    <span className="w-[7px] h-[7px] rounded-full" style={{ background: upd.stale ? 'var(--amber)' : 'var(--green)' }} />
+                    Base de <span className="font-mono">{upd.text}</span>
                   </p>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)]">
-                  CONFIG
-                </span>
+                )}
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ValorUpload onUploadComplete={loadData} />
-                <RemessaUpload onUploadComplete={loadData} />
-              </div>
-
-              <ConfiguracaoResiduaisComponent onConfigChange={loadData} />
-            </div>
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
 
-      {/* Modal de Upload de Planilha */}
-      <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-[#0e1014] border border-[var(--border-strong)] text-[var(--text)] rounded-xl shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-[var(--text)] uppercase tracking-wider">
-              Upload de Planilha de Estoque (MB52 / LX02)
-            </DialogTitle>
-            <DialogDescription className="text-[11px] text-[var(--text-3)] font-mono">
-              Selecione o arquivo exportado do SAP para atualizar os dados analíticos de estoque e aging.
+      {/* ---------- Upload da base ---------- */}
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="sm:max-w-lg bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] p-0 gap-0 rounded-[8px]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-[var(--border)] text-left">
+            <DialogTitle className="text-[15px] font-semibold">Enviar planilha de estoque</DialogTitle>
+            <DialogDescription className="text-[12.5px] text-[var(--text-3)]">
+              Exportação MB52 ou LX02 do SAP. Substitui a base de aging atual.
             </DialogDescription>
           </DialogHeader>
-          <div className="pt-2">
+          <div className="px-5 py-4">
             <ExcelUpload
               onUploadComplete={() => {
-                loadData();
-                setUploadModalOpen(false);
+                loadData(false);
+                setUploadOpen(false);
               }}
-              onClose={() => setUploadModalOpen(false)}
+              onClose={() => setUploadOpen(false)}
             />
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Modal Mover SAP */}
+      {/* ---------- Mover no SAP ---------- */}
       <MoverModal
-        open={moverModalOpen}
-        onOpenChange={setMoverModalOpen}
-        items={moverSelectedItems}
-        onRemoveItem={handleRemoveMoverItem}
+        open={moverOpen}
+        onOpenChange={setMoverOpen}
+        items={moverItems}
+        onRemoveItem={(i: number) => setMoverItems((p) => p.filter((_, x) => x !== i))}
         onSuccess={() => {
           loadData(false);
-          setMoverModalOpen(false);
+          setMoverOpen(false);
         }}
-        currentUserEmail={user?.email || userData?.email}
+        currentUserEmail={userEmail}
       />
-          </main>
-
-          {/* Mobile Bottom Navigation Bar (Fixo no Rodapé em Telas < 768px) */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--surface)] border-t border-[var(--border)] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] px-1 py-1.5 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('fin');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'fin'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <TrendingUp size={15} />
-              <span className="truncate">Financeiro</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('one');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'one'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <FileText size={15} />
-              <span className="truncate">Onepage</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('res');
-                setResiduaisActive(true);
-              }}
-              className={cn(
-                "relative flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'res'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <AlertTriangle size={15} />
-              <span className="truncate">Residuais</span>
-              {totalResiduaisCount > 0 && (
-                <span className="absolute top-0 right-1 px-1 rounded-full bg-[var(--red)] text-white text-[9px] font-mono leading-none py-0.5">
-                  {totalResiduaisCount}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('todo');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "relative flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'todo'
-                  ? "text-rose-400 font-bold bg-rose-500/10"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <AlertCircle size={15} className={activeTab === 'todo' ? "text-rose-400" : ""} />
-              <span className="truncate">TODO</span>
-              {activeTodoCount > 0 && (
-                <span
-                  style={{ color: '#000000' }}
-                  className="absolute top-0 right-1 px-1 rounded-full bg-rose-500 !text-black text-[9px] font-mono font-extrabold leading-none py-0.5"
-                >
-                  {activeTodoCount}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('rem');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'rem'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <Truck size={15} />
-              <span className="truncate">Remessas</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('scan');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'scan'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <QrCode size={15} />
-              <span className="truncate">Scanner</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('tools');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'tools'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <Wrench size={15} />
-              <span className="truncate">Tools</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('settings');
-                setResiduaisActive(false);
-              }}
-              className={cn(
-                "flex-1 min-w-[50px] py-1 px-1 rounded-[6px] flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors cursor-pointer",
-                activeTab === 'settings'
-                  ? "text-[var(--accent)] font-bold bg-[var(--accent-weak)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <SettingsIcon size={15} />
-              <span className="truncate">Config</span>
-            </button>
-          </nav>
-        </div>
-      </div>
     </ProtectedRoute>
   );
 }

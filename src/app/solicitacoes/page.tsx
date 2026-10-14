@@ -8,6 +8,7 @@ import TabelaPrincipal from "@/components/solicitacoes/TabelaPrincipal";
 import PullProductionDialog from "@/components/solicitacoes/PullProductionDialog";
 import Sap from "@/components/solicitacoes/Sap";
 import ProtectedRoute from "@/components/auth/protected-route";
+import { PageLoader } from "@/components/line-loader";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
@@ -866,11 +867,7 @@ export default function SolicitacoesPage() {
 
   // Loading de autenticação
   if (authLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)]">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[var(--accent)]" />
-      </div>
-    );
+    return <PageLoader fullScreen label="Carregando solicitações…" />;
   }
 
   // Acesso negado para usuários sem liberação de perfil

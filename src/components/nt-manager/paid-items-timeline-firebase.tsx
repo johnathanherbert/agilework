@@ -3,6 +3,7 @@
 import { useTimelineFirebase, TimelinePaidItem } from '@/hooks/useTimelineFirebase';
 import { cn } from '@/lib/utils';
 import { ChevronRight, ChevronLeft, Activity } from 'lucide-react';
+import { LineLoader } from '@/components/line-loader';
 
 interface PaidItemsTimelineProps {
   collapsed?: boolean;
@@ -117,8 +118,8 @@ export const PaidItemsTimelineFirebase = ({
       {/* Feed de Eventos Scrollável */}
       <div className="flex-1 overflow-y-auto px-3.5 pb-4 space-y-3">
         {loading && paidItems.length === 0 ? (
-          <div className="py-8 text-center text-xs text-[var(--text-3)]">
-            Carregando eventos...
+          <div className="py-8 flex justify-center">
+            <LineLoader size={36} label="Carregando eventos…" />
           </div>
         ) : paidItems.length === 0 ? (
           <div className="py-8 text-center text-xs text-[var(--text-3)]">

@@ -1,344 +1,233 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNotifications, Notification } from '@/components/providers/notification-provider';
-import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
-type NotificationTab = 'all' | 'unread' | 'nt' | 'production';
+/* ============================================================================
+ * Helpers
+ * ========================================================================== */
+type Tab = 'all' | 'unread' | 'nt' | 'production';
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const day0 = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
-function pad(n: number) {
-  return n < 10 ? `0${n}` : `${n}`;
+function dayLabel(d: Date) {
+  const today = day0(new Date());
+  const t = day0(d);
+  if (t === today) return 'Hoje';
+  if (t === today - 86400000) return 'Ontem';
+  if (today - t < 7 * 86400000) return DIAS[d.getDay()];
+  return `${d.getDate()} ${MESES[d.getMonth()]}`;
 }
 
-function formatHM(date: Date) {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const NT_TYPES = ['nt_created', 'nt_updated', 'nt_deleted', 'item_paid'];
+
+// Tipo → cor do ponto e rótulo curto (sem caixas coloridas)
+const TYPE_META: Record<string, { c: string; l: string }> = {
+  nt_created: { c: 'var(--accent)', l: 'Nova NT' },
+  nt_updated: { c: 'var(--amber)', l: 'NT alterada' },
+  nt_deleted: { c: 'var(--red)', l: 'NT excluída' },
+  item_paid: { c: 'var(--green)', l: 'Item pago' },
+  production_updated: { c: 'var(--text-2)', l: 'Produção' },
+  chat_mention: { c: 'var(--accent)', l: 'Menção' },
+};
+const typeMeta = (t: string) => TYPE_META[t] || { c: 'var(--text-3)', l: 'Aviso' };
+
+// Só considera número de NT quando vem marcado (parte "entity", "NT 123", "#123" ou entityId numérico)
+function ntOf(n: Notification): string {
+  const ent = n.parts?.find((p) => p.variant === 'entity' && /\d{4,10}/.test(p.text));
+  if (ent) return ent.text.replace(/\D/g, '');
+  const m = n.message?.match(/NT\s*#?(\d{4,10})/i) || n.message?.match(/#(\d{4,10})/);
+  if (m) return m[1];
+  if (n.entityId && /^\d{4,10}$/.test(n.entityId)) return n.entityId;
+  return '';
 }
 
-function formatTimeRelative(date: Date) {
-  const now = new Date();
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-
-  if (date.toDateString() === now.toDateString()) {
-    return formatHM(date);
-  }
-  if (date.toDateString() === yesterday.toDateString()) {
-    return 'ontem';
-  }
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
-  if (diffDays < 7) {
-    return DIAS[date.getDay()];
-  }
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
-}
-
+/* ============================================================================
+ * Componente
+ * ========================================================================== */
 export const NotificationBell = () => {
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    removeNotification,
-    clearNotifications, 
-    notificationsEnabled 
-  } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, clearNotifications, notificationsEnabled } =
+    useNotifications();
   const router = useRouter();
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<NotificationTab>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isBumping, setIsBumping] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('all');
+  const [q, setQ] = useState('');
+  const [bump, setBump] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const prevUnreadRef = useRef(unreadCount);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const prevUnread = useRef(unreadCount);
 
-  // Efeito de animação bump quando surge nova notificação não lida
+  // Pulso no contador quando chega notificação nova
   useEffect(() => {
-    if (unreadCount > prevUnreadRef.current) {
-      setIsBumping(true);
-      const timer = setTimeout(() => setIsBumping(false), 500);
-      return () => clearTimeout(timer);
-    }
-    prevUnreadRef.current = unreadCount;
+    const grew = unreadCount > prevUnread.current;
+    prevUnread.current = unreadCount; // atualiza sempre (antes ficava preso quando crescia)
+    if (!grew) return;
+    setBump(true);
+    const t = setTimeout(() => setBump(false), 500);
+    return () => clearTimeout(t);
   }, [unreadCount]);
 
-  // Fechar ao clicar fora
+  // Fechar ao clicar fora / Esc
   useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
+      setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (document.activeElement === searchRef.current && q) setQ('');
+      else setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, q]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  // Fechar com tecla Esc
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
-    };
+    if (!open) setConfirmClear(false);
+  }, [open]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  /* ---------------- dados ---------------- */
+  const counts = useMemo(
+    () => ({
+      all: notifications.length,
+      unread: notifications.filter((n) => !n.read).length,
+      nt: notifications.filter((n) => NT_TYPES.includes(n.type)).length,
+      production: notifications.filter((n) => n.type === 'production_updated').length,
+    }),
+    [notifications]
+  );
 
-  // Filtragem e busca
-  const filteredNotifications = useMemo(() => {
-    let list = notifications;
-
-    if (activeTab === 'unread') {
-      list = list.filter((n) => !n.read);
-    } else if (activeTab === 'nt') {
-      list = list.filter((n) => 
-        n.type === 'nt_created' || n.type === 'nt_updated' || n.type === 'nt_deleted' || n.type === 'item_paid'
-      );
-    } else if (activeTab === 'production') {
-      list = list.filter((n) => n.type === 'production_updated');
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(n => 
-        n.title.toLowerCase().includes(q) || 
-        n.message.toLowerCase().includes(q) ||
-        (n.entityId && n.entityId.toLowerCase().includes(q))
+  const list = useMemo(() => {
+    let l = notifications;
+    if (tab === 'unread') l = l.filter((n) => !n.read);
+    else if (tab === 'nt') l = l.filter((n) => NT_TYPES.includes(n.type));
+    else if (tab === 'production') l = l.filter((n) => n.type === 'production_updated');
+    const s = q.trim().toLowerCase();
+    if (s) {
+      l = l.filter((n) =>
+        [n.title, n.message, n.entityId, ...(n.parts || []).map((p) => p.text)].join(' ').toLowerCase().includes(s)
       );
     }
+    return [...l].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [notifications, tab, q]);
 
-    return list;
-  }, [notifications, activeTab, searchQuery]);
-
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      markAsRead(notification.id);
-    }
-    
-    // Extrai número da NT se existir em parts, message ou entityId
-    let ntNumber = '';
-    if (notification.parts) {
-      const entityPart = notification.parts.find(p => p.variant === 'entity' && /\d{4,10}/.test(p.text));
-      if (entityPart) {
-        ntNumber = entityPart.text.replace(/[^0-9]/g, '');
-      }
-    }
-    if (!ntNumber && notification.message) {
-      const match = notification.message.match(/NT\s*#?(\d{4,10})/i) || notification.message.match(/#(\d{4,10})/) || notification.message.match(/(\d{5,10})/);
-      if (match) {
-        ntNumber = match[1];
-      }
-    }
-    if (!ntNumber && notification.entityId && /^\d+$/.test(notification.entityId)) {
-      ntNumber = notification.entityId;
-    }
-
-    if (ntNumber) {
-      router.push(`/almoxarifado/nts?search=${encodeURIComponent(ntNumber)}`);
-    } else if (notification.type === 'nt_created' || notification.type === 'nt_updated' || notification.type === 'item_paid') {
-      router.push('/almoxarifado/nts');
-    } else if (notification.type === 'production_updated') {
-      router.push('/producao');
-    }
-    
-    setIsOpen(false);
+  /* ---------------- ações ---------------- */
+  const go = (n: Notification, nt?: string) => {
+    if (!n.read) markAsRead(n.id);
+    const code = nt ?? ntOf(n);
+    if (code) router.push(`/almoxarifado/nts?search=${encodeURIComponent(code)}`);
+    else if (NT_TYPES.includes(n.type)) router.push('/almoxarifado/nts');
+    else if (n.type === 'production_updated') router.push('/producao');
+    else return; // sem destino: só marca como lida e mantém o painel aberto
+    setOpen(false);
   };
 
-  const handleRemove = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    removeNotification(id);
-    toast.success('Notificação removida');
-  };
+  const NtChip = ({ n, code, label }: { n: Notification; code: string; label: string }) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        go(n, code);
+      }}
+      title={`Abrir NT ${code}`}
+      className="font-mono text-[11.5px] px-1 mx-0.5 rounded-[3px] border border-[var(--border-strong)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+    >
+      {label}
+    </button>
+  );
 
-  // Renderização do corpo da notificação com chips interativos de NT
-  const renderMessageContent = (notification: Notification) => {
-    if (notification.parts && notification.parts.length > 0) {
-      return (
-        <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">
-          {notification.parts.map((part, idx) => {
-            const isEntity = part.variant === 'entity';
-            const isActor = part.variant === 'actor';
-            const isSuccess = part.variant === 'status-success';
-            const isWarning = part.variant === 'status-warning';
-            const isAccent = part.variant === 'accent';
-
-            if (isEntity && /\d{4,10}/.test(part.text)) {
-              const code = part.text.replace(/[^0-9]/g, '');
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!notification.read) {
-                      markAsRead(notification.id);
-                    }
-                    setIsOpen(false);
-                    router.push(`/almoxarifado/nts?search=${encodeURIComponent(code)}`);
-                  }}
-                  title={`Abrir NT ${code} em Notas Técnicas`}
-                  className="inline-flex items-center font-mono text-[11.5px] px-1.5 py-0.5 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--accent)] hover:border-[var(--accent)] hover:bg-[var(--accent-weak)] font-semibold transition-colors cursor-pointer"
-                >
-                  {part.text}
-                </button>
-              );
-            }
-
-            return (
-              <span
-                key={idx}
-                className={cn(
-                  isActor && "font-semibold text-[var(--text)]",
-                  isEntity && "font-medium text-[var(--accent)]",
-                  isSuccess && "font-medium text-[var(--green)]",
-                  isWarning && "font-medium text-[var(--amber)]",
-                  isAccent && "font-bold text-[var(--accent)]",
-                  part.variant === 'muted' && "text-[var(--text-3)]"
-                )}
-              >
-                {part.text}
-              </span>
-            );
-          })}
-        </span>
-      );
-    }
-
-    // Fallback: se não tiver parts, detecta número da NT no texto e cria o link
-    const match = notification.message?.match(/NT\s*#?(\d{4,10})/i) || notification.message?.match(/#(\d{4,10})/);
-    if (match) {
-      const code = match[1];
-      const parts = notification.message.split(match[0]);
-      return (
-        <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">
-          {parts[0]}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!notification.read) {
-                markAsRead(notification.id);
-              }
-              setIsOpen(false);
-              router.push(`/almoxarifado/nts?search=${encodeURIComponent(code)}`);
-            }}
-            title={`Abrir NT ${code} em Notas Técnicas`}
-            className="inline-flex items-center font-mono text-[11.5px] px-1.5 py-0.5 mx-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--accent)] hover:border-[var(--accent)] hover:bg-[var(--accent-weak)] font-semibold transition-colors cursor-pointer"
+  const body = (n: Notification) => {
+    if (n.parts?.length) {
+      return n.parts.map((p, i) => {
+        if (p.variant === 'entity' && /\d{4,10}/.test(p.text)) {
+          return <NtChip key={i} n={n} code={p.text.replace(/\D/g, '')} label={p.text} />;
+        }
+        return (
+          <span
+            key={i}
+            className={cn(
+              p.variant === 'actor' && 'font-medium text-[var(--text)]',
+              p.variant === 'entity' && 'font-medium text-[var(--text)]',
+              p.variant === 'accent' && 'font-medium text-[var(--text)]',
+              p.variant === 'status-success' && 'text-[var(--green)]',
+              p.variant === 'status-warning' && 'text-[var(--amber)]',
+              p.variant === 'muted' && 'text-[var(--text-3)]'
+            )}
           >
-            {match[0]}
-          </button>
-          {parts.slice(1).join(match[0])}
-        </span>
+            {p.text}
+          </span>
+        );
+      });
+    }
+    const m = n.message?.match(/NT\s*#?(\d{4,10})/i) || n.message?.match(/#(\d{4,10})/);
+    if (m) {
+      const [a, ...rest] = n.message.split(m[0]);
+      return (
+        <>
+          {a}
+          <NtChip n={n} code={m[1]} label={m[0]} />
+          {rest.join(m[0])}
+        </>
       );
     }
-
-    return <span className="text-[12.5px] leading-relaxed text-[var(--text)] break-words">{notification.message}</span>;
+    return n.message;
   };
 
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'nt_created':
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="12" y1="18" x2="12" y2="12" />
-            <line x1="9" y1="15" x2="15" y2="15" />
-          </svg>
-        );
-      case 'nt_updated':
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-        );
-      case 'item_paid':
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        );
-      case 'production_updated':
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-            <path d="M17 18h1" />
-            <path d="M12 18h1" />
-            <path d="M7 18h1" />
-          </svg>
-        );
-      case 'chat_mention':
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-        );
-      default:
-        return (
-          <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-        );
-    }
-  };
+  const TABS: { k: Tab; l: string; n: number; alert?: boolean }[] = [
+    { k: 'all', l: 'Todas', n: counts.all },
+    { k: 'unread', l: 'Não lidas', n: counts.unread, alert: counts.unread > 0 },
+    { k: 'nt', l: 'NTs', n: counts.nt },
+    { k: 'production', l: 'Produção', n: counts.production },
+  ];
 
-  const getNotificationColorClass = (type: Notification['type']) => {
-    switch (type) {
-      case 'nt_created':
-        return 'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent-weak)]';
-      case 'nt_updated':
-        return 'text-[var(--amber)] border-[var(--amber)]/30 bg-[var(--amber)]/10';
-      case 'item_paid':
-        return 'text-[var(--green)] border-[var(--green)]/30 bg-[var(--green)]/10';
-      case 'production_updated':
-        return 'text-[var(--accent)] border-[var(--border)] bg-[var(--surface-2)]';
-      case 'chat_mention':
-        return 'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent-weak)]';
-      default:
-        return 'text-[var(--text-3)] border-[var(--border)] bg-[var(--surface-2)]';
-    }
-  };
+  const iconBtn = 'h-7 w-7 grid place-items-center rounded-[6px] text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)]';
 
+  let lastDay = '';
+
+  /* ============================================================================
+   * Render
+   * ========================================================================== */
   return (
-    <div className="relative inline-block select-none">
-      {/* Botão de Gatilho na Topbar */}
+    <div className="relative inline-block">
+      {/* Gatilho */}
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={unreadCount ? `Notificações, ${unreadCount} não lidas` : 'Notificações'}
         className={cn(
-          "w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer relative",
-          isOpen && "bg-[var(--hover)] text-[var(--text)]"
+          'relative h-[30px] w-[30px] grid place-items-center rounded-[6px] text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)]',
+          open && 'bg-[var(--hover)] text-[var(--text)]'
         )}
         title="Notificações"
       >
-        <svg className="w-4 h-4 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 stroke-current fill-none" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
           <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+          {!notificationsEnabled && <path d="M3 3l18 18" />}
         </svg>
-
         {notificationsEnabled && unreadCount > 0 && (
           <span
             className={cn(
-              "absolute -top-1 -right-1 min-w-[15px] h-[15px] px-[3px] rounded-[8px] bg-[var(--red)] text-white text-[9.5px] font-semibold grid place-items-center border-2 border-[var(--surface)] shadow-xs",
-              isBumping && "animate-bump"
+              'absolute top-[1px] right-0 min-w-[15px] h-[15px] px-[3px] rounded-full bg-[var(--red)] text-white text-[9.5px] font-semibold grid place-items-center border-2 border-[var(--surface)] transition-transform',
+              bump && 'scale-125'
             )}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -346,248 +235,230 @@ export const NotificationBell = () => {
         )}
       </button>
 
-      {/* PAINEL DE NOTIFICAÇÕES (.cc style) */}
-      {isOpen && (
-        <section
-          ref={panelRef}
-          role="dialog"
-          aria-label="Notificações"
-          className="fixed sm:absolute top-12 right-2 sm:right-0 w-[calc(100vw-16px)] sm:w-[400px] h-[min(580px,calc(100vh-60px))] flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] rounded-[8px] shadow-[0_16px_40px_rgba(0,0,0,0.45)] z-50 overflow-hidden animate-fade-in"
-        >
-          {/* Cabeçalho do Painel */}
-          <div className="flex items-center gap-2.5 px-3.5 pt-3 pb-1 shrink-0">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--text)] leading-tight">
-                Notificações
-              </h2>
-              <div className="text-xs text-[var(--text-3)] flex items-center gap-1.5 mt-0.5">
-                <i className={cn("w-1.5 h-1.5 rounded-full", unreadCount > 0 ? "bg-[var(--accent)] animate-pulse-dot" : "bg-[var(--green)]")} />
-                <span>
-                  {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Todas as notificações lidas'}
-                </span>
+      {/* Painel */}
+      {open && (
+        <>
+          {/* fundo escuro só no celular */}
+          <div className="sm:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setOpen(false)} />
+          <section
+            ref={panelRef}
+            role="dialog"
+            aria-label="Notificações"
+            className={cn(
+              'z-50 flex flex-col bg-[var(--surface)] border border-[var(--border-strong)] shadow-[0_16px_40px_rgba(0,0,0,.45)] overflow-hidden',
+              // desktop: dropdown ancorado no sino
+              'sm:absolute sm:top-[calc(100%+8px)] sm:right-0 sm:w-[400px] sm:h-[min(580px,calc(100vh-72px))] sm:rounded-[8px]',
+              // celular: painel de baixo
+              'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:h-[85dvh] max-sm:rounded-t-[12px] max-sm:border-b-0'
+            )}
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center gap-2 pl-4 pr-2 pt-3 pb-1">
+              <div className="min-w-0">
+                <h2 className="text-[14px] font-semibold leading-tight">Notificações</h2>
+                <p className="text-[12px] text-[var(--text-3)] mt-0.5">
+                  {!notificationsEnabled
+                    ? 'Pausadas · ative em Configurações'
+                    : unreadCount
+                    ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}`
+                    : 'Tudo lido'}
+                </p>
               </div>
-            </div>
-
-            <div className="ml-auto flex items-center gap-1">
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllAsRead}
-                  className="h-6 px-2 text-[11.5px] font-medium text-[var(--accent)] hover:bg-[var(--hover)] rounded-[4px] transition-colors cursor-pointer"
-                  title="Marcar todas como lidas"
-                >
-                  Lidas
-                </button>
-              )}
-
-              {notifications.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearNotifications}
-                  className="w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
-                  title="Limpar todas as notificações"
-                >
-                  <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <div className="ml-auto flex items-center gap-0.5">
+                {unreadCount > 0 && (
+                  <button type="button" onClick={markAllAsRead} className="h-7 px-2 rounded-[6px] text-[12px] font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)]">
+                    Marcar todas como lidas
+                  </button>
+                )}
+                <button type="button" onClick={() => setOpen(false)} className={iconBtn} title="Fechar (Esc)">
+                  <svg className="w-4 h-4 stroke-current fill-none" strokeWidth={1.6} strokeLinecap="round" viewBox="0 0 24 24">
+                    <path d="M6 6l12 12M18 6 6 18" />
                   </svg>
                 </button>
-              )}
+              </div>
+            </div>
 
+            {/* Abas */}
+            <div className="flex gap-1 px-2.5 pt-2 border-b border-[var(--border)]">
+              {TABS.map((t) => (
+                <button
+                  key={t.k}
+                  type="button"
+                  onClick={() => setTab(t.k)}
+                  className={cn(
+                    'relative h-8 px-2 text-[12.5px] font-medium inline-flex items-center gap-1.5',
+                    tab === t.k ? 'text-[var(--text)]' : 'text-[var(--text-3)] hover:text-[var(--text)]'
+                  )}
+                >
+                  {t.l}
+                  {t.n > 0 && (
+                    <span className={cn('font-mono text-[10.5px]', t.alert ? 'text-[var(--red)]' : 'text-[var(--text-3)]')}>{t.n}</span>
+                  )}
+                  {tab === t.k && <span className="absolute left-1.5 right-1.5 -bottom-px h-0.5 bg-[var(--text)]" />}
+                </button>
+              ))}
+            </div>
+
+            {/* Busca */}
+            <div className="px-3 pt-2.5 pb-1.5">
+              <label className="flex items-center gap-2 h-8 px-2.5 rounded-[6px] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text-3)] focus-within:border-[var(--accent)]">
+                <svg className="w-3.5 h-3.5 stroke-current fill-none shrink-0" strokeWidth={1.6} strokeLinecap="round" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input
+                  ref={searchRef}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por NT, pessoa ou texto"
+                  className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)]"
+                />
+                {q && (
+                  <button type="button" onClick={() => setQ('')} className="hover:text-[var(--text)]" title="Limpar busca">
+                    <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth={1.6} strokeLinecap="round" viewBox="0 0 24 24">
+                      <path d="M6 6l12 12M18 6 6 18" />
+                    </svg>
+                  </button>
+                )}
+              </label>
+            </div>
+
+            {/* Lista agrupada por dia */}
+            <div className="flex-1 overflow-y-auto pb-2">
+              {list.length === 0 ? (
+                <p className="px-6 py-12 text-center text-[12.5px] text-[var(--text-3)] leading-relaxed">
+                  {q ? (
+                    <>Nada encontrado para “{q}”.</>
+                  ) : tab === 'unread' ? (
+                    'Nenhuma notificação não lida.'
+                  ) : tab === 'nt' ? (
+                    'Nenhuma notificação de NT.'
+                  ) : tab === 'production' ? (
+                    'Nenhuma notificação de produção.'
+                  ) : (
+                    'Nenhuma notificação por aqui.'
+                  )}
+                </p>
+              ) : (
+                list.map((n) => {
+                  const d = new Date(n.createdAt);
+                  const dl = dayLabel(d);
+                  const header = dl !== lastDay;
+                  lastDay = dl;
+                  const tm = typeMeta(n.type);
+                  return (
+                    <Fragment key={n.id}>
+                      {header && (
+                        <div className="sticky top-0 z-[1] bg-[var(--surface)] px-4 pt-3 pb-1 text-[11px] font-medium text-[var(--text-3)]">
+                          {dl}
+                        </div>
+                      )}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => go(n)}
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), go(n))}
+                        className="group relative grid grid-cols-[minmax(0,1fr)_auto] gap-3 pl-4 pr-3 py-2.5 border-b border-[var(--border)] cursor-pointer hover:bg-[var(--hover)] outline-none focus-visible:bg-[var(--hover)]"
+                      >
+                        {/* traço de não lida */}
+                        {!n.read && <span className="absolute left-0 top-3 w-[3px] h-4 rounded-r-sm bg-[var(--accent)]" />}
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-3)]">
+                            <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: tm.c }} />
+                            {tm.l}
+                          </div>
+                          <p className={cn('text-[13px] mt-0.5 truncate', n.read ? 'text-[var(--text-2)]' : 'font-medium text-[var(--text)]')}>
+                            {n.title}
+                          </p>
+                          <p className={cn('text-[12.5px] leading-snug mt-0.5 break-words', n.read ? 'text-[var(--text-3)]' : 'text-[var(--text-2)]')}>
+                            {body(n)}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1">
+                          <time className="font-mono text-[11px] text-[var(--text-3)] whitespace-nowrap" title={d.toLocaleString('pt-BR')}>
+                            {hm(d)}
+                          </time>
+                          <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                            {!n.read && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(n.id);
+                                }}
+                                className="h-6 w-6 grid place-items-center rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
+                                title="Marcar como lida"
+                              >
+                                <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                  <path d="m5 12 5 5 9-10" />
+                                </svg>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeNotification(n.id);
+                              }}
+                              className="h-6 w-6 grid place-items-center rounded text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--surface-2)]"
+                              title="Remover"
+                            >
+                              <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth={1.6} strokeLinecap="round" viewBox="0 0 24 24">
+                                <path d="M6 6l12 12M18 6 6 18" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Fragment>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-[var(--border)] text-[12px] pb-[max(10px,env(safe-area-inset-bottom))]">
+              {notifications.length > 0 ? (
+                confirmClear ? (
+                  <span className="flex items-center gap-2 text-[var(--text-2)]">
+                    Apagar todas?
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearNotifications();
+                        setConfirmClear(false);
+                      }}
+                      className="font-medium text-[var(--red)]"
+                    >
+                      Apagar
+                    </button>
+                    <button type="button" onClick={() => setConfirmClear(false)} className="text-[var(--text-3)] hover:text-[var(--text)]">
+                      Cancelar
+                    </button>
+                  </span>
+                ) : (
+                  <button type="button" onClick={() => setConfirmClear(true)} className="text-[var(--text-3)] hover:text-[var(--red)]">
+                    Limpar todas
+                  </button>
+                )
+              ) : (
+                <span />
+              )}
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-[6px] grid place-items-center text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
-                title="Fechar (Esc)"
+                onClick={() => {
+                  setOpen(false);
+                  router.push('/settings');
+                }}
+                className="text-[var(--text-2)] hover:text-[var(--text)]"
               >
-                <svg className="w-4 h-4 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
+                Preferências
               </button>
             </div>
-          </div>
-
-          {/* Abas (.cc-tabs) */}
-          <div className="flex gap-1 px-3 pt-2 border-b border-[var(--border)] shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('all');
-                setSearchQuery('');
-              }}
-              className={cn(
-                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                activeTab === 'all'
-                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <span>Todas</span>
-              <span className="font-mono text-[10.5px] text-[var(--text-3)]">
-                {notifications.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('unread');
-                setSearchQuery('');
-              }}
-              className={cn(
-                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                activeTab === 'unread'
-                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <span>Não lidas</span>
-              {unreadCount > 0 && (
-                <span className="font-mono text-[10.5px] text-[var(--red)] font-semibold">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('nt');
-                setSearchQuery('');
-              }}
-              className={cn(
-                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                activeTab === 'nt'
-                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <span>NTs</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('production');
-                setSearchQuery('');
-              }}
-              className={cn(
-                "relative px-2 py-1.5 text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                activeTab === 'production'
-                  ? "text-[var(--text)] after:content-[''] after:absolute after:left-1.5 after:right-1.5 after:-bottom-[1px] after:h-[2px] after:bg-[var(--text)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text)]"
-              )}
-            >
-              <span>Produção</span>
-            </button>
-          </div>
-
-          {/* Campo de Busca (.cc-search) */}
-          <div className="p-3 pb-1.5 shrink-0">
-            <div className="flex items-center gap-2 h-[30px] px-2.5 rounded-[6px] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text-3)] focus-within:border-[var(--accent)] transition-colors">
-              <svg className="w-3.5 h-3.5 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar notificação ou NT..."
-                className="bg-transparent border-0 outline-none text-[12.5px] text-[var(--text)] flex-1 min-w-0 placeholder:text-[var(--text-3)]"
-              />
-            </div>
-          </div>
-
-          {/* Lista de Notificações */}
-          <div className="flex-1 overflow-y-auto pb-2">
-            {filteredNotifications.length === 0 ? (
-              <div className="p-8 text-center text-xs text-[var(--text-3)] leading-relaxed">
-                {searchQuery ? (
-                  `Nenhuma notificação encontrada com "${searchQuery}".`
-                ) : activeTab === 'unread' ? (
-                  'Tudo em dia! Você não tem notificações não lidas.'
-                ) : (
-                  'Nenhuma notificação recente por aqui.'
-                )}
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--border)]">
-                {filteredNotifications.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => handleNotificationClick(n)}
-                    className={cn(
-                      "grid grid-cols-[28px_1fr_auto] gap-2.5 items-start px-3.5 py-2.5 hover:bg-[var(--hover)] transition-colors cursor-pointer group relative",
-                      !n.read && "bg-[var(--accent-weak)]/30"
-                    )}
-                  >
-                    {/* Ícone de Categoria */}
-                    <span
-                      className={cn(
-                        "w-7 h-7 rounded-[6px] border grid place-items-center shrink-0 mt-0.5",
-                        getNotificationColorClass(n.type)
-                      )}
-                    >
-                      {getNotificationIcon(n.type)}
-                    </span>
-
-                    {/* Texto da Notificação */}
-                    <div className="min-w-0">
-                      <div className="flex items-baseline gap-1.5">
-                        <b className={cn("text-[13px] truncate", !n.read ? "font-semibold text-[var(--text)]" : "font-medium text-[var(--text-2)]")}>
-                          {n.title}
-                        </b>
-                        {!n.read && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                        )}
-                      </div>
-
-                      <div className="mt-0.5">
-                        {renderMessageContent(n)}
-                      </div>
-                    </div>
-
-                    {/* Hora e Ações no Hover */}
-                    <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
-                      <time className="font-mono text-[11px] text-[var(--text-3)]">
-                        {formatTimeRelative(n.createdAt)}
-                      </time>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemove(e, n.id)}
-                        className="w-5 h-5 rounded-[4px] grid place-items-center text-[var(--text-3)] hover:text-[var(--red)] hover:bg-[var(--surface-2)] opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                        title="Remover notificação"
-                      >
-                        <svg className="w-3 h-3 stroke-current fill-none stroke-[1.6]" viewBox="0 0 24 24">
-                          <path d="M18 6 6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Rodapé (.cc style) */}
-          <div className="p-2.5 px-3 bg-[var(--surface-2)] border-t border-[var(--border)] shrink-0 flex items-center justify-between text-xs">
-            <span className="text-[11px] text-[var(--text-3)] flex items-center gap-1.5">
-              <i className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-              Notificações ativas
-            </span>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                router.push('/settings');
-              }}
-              className="text-[11px] font-medium text-[var(--text-2)] hover:text-[var(--text)] transition-colors cursor-pointer"
-            >
-              Configurações →
-            </button>
-          </div>
-        </section>
+          </section>
+        </>
       )}
     </div>
   );

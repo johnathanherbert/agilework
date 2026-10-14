@@ -42,6 +42,7 @@ import {
   Check,
   History,
 } from 'lucide-react';
+import { PageLoader } from '@/components/line-loader';
 
 /* ============================================================================
  * Helpers
@@ -1192,9 +1193,7 @@ export function ConsultaRapidaView({
       {!scannedResult && (
         <div className="py-14 text-center">
           {loadingData ? (
-            <p className="text-sm text-[var(--text-3)] inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando estoque…
-            </p>
+            <PageLoader size={40} label="Carregando estoque…" />
           ) : (
             <>
               <QrCode className="h-6 w-6 mx-auto text-[var(--text-3)]" />

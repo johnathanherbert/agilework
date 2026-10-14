@@ -40,6 +40,16 @@ export interface PesagemTodoItem {
   // Acompanhamento e status
   status: PesagemTodoStatus;
   prioridade: PesagemTodoPriority;
+  categoria?: string;
+  etapa?: string;
+  checklist?: Array<{ id: string; t: string; req?: boolean; done: boolean; by?: string; at?: string }>;
+  causa_raiz?: string;
+  responsavel?: string;
+  prazo?: string;
+  fisico_contado?: number;
+  fisico_em?: string;
+  documento_sap?: string;
+  eventos?: Array<{ id: string; tipo: string; texto: string; by?: string; at: string }>;
   motivo_inicial?: string;
   notas: PesagemTodoNote[];
   acoes?: PesagemTodoAcao[];

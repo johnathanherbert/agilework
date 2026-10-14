@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { NT } from '@/types';
 import { ChevronRight } from 'lucide-react';
+import { LineLoader } from '@/components/line-loader';
 import { useTimelineFirebase, TimelinePaidItem } from '@/hooks/useTimelineFirebase';
 
 function dur(min: number): string {
@@ -232,8 +233,8 @@ export const NTAsidePanel = ({ nts }: NTAsidePanelProps) => {
       {/* .feed */}
       <div className="feed">
         {loading && paidItems.length === 0 ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
-            Carregando eventos...
+          <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}>
+            <LineLoader size={36} label="Carregando eventos…" />
           </div>
         ) : paidItems.length === 0 ? (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>

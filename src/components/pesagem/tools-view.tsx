@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { AgingData, ListaTecnicaItem } from '@/types/aging';
 import { Search, Plus, Trash2, Copy, X, Loader2, ChevronRight, ListTree, Calculator } from 'lucide-react';
+import { PageLoader } from '@/components/line-loader';
 import toast from 'react-hot-toast';
 import { fetchListaTecnica } from '@/lib/dashpesagem-api';
 import { cn, copyToClipboard } from '@/lib/utils';
@@ -714,9 +715,7 @@ export function ToolsView({ agingData, valores }: ToolsViewProps) {
 
           {/* Resultados */}
           {ltLoading ? (
-            <p className="py-16 text-center text-[12.5px] text-[var(--text-3)] inline-flex w-full justify-center items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Consultando lista técnica…
-            </p>
+            <PageLoader size={40} label="Consultando lista técnica…" />
           ) : groups.length > 0 ? (
             <>
               <p className="mt-4 mb-2 text-[12px] text-[var(--text-3)]">

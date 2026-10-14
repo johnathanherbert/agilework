@@ -63,6 +63,16 @@ const mapDocToPesagemTodo = (docId: string, data: any): PesagemTodoItem => ({
 
   status: (data.status as PesagemTodoStatus) || 'pendente',
   prioridade: (data.prioridade as PesagemTodoPriority) || 'media',
+  categoria: data.categoria || undefined,
+  etapa: data.etapa || undefined,
+  checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+  causa_raiz: data.causa_raiz || undefined,
+  responsavel: data.responsavel || undefined,
+  prazo: data.prazo || undefined,
+  fisico_contado: data.fisico_contado !== undefined ? Number(data.fisico_contado) : undefined,
+  fisico_em: data.fisico_em || undefined,
+  documento_sap: data.documento_sap || undefined,
+  eventos: Array.isArray(data.eventos) ? data.eventos : undefined,
   motivo_inicial: data.motivo_inicial || '',
   notas: Array.isArray(data.notas) ? data.notas : [],
   acoes: Array.isArray(data.acoes) ? data.acoes : [],
@@ -129,6 +139,16 @@ export type CreatePesagemTodoInput = {
   motivo_inicial?: string;
   prioridade?: PesagemTodoPriority;
   status?: PesagemTodoStatus;
+  categoria?: string;
+  etapa?: string;
+  checklist?: any[];
+  causa_raiz?: string;
+  responsavel?: string;
+  prazo?: string;
+  fisico_contado?: number;
+  fisico_em?: string;
+  documento_sap?: string;
+  eventos?: any[];
   tags?: string[];
   nota_inicial?: string;
   desfecho?: string;
@@ -179,6 +199,17 @@ export async function createPesagemTodo(input: CreatePesagemTodoInput): Promise<
     motivo_inicial: input.motivo_inicial || 'Investigação e acompanhamento de lote',
     notas,
     tags: input.tags || [],
+
+    categoria: input.categoria,
+    etapa: input.etapa,
+    checklist: input.checklist,
+    causa_raiz: input.causa_raiz,
+    responsavel: input.responsavel,
+    prazo: input.prazo,
+    fisico_contado: input.fisico_contado,
+    fisico_em: input.fisico_em,
+    documento_sap: input.documento_sap,
+    eventos: input.eventos,
 
     created_at: now,
     updated_at: now,
@@ -256,6 +287,17 @@ export async function createBatchPesagemTodos(
       motivo_inicial: input.motivo_inicial || 'Marcado em lote na tabela de pesagem',
       notas,
       tags: input.tags || [],
+
+      categoria: input.categoria,
+      etapa: input.etapa,
+      checklist: input.checklist,
+      causa_raiz: input.causa_raiz,
+      responsavel: input.responsavel,
+      prazo: input.prazo,
+      fisico_contado: input.fisico_contado,
+      fisico_em: input.fisico_em,
+      documento_sap: input.documento_sap,
+      eventos: input.eventos,
 
       created_at: now,
       updated_at: now,

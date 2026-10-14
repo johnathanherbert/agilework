@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { Topbar } from '@/components/layout/topbar';
 import { Sidebar } from '@/components/layout/sidebar';
+import { PageLoader } from '@/components/line-loader';
 import { useFirebase } from '@/components/providers/firebase-provider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { NT, NTItem } from '@/types';
@@ -441,7 +442,7 @@ function NTManagerContent() {
             {/* ── NT List ── */}
             <div>
               {loading && nts.length === 0 ? (
-                <div className="empty">Carregando Notas Técnicas...</div>
+                <PageLoader label="Carregando Notas Técnicas…" />
               ) : filtered.length === 0 ? (
                 <div className="empty">
                   {q ? `Nenhuma NT com "${q}".` : tab === 'open' ? 'Nenhuma NT aberta neste filtro.' : 'Nenhuma NT concluída no período.'}
@@ -500,11 +501,7 @@ function NTManagerContent() {
 
 export default function NTManagerPage() {
   return (
-    <Suspense fallback={
-      <div className="h-screen flex items-center justify-center bg-[var(--bg)] text-xs text-[var(--text-3)]">
-        Carregando gerenciador de NTs...
-      </div>
-    }>
+    <Suspense fallback={<PageLoader fullScreen label="Carregando gerenciador de NTs…" />}>
       <NTManagerContent />
     </Suspense>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFirebase, ADMIN_EMAIL } from "@/components/providers/firebase-provider";
+import { PageLoader } from "@/components/line-loader";
 import { 
   getAllUsers, 
   deleteUserDb, 
@@ -805,11 +806,7 @@ export default function AdminControlPanelPage() {
   };
 
   if (loading || loadingUsers) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)]">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[var(--accent)]" />
-      </div>
-    );
+    return <PageLoader fullScreen label="Carregando usuários…" />;
   }
 
   if (!userData || userData.email !== ADMIN_EMAIL) return null;
