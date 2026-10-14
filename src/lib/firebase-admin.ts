@@ -28,12 +28,18 @@ function findLocalServiceAccountFile(): string | null {
 }
 
 function getServiceAccountCredentials(): any | null {
-  // 1. Tenta carregar de process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  // 1. Tenta carregar de process.env.FIREBASE_SERVICE_ACCOUNT_KEY (suporta JSON puro ou Base64)
+  const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (rawKey) {
     try {
-      return typeof process.env.FIREBASE_SERVICE_ACCOUNT_KEY === 'string'
-        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-        : process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      if (typeof rawKey === 'object') return rawKey;
+      const trimmed = rawKey.trim();
+      if (trimmed.startsWith('{')) {
+        return JSON.parse(trimmed);
+      }
+      // Se estiver em Base64 (ideal para Coolify, Docker, CI/CD)
+      const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+      return JSON.parse(decoded);
     } catch (e: any) {
       console.error('❌ Erro no parse de process.env.FIREBASE_SERVICE_ACCOUNT_KEY:', e.message);
     }
