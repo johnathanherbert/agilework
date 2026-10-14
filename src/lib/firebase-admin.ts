@@ -33,7 +33,11 @@ function getServiceAccountCredentials(): any | null {
   if (rawKey) {
     try {
       if (typeof rawKey === 'object') return rawKey;
-      const trimmed = rawKey.trim();
+      let trimmed = rawKey.trim();
+      // Remove aspas simples ou duplas envolventes caso inseridas pelo Coolify/.env
+      if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+        trimmed = trimmed.slice(1, -1).trim();
+      }
       if (trimmed.startsWith('{')) {
         return JSON.parse(trimmed);
       }
