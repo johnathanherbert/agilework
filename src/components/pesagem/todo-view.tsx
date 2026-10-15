@@ -82,11 +82,12 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
     l: 'Saldo sem físico',
     hint: 'SAP mostra mais do que existe na área',
     tpl: [
-      { t: 'Contar o físico na área PES', req: true },
-      { t: 'Consultar movimentos do lote na MB51', req: true },
+      { t: 'Fazer uma busca em todo depósito', req: true },
+      { t: 'Consultar movimentos do lote na MB51/LT24', req: true },
       { t: 'Verificar baixa de OP ou remessa não lançada' },
       { t: 'Checar possível troca de lote' },
-      { t: 'Lançar ajuste ou abrir RNC', req: true },
+      { t: 'Solicitar inventário do almoxarifado' },
+      { t: 'Lançar ajuste ou abrir chamado' },
     ],
   },
   fisico_maior: {
@@ -94,10 +95,12 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
     hint: 'Existe material na área sem saldo no SAP',
     tpl: [
       { t: 'Contar o físico e conferir etiqueta do lote', req: true },
-      { t: 'Rastrear origem na MB51 / LT10', req: true },
-      { t: 'Verificar devolução não lançada' },
-      { t: 'Checar troca com outro lote do material' },
-      { t: 'Regularizar entrada ou transferência', req: true },
+      { t: 'Rastrear origem na MB51 / LT10 / LT24', req: true },
+      { t: 'Verificar se não há devolução', req: true },
+      { t: 'Verificar se não houve baixa errada ou desnesessária', req: true },
+      { t: 'Checar se não houve troca de lote', req: true },
+      { t: 'Solicitar inventário do almoxarifado' },
+      { t: 'Abrir chamado de ajuste de reentrada' },
     ],
   },
   troca_lote: {
@@ -108,7 +111,7 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
       { t: 'Conferir etiquetas físicas e ordens de pesagem', req: true },
       { t: 'Verificar OPs afetadas' },
       { t: 'Comunicar a Qualidade (desvio)', req: true },
-      { t: 'Corrigir os movimentos no SAP', req: true },
+      { t: 'Corrigir a pesagem e o consumo', req: true },
     ],
   },
   divergencia_pesagem: {
@@ -117,7 +120,7 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
     tpl: [
       { t: 'Conferir registro da pesagem (ordem / batch record)', req: true },
       { t: 'Verificar calibração da balança' },
-      { t: 'Pesar novamente o saldo', req: true },
+      { t: 'Solicitar repesagem do material', req: true },
       { t: 'Ajustar saldo no SAP', req: true },
     ],
   },
@@ -127,7 +130,7 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
     tpl: [
       { t: 'Localizar OT pendente (LT23 / LT10)', req: true },
       { t: 'Confirmar ou estornar a OT', req: true },
-      { t: 'Validar saldo na LX02', req: true },
+      { t: 'Tratar saldo compensando os positivos fictícios', req: true },
     ],
   },
   saldo_negativo: {
@@ -136,16 +139,20 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
     tpl: [
       { t: 'Consultar movimentos na MB51', req: true },
       { t: 'Identificar movimento que gerou o negativo', req: true },
-      { t: 'Corrigir no SAP', req: true },
+      { t: 'Verificar movimento de bloquio com LT06 pendente', req: true },
+      { t: 'Identificar e estornar OT que gerou o saldo negativo', req: true },
     ],
   },
   residual_parado: {
     l: 'Residual parado',
     hint: 'Sobra pequena sem consumo previsto',
     tpl: [
+      { t: 'Verificar se o material existe fisicamente', req: true },
       { t: 'Verificar remessa ou OP que consuma o saldo', req: true },
-      { t: 'Decidir: consumir, devolver ou baixar', req: true },
-      { t: 'Executar o movimento (ZWM296 / MIGO)', req: true },
+      { t: 'Decidir: consumir, devolver ou ajustar', req: true },
+      { t: 'Bloquear material na MIGO', req: true },
+      { t: 'Mover saldo para AJUSTE', req: true },
+      { t: 'Abrir chamado de ajuste de saída' },
     ],
   },
   lote_vencido: {
@@ -156,6 +163,7 @@ const CATS: Record<Cat, { l: string; hint: string; tpl: { t: string; req?: boole
       { t: 'Bloquear o estoque (MIGO)', req: true },
       { t: 'Segregar o físico', req: true },
       { t: 'Encaminhar à Qualidade / descarte' },
+      { t: 'Abrir chamado de ajuste de saída', req: true },
     ],
   },
   outro: {
@@ -176,7 +184,7 @@ const CAUSAS: { k: string; l: string }[] = [
   { k: 'erro_pesagem', l: 'Erro de pesagem' },
   { k: 'troca_lote', l: 'Troca de lote' },
   { k: 'baixa_pendente', l: 'Consumo / baixa não lançada' },
-  { k: 'devolucao_nao_lancada', l: 'Devolução não lançada' },
+  { k: 'devolucao_nao_lancada', l: 'Devolução não puxada/ALM' },
   { k: 'transferencia_pendente', l: 'OT / transferência pendente' },
   { k: 'movimento_incorreto', l: 'Movimento SAP incorreto' },
   { k: 'perda_processo', l: 'Perda de processo' },
@@ -206,10 +214,11 @@ const DIAS_CONCLUIDOS_QUADRO = 14;
 const IGNORAR_DIAS = 7;
 
 const DESFECHOS = [
-  'Ajuste de inventário lançado',
-  'Transferência / OT confirmada',
-  'Consumo lançado na OP',
+  'Aberto chamado de ajuste de saída',
+  'Transferência / OT confirmada LT24',
+  'Consumo lançado em OP',
   'Devolvido ao almoxarifado',
+  'Aguardando chamado de ajuste de saída',
   'Estorno do movimento incorreto',
   'Saldo conferido, sem divergência',
 ];
