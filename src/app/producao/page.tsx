@@ -21,6 +21,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import ProtectedRoute from '@/components/auth/protected-route';
 import { useProductionRealtime } from '@/hooks/useProductionRealtime';
+import { useProductionVolume } from '@/hooks/useProductionVolume';
 import {
   updateProductionItem,
   moveProductionItem,
@@ -88,6 +89,7 @@ function loadHtml2Canvas(): Promise<any> {
 
 function ProducaoPageContent() {
   const { items, loading } = useProductionRealtime();
+  const { shiftVolumes, dayVolume, recordVolumeKg } = useProductionVolume(items);
 
   // Relógio e Data em tempo real
   const [now, setNow] = useState<Date>(() => new Date());
@@ -153,7 +155,7 @@ function ProducaoPageContent() {
   const currentShift = useMemo(() => getCurrentActiveShift(now), [now]);
 
   // Insights / Pontos de atenção
-  const insights = useMemo(() => getProductionInsights(items, now), [items, now]);
+  const insights = useMemo(() => getProductionInsights(items, now, shiftVolumes), [items, now, shiftVolumes]);
 
   // Chips de Turno
   const handleToggleShiftChip = (turno: ProductionTurno | 'all') => {
@@ -705,7 +707,7 @@ function ProducaoPageContent() {
             </div>
 
             {/* 1. Totais do Dia (Daybar) */}
-            <DaySummaryBar items={items} now={now} />
+            <DaySummaryBar items={items} now={now} recordVolumeKg={recordVolumeKg} />
 
             {/* 2. Visão Geral dos 3 Turnos (Cards de Resumo) */}
             <ShiftsOverview
@@ -755,6 +757,7 @@ function ProducaoPageContent() {
                 selectedFamily={selectedFamily || null}
                 selectedVia={selectedVia || null}
                 hideCompleted={hideCompleted}
+                shiftVolumes={shiftVolumes}
                 onItemClick={(item) => {
                   setModalState({
                     open: true,

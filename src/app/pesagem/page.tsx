@@ -699,6 +699,7 @@ export default function PesagemPage() {
                     />
                     <AgingTable
                       data={displayData}
+                      allData={data}
                       valores={valores}
                       remessas={remessas}
                       configResiduais={config}
@@ -708,16 +709,17 @@ export default function PesagemPage() {
                       onSearchChange={setSearchTerm}
                       residuaisActive={residuaisActive}
                       onToggleResiduais={() => setResiduaisActive((v) => !v)}
-                      onOpenMoverModal={(rows: EnrichedRow[]) => {
-                        setMoverItems(rows);
-                        setMoverOpen(true);
-                      }}
                       onInvestigacaoChange={() => loadData(false)}
                       selectedMaterialFilter={selectedMaterialFilter}
                       onClearMaterialFilter={() => setSelectedMaterialFilter(undefined)}
                       currentUserEmail={userEmail || 'Web Pesagem'}
                       onAtualizarDb={handleAtualizarDb}
+                      isAtualizandoDb={isAtualizandoDb}
                       onNavigateToTodo={handleNavigateToTodo}
+                      onNavigateToRemessas={(m: string) => {
+                        setSelectedMaterialFilter(m);
+                        goTab('rem');
+                      }}
                     />
                   </div>
                 )}

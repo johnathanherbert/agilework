@@ -7,10 +7,18 @@ import { createBatchPesagemTodos, CreatePesagemTodoInput } from '@/lib/pesagem-t
 import { copyToClipboard, cn } from '@/lib/utils';
 import { isMaterialEspecial } from '@/lib/materiais-especiais';
 import { getMaterialDescription, rememberMaterialDescriptions } from '@/lib/material-descriptions';
-import { addLoteInvestigacao, removeLoteInvestigacao, triggerSapAutomation, checkSapAutomationStatus } from '@/lib/dashpesagem-api';
+import {
+  addLoteInvestigacao,
+  removeLoteInvestigacao,
+  triggerSapAutomation,
+  checkSapAutomationStatus,
+} from '@/lib/dashpesagem-api';
 import {
   SapPipelineModal,
   BloquearItemParam,
+  generateMoverLt10Vbs,
+  PREDEFINED_MOVER_ROUTES,
+  MoverItemParam,
 } from './sap-pipeline-modal';
 import {
   generateDevolverZwm296Vbs,
@@ -42,8 +50,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Play,
-  ChevronUp,
-  ArrowDown,
+  Layers,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -93,8 +100,9 @@ export interface EnrichedRow extends AgingData {
   todo_item?: PesagemTodoItem;
 }
 
-interface AgingTableProps {
+export interface AgingTableProps {
   data: AgingData[];
+  allData?: AgingData[];
   valores?: Record<string, number>;
   remessas?: RemessaData[];
   configResiduais?: ConfiguracaoResiduais;
@@ -111,19 +119,41 @@ interface AgingTableProps {
   onClearMaterialFilter?: () => void;
   currentUserEmail?: string;
   onAtualizarDb?: () => void;
+  isAtualizandoDb?: boolean;
   onNavigateToTodo?: (lote: string) => void;
+  onNavigateToRemessas?: (material: string) => void;
+}
+
+function isTrZoneItem(item: Pick<AgingData, 'deposito' | 'tipo_deposito' | 'posicao_deposito'>): boolean {
+  const tipo = String(item.tipo_deposito || '').trim().toUpperCase();
+  const pos = String(item.posicao_deposito || '').trim().toUpperCase();
+  const dep = String(item.deposito || '').trim().toUpperCase();
+  return (
+    tipo === '922' ||
+    tipo.includes('922') ||
+    tipo === 'TR-ZONE' ||
+    tipo.includes('TR-ZONE') ||
+    tipo.includes('TRZONE') ||
+    pos.includes('TR-ZONE') ||
+    pos.includes('TR_ZONE') ||
+    pos.includes('TRZONE') ||
+    pos.includes('TR ZONE') ||
+    dep === '922' ||
+    dep === 'TR-ZONE'
+  );
 }
 
 export function AgingTable({
   data,
+  allData,
   valores = {},
   remessas = [],
   configResiduais,
   lotesInvestigacao = [],
   todoItems = [],
-  searchTerm = '',
+  searchTerm: externalSearchTerm,
   onSearchChange,
-  residuaisActive = false,
+  residuaisActive: externalResiduaisActive,
   onToggleResiduais,
   onOpenMoverModal,
   onInvestigacaoChange,
@@ -132,7 +162,9 @@ export function AgingTable({
   onClearMaterialFilter,
   currentUserEmail,
   onAtualizarDb,
+  isAtualizandoDb = false,
   onNavigateToTodo,
+  onNavigateToRemessas,
 }: AgingTableProps) {
   const [cols, setCols] = useState<ColumnDef[]>(DEFAULT_COLS);
   const [colsPopOpen, setColsPopOpen] = useState(false);
@@ -143,9 +175,25 @@ export function AgingTable({
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [blockedMap, setBlockedMap] = useState<Record<string, boolean>>({});
   const [resNivelFilter, setResNivelFilter] = useState<'all' | 'v' | 'a' | 'r'>('all');
-  const [isMoverSRunning, setIsMoverSRunning] = useState(false);
+  const [isMoverRunning, setIsMoverRunning] = useState(false);
+  const [isApplyingInvestigacao, setIsApplyingInvestigacao] = useState(false);
   const lastSelectedRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Controle de busca e modo residual (controlado externamente ou localmente)
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
+  const searchTerm = externalSearchTerm !== undefined ? externalSearchTerm : internalSearchTerm;
+  const handleSearchChange = (val: string) => {
+    if (onSearchChange) onSearchChange(val);
+    else setInternalSearchTerm(val);
+  };
+
+  const [internalResiduaisActive, setInternalResiduaisActive] = useState(false);
+  const isResiduaisActive = externalResiduaisActive !== undefined ? externalResiduaisActive : internalResiduaisActive;
+  const handleToggleResiduais = () => {
+    if (onToggleResiduais) onToggleResiduais();
+    else setInternalResiduaisActive(!internalResiduaisActive);
+  };
 
   // Estados do Modal de Devolução Fracionada (/nzwm296)
   const [devolverOpen, setDevolverOpen] = useState(false);
@@ -158,6 +206,11 @@ export function AgingTable({
     { id: '1', quantidade: '', volume: '1' },
   ]);
   const [isDevolverRunning, setIsDevolverRunning] = useState(false);
+
+  // Estados do Modal Mover no SAP (/nlt10)
+  const [moverModalOpen, setMoverModalOpen] = useState(false);
+  const [moverItems, setMoverItems] = useState<MoverItemParam[]>([]);
+  const [selectedMoverRoute, setSelectedMoverRoute] = useState<string>('pes_pesagem');
 
   // Estados do Modal de Bloquear / MIGO e Pipeline de Macros SAP
   const [bloquearMigoOpen, setBloquearMigoOpen] = useState(false);
@@ -219,18 +272,18 @@ export function AgingTable({
           storeMap[c.k] = c.on;
         });
         localStorage.setItem('dp_cols_config', JSON.stringify(storeMap));
-      } catch {
-        // Ignore
-      }
+      } catch {}
       return updated;
     });
   };
 
-  // Mapa de remessas e investigações
+  // Mapeamentos rápidos
   const remessasCountMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const r of remessas) {
-      map[r.material] = (map[r.material] || 0) + 1;
+      if (r.material) {
+        map[r.material] = (map[r.material] || 0) + 1;
+      }
     }
     return map;
   }, [remessas]);
@@ -257,7 +310,10 @@ export function AgingTable({
     if (data && data.length > 0) {
       rememberMaterialDescriptions(data);
     }
-  }, [data]);
+    if (allData && allData.length > 0) {
+      rememberMaterialDescriptions(allData);
+    }
+  }, [data, allData]);
 
   // Enriquecer dados
   const enrichedData = useMemo<EnrichedRow[]>(() => {
@@ -330,7 +386,7 @@ export function AgingTable({
         }
 
         // Filtro de Residuais
-        if (residuaisActive) {
+        if (isResiduaisActive) {
           if (!row.is_res) return false;
           if (resNivelFilter !== 'all' && row.res_nivel !== resNivelFilter) return false;
         }
@@ -350,7 +406,6 @@ export function AgingTable({
           if (filterVal === undefined || filterVal === null || filterVal === '') continue;
 
           if (typeof filterVal === 'object') {
-            // Range min/max
             const val = Number((row as any)[key]) || 0;
             if (filterVal.min !== undefined && filterVal.min !== '' && val < Number(filterVal.min)) return false;
             if (filterVal.max !== undefined && filterVal.max !== '' && val > Number(filterVal.max)) return false;
@@ -373,7 +428,7 @@ export function AgingTable({
 
         return String(valA || '').localeCompare(String(valB || ''), 'pt-BR') * sortDir;
       });
-  }, [enrichedData, searchTerm, selectedMaterialFilter, residuaisActive, resNivelFilter, columnFilters, sortField, sortDir]);
+  }, [enrichedData, searchTerm, selectedMaterialFilter, isResiduaisActive, resNivelFilter, columnFilters, sortField, sortDir]);
 
   // Contagem e Estatísticas de Residuais
   const residualStats = useMemo(() => {
@@ -449,13 +504,13 @@ export function AgingTable({
       return;
     }
     const nextMap: Record<string, boolean> = {};
-    for (const r of filteredAndSorted) {
+    filteredAndSorted.forEach((r) => {
       nextMap[r.id_row] = true;
-    }
+    });
     setSelectedIds(nextMap);
   };
 
-  // Ações em Massa
+  // Funções de Copiar
   const handleCopyTSV = async () => {
     if (selectedRowsList.length === 0) return;
     const headers = ['Material', 'Descrição', 'Lote', 'Centro', 'Depósito', 'Tipo dep.', 'Posição', 'Quantidade', 'UMB', 'Val. unit.', 'Val. total', 'Aging', 'Status'];
@@ -477,32 +532,31 @@ export function AgingTable({
 
     const text = [headers.join('\t'), ...rows].join('\n');
     const ok = await copyToClipboard(text);
-    if (ok) toast.success(`${selectedRowsList.length} linhas copiadas (cole no Excel)`);
+    if (ok) toast.success(`${selectedRowsList.length} linhas copiadas`);
   };
 
   const handleCopyMIGO = async () => {
     if (selectedRowsList.length === 0) return;
     const lines = selectedRowsList.map((d) => {
-      // Sequência exata: codigo[2tabs]qtd[2tabs]umr[2tabs]Y84[1tab]centro[3tabs]pes[2tabs]pes[1tab]9000
       return [
-        d.material,           // codigo
-        '',                   // tab vazio
+        d.material,
+        '',
         d.estoque_disponivel.toLocaleString('pt-BR', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 3,
-          useGrouping: false  // Remove separador de milhares
-        }),                   // qtd (quantidade com vírgula decimal)
-        '',                   // tab vazio
-        d.unidade_medida || 'KG', // umr (KG, G, etc)
-        '',                   // tab vazio
-        '',                   // tab vazio (Y84 já preenchido aqui)
-        d.centro || '600',    // centro
-        '',                   // tab vazio
-        '',                   // tab vazio
-        d.deposito || 'PES',  // pes
-        '',                   // tab vazio
-        d.deposito || 'PES',  // pes
-        '9000',               // 9000
+          useGrouping: false,
+        }),
+        '',
+        d.unidade_medida || 'KG',
+        '',
+        '',
+        d.centro || '600',
+        '',
+        '',
+        d.deposito || 'PES',
+        '',
+        d.deposito || 'PES',
+        '9000',
       ].join('\t');
     });
 
@@ -518,13 +572,26 @@ export function AgingTable({
     if (ok) toast.success(`${selectedRowsList.length} lotes copiados`);
   };
 
+  const handleToggleBlock = () => {
+    if (selectedRowsList.length === 0) return;
+    const anyUnblocked = selectedRowsList.some((l) => !blockedMap[l.lote]);
+    setBlockedMap((prev) => {
+      const next = { ...prev };
+      selectedRowsList.forEach((l) => {
+        next[l.lote] = anyUnblocked;
+      });
+      return next;
+    });
+    toast.success(`${selectedRowsList.length} lote(s) ${anyUnblocked ? 'bloqueados' : 'desbloqueados'}`);
+  };
+
   const handleOpenBloquearMigo = () => {
     if (selectedRowsList.length === 0) {
       toast.error('Selecione ao menos 1 item');
       return;
     }
     const params: BloquearItemParam[] = selectedRowsList.map((row) => {
-      const quantidadeTabela = (Number(row.estoque_disponivel) || 0).toLocaleString('pt-BR', {
+      const quantidadeTabela = row.estoque_disponivel.toLocaleString('pt-BR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 3,
         useGrouping: false,
@@ -543,31 +610,32 @@ export function AgingTable({
   };
 
   const handleToggleInvestigacao = async () => {
-    if (selectedRowsList.length === 0) return;
+    if (selectedRowsList.length === 0 || isApplyingInvestigacao) return;
+    setIsApplyingInvestigacao(true);
     const anyNotInInv = selectedRowsList.some((l) => !l.is_investigacao);
-    const toastId = toast.loading(
-      anyNotInInv ? 'Marcando em investigação...' : 'Removendo da investigação...'
-    );
+    const toastId = toast.loading(anyNotInInv ? 'Marcando em investigação...' : 'Removendo da investigação...');
 
     try {
       for (const item of selectedRowsList) {
-        if (anyNotInInv) {
+        if (anyNotInInv && !item.is_investigacao) {
           await addLoteInvestigacao({
             lote: item.lote,
             material: item.material,
-            motivo: 'Marcado em lote na tabela de aging',
+            created_by: currentUserEmail || 'Web Pesagem',
           });
-        } else {
+        } else if (!anyNotInInv && item.is_investigacao) {
           await removeLoteInvestigacao(item.lote);
         }
       }
-      toast.success(
-        `${selectedRowsList.length} lote(s) ${anyNotInInv ? 'marcados em investigação' : 'removidos da investigação'}`,
-        { id: toastId }
-      );
+      toast.dismiss(toastId);
+      toast.success(anyNotInInv ? 'Lotes marcados em investigação' : 'Lotes removidos da investigação');
+      setSelectedIds({});
       onInvestigacaoChange?.();
     } catch {
-      toast.error('Erro ao atualizar investigação', { id: toastId });
+      toast.dismiss(toastId);
+      toast.error('Erro ao atualizar investigação');
+    } finally {
+      setIsApplyingInvestigacao(false);
     }
   };
 
@@ -579,7 +647,7 @@ export function AgingTable({
         material: row.material,
         texto_breve_material: row.texto_breve_material,
         lote: row.lote,
-        quantidade: row.estoque_disponivel,
+        quantidade: Number(row.estoque_disponivel) || 0,
         unidade_medida: row.unidade_medida,
         deposito: row.deposito,
         tipo_deposito: row.tipo_deposito,
@@ -588,7 +656,7 @@ export function AgingTable({
         valor_total: row.valor_total,
         dias_aging: row.dias_aging,
         data_vencimento: row.data_vencimento,
-        motivo_inicial: 'Marcado via tabela de aging',
+        motivo_inicial: 'Marcado via análise de aging financeiro',
         prioridade: row.status_crit === 'cr' ? 'critica' : row.status_crit === 'al' ? 'alta' : 'media',
       }));
       await createBatchPesagemTodos(inputs);
@@ -599,20 +667,75 @@ export function AgingTable({
     }
   };
 
-  const totalDevolvendo = useMemo(() => {
-    return devolverVolumes.reduce((acc, v) => {
-      const parsed = parseFloat(v.quantidade.replace(',', '.')) || 0;
-      return acc + parsed;
-    }, 0);
-  }, [devolverVolumes]);
+  // Handlers do Modal Mover Estoque
+  const handleOpenMoverModal = () => {
+    if (onOpenMoverModal) {
+      onOpenMoverModal(selectedRowsList);
+      return;
+    }
+    const listToMover: MoverItemParam[] = selectedRowsList.map((row) => {
+      const quantidadeTabela = row.estoque_disponivel.toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3,
+        useGrouping: false,
+      });
+      return {
+        material: row.material,
+        descricao: row.texto_breve_material || '',
+        lote: row.lote,
+        quantidade: quantidadeTabela,
+        unidade: row.unidade_medida?.toUpperCase() || 'KG',
+        depositoOrigem: row.deposito || 'PES',
+      };
+    });
+    setMoverItems(listToMover);
+    setSelectedMoverRoute('pes_pesagem');
+    setMoverModalOpen(true);
+  };
 
-  const saldoRestante = useMemo(() => {
-    return Number((devolverSaldoTotal - totalDevolvendo).toFixed(3));
-  }, [devolverSaldoTotal, totalDevolvendo]);
+  const waitForJobCompletion = async (jobId: number, maxWaitMs = 60000) => {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      const job = await checkSapAutomationStatus(jobId);
+      if (job?.status === 'completed') return true;
+      if (job?.status === 'failed') throw new Error(job.result_message || 'Erro na execução do script SAP');
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    return true;
+  };
 
-  const isOverSaldo = totalDevolvendo > devolverSaldoTotal + 0.0001;
-  const isZeroRestante = Math.abs(saldoRestante) <= 0.0001 && totalDevolvendo > 0;
+  const handleConfirmMoverLt10 = async () => {
+    if (moverItems.length === 0) return;
+    setIsMoverRunning(true);
+    const toastId = toast.loading(`Enviando transferência de ${moverItems.length} item(ns) ao SAP...`);
 
+    try {
+      const route = PREDEFINED_MOVER_ROUTES.find((r) => r.id === selectedMoverRoute) || PREDEFINED_MOVER_ROUTES[0];
+      const vbs = generateMoverLt10Vbs(moverItems, { tipo: route.tipo, posicao: route.posicao });
+      const res = await triggerSapAutomation(
+        'mover_lt10',
+        currentUserEmail || 'Web Pesagem',
+        vbs
+      );
+
+      if (res.job?.id) {
+        await waitForJobCompletion(res.job.id);
+      }
+
+      toast.dismiss(toastId);
+      toast.success('Transferência LT10 executada com sucesso no SAP!');
+      setMoverModalOpen(false);
+      setSelectedIds({});
+      onAtualizarDb?.();
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(`Erro na transferência: ${err.message || 'Falha no SAP'}`);
+    } finally {
+      setIsMoverRunning(false);
+    }
+  };
+
+  // Handlers do Modal de Devolução
   const handleOpenDevolver = () => {
     if (selectedRowsList.length !== 1) {
       toast.error('Selecione exatamente 1 item para devolução');
@@ -668,6 +791,23 @@ export function AgingTable({
     });
   };
 
+  const parseQtdNumber = (valStr: string) => {
+    if (!valStr) return 0;
+    const clean = valStr.trim().replace(/\./g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+  };
+
+  const totalDevolvendo = useMemo(() => {
+    return devolverVolumes.reduce((acc, v) => acc + parseQtdNumber(v.quantidade), 0);
+  }, [devolverVolumes]);
+
+  const saldoRestante = useMemo(() => {
+    return Number((devolverSaldoTotal - totalDevolvendo).toFixed(3));
+  }, [devolverSaldoTotal, totalDevolvendo]);
+
+  const isOverSaldo = saldoRestante < -0.0001;
+  const isZeroRestante = Math.abs(saldoRestante) <= 0.0001 && totalDevolvendo > 0;
+
   const handleFillRestante = () => {
     if (saldoRestante <= 0.0001) return;
     setDevolverVolumes((prev) => {
@@ -698,14 +838,7 @@ export function AgingTable({
       );
 
       if (res.job?.id) {
-        const start = Date.now();
-        const maxWaitMs = 60000;
-        while (Date.now() - start < maxWaitMs) {
-          const job = await checkSapAutomationStatus(res.job.id);
-          if (job?.status === 'completed') break;
-          if (job?.status === 'failed') throw new Error(job.result_message || 'Erro na execução do script SAP');
-          await new Promise((r) => setTimeout(r, 1500));
-        }
+        await waitForJobCompletion(res.job.id);
       }
 
       toast.dismiss(toastId);
@@ -721,21 +854,15 @@ export function AgingTable({
     }
   };
 
-  const handleDevolver = () => {
-    handleOpenDevolver();
-  };
-
   const handleMoverS = async () => {
-    if (isMoverSRunning) return;
-    setIsMoverSRunning(true);
+    if (isMoverRunning) return;
+    setIsMoverRunning(true);
     const toastId = toast.loading('Enviando solicitação movermigo (saldo tipo S) para o Planilha Sync...');
 
     try {
-      const res = await triggerSapAutomation('movermigo', 'Web Pesagem');
+      const res = await triggerSapAutomation('movermigo', currentUserEmail || 'Web Pesagem');
       if (!res.success || !res.job) {
-        toast.error(`Falha ao disparar automação: ${res.error || 'Erro desconhecido'}`, { id: toastId });
-        setIsMoverSRunning(false);
-        return;
+        throw new Error(res.error || 'Falha ao enfileirar automação no servidor');
       }
 
       const jobId = res.job.id;
@@ -749,28 +876,28 @@ export function AgingTable({
           const statusJob = await checkSapAutomationStatus(jobId);
           if (statusJob?.status === 'completed') {
             clearInterval(interval);
-            setIsMoverSRunning(false);
+            setIsMoverRunning(false);
             toast.success('Script movermigo (saldo S) executado com sucesso no SAP!', { id: toastId });
-            onInvestigacaoChange?.();
+            onAtualizarDb?.();
           } else if (statusJob?.status === 'failed') {
             clearInterval(interval);
-            setIsMoverSRunning(false);
+            setIsMoverRunning(false);
             toast.error(`Execução no SAP falhou: ${statusJob.result_message || 'Erro no script'}`, { id: toastId });
           } else if (attempts >= maxAttempts) {
             clearInterval(interval);
-            setIsMoverSRunning(false);
+            setIsMoverRunning(false);
             toast('Tempo limite aguardando o Planilha Sync. Verifique se o app está aberto.', { id: toastId });
           }
-        } catch (e) {
+        } catch {
           if (attempts >= maxAttempts) {
             clearInterval(interval);
-            setIsMoverSRunning(false);
+            setIsMoverRunning(false);
           }
         }
       }, 2000);
     } catch (err: any) {
       toast.error(`Erro: ${err?.message || err}`, { id: toastId });
-      setIsMoverSRunning(false);
+      setIsMoverRunning(false);
     }
   };
 
@@ -822,11 +949,11 @@ export function AgingTable({
         {/* Botão 1: Analisar resíduos */}
         <button
           type="button"
-          className={cn("btn", residuaisActive && "on")}
-          onClick={onToggleResiduais}
+          className={cn("btn", isResiduaisActive && "on")}
+          onClick={handleToggleResiduais}
           title="Alternar filtro e análise de lotes residuais"
         >
-          <AlertTriangle size={14} className={residuaisActive ? "text-[var(--amber)]" : ""} />
+          <AlertTriangle size={14} className={isResiduaisActive ? "text-[var(--amber)]" : ""} />
           <span>Analisar resíduos</span>
         </button>
 
@@ -836,7 +963,7 @@ export function AgingTable({
           <input
             ref={searchInputRef}
             value={searchTerm}
-            onChange={(e) => onSearchChange?.(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Busca global: material, descrição, lote"
           />
           {searchTerm ? (
@@ -844,7 +971,7 @@ export function AgingTable({
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                onSearchChange?.('');
+                handleSearchChange('');
                 searchInputRef.current?.focus();
               }}
               className="text-[var(--text-3)] hover:text-[var(--text)] transition-colors p-0.5"
@@ -878,10 +1005,10 @@ export function AgingTable({
           type="button"
           className="btn"
           onClick={handleMoverS}
-          disabled={isMoverSRunning}
+          disabled={isMoverRunning}
           title="Mover/Ajuste em massa de saldo bloqueado (S) para 999/AJUSTE via SAP"
         >
-          {isMoverSRunning ? (
+          {isMoverRunning ? (
             <Loader2 size={14} className="animate-spin text-[var(--accent)]" />
           ) : (
             <RefreshCw size={14} />
@@ -943,9 +1070,22 @@ export function AgingTable({
           )}
         </div>
 
+        {onAtualizarDb && (
+          <button
+            type="button"
+            className="btn"
+            onClick={onAtualizarDb}
+            disabled={isAtualizandoDb}
+            title="Atualizar banco de dados via Planilha Sync"
+          >
+            <RefreshCw size={13} className={isAtualizandoDb ? "animate-spin text-[var(--accent)]" : ""} />
+            <span>Atualizar DB</span>
+          </button>
+        )}
+
         <div className="grow" />
 
-        {/* Contador */}
+        {/* Contador Geral */}
         <span className="count">
           <b>{filteredAndSorted.length.toLocaleString('pt-BR')}</b> de{' '}
           <span className="mono">{data.length.toLocaleString('pt-BR')}</span> lotes ·{' '}
@@ -954,7 +1094,7 @@ export function AgingTable({
       </div>
 
       {/* Barra de Residuais (.res) */}
-      {residuaisActive && (
+      {isResiduaisActive && (
         <div className="res">
           <span className="font-semibold text-[var(--text)]">Resíduos PES:</span>
           <button
@@ -1015,17 +1155,9 @@ export function AgingTable({
             Lote
           </button>
           <div className="vsep" />
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => onOpenMoverModal?.(selectedRowsList)}
-          >
-            <ArrowRightLeft size={13} />
-            Mover…
-          </button>
           <button type="button" className="btn sm primary" onClick={handleOpenBloquearMigo}>
             <Lock size={13} />
-            Bloquear / MIGO…
+            Pipeline SAP
           </button>
           <button
             type="button"
@@ -1033,12 +1165,17 @@ export function AgingTable({
             onClick={handleBatchAddToTodo}
             title={`Adicionar ${selectedRowsList.length} lote(s) ao TODO / Investigação`}
           >
-            <AlertCircle size={14} className="text-rose-400 animate-pulse" />
+            <AlertCircle size={14} className="text-rose-400" />
+          </button>
+          <button type="button" className="btn sm" onClick={handleOpenMoverModal}>
+            <ArrowRightLeft size={13} />
+            Mover…
           </button>
           <button type="button" className="btn sm" onClick={handleToggleInvestigacao}>
             Investigação
           </button>
-          <button type="button" className="btn sm warn" onClick={handleDevolver}>
+          <button type="button" className="btn sm warn" onClick={handleOpenDevolver}>
+            <Undo2 size={13} />
             Devolver
           </button>
           <span className="grow" style={{ flex: 1 }} />
@@ -1186,7 +1323,17 @@ export function AgingTable({
                         case 'material':
                           return (
                             <td key={col.k} className="mat">
-                              {highlightText(row.material)}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  copyToClipboard(row.material);
+                                  toast.success(`Material ${row.material} copiado`);
+                                }}
+                                className="hover:text-[var(--accent)] transition-colors cursor-pointer text-left"
+                                title="Clique para copiar"
+                              >
+                                {highlightText(row.material)}
+                              </button>
                             </td>
                           );
 
@@ -1204,7 +1351,17 @@ export function AgingTable({
                           const isBlocked = blockedMap[row.lote] ?? row.is_blocked;
                           return (
                             <td key={col.k} className="lt">
-                              <span className="font-mono">{highlightText(row.lote)}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  copyToClipboard(row.lote);
+                                  toast.success(`Lote ${row.lote} copiado`);
+                                }}
+                                className="hover:text-[var(--amber)] transition-colors cursor-pointer text-left font-mono font-bold text-[var(--amber)] inline-flex items-center"
+                                title="Clique para copiar"
+                              >
+                                <span>{highlightText(row.lote)}</span>
+                              </button>
                               {row.has_todo && (
                                 <button
                                   type="button"
@@ -1233,7 +1390,7 @@ export function AgingTable({
                             <td
                               key={col.k}
                               className={cn(
-                                "num",
+                                "num font-mono font-semibold",
                                 row.estoque_disponivel < 0 && "neg",
                                 row.estoque_disponivel === 0 && "zero"
                               )}
@@ -1247,14 +1404,14 @@ export function AgingTable({
 
                         case 'valor_unitario':
                           return (
-                            <td key={col.k} className="num text-[var(--text-3)]">
+                            <td key={col.k} className="num text-[var(--text-3)] font-mono">
                               {row.valor_unitario > 0 ? formatBRL(row.valor_unitario) : '—'}
                             </td>
                           );
 
                         case 'valor_total':
                           return (
-                            <td key={col.k} className="num font-medium text-[var(--text)]">
+                            <td key={col.k} className="num font-mono font-semibold text-[var(--green)]">
                               {row.valor_total > 0 ? formatBRL(row.valor_total) : <span className="zero">—</span>}
                             </td>
                           );
@@ -1264,7 +1421,7 @@ export function AgingTable({
                             <td
                               key={col.k}
                               className={cn(
-                                "num font-semibold",
+                                "num font-mono font-bold",
                                 row.status_crit === 'cr' && "c-cr",
                                 row.status_crit === 'al' && "c-al",
                                 row.status_crit === 'ok' && "c-ok"
@@ -1276,7 +1433,7 @@ export function AgingTable({
 
                         case 'status_aging':
                           return (
-                            <td key={col.k} className="st">
+                            <td key={col.k} className="st font-mono">
                               <span
                                 className="dot"
                                 style={{
@@ -1303,7 +1460,13 @@ export function AgingTable({
                           return (
                             <td key={col.k} className="num">
                               {row.remessas > 0 ? (
-                                <span className="rem">{row.remessas}</span>
+                                <span
+                                  className="rem cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => onNavigateToRemessas?.(row.material)}
+                                  title="Ver remessas deste material"
+                                >
+                                  {row.remessas}
+                                </span>
                               ) : (
                                 <span className="zero">—</span>
                               )}
@@ -1316,7 +1479,8 @@ export function AgingTable({
                             <td
                               key={col.k}
                               className={cn(
-                                row.tipo_deposito === 'TR-ZONE' && row.estoque_disponivel < 0 && "c-cr font-bold"
+                                "font-mono",
+                                isTrZoneItem(row) && Number(row.estoque_disponivel) < 0 && "c-cr font-bold"
                               )}
                             >
                               {(row as any)[col.k] || '—'}
@@ -1325,7 +1489,7 @@ export function AgingTable({
 
                         default:
                           return (
-                            <td key={col.k}>
+                            <td key={col.k} className="font-mono">
                               {(row as any)[col.k] != null ? String((row as any)[col.k]) : '—'}
                             </td>
                           );
@@ -1339,12 +1503,12 @@ export function AgingTable({
         </table>
       </div>
 
-      {/* Dialog Devolução Fracionada (/nzwm296) */}
+      {/* Modal de Devolução Fracionada (/nzwm296) */}
       <Dialog open={devolverOpen} onOpenChange={setDevolverOpen}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-3xl lg:max-w-4xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] p-4 sm:p-6 max-h-[90dvh] flex flex-col rounded-xl shadow-2xl">
-          <DialogHeader className="shrink-0 pb-1">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <DialogTitle className="flex items-center gap-2 text-[var(--text)] text-base font-bold uppercase tracking-wider">
+        <DialogContent className="sm:max-w-3xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--text)] max-h-[90vh] flex flex-col p-6 rounded-xl shadow-2xl">
+          <DialogHeader className="shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-base font-bold uppercase tracking-wider text-[var(--text)]">
                 <Undo2 className="h-5 w-5 text-[var(--amber)]" />
                 <span>Devolução Fracionada no SAP (/nzwm296)</span>
               </DialogTitle>
@@ -1551,6 +1715,107 @@ export function AgingTable({
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Mover Estoque no SAP (/nlt10) */}
+      <Dialog open={moverModalOpen} onOpenChange={setMoverModalOpen}>
+        <DialogContent className="sm:max-w-2xl bg-[#0e1014] border border-[var(--border-strong)] text-[var(--text)] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[var(--text)] text-base font-bold uppercase tracking-wider">
+              <ArrowRightLeft className="h-5 w-5 text-[var(--accent)]" />
+              <span>Mover Estoque no SAP</span>
+              {moverItems.length > 0 && (
+                <span className="border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-3)] font-mono text-[10px] py-0.5 px-2 rounded ml-1">
+                  {moverItems.length} {moverItems.length === 1 ? 'item' : 'itens'}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-mono text-[var(--text-3)] pt-0.5">
+              Transfira itens localizando pelo lote e quantidade exata via <code>/nlt10</code>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-mono font-semibold text-[var(--text-3)] uppercase tracking-wider flex items-center gap-1.5">
+                <Layers size={13} className="text-[var(--accent)]" />
+                <span>Selecione a Rota de Destino:</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {PREDEFINED_MOVER_ROUTES.map((route) => {
+                  const isSelected = selectedMoverRoute === route.id;
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      onClick={() => setSelectedMoverRoute(route.id)}
+                      className={cn(
+                        "p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between cursor-pointer",
+                        isSelected
+                          ? "bg-[var(--surface-2)] border-[var(--accent)] text-[var(--text)] shadow-xs ring-1 ring-[var(--accent)]/40"
+                          : "bg-[var(--surface)] hover:bg-[var(--surface-2)] border-[var(--border-strong)] text-[var(--text-3)]"
+                      )}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className={cn("text-xs font-bold font-mono", isSelected ? "text-[var(--text)]" : "text-[var(--text-2)]")}>
+                          {route.label}
+                        </span>
+                        {isSelected && <CheckCircle2 size={13} className="text-[var(--accent)]" />}
+                      </div>
+                      <span className="text-[10px] font-mono text-[var(--text-3)] leading-tight">
+                        {route.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="max-h-52 overflow-y-auto rounded-lg border border-[var(--border-strong)] bg-[var(--surface)]">
+              <table className="w-full text-left border-collapse font-mono text-xs">
+                <thead className="text-[10.5px] text-[var(--text-3)] uppercase bg-[var(--surface-2)] sticky top-0 border-b border-[var(--border-strong)]">
+                  <tr>
+                    <th className="px-2.5 py-1.5 font-bold">Material</th>
+                    <th className="px-2.5 py-1.5 font-bold">Lote</th>
+                    <th className="px-2.5 py-1.5 font-bold">Dep. Origem</th>
+                    <th className="px-2.5 py-1.5 text-right font-bold">Qtd</th>
+                    <th className="px-2.5 py-1.5 text-center font-bold">UMB</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {moverItems.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-[var(--hover)] transition-colors">
+                      <td className="px-2.5 py-1.5 text-[var(--accent)] font-semibold">{item.material}</td>
+                      <td className="px-2.5 py-1.5 text-[var(--amber)] font-bold">{item.lote}</td>
+                      <td className="px-2.5 py-1.5 uppercase text-[var(--text)]">{item.depositoOrigem}</td>
+                      <td className="px-2.5 py-1.5 text-right text-[var(--text)]">{item.quantidade}</td>
+                      <td className="px-2.5 py-1.5 text-center uppercase text-[var(--text-3)]">{item.unidade}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-[var(--border)]">
+            <button
+              type="button"
+              onClick={() => setMoverModalOpen(false)}
+              className="px-4 py-2 rounded-[var(--radius)] bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border-strong)] text-[var(--text)] font-semibold text-xs transition-colors cursor-pointer mr-2"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmMoverLt10}
+              disabled={moverItems.length === 0 || isMoverRunning}
+              className="px-5 py-2 rounded-[var(--radius)] bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--bg)] font-bold text-xs shadow-xs transition-all active:scale-[0.98] flex items-center gap-1.5 cursor-pointer"
+            >
+              <Play size={13} className="fill-current" />
+              <span>Executar Transferência ({moverItems.length} itens) no SAP</span>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal Reutilizável: Execução SAP & Pipeline de Macros */}
       <SapPipelineModal
         open={bloquearMigoOpen}
@@ -1559,9 +1824,10 @@ export function AgingTable({
         currentUserEmail={currentUserEmail}
         onSuccess={() => {
           setSelectedIds({});
+          onInvestigacaoChange?.();
           onAtualizarDb?.();
         }}
       />
-      </section>
+    </section>
   );
 }

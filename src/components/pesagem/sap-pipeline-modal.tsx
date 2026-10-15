@@ -12,11 +12,14 @@ import {
   Plus, 
   Trash2, 
   Loader2, 
-  Layers 
+  Layers,
+  GripVertical,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -543,6 +546,39 @@ export interface SapPipelineModalProps {
   onItemsChange?: (updatedItems: BloquearItemParam[]) => void;
 }
 
+/* ============================================================================
+ * Apenas apresentação — nada abaixo altera geração de VBS ou execução
+ * ========================================================================== */
+
+const STEP_COLOR: Record<MacroActionType, string> = {
+  bloquear_migo: 'var(--amber)',
+  desbloquear_migo: 'var(--green)',
+  mover_lt10: 'var(--accent)',
+  mover_ajuste: 'var(--text-3)',
+  atualizar_db: 'var(--text-3)',
+  devolver: 'var(--text-3)',
+};
+
+const UI_PRESETS: Array<{ label: string; types: MacroActionType[] }> = [
+  { label: 'Completo', types: ['bloquear_migo', 'mover_lt10', 'atualizar_db'] },
+  { label: 'Mover + DB', types: ['mover_lt10', 'atualizar_db'] },
+  { label: 'Bloquear + DB', types: ['bloquear_migo', 'atualizar_db'] },
+  { label: 'Desbloquear + DB', types: ['desbloquear_migo', 'atualizar_db'] },
+];
+
+function shortLabelOf(type: MacroActionType): string {
+  return AVAILABLE_MACROS.find((m) => m.type === type)?.shortLabel || type;
+}
+
+function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 mb-2">
+      <h3 className="text-[13px] font-medium text-[var(--text)]">{children}</h3>
+      {right && <div className="text-[11px] text-[var(--text-3)]">{right}</div>}
+    </div>
+  );
+}
+
 export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
   open,
   onOpenChange,
@@ -563,6 +599,9 @@ export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
   const [stepError, setStepError] = useState<{ stepIndex: number; message: string } | null>(null);
   const [executionLog, setExecutionLog] = useState<Array<{ stepLabel: string; status: 'ok' | 'error' | 'running'; message: string; timestamp: string }>>([]);
 
+  // UI (somente visual)
+  const [showAddMenu, setShowAddMenu] = useState(false);
+
   const prevOpenRef = useRef(false);
 
   useEffect(() => {
@@ -576,6 +615,7 @@ export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
       setCompletedSteps([]);
       setStepError(null);
       setExecutionLog([]);
+      setShowAddMenu(false);
       setMacroPipeline(
         initialPreset.map((actionType, i) => ({
           id: `${actionType}-${Date.now()}-${i}`,
@@ -803,235 +843,227 @@ export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
     }
   };
 
+  /* ---------------------------- Derivados de UI ---------------------------- */
+
+  const totalSteps = macroPipeline.length;
+  const migoMode: 'bloquear' | 'desbloquear' | null = macroPipeline.some((m) => m.actionType === 'desbloquear_migo')
+    ? 'desbloquear'
+    : macroPipeline.some((m) => m.actionType === 'bloquear_migo')
+    ? 'bloquear'
+    : null;
+
+  const origens = Array.from(new Set(selectedItems.map((it) => (it.depositoOrigem || 'PES').toUpperCase())));
+  const origemLabel = origens.length <= 1 ? (origens[0] || 'PES') : `${origens.length} depósitos`;
+  const materiaisCount = new Set(selectedItems.map((it) => it.material)).size;
+  const hasInvalidItem = selectedItems.some((it) => !it.material || !it.lote || !it.quantidade);
+  const canRun = !isRunning && totalSteps > 0 && selectedItems.length > 0 && !hasInvalidItem;
+
+  const finishedOk = !isRunning && !stepError && totalSteps > 0 && completedSteps.length === totalSteps;
+  const hasRun = executionLog.length > 0;
+  const progressPct = totalSteps > 0 ? (completedSteps.length / totalSteps) * 100 : 0;
+  const lastLogTime = executionLog[executionLog.length - 1]?.timestamp;
+
+  const activePreset = UI_PRESETS.find(
+    (p) => p.types.length === totalSteps && p.types.every((t, i) => macroPipeline[i]?.actionType === t)
+  )?.label;
+
+  const lotesLabel = `${selectedItems.length} ${selectedItems.length === 1 ? 'lote' : 'lotes'}`;
+  const etapasLabel = `${totalSteps} ${totalSteps === 1 ? 'etapa' : 'etapas'}`;
+
+  let footerStatus: { dot: string; text: string } = { dot: 'var(--text-3)', text: 'Pronto para executar' };
+  if (isRunning) {
+    const cur = runningStepIndex !== null ? macroPipeline[runningStepIndex] : undefined;
+    footerStatus = {
+      dot: 'var(--accent)',
+      text: `Etapa ${(runningStepIndex ?? 0) + 1} de ${totalSteps}${cur ? ` · ${shortLabelOf(cur.actionType)}` : ''}`,
+    };
+  } else if (stepError) {
+    footerStatus = { dot: 'var(--red)', text: `Parou na etapa ${stepError.stepIndex + 1} · ${completedSteps.length} de ${totalSteps} concluídas` };
+  } else if (finishedOk) {
+    footerStatus = { dot: 'var(--green)', text: `Concluído${lastLogTime ? ` às ${lastLogTime}` : ''}` };
+  } else if (hasInvalidItem) {
+    footerStatus = { dot: 'var(--amber)', text: 'Lote sem material, número ou quantidade' };
+  } else if (totalSteps === 0) {
+    footerStatus = { dot: 'var(--amber)', text: 'Nenhuma etapa no pipeline' };
+  }
+
+  const inputCls =
+    "h-10 sm:h-8 w-full px-2.5 font-mono text-[13px] sm:text-xs border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] text-[var(--text)] focus:border-[var(--accent)] outline-none transition-colors disabled:opacity-50";
+
+  const iconBtnCls =
+    "h-8 w-8 sm:h-6 sm:w-6 inline-flex items-center justify-center rounded text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] disabled:opacity-25 disabled:hover:bg-transparent transition-colors cursor-pointer";
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!isRunning) onOpenChange(o); }}>
-      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <DialogHeader className="flex flex-row items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0 bg-[var(--surface)]">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]">
-                <Layers size={15} />
-              </span>
-              <DialogTitle className="text-sm font-semibold tracking-tight text-[var(--text)]">
-                Execução SAP &amp; Pipeline de Macros
-              </DialogTitle>
-              <span className="font-mono text-[11px] text-[var(--text-3)]">
-                ({selectedItems.length} {selectedItems.length === 1 ? 'lote' : 'lotes'})
-              </span>
-            </div>
-            <p className="text-xs text-[var(--text-3)] mt-0.5 ml-[29px]">
-              Automação em lote via MIGO / LT10 integrada ao Planilha Sync
-            </p>
-          </div>
+      <DialogContent className="max-w-xl w-[calc(100vw-1rem)] sm:w-full p-0 gap-0 overflow-hidden bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg shadow-2xl flex flex-col max-h-[92vh]">
+        {/* ───────────── Cabeçalho ───────────── */}
+        <DialogHeader className="px-5 pt-4 pb-3 pr-12 border-b border-[var(--border)] shrink-0 text-left space-y-0.5">
+          <DialogTitle className="text-[15px] font-semibold tracking-tight text-[var(--text)] flex items-center gap-2">
+            <Layers size={15} className="text-[var(--text-3)]" />
+            Pipeline SAP
+          </DialogTitle>
+          <DialogDescription className="text-xs text-[var(--text-3)]">
+            {lotesLabel} · origem <span className="font-mono text-[var(--text-2)]">{origemLabel}</span> · executa via Planilha Sync
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Corpo */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-[13px]">
-          {/* Seletor Segmentado de Operação Base */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-xs font-medium text-[var(--text-2)]">Operação no MIGO:</span>
-            <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)] divide-x divide-[var(--border-strong)]">
-              <button
-                type="button"
-                disabled={isRunning}
-                onClick={() => handleToggleMigoMode('bloquear')}
-                className={cn(
-                  "py-1 px-3 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                  !macroPipeline.some((m) => m.actionType === 'desbloquear_migo')
-                    ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
-                    : "text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--surface)]"
-                )}
-              >
-                <span className="w-2 h-2 rounded-full bg-[var(--amber)] shrink-0" />
-                <span>Bloquear saldo (Y84)</span>
-              </button>
-              <button
-                type="button"
-                disabled={isRunning}
-                onClick={() => handleToggleMigoMode('desbloquear')}
-                className={cn(
-                  "py-1 px-3 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
-                  macroPipeline.some((m) => m.actionType === 'desbloquear_migo')
-                    ? "bg-[var(--hover)] text-[var(--text)] font-semibold"
-                    : "text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--surface)]"
-                )}
-              >
-                <span className="w-2 h-2 rounded-full bg-[var(--green)] shrink-0" />
-                <span>Desbloquear saldo (Y83)</span>
-              </button>
-            </div>
-          </div>
+        {/* ───────────── Corpo ───────────── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 text-[13px]">
+          {/* Lotes */}
+          <section>
+            <SectionTitle right={selectedItems.length > 1 ? `${materiaisCount} ${materiaisCount === 1 ? 'material' : 'materiais'}` : undefined}>
+              {selectedItems.length === 1 ? 'Lote' : `Lotes (${selectedItems.length})`}
+            </SectionTitle>
 
-          {/* Seção 1: Dados dos Lotes Selecionados */}
-          <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface-2)] overflow-hidden">
-            <div className="flex items-center justify-between px-3.5 py-2 border-b border-[var(--border)] bg-[var(--surface)] text-xs">
-              <span className="font-medium text-[var(--text-2)]">
-                {selectedItems.length === 1 ? 'Parâmetros do lote' : 'Lotes a processar'}
-              </span>
-              <span className="font-mono text-[11px] text-[var(--text-3)]">
-                Dep. origem: {selectedItems[0]?.depositoOrigem || 'PES'}
-              </span>
-            </div>
-
-            {selectedItems.length === 1 ? (
-              <div className="p-3.5 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <span className="block text-[11px] text-[var(--text-3)] mb-1">Código SAP</span>
-                    <span className="font-mono font-medium text-xs text-[var(--text)]">
-                      {selectedItems[0]?.material}
-                    </span>
+            {selectedItems.length === 0 ? (
+              <p className="text-xs text-[var(--text-3)]">Nenhum lote selecionado.</p>
+            ) : selectedItems.length === 1 ? (
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-mono text-lg font-semibold leading-tight text-[var(--text)]">
+                      {selectedItems[0]?.lote || '—'}
+                    </div>
+                    <div className="mt-0.5 text-xs text-[var(--text-2)] truncate" title={selectedItems[0]?.descricao}>
+                      <span className="font-mono text-[var(--text)]">{selectedItems[0]?.material}</span>
+                      {selectedItems[0]?.descricao ? <span className="text-[var(--text-3)]"> · {selectedItems[0]?.descricao}</span> : null}
+                    </div>
                   </div>
-                  <div className="sm:col-span-2">
-                    <span className="block text-[11px] text-[var(--text-3)] mb-1">Descrição do material</span>
-                    <span className="text-xs text-[var(--text-2)] truncate block" title={selectedItems[0]?.descricao}>
-                      {selectedItems[0]?.descricao || '—'}
-                    </span>
-                  </div>
+                  <span className="shrink-0 font-mono text-[11px] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-2)]">
+                    {(selectedItems[0]?.depositoOrigem || 'PES').toUpperCase()}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[var(--border)]">
-                  <div>
-                    <span className="block text-[11px] text-[var(--text-3)] mb-1">Lote</span>
-                    <span className="font-mono font-medium text-xs text-[var(--text)]">
-                      {selectedItems[0]?.lote}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-[var(--text-3)] mb-1">
-                      Quantidade
-                    </label>
+                <div className="mt-3 grid grid-cols-[1fr_96px] gap-2">
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-3)] mb-1">Quantidade</span>
                     <input
                       type="text"
+                      inputMode="decimal"
                       disabled={isRunning}
                       value={selectedItems[0]?.quantidade ?? ''}
                       onChange={(e) => handleUpdateSingleItem('quantidade', e.target.value)}
-                      className="h-7 w-full px-2 font-mono text-xs border border-[var(--border-strong)] rounded bg-[var(--bg)] text-[var(--text)] focus:border-[var(--accent)] outline-none"
+                      className={inputCls}
                       placeholder="0,000"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-[var(--text-3)] mb-1">
-                      Unidade (UMB)
-                    </label>
+                  </label>
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-3)] mb-1">Unidade</span>
                     <input
                       type="text"
                       disabled={isRunning}
                       value={selectedItems[0]?.unidade ?? ''}
                       onChange={(e) => handleUpdateSingleItem('unidade', e.target.value.toUpperCase())}
-                      className="h-7 w-full px-2 font-mono text-xs uppercase border border-[var(--border-strong)] rounded bg-[var(--bg)] text-[var(--text)] focus:border-[var(--accent)] outline-none"
+                      className={cn(inputCls, "uppercase")}
                       placeholder="KG"
                     />
-                  </div>
+                  </label>
                 </div>
               </div>
             ) : (
-              <div className="max-h-40 overflow-y-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--border)] bg-[var(--surface)] text-[11px] font-semibold text-[var(--text-3)] uppercase text-left">
-                      <th className="p-2 font-mono">Material</th>
-                      <th className="p-2">Descrição</th>
-                      <th className="p-2 font-mono">Lote</th>
-                      <th className="p-2 text-right font-mono">Quantidade</th>
-                      <th className="p-2">UMB</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono text-xs divide-y divide-[var(--border)]">
-                    {selectedItems.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-[var(--hover)]">
-                        <td className="p-2 font-medium text-[var(--text)]">{item.material}</td>
-                        <td className="p-2 font-sans text-[var(--text-2)] text-[12px] truncate max-w-[200px]" title={item.descricao}>
-                          {item.descricao || '—'}
-                        </td>
-                        <td className="p-2 text-[var(--text-2)]">{item.lote}</td>
-                        <td className="p-2 text-right font-medium text-[var(--text)]">{item.quantidade}</td>
-                        <td className="p-2 text-[var(--text-3)]">{item.unidade}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="max-h-48 overflow-y-auto border-y border-[var(--border)] divide-y divide-[var(--border)]">
+                {selectedItems.map((item, idx) => (
+                  <li key={idx} className="flex items-center justify-between gap-3 py-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs font-medium text-[var(--text)]">{item.lote}</div>
+                      <div className="text-[11px] text-[var(--text-3)] truncate" title={item.descricao}>
+                        <span className="font-mono">{item.material}</span>
+                        {item.descricao ? ` · ${item.descricao}` : ''}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right font-mono text-xs">
+                      <span className="font-medium text-[var(--text)]">{item.quantidade || '—'}</span>
+                      <span className="ml-1 text-[var(--text-3)]">{item.unidade}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
+          </section>
 
-          {/* Seção 2: Pipeline de Execução */}
-          <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] p-3.5 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--border)]">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[var(--text)]">
-                  Etapas do pipeline
-                </span>
-                <span className="font-mono text-[11px] text-[var(--text-3)]">
-                  ({macroPipeline.length} {macroPipeline.length === 1 ? 'etapa' : 'etapas'})
-                </span>
-              </div>
+          {/* Operação MIGO */}
+          <section>
+            <SectionTitle right={migoMode === null ? 'sem etapa MIGO' : undefined}>Operação no MIGO</SectionTitle>
+            <div className="grid grid-cols-2 gap-1 p-0.5 rounded-[var(--radius)] bg-[var(--surface-2)] border border-[var(--border)]">
+              {([
+                { mode: 'bloquear' as const, label: 'Bloquear saldo', code: 'Y84', color: 'var(--amber)' },
+                { mode: 'desbloquear' as const, label: 'Desbloquear saldo', code: 'Y83', color: 'var(--green)' },
+              ]).map((opt) => {
+                const active = migoMode === opt.mode;
+                return (
+                  <button
+                    key={opt.mode}
+                    type="button"
+                    disabled={isRunning}
+                    onClick={() => handleToggleMigoMode(opt.mode)}
+                    className={cn(
+                      "h-10 sm:h-8 px-3 rounded-[calc(var(--radius)-2px)] text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50",
+                      active
+                        ? "bg-[var(--surface)] text-[var(--text)] font-medium shadow-sm"
+                        : "text-[var(--text-3)] hover:text-[var(--text-2)]"
+                    )}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: opt.color, opacity: active ? 1 : 0.5 }} />
+                    {opt.label}
+                    <span className="font-mono text-[11px] text-[var(--text-3)]">{opt.code}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-              {/* Predefinições Rápidas */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-[var(--text-3)]">Predefinições:</span>
-                <div className="flex border border-[var(--border-strong)] rounded-[var(--radius)] overflow-hidden bg-[var(--bg)] divide-x divide-[var(--border-strong)]">
+          {/* Pipeline */}
+          <section>
+            <SectionTitle right={etapasLabel}>Etapas</SectionTitle>
+
+            {/* Predefinições */}
+            <div className="flex items-center gap-1 flex-wrap mb-3">
+              {UI_PRESETS.map((p) => {
+                const active = activePreset === p.label;
+                return (
                   <button
+                    key={p.label}
                     type="button"
                     disabled={isRunning}
-                    onClick={() => handleApplyMacroPreset(['bloquear_migo', 'mover_lt10', 'atualizar_db'])}
-                    className="py-0.5 px-2 text-[11px] text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                    title="Bloquear MIGO ➔ Mover (/nlt10) ➔ Atualizar Base"
+                    onClick={() => handleApplyMacroPreset(p.types)}
+                    title={p.types.map(shortLabelOf).join(' → ')}
+                    className={cn(
+                      "h-8 sm:h-6 px-2.5 rounded-full text-[11px] border transition-colors cursor-pointer disabled:opacity-40",
+                      active
+                        ? "border-[var(--text-3)] text-[var(--text)] bg-[var(--hover)]"
+                        : "border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text)] hover:border-[var(--border-strong)]"
+                    )}
                   >
-                    Completo
+                    {p.label}
                   </button>
-                  <button
-                    type="button"
-                    disabled={isRunning}
-                    onClick={() => handleApplyMacroPreset(['mover_lt10', 'atualizar_db'])}
-                    className="py-0.5 px-2 text-[11px] text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                    title="Mover (/nlt10) ➔ Atualizar Base"
-                  >
-                    Mover + DB
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isRunning}
-                    onClick={() => handleApplyMacroPreset(['bloquear_migo', 'atualizar_db'])}
-                    className="py-0.5 px-2 text-[11px] text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                    title="Bloquear MIGO ➔ Atualizar Base"
-                  >
-                    Bloquear + DB
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isRunning}
-                    onClick={() => handleApplyMacroPreset(['desbloquear_migo', 'atualizar_db'])}
-                    className="py-0.5 px-2 text-[11px] text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                    title="Desbloquear MIGO ➔ Atualizar Base"
-                  >
-                    Desbloquear + DB
-                  </button>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
-            {/* Lista Sequencial de Etapas */}
-            <div className="space-y-1.5">
-              {macroPipeline.length === 0 ? (
-                <div className="p-4 text-center text-xs text-[var(--text-3)] border border-dashed border-[var(--border)] rounded-[var(--radius)]">
-                  Nenhuma etapa no pipeline. Adicione uma ação abaixo.
-                </div>
-              ) : (
-                macroPipeline.map((step, idx) => {
+            {totalSteps === 0 ? (
+              <p className="py-4 text-center text-xs text-[var(--text-3)] border border-dashed border-[var(--border)] rounded-[var(--radius)]">
+                Nenhuma etapa. Escolha uma predefinição ou adicione abaixo.
+              </p>
+            ) : (
+              <ol>
+                {macroPipeline.map((step, idx) => {
                   const macroDef = AVAILABLE_MACROS.find((m) => m.type === step.actionType);
                   if (!macroDef) return null;
 
                   const isCurrentRunning = isRunning && runningStepIndex === idx;
                   const isDone = completedSteps.includes(idx);
                   const isFailed = stepError?.stepIndex === idx;
+                  const isLast = idx === totalSteps - 1;
+                  const route = step.actionType === 'mover_lt10'
+                    ? PREDEFINED_MOVER_ROUTES.find((r) => r.id === (step.routeId || 'pes_pesagem'))
+                    : undefined;
 
                   return (
-                    <div
+                    <li
                       key={step.id}
                       draggable={!isRunning}
                       onDragStart={() => setDraggedMacroIndex(idx)}
+                      onDragEnd={() => setDraggedMacroIndex(null)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => {
                         if (draggedMacroIndex !== null && draggedMacroIndex !== idx) {
@@ -1040,194 +1072,252 @@ export const SapPipelineModal: React.FC<SapPipelineModalProps> = ({
                         }
                       }}
                       className={cn(
-                        "border rounded-[var(--radius)] p-2.5 bg-[var(--surface-2)] transition-colors",
-                        isCurrentRunning && "border-[var(--accent)] bg-[var(--accent-weak)]/20",
-                        isDone && "border-[var(--green)] bg-[var(--green-weak)]/10",
-                        isFailed && "border-[var(--red)] bg-[var(--red-weak)]/20",
-                        draggedMacroIndex === idx && "opacity-50 border-[var(--accent)]",
-                        !isCurrentRunning && !isDone && !isFailed && "border-[var(--border)] hover:border-[var(--border-strong)]"
+                        "group relative flex gap-3 rounded-[var(--radius)] -mx-2 px-2 transition-colors",
+                        !isLast && "pb-1",
+                        draggedMacroIndex === idx && "opacity-40",
+                        !isRunning && "hover:bg-[var(--hover)]/50"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="font-mono text-[11px] text-[var(--text-3)] w-4 text-center select-none">
-                            {idx + 1}.
-                          </span>
+                      {/* Trilho */}
+                      {!isLast && (
+                        <span
+                          aria-hidden
+                          className="absolute left-[19px] top-[30px] bottom-[-2px] w-px"
+                          style={{ background: isDone ? 'var(--green)' : 'var(--border)' }}
+                        />
+                      )}
+
+                      {/* Marcador */}
+                      <span
+                        className={cn(
+                          "relative z-10 mt-2 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border font-mono text-[11px] bg-[var(--surface)]",
+                          isCurrentRunning && "border-[var(--accent)] text-[var(--accent)]",
+                          isDone && "border-[var(--green)] bg-[var(--green)] text-white",
+                          isFailed && "border-[var(--red)] text-[var(--red)]",
+                          !isCurrentRunning && !isDone && !isFailed && "border-[var(--border-strong)] text-[var(--text-3)]"
+                        )}
+                      >
+                        {isCurrentRunning ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : isDone ? (
+                          <Check size={12} strokeWidth={3} />
+                        ) : isFailed ? (
+                          <AlertCircle size={12} />
+                        ) : (
+                          idx + 1
+                        )}
+                      </span>
+
+                      <div className="min-w-0 flex-1 py-2">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0"
-                                style={{
-                                  background:
-                                    step.actionType === 'bloquear_migo'
-                                      ? 'var(--amber)'
-                                      : step.actionType === 'desbloquear_migo'
-                                      ? 'var(--green)'
-                                      : step.actionType === 'mover_lt10'
-                                      ? 'var(--accent)'
-                                      : 'var(--text-3)',
-                                }}
-                              />
-                              <span className="font-medium text-xs text-[var(--text)]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STEP_COLOR[step.actionType] }} />
+                              <span className={cn("text-[13px] font-medium", isFailed ? "text-[var(--red)]" : "text-[var(--text)]")}>
                                 {macroDef.label}
                               </span>
-                              {isCurrentRunning && (
-                                <Loader2 size={12} className="animate-spin text-[var(--accent)]" />
-                              )}
-                              {isDone && (
-                                <Check size={12} className="text-[var(--green)]" />
-                              )}
-                              {isFailed && (
-                                <AlertCircle size={12} className="text-[var(--red)]" />
-                              )}
                             </div>
-                            <span className="text-[11px] text-[var(--text-3)] block mt-0.5 truncate">
-                              {macroDef.description}
+                            <p className="text-[11px] text-[var(--text-3)] mt-0.5 truncate">{macroDef.description}</p>
+                          </div>
+
+                          {!isRunning && (
+                            <div className="flex items-center shrink-0 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <span className="hidden sm:inline-flex h-6 w-5 items-center justify-center text-[var(--text-3)] cursor-grab" title="Arraste para reordenar">
+                                <GripVertical size={12} />
+                              </span>
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveMacroInPipeline(idx, idx - 1)}
+                                className={iconBtnCls}
+                                title="Mover para cima"
+                              >
+                                <ChevronUp size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLast}
+                                onClick={() => handleMoveMacroInPipeline(idx, idx + 1)}
+                                className={iconBtnCls}
+                                title="Mover para baixo"
+                              >
+                                <ChevronDown size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMacroFromPipeline(idx)}
+                                className={cn(iconBtnCls, "hover:text-[var(--red)]")}
+                                title="Remover etapa"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Rota /nlt10 */}
+                        {step.actionType === 'mover_lt10' && (
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            <select
+                              disabled={isRunning}
+                              value={step.routeId || 'pes_pesagem'}
+                              onChange={(e) => handleUpdateStepRoute(step.id, e.target.value)}
+                              className="h-9 sm:h-7 pl-2 pr-6 text-xs border border-[var(--border-strong)] rounded-[var(--radius)] bg-[var(--bg)] text-[var(--text)] focus:border-[var(--accent)] outline-none disabled:opacity-50"
+                              title={route?.description}
+                            >
+                              {PREDEFINED_MOVER_ROUTES.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.label}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--text-3)]">
+                              {origemLabel}
+                              <ArrowRight size={11} />
+                              <span className="text-[var(--text-2)]">
+                                {(route?.tipo || 'pes').toUpperCase()} · {(route?.posicao || 'pesagem').toUpperCase()}
+                              </span>
                             </span>
                           </div>
-                        </div>
+                        )}
 
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            disabled={isRunning || idx === 0}
-                            onClick={() => handleMoveMacroInPipeline(idx, idx - 1)}
-                            className="p-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-30 transition-opacity cursor-pointer"
-                            title="Mover para cima"
-                          >
-                            <ChevronUp size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isRunning || idx === macroPipeline.length - 1}
-                            onClick={() => handleMoveMacroInPipeline(idx, idx + 1)}
-                            className="p-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-30 transition-opacity cursor-pointer"
-                            title="Mover para baixo"
-                          >
-                            <ChevronDown size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isRunning}
-                            onClick={() => handleRemoveMacroFromPipeline(idx)}
-                            className="p-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-3)] hover:text-[var(--red)] disabled:opacity-30 transition-colors cursor-pointer"
-                            title="Remover etapa"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
+                        {isCurrentRunning && (
+                          <p className="mt-1 text-[11px] text-[var(--accent)]">Executando no SAP…</p>
+                        )}
+                        {isFailed && stepError && (
+                          <p className="mt-1 text-[11px] text-[var(--red)] break-words">{stepError.message}</p>
+                        )}
                       </div>
-
-                      {/* Configuração de Rota para /nlt10 */}
-                      {step.actionType === 'mover_lt10' && (
-                        <div className="mt-2.5 pt-2 border-t border-[var(--border)] flex items-center gap-2 flex-wrap text-xs">
-                          <span className="text-[11px] text-[var(--text-3)]">Rota de transferência:</span>
-                          <select
-                            disabled={isRunning}
-                            value={step.routeId || 'pes_pesagem'}
-                            onChange={(e) => handleUpdateStepRoute(step.id, e.target.value)}
-                            className="h-6 px-2 text-xs border border-[var(--border-strong)] rounded bg-[var(--surface)] text-[var(--text)] focus:border-[var(--accent)] outline-none"
-                          >
-                            {PREDEFINED_MOVER_ROUTES.map((route) => (
-                              <option key={route.id} value={route.id}>
-                                {route.label} ({route.description})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
+                    </li>
                   );
-                })
+                })}
+              </ol>
+            )}
+
+            {/* Adicionar etapa */}
+            <div className="mt-2">
+              <button
+                type="button"
+                disabled={isRunning}
+                onClick={() => setShowAddMenu((v) => !v)}
+                className="h-9 sm:h-7 px-2 -mx-2 inline-flex items-center gap-1.5 rounded text-xs text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <Plus size={13} className={cn("transition-transform", showAddMenu && "rotate-45")} />
+                {showAddMenu ? 'Fechar' : 'Adicionar etapa'}
+              </button>
+
+              {showAddMenu && !isRunning && (
+                <ul className="mt-1 border-y border-[var(--border)] divide-y divide-[var(--border)]">
+                  {AVAILABLE_MACROS.map((macro) => (
+                    <li key={macro.type}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAddMacroToPipeline(macro.type);
+                          setShowAddMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 py-2.5 sm:py-2 px-1 text-left hover:bg-[var(--hover)] transition-colors cursor-pointer"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STEP_COLOR[macro.type] }} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-medium text-[var(--text)]">{macro.label}</span>
+                          <span className="block text-[11px] text-[var(--text-3)] truncate">{macro.description}</span>
+                        </span>
+                        <Plus size={12} className="text-[var(--text-3)] shrink-0" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
+          </section>
 
-            {/* Adicionar Ação ao Pipeline */}
-            <div className="pt-2 border-t border-[var(--border)] flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] text-[var(--text-3)]">Adicionar ação:</span>
-              {AVAILABLE_MACROS.map((macro) => (
-                <button
-                  key={macro.type}
-                  type="button"
-                  disabled={isRunning}
-                  onClick={() => handleAddMacroToPipeline(macro.type)}
-                  className="h-6 px-2 text-[11px] font-medium border border-[var(--border-strong)] rounded bg-[var(--surface-2)] text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-40"
-                >
-                  <Plus size={10} />
-                  <span>{macro.shortLabel}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Log de Execução ao Vivo */}
-          {executionLog.length > 0 && (
-            <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface-2)] p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-[var(--text)]">
-                <span>Registro de Execução</span>
-                {isRunning && (
-                  <span className="flex items-center gap-1.5 text-[var(--accent)] text-[11px] font-normal">
-                    <Loader2 size={11} className="animate-spin" />
-                    Processando no SAP...
-                  </span>
-                )}
-              </div>
-              <div className="space-y-1 max-h-32 overflow-y-auto font-mono text-[11px]">
+          {/* Registro */}
+          {hasRun && (
+            <section>
+              <SectionTitle right={isRunning ? 'ao vivo' : lastLogTime}>Registro</SectionTitle>
+              <ul className="space-y-1.5 max-h-36 overflow-y-auto">
                 {executionLog.map((log, idx) => (
-                  <div key={idx} className="flex items-start gap-2">
-                    <span className="text-[var(--text-3)] shrink-0">{log.timestamp}</span>
-                    <span className="font-semibold text-[var(--text-2)] shrink-0">[{log.stepLabel}]</span>
+                  <li key={idx} className="flex items-start gap-2 text-[11px] leading-relaxed">
+                    <span
+                      className={cn("mt-[6px] w-1.5 h-1.5 rounded-full shrink-0", log.status === 'running' && "animate-pulse")}
+                      style={{
+                        background:
+                          log.status === 'ok' ? 'var(--green)' : log.status === 'error' ? 'var(--red)' : 'var(--accent)',
+                      }}
+                    />
+                    <span className="font-mono text-[var(--text-3)] shrink-0">{log.timestamp}</span>
+                    <span className="font-medium text-[var(--text-2)] shrink-0">{log.stepLabel}</span>
                     <span
                       className={cn(
-                        "flex-1",
-                        log.status === 'ok' && "text-[var(--green)]",
-                        log.status === 'error' && "text-[var(--red)] font-medium",
-                        log.status === 'running' && "text-[var(--accent)]"
+                        "flex-1 min-w-0 break-words",
+                        log.status === 'error' ? "text-[var(--red)]" : "text-[var(--text-3)]"
                       )}
                     >
                       {log.message}
                     </span>
-                  </div>
+                  </li>
                 ))}
-              </div>
-            </div>
+              </ul>
+            </section>
           )}
         </div>
 
-        {/* Rodapé */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-          <button
-            type="button"
-            disabled={isRunning}
-            onClick={() => onOpenChange(false)}
-            className="h-8 px-3 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--text-3)] transition-colors cursor-pointer disabled:opacity-40"
-          >
-            Cancelar
-          </button>
+        {/* ───────────── Rodapé ───────────── */}
+        <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)]">
+          {(isRunning || hasRun) && (
+            <div className="h-0.5 w-full bg-[var(--border)]">
+              <div
+                className="h-full transition-[width] duration-500"
+                style={{
+                  width: `${stepError ? Math.max(progressPct, 4) : progressPct}%`,
+                  background: stepError ? 'var(--red)' : finishedOk ? 'var(--green)' : 'var(--accent)',
+                }}
+              />
+            </div>
+          )}
 
-          <button
-            type="button"
-            disabled={
-              isRunning ||
-              macroPipeline.length === 0 ||
-              selectedItems.length === 0 ||
-              selectedItems.some((it) => !it.material || !it.lote || !it.quantidade)
-            }
-            onClick={handleExecutePipeline}
-            className="h-8 px-4 rounded-[var(--radius)] bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer disabled:opacity-40 shadow-sm"
-          >
-            {isRunning ? (
-              <>
-                <Loader2 size={13} className="animate-spin" />
-                <span>Executando etapa {(runningStepIndex ?? 0) + 1} de {macroPipeline.length}...</span>
-              </>
-            ) : (
-              <>
-                <Play size={13} />
-                <span>Executar Pipeline ({macroPipeline.length} {macroPipeline.length === 1 ? 'etapa' : 'etapas'})</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-5 py-3">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-2)] min-w-0">
+              <span
+                className={cn("w-1.5 h-1.5 rounded-full shrink-0", isRunning && "animate-pulse")}
+                style={{ background: footerStatus.dot }}
+              />
+              <span className="truncate">{footerStatus.text}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isRunning}
+                onClick={() => onOpenChange(false)}
+                className="h-10 sm:h-8 px-3 flex-1 sm:flex-none rounded-[var(--radius)] text-xs font-medium text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors cursor-pointer disabled:opacity-40"
+              >
+                {finishedOk ? 'Fechar' : 'Cancelar'}
+              </button>
+
+              <button
+                type="button"
+                disabled={!canRun}
+                onClick={handleExecutePipeline}
+                className="h-10 sm:h-8 px-4 flex-[2] sm:flex-none rounded-[var(--radius)] bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isRunning ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Executando {(runningStepIndex ?? 0) + 1}/{totalSteps}…</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={12} />
+                    <span>
+                      {stepError || finishedOk ? 'Executar de novo' : 'Executar'} · {etapasLabel} · {lotesLabel}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -1305,7 +1305,7 @@ export function ResiduaisView({
           <div className="vsep" />
           <button type="button" className="btn sm primary" onClick={handleOpenBloquearMigo}>
             <Lock size={13} />
-            Bloquear / desbloquear
+            Pipeline SAP
           </button>
           <button
             type="button"

@@ -9,7 +9,9 @@ import {
   getShiftPhase,
   getItemStatus,
   getCarryNote,
+  formatKg,
 } from '@/lib/production-schedule';
+import { ShiftVolumeStats } from '@/hooks/useProductionVolume';
 import { cn } from '@/lib/utils';
 
 interface DetailedReportViewProps {
@@ -20,6 +22,7 @@ interface DetailedReportViewProps {
   selectedFamily: string | null;
   selectedVia: string | null;
   hideCompleted: boolean;
+  shiftVolumes?: Record<number, ShiftVolumeStats>;
   onItemClick: (item: ProductionItem) => void;
   onAddClick: (turno: ProductionTurno, via?: ProductionVia) => void;
   onUpdateQty: (item: ProductionItem, delta: number, e: React.MouseEvent) => void;
@@ -33,6 +36,7 @@ export function DetailedReportView({
   selectedFamily,
   selectedVia,
   hideCompleted,
+  shiftVolumes,
   onItemClick,
   onAddClick,
   onUpdateQty,
@@ -83,6 +87,7 @@ export function DetailedReportView({
         const shiftPdpa = items.filter((x) => x.turno === shift.n && (x.tipo === 'auto' || x.tipo === 'direta'));
         const autoPdpa = shiftPdpa.filter((x) => x.tipo === 'auto');
         const diretaPdpa = shiftPdpa.filter((x) => x.tipo === 'direta');
+        const shiftVol = shiftVolumes?.[shift.n] ?? { realKg: 0, progKg: 0, pct: 0 };
 
         return (
           <section
@@ -160,6 +165,30 @@ export function DetailedReportView({
                         stats.pdpaTotal[0] >= stats.pdpaTotal[1] && stats.pdpaTotal[1] > 0 ? "bg-[var(--green)]" : "bg-[var(--text-2)]"
                       )}
                       style={{ width: `${Math.min(stats.pdpaPct, 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* KPI Volume (kg) */}
+                <div className="grid grid-cols-[auto_105px] gap-x-2.5 gap-y-0.5 items-center text-xs">
+                  <label className="col-span-2 text-xs font-semibold text-[var(--text-3)]">Volume</label>
+                  <b
+                    className="font-mono text-lg font-bold text-[var(--text)] leading-none"
+                    title={`${shiftVol.realKg.toLocaleString('pt-BR')} kg realizados / ${shiftVol.progKg.toLocaleString('pt-BR')} kg programados`}
+                  >
+                    {formatKg(shiftVol.realKg)}
+                    <small className="text-[13.5px] text-[var(--text-3)] font-semibold">
+                      /{formatKg(shiftVol.progKg)} kg
+                    </small>{' '}
+                    <span className="text-xs font-semibold text-[var(--text-2)]">· {shiftVol.pct}%</span>
+                  </b>
+                  <div className="h-2 w-full bg-[var(--track)] rounded-full overflow-hidden relative">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-300",
+                        shiftVol.realKg >= shiftVol.progKg && shiftVol.progKg > 0 ? "bg-[var(--green)]" : "bg-[var(--text-2)]"
+                      )}
+                      style={{ width: `${Math.min(shiftVol.pct, 100)}%` }}
                     />
                   </div>
                 </div>

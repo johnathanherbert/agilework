@@ -2,15 +2,16 @@
 
 import { useMemo } from 'react';
 import { ProductionItem } from '@/types';
-import { SHIFT_SCHEDULES, getShiftStats, getItemStatus } from '@/lib/production-schedule';
+import { SHIFT_SCHEDULES, getShiftStats, getItemStatus, formatKg } from '@/lib/production-schedule';
 import { cn } from '@/lib/utils';
 
 interface DaySummaryBarProps {
   items: ProductionItem[];
   now: Date;
+  recordVolumeKg?: number;
 }
 
-export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
+export function DaySummaryBar({ items, now, recordVolumeKg = 0 }: DaySummaryBarProps) {
   const totals = useMemo(() => {
     const ordens = items.filter((x) => x.tipo === 'ordem');
     const auto = items.filter((x) => x.tipo === 'auto');
@@ -223,9 +224,9 @@ export function DaySummaryBar({ items, now }: DaySummaryBarProps) {
             </>
           )}
 
-          <dt className="text-[var(--text-3)] font-medium">Não concluídas (turnos encerrados)</dt>
-          <dd className={cn("font-mono text-right text-[14px] font-bold", totals.naoConcluidas > 0 ? "text-[var(--red)]" : "text-[var(--text)]")}>
-            {totals.naoConcluidas}
+          <dt className="text-[var(--text-3)] font-medium">Recorde de volume (turno)</dt>
+          <dd className="font-mono text-right text-[14px] font-bold text-[var(--text)]">
+            {formatKg(recordVolumeKg)} kg
           </dd>
 
           <dt className="text-[var(--text-3)] font-medium">Lotes piloto</dt>

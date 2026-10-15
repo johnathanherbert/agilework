@@ -201,10 +201,22 @@ export function getShiftStats(turno: ProductionTurno, items: ProductionItem[]) {
   };
 }
 
+export function formatKg(val: number): string {
+  if (!val || isNaN(val) || val <= 0) return '0';
+  if (val < 10) {
+    return val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+  return Math.round(val).toLocaleString('pt-BR');
+}
+
 /**
  * Gera os pontos de atenção e inteligência operacional
  */
-export function getProductionInsights(items: ProductionItem[], now: Date = new Date()): ProductionInsight[] {
+export function getProductionInsights(
+  items: ProductionItem[],
+  now: Date = new Date(),
+  shiftVolumes?: Record<number, { realKg: number; progKg: number; pct: number }>
+): ProductionInsight[] {
   const list: ProductionInsight[] = [];
 
   SHIFT_SCHEDULES.forEach((s) => {
@@ -305,6 +317,33 @@ export function getProductionInsights(items: ProductionItem[], now: Date = new D
           });
         }
       });
+    }
+
+    // 6. Baixa quantidade de ordens em função da grande quantidade de volume
+    const sVol = shiftVolumes?.[s.n];
+    if (sVol && sVol.realKg > 0 && st.prog > 0) {
+      const avgKgPerOp = st.real > 0 ? sVol.realKg / st.real : 0;
+      const el = Math.round((ph.el || 0) * 100);
+      const isLowOrders =
+        (ph.k === 'now' && (st.pct < 70 || st.pct < el - RITMO_TOLERANCIA_PCT)) ||
+        (ph.k === 'done' && st.pct < 80);
+      const isHighVolume =
+        sVol.realKg >= 1200 ||
+        avgKgPerOp >= 350 ||
+        (sVol.progKg > 0 && sVol.pct >= st.pct + 15);
+
+      if (isLowOrders && isHighVolume) {
+        list.push({
+          id: `alta-carga-vol-${s.n}`,
+          color: 'var(--amber)',
+          weight: 4,
+          title: `${s.l} — Menor entrega de ordens em função do alto volume (${formatKg(sVol.realKg)} kg)`,
+          desc: `Quantidade de ordens em ${st.pct}% (${st.real}/${st.prog} OPs), justificada pelo expressivo volume físico pesado (${formatKg(sVol.realKg)} kg${st.real > 0 ? ` · média ${formatKg(Math.round(avgKgPerOp))} kg/OP` : ''}). Ritmo operacional impactado pelo peso das fórmulas.`,
+          targetId: `sh-${s.n}`,
+          tag: `${formatKg(sVol.realKg)} kg`,
+          turno: s.n,
+        });
+      }
     }
   });
 
