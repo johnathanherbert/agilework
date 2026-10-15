@@ -120,7 +120,12 @@ export default function Dashboard() {
   const [now, setNow] = useState(() => new Date());
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // relógio por minuto
+  // Foco imediato na barra de busca ao abrir a página
+  useEffect(() => {
+    searchRef.current?.focus();
+    const t = setTimeout(() => searchRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     const iv = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(iv);
@@ -356,6 +361,7 @@ export default function Dashboard() {
                 <Search className="h-4 w-4 shrink-0" />
                 <input
                   ref={searchRef}
+                  autoFocus
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Ir para… (NT, lote, produção, usuários)"
