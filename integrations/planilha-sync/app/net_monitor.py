@@ -3,7 +3,8 @@ net_monitor.py — Monitor de conexão com a internet e reinicialização autom�
 
 Detecta com precisão quando a conexão de internet cai e, quando restabelecida, encerra
 as sessões travadas/desconectadas do SAP GUI e reabre o SAP Logon apontando para o
-arquivo de Landscape XML especificado, navegando diretamente para o 3º item da lista (sap 03).
+arquivo de Landscape XML especificado, tratando popup inicial e navegando com foco
+garantido para a conexão 03 (sap 03).
 
 A suspensão de extrações automáticas é ativada EXCLUSIVAMENTE quando a internet cair
 ou durante o procedimento ativo de reinicialização do SAP Logon. Fora desses eventos,
@@ -87,7 +88,6 @@ def get_third_service_name_from_xml(landscape_xml_path: str, target_index: int =
         tree = ET.parse(str(p))
         root = tree.getroot()
 
-        # Dicionário de serviços por UUID: {uuid: name}
         services_by_uuid: dict[str, str] = {}
         for svc in root.findall(".//Service"):
             uuid_val = svc.attrib.get("uuid") or svc.attrib.get("systemid") or ""
@@ -95,7 +95,6 @@ def get_third_service_name_from_xml(landscape_xml_path: str, target_index: int =
             if uuid_val and name_val:
                 services_by_uuid[uuid_val] = name_val
 
-        # 1. Tenta pegar a ordem da Workspace principal
         items = root.findall(".//Workspaces/Workspace/Item")
         if items and len(items) >= target_index:
             target_item = items[target_index - 1]
@@ -105,7 +104,6 @@ def get_third_service_name_from_xml(landscape_xml_path: str, target_index: int =
             if "name" in target_item.attrib:
                 return target_item.attrib["name"]
 
-        # 2. Tenta pegar da lista direta de Services
         direct_services = root.findall(".//Services/Service")
         if direct_services and len(direct_services) >= target_index:
             target_svc = direct_services[target_index - 1]
@@ -119,14 +117,13 @@ def get_third_service_name_from_xml(landscape_xml_path: str, target_index: int =
 
 def kill_sap_processes() -> None:
     """
-    Finaliza todas as instâncias existentes de saplogon, saplgpad e sapgui.
+    Finaliza todas as instâncias existentes de saplogon, sapfewse, saplgpad e sapgui.
     """
-    logger.info("[SAP_RESTART] Encerrando processos SAP existentes (saplogon, saplgpad, sapgui)...")
+    logger.info("[SAP_RESTART] Encerrando processos SAP existentes (saplogon, sapfewse, saplgpad, sapgui)...")
     if sys.platform == "win32":
         try:
-            # taskkill força encerramento imediato de toda a árvore
             subprocess.run(
-                ["taskkill", "/F", "/IM", "saplogon.exe", "/IM", "saplgpad.exe", "/IM", "sapgui.exe"],
+                ["taskkill", "/F", "/IM", "saplogon.exe", "/IM", "sapfewse.exe", "/IM", "saplgpad.exe", "/IM", "sapgui.exe"],
                 capture_output=True,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
@@ -135,7 +132,7 @@ def kill_sap_processes() -> None:
     else:
         logger.debug("[SAP_RESTART] Modo não-Windows: pulando taskkill.")
 
-    time.sleep(1.8)
+    time.sleep(1.5)
 
 
 def generate_powershell_restart_script(
@@ -145,21 +142,20 @@ def generate_powershell_restart_script(
     service_name: Optional[str] = None,
 ) -> str:
     """
-    Gera o script PowerShell que inicia o SAP Logon com o arquivo XML especificado,
-    traz a janela para primeiro plano, navega 2 vezes para baixo a partir do sap 01
-    para selecionar e abrir o sap 03 com ENTER.
+    Gera o script PowerShell que fecha o SAP, reabre apontando para o XML,
+    trata o popup com fechamento via ENTER, e seleciona com foco forçado a conexão 03.
     """
     escaped_exe = sap_exe.replace("'", "''")
     escaped_xml = landscape_xml.replace("'", "''")
 
-    return f"""# PowerShell - Reinício do SAP Logon e Seleção do SAP 03
+    return f"""# PowerShell - Reinício e Conexão Automatizada do SAP Logon
 $ErrorActionPreference = 'SilentlyContinue'
 
 $sapExe = '{escaped_exe}'
 $landscapeXml = '{escaped_xml}'
 $targetIndex = {target_index}
 
-# 1. Helper Win32 para garantir foco prioritário no SAP Logon
+# 1. Definição do Win32Helper para garantia absoluta de foco em primeiro plano
 $win32Code = @"
 using System;
 using System.Runtime.InteropServices;
@@ -212,7 +208,30 @@ try {{
     Add-Type -TypeDefinition $win32Code -ErrorAction SilentlyContinue
 }} catch {{}}
 
-# 2. Fallback de executável 32/64 bits se o caminho original não existir
+Add-Type -AssemblyName Microsoft.VisualBasic -ErrorAction SilentlyContinue
+Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
+
+function Focus-SapWindow {{
+    $proc = Get-Process saplogon, saplgpad, sapfewse -ErrorAction SilentlyContinue | Where-Object {{ $_.MainWindowHandle -ne 0 }} | Select-Object -First 1
+    if ($proc) {{
+        [Win32Helper]::ForceForeground($proc.MainWindowHandle)
+        try {{
+            [Microsoft.VisualBasic.Interaction]::AppActivate($proc.Id)
+        }} catch {{}}
+        Start-Sleep -Milliseconds 300
+    }}
+}}
+
+# 2. Fecha processos existentes do SAP
+Write-Output "[PS] Fechando processos SAP existentes..."
+Get-Process saplogon -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process sapfewse -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process saplgpad -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process sapgui -ErrorAction SilentlyContinue | Stop-Process -Force
+
+Start-Sleep -Seconds 4
+
+# 3. Fallback de executável 32/64 bits se necessário
 if (-not (Test-Path $sapExe)) {{
     $alt32 = "C:\\Program Files (x86)\\SAP\\FrontEnd\\SAPGUI\\saplogon.exe"
     $alt64 = "C:\\Program Files\\SAP\\FrontEnd\\SAPGUI\\saplogon.exe"
@@ -220,60 +239,52 @@ if (-not (Test-Path $sapExe)) {{
     elseif (Test-Path $alt64) {{ $sapExe = $alt64 }}
 }}
 
-Write-Output "[PS] Iniciando SAP Logon: $sapExe /LSXML_File=$landscapeXml"
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = $sapExe
-$psi.Arguments = "/LSXML_File=`"$landscapeXml`""
-$psi.UseShellExecute = $true
-$proc = [System.Diagnostics.Process]::Start($psi)
+Write-Output "[PS] Abrindo SAP: $sapExe /LSXML_File=$landscapeXml"
+Start-Process `
+    -FilePath $sapExe `
+    -ArgumentList "/LSXML_File=`"$landscapeXml`""
 
-# 3. Aguarda a janela principal do SAP Logon aparecer
-$timeoutSec = 25
-$elapsed = 0
-$sapWin = $null
+# 4. Aguarda popup inicial do SAP (8 segundos conforme rotina validada)
+Write-Output "[PS] Aguardando inicializacao e popup do SAP (8s)..."
+Start-Sleep -Seconds 8
 
-while ($elapsed -lt $timeoutSec) {{
-    Start-Sleep -Milliseconds 400
-    $elapsed += 0.4
-    $sapWin = Get-Process -Name "saplogon", "saplgpad" -ErrorAction SilentlyContinue | Where-Object {{ $_.MainWindowHandle -ne 0 }} | Select-Object -First 1
-    if ($sapWin) {{ break }}
-}}
+# Fecha popup garantindo foco prioritário
+Write-Output "[PS] Focando e fechando popup do SAP com ENTER..."
+Focus-SapWindow
+[System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
 
-if (-not $sapWin) {{
-    Write-Output "[PS_WARN] Janela do SAP Logon não apareceu no tempo limite ($timeoutSec s)."
+# 5. Aguarda estabilização da lista de conexões (5 segundos)
+Write-Output "[PS] Aguardando estabilizacao da lista do SAP Logon (5s)..."
+Start-Sleep -Seconds 5
+
+# 6. Seleciona conexão 03 (vai da linha 01 para a linha 03 com foco assegurado a cada passo)
+Write-Output "[PS] Selecionando ambiente 03..."
+
+# 1º DOWN: vai para a linha 02
+Focus-SapWindow
+[System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
+Start-Sleep -Milliseconds 350
+
+# 2º DOWN: vai para a linha 03
+Focus-SapWindow
+[System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
+Start-Sleep -Milliseconds 350
+
+# ENTER: entra na conexão 03
+Focus-SapWindow
+[System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
+Write-Output "[PS_OK] Conexao 03 acionada com sucesso!"
+
+# 7. Aguarda inicialização do SSO e estabilização da sessão (15 segundos)
+Write-Output "[PS] Aguardando autenticacao SSO e conexao do SAP..."
+Start-Sleep -Seconds 15
+
+if (-not (Get-Process saplogon, saplgpad, sapgui -ErrorAction SilentlyContinue)) {{
+    Write-Output "[PS_WARN] SAP nao abriu corretamente."
     exit 1
 }}
 
-# 4. Aguarda inicialização da janela e seleção padrão do sap 01
-Write-Output "[PS] Janela do SAP Logon detectada (PID: $($sapWin.Id)). Aguardando renderizacao do sap 01..."
-Start-Sleep -Milliseconds 1500
-
-# 5. Força foco e primeiro plano na janela do SAP Logon
-[Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-Start-Sleep -Milliseconds 500
-
-Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
-
-# Número de passos para baixo a partir do sap 01 (para o 3º item: 3 - 1 = 2)
-$downCount = $targetIndex - 1
-if ($downCount -lt 0) {{ $downCount = 0 }}
-
-Write-Output "[PS] SAP Logon pronto com sap 01 selecionado. Navegando $downCount x para baixo ate o sap 03..."
-
-for ($i = 1; $i -le $downCount; $i++) {{
-    [Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-    [System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
-    Write-Output "[PS] Seta para baixo $i de $downCount enviada."
-    Start-Sleep -Milliseconds 350
-}}
-
-# 6. Pressiona ENTER para abrir a conexão com o sap 03
-Start-Sleep -Milliseconds 350
-[Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-[System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
-Write-Output "[PS_OK] ENTER enviado com sucesso no SAP 03!"
-
-Start-Sleep -Milliseconds 1500
+Write-Output "[PS_OK] SAP reconectado com sucesso!"
 exit 0
 """
 
@@ -324,7 +335,7 @@ def restart_sap_session(
             ],
             capture_output=True,
             text=True,
-            timeout=40,
+            timeout=70,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
         )
         elapsed = time.perf_counter() - t0
