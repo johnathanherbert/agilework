@@ -20,6 +20,12 @@ from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 from app import tray
+from app.config import (
+    DEFAULT_SAP_LOGON_EXE,
+    DEFAULT_SAP_LANDSCAPE_XML,
+    DEFAULT_SAP_TARGET_INDEX,
+    NET_CHECK_INTERVAL_SECONDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +41,16 @@ class VbaConfig:
     output_data_path: str = ""  # Caminho onde o script salva o arquivo (ex: dados.txt ou ajuste.xlsx)
     timeout_seconds: int = 180
     run_on_startup: bool = True
+    # Watchdog de Internet & Reinício do SAP
+    sap_watchdog_enabled: bool = True
+    sap_exe_path: str = DEFAULT_SAP_LOGON_EXE
+    landscape_xml_path: str = DEFAULT_SAP_LANDSCAPE_XML
+    sap_target_index: int = DEFAULT_SAP_TARGET_INDEX
+    net_check_interval: int = NET_CHECK_INTERVAL_SECONDS
 
     @classmethod
     def from_dict(cls, data: dict) -> "VbaConfig":
+        watchdog_data = data.get("sap_watchdog") or {}
         return cls(
             enabled=bool(data.get("enabled", False)),
             interval_minutes=max(1, int(data.get("interval_minutes", 15))),
@@ -46,6 +59,11 @@ class VbaConfig:
             output_data_path=str(data.get("output_data_path", "")).strip(),
             timeout_seconds=max(10, int(data.get("timeout_seconds", 180))),
             run_on_startup=bool(data.get("run_on_startup", True)),
+            sap_watchdog_enabled=bool(watchdog_data.get("enabled", True)),
+            sap_exe_path=str(watchdog_data.get("sap_exe_path", DEFAULT_SAP_LOGON_EXE)).strip(),
+            landscape_xml_path=str(watchdog_data.get("landscape_xml_path", DEFAULT_SAP_LANDSCAPE_XML)).strip(),
+            sap_target_index=int(watchdog_data.get("target_connection_index", DEFAULT_SAP_TARGET_INDEX)),
+            net_check_interval=int(watchdog_data.get("check_interval_seconds", NET_CHECK_INTERVAL_SECONDS)),
         )
 
 

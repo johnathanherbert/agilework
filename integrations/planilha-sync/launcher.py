@@ -51,12 +51,14 @@ from app.config import (
     ESTOQUE_FILE_PATTERN, VALOR_UNIT_PATTERN, REMESSAS_FILE_PATTERN,
     ESTOQUE_HEADER_ROW, REMESSAS_HEADER_ROW,
     LOG_LEVEL,
+    DEFAULT_SAP_LOGON_EXE, DEFAULT_SAP_LANDSCAPE_XML,
 )
-from app import db, sync
+from app import db, sync, tray
 from app.watcher import DirectoryWatcher
 from app.vba_runner import VbaScheduler
 from app.sap_runner import SapAutomationWorker
 from app.updater import AutoUpdater
+from app.net_monitor import NetworkSapWatchdog
 from app.version import VERSION, BUILD_COMMIT
 
 # ---------------------------------------------------------------------------
@@ -337,6 +339,24 @@ def main() -> None:
     auto_updater = AutoUpdater(exe_dir=EXE_DIR, current_exe=current_exe_path, check_interval_hours=4)
     auto_updater.start()
 
+    # Iniciar Watchdog de Internet & Reinício Automático do SAP
+    sap_watchdog = None
+    if getattr(vba_scheduler.config, 'sap_watchdog_enabled', True):
+        sap_exe = getattr(vba_scheduler.config, 'sap_exe_path', '') or DEFAULT_SAP_LOGON_EXE
+        landscape_xml = getattr(vba_scheduler.config, 'landscape_xml_path', '') or DEFAULT_SAP_LANDSCAPE_XML
+        target_idx = getattr(vba_scheduler.config, 'sap_target_index', 3)
+        poll_sec = float(getattr(vba_scheduler.config, 'net_check_interval', 4))
+
+        sap_watchdog = NetworkSapWatchdog(
+            sap_exe=sap_exe,
+            landscape_xml=landscape_xml,
+            target_index=target_idx,
+            poll_interval=poll_sec,
+            fallback_url=API_BASE_URL,
+            on_notify=tray.notify,
+        )
+        sap_watchdog.start()
+
     # System tray
     def _force_sync():
         logger.info("Sync manual via bandeja")
@@ -360,6 +380,10 @@ def main() -> None:
         logger.info("Encerrando por solicitacao do usuario")
         _shutdown_event.set()
 
+    def _restart_sap_manual():
+        if sap_watchdog:
+            sap_watchdog.trigger_restart_now()
+
     try:
         from app.tray import start_tray
         start_tray(
@@ -369,6 +393,7 @@ def main() -> None:
             toggle_vba_pause_callback=_toggle_vba_pause,
             is_vba_paused_callback=lambda: vba_scheduler.is_paused,
             check_update_callback=_check_updates,
+            restart_sap_callback=_restart_sap_manual,
             log_path=str(LOG_FILE),
         )
     except Exception as exc:
@@ -395,6 +420,8 @@ def main() -> None:
     except KeyboardInterrupt:
         logger.info("Interrompido via Ctrl+C")
     finally:
+        if sap_watchdog:
+            sap_watchdog.stop()
         auto_updater.stop()
         sap_worker.stop()
         vba_scheduler.stop()

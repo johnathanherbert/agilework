@@ -87,3 +87,17 @@ VALOR_UNIT_HEADER_ROW = int(os.environ.get('VALOR_UNIT_HEADER_ROW', '0'))
 REMESSAS_HEADER_ROW   = int(os.environ.get('REMESSAS_HEADER_ROW',   '3'))
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+
+# ------------------------------------------------------------------
+# Configurações do SAP & Watchdog de Internet
+# ------------------------------------------------------------------
+DEFAULT_SAP_LOGON_EXE = os.environ.get(
+    'SAP_LOGON_EXE',
+    r"C:\Program Files\SAP\FrontEnd\SAPGUI\saplogon.exe"
+)
+DEFAULT_SAP_LANDSCAPE_XML = os.environ.get(
+    'SAP_LANDSCAPE_XML',
+    r"C:\SAP_INI_FILE\EMS\SAPUILandscapeSSO.xml"
+)
+DEFAULT_SAP_TARGET_INDEX = int(os.environ.get('SAP_TARGET_INDEX', '3'))
+NET_CHECK_INTERVAL_SECONDS = int(os.environ.get('NET_CHECK_INTERVAL_SECONDS', '4'))

@@ -6,12 +6,20 @@
   "output_data_path": "database\\dados.txt",
   "timeout_seconds": 180,
   "run_on_startup": true,
+  "sap_watchdog": {
+    "enabled": true,
+    "sap_exe_path": "C:\\Program Files\\SAP\\FrontEnd\\SAPGUI\\saplogon.exe",
+    "landscape_xml_path": "C:\\SAP_INI_FILE\\EMS\\SAPUILandscapeSSO.xml",
+    "target_connection_index": 3,
+    "check_interval_seconds": 4
+  },
   "_comentarios": {
     "enabled": "Defina como true para ativar a extração automática periódica",
     "interval_minutes": "Intervalo em minutos entre cada extração do SAP",
     "vba_script_path": "Caminho do script VBA (.vbs, .xlsm, .xls, .bat ou .ps1)",
     "macro_name": "Se o script for uma planilha .xlsm/.xls com Macro, informe o nome da sub (ex: Modulo1.ExtrairRelatorio)",
     "output_data_path": "Caminho onde o script salva o arquivo de dados (.txt ou .xlsx)",
-    "timeout_seconds": "Tempo limite em segundos para execução do script"
+    "timeout_seconds": "Tempo limite em segundos para execução do script",
+    "sap_watchdog": "Reinicia o SAP automaticamente quando a internet cai e retorna (abrindo o 3º item da lista)"
   }
 }

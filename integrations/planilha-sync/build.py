@@ -55,6 +55,7 @@ SPEC_CONFIG = {
         'app.watcher',
         'app.tray',
         'app.vba_runner',
+        'app.net_monitor',
         'app.updater',
         'app.version',
     ],

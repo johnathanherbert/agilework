@@ -45,6 +45,7 @@ def start_tray(
     toggle_vba_pause_callback: Optional[Callable] = None,
     is_vba_paused_callback: Optional[Callable[[], bool]] = None,
     check_update_callback: Optional[Callable] = None,
+    restart_sap_callback: Optional[Callable] = None,
     log_path: Optional[str] = None,
 ) -> bool:
     """
@@ -56,6 +57,7 @@ def start_tray(
     :param toggle_vba_pause_callback: Chamado ao clicar "Pausar/Ativar Extração Automática"
     :param is_vba_paused_callback:    Retorna True se o agendador VBA estiver pausado
     :param check_update_callback:     Chamado ao clicar "Verificar atualizações"
+    :param restart_sap_callback:      Chamado ao clicar "Reiniciar SAP (3º item)"
     :param log_path:                  Caminho do arquivo de log (para "Abrir log")
     :return: True se pystray estiver disponível
     """
@@ -97,6 +99,10 @@ def start_tray(
         if check_update_callback:
             threading.Thread(target=check_update_callback, daemon=True).start()
 
+    def _restart_sap(icon=None, item=None):
+        if restart_sap_callback:
+            threading.Thread(target=restart_sap_callback, daemon=True).start()
+
     def _open_log(icon=None, item=None):
         if log_path:
             import subprocess, sys
@@ -115,6 +121,8 @@ def start_tray(
         menu_items.append(pystray.MenuItem(_vba_toggle_title, _toggle_vba))
     if force_sync_callback:
         menu_items.append(pystray.MenuItem('Sincronizar agora', _force_sync))
+    if restart_sap_callback:
+        menu_items.append(pystray.MenuItem('🔄 Reiniciar SAP (3º item)', _restart_sap))
     if check_update_callback:
         menu_items.append(pystray.MenuItem('Verificar atualizações', _check_update))
     if log_path:
