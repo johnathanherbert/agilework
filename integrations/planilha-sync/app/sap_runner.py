@@ -118,12 +118,18 @@ class SapAutomationWorker:
         poll_interval: float = 4.0,
         on_success_trigger: Optional[Callable[..., None]] = None,
         command_handler: Optional[Callable[[str, Optional[str]], Tuple[bool, str]]] = None,
+        can_run_predicate: Optional[Callable[[], Tuple[bool, str]]] = None,
     ):
         self.poll_interval = poll_interval
         self.on_success_trigger = on_success_trigger
         self.command_handler = command_handler
+        self.can_run_predicate = can_run_predicate
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
+
+    def set_readiness_checker(self, fn: Callable[[], Tuple[bool, str]]) -> None:
+        """Define o callback de prontidão (ex: SAP online e SAP 03 aberto)."""
+        self.can_run_predicate = fn
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -147,6 +153,18 @@ class SapAutomationWorker:
                     job_id = int(job['id'])
                     command = str(job.get('command', 'movermigo')).lower()
                     requested_by = job.get('requested_by', 'Dashboard')
+
+                    # Checa prontidão do SAP antes de tentar executar qualquer automação
+                    if self.can_run_predicate:
+                        allowed, reason = self.can_run_predicate()
+                        if not allowed:
+                            logger.warning(
+                                "[SAP_WORKER] Job #%d [%s] aguardando: %s. Tentará novamente no próximo ciclo.",
+                                job_id, command, reason
+                            )
+                            self._stop_event.wait(self.poll_interval)
+                            continue
+
                     logger.info("Nova solicitação de automação SAP recebida! Job #%d [%s] por %s", job_id, command, requested_by)
 
                     tray.notify(

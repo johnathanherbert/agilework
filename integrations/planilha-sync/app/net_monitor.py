@@ -4,6 +4,9 @@ net_monitor.py — Monitor de conexão com a internet e reinicialização autom�
 Detecta com precisão quando a conexão de internet cai e, quando restabelecida, encerra
 as sessões travadas/desconectadas do SAP GUI e reabre o SAP Logon apontando para o
 arquivo de Landscape XML especificado, navegando diretamente para o 3º item da lista (sap 03).
+
+Garante controle estrito de prontidão para que extrações automáticas sejam suspensas
+durante quedas de rede e só possam rodar se a internet estiver ativa e o SAP 03 aberto.
 """
 
 from __future__ import annotations
@@ -59,6 +62,58 @@ def is_internet_available(timeout: float = 1.5, fallback_http_url: Optional[str]
             pass
 
     return False
+
+
+def is_sap_03_process_running() -> bool:
+    """
+    Verifica se a sessão do SAP GUI (sapgui.exe) está ativa no Windows com janela criada.
+    Retorna True se sapgui.exe estiver em execução com janela aberta.
+    """
+    if sys.platform != "win32":
+        return True  # Modo de desenvolvimento não-Windows
+
+    try:
+        # 1. Checagem rápida de processos via tasklist
+        cmd = ["tasklist", "/FI", "IMAGENAME eq sapgui.exe", "/NH"]
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=3,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        if "sapgui.exe" not in res.stdout.lower():
+            return False
+
+        # 2. Confirma existência de janela principal ativa
+        ps_cmd = (
+            'Get-Process -Name "sapgui" -ErrorAction SilentlyContinue | '
+            'Where-Object { $_.MainWindowHandle -ne 0 } | '
+            'Select-Object -First 1 -ExpandProperty Id'
+        )
+        ps_res = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_cmd],
+            capture_output=True,
+            text=True,
+            timeout=4,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        pid_str = ps_res.stdout.strip()
+        return bool(pid_str and pid_str.isdigit())
+    except Exception as exc:
+        logger.debug("[SAP_CHECK] Erro ao verificar processo sapgui.exe: %s", exc)
+        return False
+
+
+def default_sap_ready_check() -> Tuple[bool, str]:
+    """
+    Checagem de prontidão do SAP para extração quando o watchdog estiver desativado.
+    """
+    if not is_internet_available():
+        return False, "Conexão de internet está OFFLINE"
+    if sys.platform == "win32" and not is_sap_03_process_running():
+        return False, "Sessão do SAP 03 não está aberta (sapgui.exe ausente)"
+    return True, "SAP 03 online e pronto"
 
 
 def get_third_service_name_from_xml(landscape_xml_path: str, target_index: int = 3) -> Optional[str]:
@@ -133,8 +188,8 @@ def generate_powershell_restart_script(
 ) -> str:
     """
     Gera o script PowerShell que inicia o SAP Logon com o arquivo XML especificado,
-    traz a janela para primeiro plano e navega 2 vezes para baixo a partir do sap 01
-    para selecionar e abrir o sap 03 com ENTER.
+    traz a janela para primeiro plano, navega 2 vezes para baixo a partir do sap 01
+    para selecionar e abrir o sap 03 com ENTER, aguardando a abertura do sapgui.exe.
     """
     escaped_exe = sap_exe.replace("'", "''")
     escaped_xml = landscape_xml.replace("'", "''")
@@ -260,8 +315,27 @@ Start-Sleep -Milliseconds 350
 [System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
 Write-Output "[PS_OK] ENTER enviado com sucesso no SAP 03!"
 
-Start-Sleep -Milliseconds 800
-exit 0
+# 7. Aguarda abertura da janela da sessão (sapgui.exe) para confirmar conexão
+Write-Output "[PS] Aguardando abertura da janela da sessao sapgui.exe..."
+$sapGuiWin = $null
+$waitGuiSec = 25
+$elapsedGui = 0
+
+while ($elapsedGui -lt $waitGuiSec) {{
+    Start-Sleep -Milliseconds 500
+    $elapsedGui += 0.5
+    $sapGuiWin = Get-Process -Name "sapgui" -ErrorAction SilentlyContinue | Where-Object {{ $_.MainWindowHandle -ne 0 }} | Select-Object -First 1
+    if ($sapGuiWin) {{ break }}
+}}
+
+if ($sapGuiWin) {{
+    Write-Output "[PS_OK] Sessao do SAP 03 aberta e detectada com sucesso (PID: $($sapGuiWin.Id))!"
+    Start-Sleep -Milliseconds 1500
+    exit 0
+}} else {{
+    Write-Output "[PS_WARN] Processo sapgui.exe nao detectado apos $waitGuiSec s, mas comando de conexao foi enviado."
+    exit 0
+}}
 """
 
 
@@ -271,7 +345,7 @@ def restart_sap_session(
     target_index: int = 3,
 ) -> Tuple[bool, str]:
     """
-    Fecha o SAP GUI travado e reabre conectando no 3º item da lista.
+    Fecha o SAP GUI travado e reabre conectando no 3º item da lista (sap 03).
     """
     logger.info("[SAP_RESTART] Iniciando rotina de reinício do SAP GUI...")
 
@@ -311,7 +385,7 @@ def restart_sap_session(
             ],
             capture_output=True,
             text=True,
-            timeout=40,
+            timeout=50,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
         )
         elapsed = time.perf_counter() - t0
@@ -346,7 +420,11 @@ class NetworkSapWatchdog:
     """
     Worker em background que monitora continuamente a conexão com a internet.
     Detecta quedas e, no retorno, executa automaticamente o fechamento e a
-    reabertura do SAP GUI com seleção do 3º item.
+    reabertura do SAP GUI com seleção do 3º item (sap 03).
+
+    Controla e exporta a prontidão para extração automática, garantindo que
+    nenhuma extração ocorra enquanto a internet estiver caída ou enquanto
+    o SAP 03 estiver sendo reiniciado / não estiver aberto.
     """
 
     def __init__(
@@ -374,6 +452,31 @@ class NetworkSapWatchdog:
         self.offline_since: Optional[float] = None
         self.last_restart_time: float = 0.0
 
+        # Controle de lock de reinício e prontidão do SAP
+        self.is_restarting = False
+        self.sap_ready = True
+
+    def is_ready_for_extraction(self) -> Tuple[bool, str]:
+        """
+        Garante que extrações automáticas só rodem se:
+        1. A internet estiver online.
+        2. O SAP não estiver no meio do processo de reinício.
+        3. O SAP 03 tiver sido restabelecido e o processo sapgui.exe estiver aberto.
+        """
+        if not self.is_online:
+            return False, "Conexão de internet está OFFLINE"
+
+        if self.is_restarting:
+            return False, "SAP está em processo de reinicialização / reconexão"
+
+        if self.was_offline and not self.sap_ready:
+            return False, "Aguardando conclusão da reabertura do SAP 03 após queda de rede"
+
+        if sys.platform == "win32" and not is_sap_03_process_running():
+            return False, "Sessão do SAP 03 não está aberta (sapgui.exe não detectado)"
+
+        return True, "SAP 03 online e pronto"
+
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
             return
@@ -385,7 +488,7 @@ class NetworkSapWatchdog:
         )
         self._thread.start()
         logger.info(
-            "[NET_WATCHDOG] Monitor de internet e SAP iniciado (polling a cada %.1fs). Alvo SAP: 3º item.",
+            "[NET_WATCHDOG] Monitor de internet e SAP iniciado (polling a cada %.1fs). Alvo SAP: 3º item (sap 03).",
             self.poll_interval,
         )
 
@@ -397,16 +500,26 @@ class NetworkSapWatchdog:
 
     def trigger_restart_now(self) -> Tuple[bool, str]:
         """Permite disparar a reinicialização manual (ex: via clique na bandeja)."""
-        logger.info("[NET_WATCHDOG] Disparo manual de reinício do SAP solicitado.")
-        # NÃO chama on_notify ANTES do reinício para não roubar o foco da tela para a bandeja
-        ok, msg = restart_sap_session(
-            sap_exe=self.sap_exe,
-            landscape_xml=self.landscape_xml,
-            target_index=self.target_index,
-        )
+        logger.info("[NET_WATCHDOG] Disparo manual de reinício do SAP solicitado. Suspendendo extrações...")
+        self.is_restarting = True
+        self.sap_ready = False
+        try:
+            ok, msg = restart_sap_session(
+                sap_exe=self.sap_exe,
+                landscape_xml=self.landscape_xml,
+                target_index=self.target_index,
+            )
+            time.sleep(1.0)
+            if ok and is_sap_03_process_running():
+                self.sap_ready = True
+            else:
+                self.sap_ready = False
+        finally:
+            self.is_restarting = False
+
         if self.on_notify:
-            if ok:
-                self.on_notify("Planilha Sync — SAP", "SAP reaberto com sucesso no 3º item!")
+            if ok and self.sap_ready:
+                self.on_notify("Planilha Sync — SAP", "SAP 03 reaberto com sucesso!")
             else:
                 self.on_notify("Planilha Sync — Erro SAP", f"Falha ao reabrir SAP: {msg}")
         return ok, msg
@@ -417,10 +530,12 @@ class NetworkSapWatchdog:
         self.is_online = initial_check
         if not initial_check:
             self.was_offline = True
+            self.sap_ready = False
             self.offline_since = time.time()
-            logger.warning("[NET_WATCHDOG] Iniciado com conexão de internet OFFLINE.")
+            logger.warning("[NET_WATCHDOG] Iniciado com conexão de internet OFFLINE. Extrações automáticas suspensas.")
         else:
-            logger.info("[NET_WATCHDOG] Conexão inicial com a internet: ONLINE.")
+            self.sap_ready = is_sap_03_process_running()
+            logger.info("[NET_WATCHDOG] Conexão inicial com a internet: ONLINE. SAP 03 pronto: %s", self.sap_ready)
 
         consecutive_online_count = 0
 
@@ -432,16 +547,17 @@ class NetworkSapWatchdog:
                 if not available and self.is_online:
                     self.is_online = False
                     self.was_offline = True
+                    self.sap_ready = False
                     self.offline_since = time.time()
                     consecutive_online_count = 0
 
                     logger.warning(
-                        "[NET_WATCHDOG] ⚠️ Conexão com a internet CAIU! Monitorando retorno para reiniciar o SAP..."
+                        "[NET_WATCHDOG] ⚠️ Conexão com a internet CAIU! Extrações automáticas suspensas imediatamente. Monitorando retorno para reiniciar o SAP..."
                     )
                     if self.on_notify:
                         self.on_notify(
                             "Planilha Sync — Rede",
-                            "Conexão com a internet perdida. O SAP será reiniciado assim que a rede voltar.",
+                            "Conexão com a internet perdida. Extrações suspensas e SAP será reiniciado quando a rede voltar.",
                         )
 
                 # 2. Caso a internet continue offline
@@ -457,44 +573,57 @@ class NetworkSapWatchdog:
                             time.time() - self.offline_since if self.offline_since else 0
                         )
                         self.is_online = True
+                        self.is_restarting = True
+                        self.sap_ready = False
+
                         logger.info(
-                            "[NET_WATCHDOG] 🌐 Conexão com a internet VOLTOU após %.1fs de queda! Iniciando reinício do SAP...",
+                            "[NET_WATCHDOG] 🌐 Conexão com a internet VOLTOU após %.1fs de queda! Bloqueando extrações e iniciando reinício do SAP 03...",
                             duration_offline,
                         )
 
-                        # NOTA: NÃO chamamos self.on_notify aqui antes da reinicialização
-                        # pois balões de notificação do Windows roubam o foco para Shell_TrayWnd (bandeja).
-
-                        # Executa encerramento e reabertura do SAP
-                        ok, msg = restart_sap_session(
-                            sap_exe=self.sap_exe,
-                            landscape_xml=self.landscape_xml,
-                            target_index=self.target_index,
-                        )
+                        # Executa encerramento e reabertura do SAP com proteção de extração
+                        try:
+                            ok, msg = restart_sap_session(
+                                sap_exe=self.sap_exe,
+                                landscape_xml=self.landscape_xml,
+                                target_index=self.target_index,
+                            )
+                        finally:
+                            self.is_restarting = False
 
                         self.last_restart_time = time.time()
                         self.was_offline = False
                         self.offline_since = None
 
                         if ok:
-                            logger.info("[NET_WATCHDOG] ✅ SAP reaberto com sucesso no 3º item.")
-                            if self.on_notify:
-                                self.on_notify(
-                                    "Planilha Sync — SAP",
-                                    "SAP reaberto com sucesso no 3º item da lista!",
-                                )
+                            # Confirma se o processo sapgui.exe realmente abriu
+                            time.sleep(1.0)
+                            if is_sap_03_process_running():
+                                self.sap_ready = True
+                                logger.info("[NET_WATCHDOG] ✅ SAP 03 verificado e aberto! Extrações automáticas liberadas.")
+                                if self.on_notify:
+                                    self.on_notify(
+                                        "Planilha Sync — SAP",
+                                        "SAP 03 reaberto com sucesso! Extrações automáticas retomadas.",
+                                    )
+                            else:
+                                self.sap_ready = False
+                                logger.warning("[NET_WATCHDOG] ⚠️ SAP Logon acionado, mas sapgui.exe ainda não foi detectado com janela aberta. Extrações permanecem suspensas.")
                         else:
-                            logger.error("[NET_WATCHDOG] ❌ Falha ao reiniciar SAP: %s", msg)
+                            self.sap_ready = False
+                            logger.error("[NET_WATCHDOG] ❌ Falha ao reiniciar SAP: %s. Extrações permanecem suspensas.", msg)
                             if self.on_notify:
                                 self.on_notify(
                                     "Planilha Sync — Erro SAP",
                                     f"Falha ao reabrir SAP no retorno da rede: {msg}",
                                 )
 
-                # 4. Continua online
+                # 4. Continua online: monitora se sapgui.exe fechou inesperadamente
                 elif available and self.is_online:
                     consecutive_online_count = max(consecutive_online_count + 1, 2)
                     self.was_offline = False
+                    if sys.platform == "win32" and not self.is_restarting:
+                        self.sap_ready = is_sap_03_process_running()
 
             except Exception as exc:
                 logger.error("[NET_WATCHDOG] Erro no loop de monitoramento de rede: %s", exc, exc_info=True)

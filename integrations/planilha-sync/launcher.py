@@ -58,7 +58,7 @@ from app.watcher import DirectoryWatcher
 from app.vba_runner import VbaScheduler
 from app.sap_runner import SapAutomationWorker
 from app.updater import AutoUpdater
-from app.net_monitor import NetworkSapWatchdog
+from app.net_monitor import NetworkSapWatchdog, default_sap_ready_check
 from app.version import VERSION, BUILD_COMMIT
 
 # ---------------------------------------------------------------------------
@@ -274,7 +274,7 @@ def main() -> None:
     watcher.start()
     _animate_loading(status_file, 88, 94, 'Iniciando monitoramento', 0.2)
 
-    # Iniciar Agendador VBA (se ativado em vba_config.json)
+    # Configurar Agendador VBA (sem iniciar a thread ainda)
     _animate_loading(status_file, 94, 98, 'Carregando agendador VBA', 0.1)
     
     def _on_vba_output_ready(out_file: Path):
@@ -282,7 +282,28 @@ def main() -> None:
         sync.sync_estoque(out_file, 'estoque', header_row=ESTOQUE_HEADER_ROW)
 
     vba_scheduler = VbaScheduler(base_dir=EXE_DIR, on_sync_trigger=_on_vba_output_ready)
-    vba_scheduler.start()
+
+    # Iniciar Watchdog de Internet & Reinício Automático do SAP
+    sap_watchdog = None
+    if getattr(vba_scheduler.config, 'sap_watchdog_enabled', True):
+        sap_exe = getattr(vba_scheduler.config, 'sap_exe_path', '') or DEFAULT_SAP_LOGON_EXE
+        landscape_xml = getattr(vba_scheduler.config, 'landscape_xml_path', '') or DEFAULT_SAP_LANDSCAPE_XML
+        target_idx = getattr(vba_scheduler.config, 'sap_target_index', 3)
+        poll_sec = float(getattr(vba_scheduler.config, 'net_check_interval', 4))
+
+        sap_watchdog = NetworkSapWatchdog(
+            sap_exe=sap_exe,
+            landscape_xml=landscape_xml,
+            target_index=target_idx,
+            poll_interval=poll_sec,
+            fallback_url=API_BASE_URL,
+            on_notify=tray.notify,
+        )
+        sap_watchdog.start()
+
+    # Vincula o verificador de prontidão do SAP (extrações bloqueadas se internet cair ou SAP 03 não estiver aberto)
+    ready_checker = sap_watchdog.is_ready_for_extraction if sap_watchdog else default_sap_ready_check
+    vba_scheduler.set_readiness_checker(ready_checker)
 
     # Iniciar Worker de Automações SAP (recebe solicitações sob demanda do dashboard)
     def _on_sap_automation_success(cmd: str = ''):
@@ -294,12 +315,18 @@ def main() -> None:
 
         logger.info("Automação SAP '%s' concluída com sucesso. Disparando sincronização/extração de dados...", cmd)
         if vba_scheduler.config.vba_script_path:
-            vba_scheduler.run_once(notify_user=False)
+            vba_scheduler.run_once(notify_user=False, is_automated=True)
         else:
             watcher.force_sync_all()
 
     def _handle_sap_command(cmd: str, script_code: Optional[str]) -> Tuple[bool, str]:
         cmd_norm = cmd.lower().strip()
+        if ready_checker:
+            allowed, reason = ready_checker()
+            if not allowed:
+                logger.warning("Comando SAP '%s' bloqueado: %s.", cmd, reason)
+                return False, f"SAP 03 não está disponível ({reason})"
+
         if cmd_norm in ('extrair_relatorio', 'atualizar_db', 'sync_db', 'extrair'):
             logger.info("Extração de relatório / atualização do DB solicitada pelo dashboard...")
             if script_code:
@@ -309,7 +336,7 @@ def main() -> None:
                     return False, msg
             else:
                 # Executa a mesma rotina de extração da bandeja (run_once)
-                ok = vba_scheduler.run_once(notify_user=True)
+                ok = vba_scheduler.run_once(notify_user=True, is_automated=True)
                 if not ok and not vba_scheduler.config.vba_script_path:
                     # Se não houver script VBA configurado em vba_config.json, sincroniza arquivos da pasta
                     synced = watcher.force_sync_all()
@@ -331,31 +358,17 @@ def main() -> None:
         poll_interval=4.0,
         on_success_trigger=_on_sap_automation_success,
         command_handler=_handle_sap_command,
+        can_run_predicate=ready_checker,
     )
     sap_worker.start()
+
+    # Agora sim, inicia o agendador VBA protegido
+    vba_scheduler.start()
 
     # Iniciar Auto-Updater (busca novas versões compiladas no GitHub)
     current_exe_path = Path(sys.executable) if getattr(sys, 'frozen', False) else EXE_DIR / 'planilha_sync.exe'
     auto_updater = AutoUpdater(exe_dir=EXE_DIR, current_exe=current_exe_path, check_interval_hours=4)
     auto_updater.start()
-
-    # Iniciar Watchdog de Internet & Reinício Automático do SAP
-    sap_watchdog = None
-    if getattr(vba_scheduler.config, 'sap_watchdog_enabled', True):
-        sap_exe = getattr(vba_scheduler.config, 'sap_exe_path', '') or DEFAULT_SAP_LOGON_EXE
-        landscape_xml = getattr(vba_scheduler.config, 'landscape_xml_path', '') or DEFAULT_SAP_LANDSCAPE_XML
-        target_idx = getattr(vba_scheduler.config, 'sap_target_index', 3)
-        poll_sec = float(getattr(vba_scheduler.config, 'net_check_interval', 4))
-
-        sap_watchdog = NetworkSapWatchdog(
-            sap_exe=sap_exe,
-            landscape_xml=landscape_xml,
-            target_index=target_idx,
-            poll_interval=poll_sec,
-            fallback_url=API_BASE_URL,
-            on_notify=tray.notify,
-        )
-        sap_watchdog.start()
 
     # System tray
     def _force_sync():

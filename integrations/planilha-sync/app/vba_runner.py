@@ -255,9 +255,11 @@ class VbaScheduler:
         self,
         base_dir: Path,
         on_sync_trigger: Optional[Callable[[Path], None]] = None,
+        can_run_predicate: Optional[Callable[[], Tuple[bool, str]]] = None,
     ):
         self.base_dir = base_dir
         self.on_sync_trigger = on_sync_trigger
+        self.can_run_predicate = can_run_predicate
         self.config_path, self.config = find_or_create_config_file(base_dir)
 
         self._lock = threading.Lock()
@@ -268,6 +270,10 @@ class VbaScheduler:
         self._thread: Optional[threading.Thread] = None
         # Se enabled=True no config, inicia ativo; se enabled=False, inicia pausado
         self._paused = not self.config.enabled
+
+    def set_readiness_checker(self, fn: Callable[[], Tuple[bool, str]]) -> None:
+        """Define o callback de prontidão (ex: SAP online e SAP 03 aberto)."""
+        self.can_run_predicate = fn
 
     @property
     def is_paused(self) -> bool:
@@ -326,11 +332,28 @@ class VbaScheduler:
             self._thread.join(timeout=5)
         logger.info("Agendador VBA parado.")
 
-    def run_once(self, notify_user: bool = True, debounce_seconds: float = 5.0) -> bool:
+    def run_once(
+        self,
+        notify_user: bool = True,
+        debounce_seconds: float = 5.0,
+        is_automated: bool = False,
+    ) -> bool:
         """
-        Executa uma extração manual imediatamente (funciona mesmo se o loop automático estiver pausado).
-        Garante que apenas uma execução ocorra por vez e evita execuções repetidas em curto intervalo (debounce).
+        Executa uma extração manual imediatamente ou automática via agendador.
+        Garante que apenas uma execução ocorra por vez e que o SAP esteja pronto.
         """
+        # Checagem de prontidão (ex: internet + SAP 03 aberto)
+        if self.can_run_predicate:
+            allowed, reason = self.can_run_predicate()
+            if not allowed:
+                if is_automated:
+                    logger.warning("[VBA_SCHEDULER] Extração automática bloqueada: %s. Extração não executada.", reason)
+                else:
+                    logger.warning("Extração VBA manual rejeitada: %s.", reason)
+                    if notify_user:
+                        tray.notify("Extração VBA", f"Não é possível extrair agora: {reason}")
+                return False
+
         if not self._exec_lock.acquire(blocking=False):
             logger.warning("Extração VBA ignorada: uma extração já está em andamento no momento.")
             if notify_user:
@@ -386,8 +409,16 @@ class VbaScheduler:
     def _run_loop(self) -> None:
         # Se configurado para rodar na inicialização e não estiver pausado
         if self.config.run_on_startup and not self._paused:
-            logger.info("Executando extração VBA inicial (run_on_startup=true)...")
-            self.run_once(notify_user=False)
+            if self.can_run_predicate:
+                allowed, reason = self.can_run_predicate()
+                if not allowed:
+                    logger.warning("[VBA_SCHEDULER] Extração inicial adiada: %s.", reason)
+                else:
+                    logger.info("Executando extração VBA inicial (run_on_startup=true)...")
+                    self.run_once(notify_user=False, is_automated=True)
+            else:
+                logger.info("Executando extração VBA inicial (run_on_startup=true)...")
+                self.run_once(notify_user=False, is_automated=True)
 
         while not self._stop_event.is_set():
             interval_sec = max(30, self.config.interval_minutes * 60)
@@ -397,7 +428,16 @@ class VbaScheduler:
                 break
 
             if not self._paused:
+                if self.can_run_predicate:
+                    allowed, reason = self.can_run_predicate()
+                    if not allowed:
+                        logger.warning(
+                            "[VBA_SCHEDULER] Ciclo automático de extração adiado: %s.",
+                            reason,
+                        )
+                        continue
+
                 logger.info("Executando extração VBA agendada...")
-                self.run_once(notify_user=False)
+                self.run_once(notify_user=False, is_automated=True)
             else:
                 logger.debug("Ciclo de extração ignorado pois o agendador está pausado.")
