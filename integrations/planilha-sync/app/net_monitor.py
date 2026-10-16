@@ -3,7 +3,7 @@ net_monitor.py — Monitor de conexão com a internet e reinicialização autom�
 
 Detecta com precisão quando a conexão de internet cai e, quando restabelecida, encerra
 as sessões travadas/desconectadas do SAP GUI e reabre o SAP Logon apontando para o
-arquivo de Landscape XML especificado, selecionando automaticamente o 3º item da lista.
+arquivo de Landscape XML especificado, navegando diretamente para o 3º item da lista (sap 03).
 """
 
 from __future__ import annotations
@@ -132,26 +132,21 @@ def generate_powershell_restart_script(
     service_name: Optional[str] = None,
 ) -> str:
     """
-    Gera o script PowerShell que inicia o SAP Logon com o arquivo XML especificado
-    e ativa com precisão o 3º item da lista usando UI Automation e clique direto.
+    Gera o script PowerShell que inicia o SAP Logon com o arquivo XML especificado,
+    traz a janela para primeiro plano e navega 2 vezes para baixo a partir do sap 01
+    para selecionar e abrir o sap 03 com ENTER.
     """
     escaped_exe = sap_exe.replace("'", "''")
     escaped_xml = landscape_xml.replace("'", "''")
-    if service_name:
-        escaped_svc = service_name.replace("'", "''")
-        svc_param = f"'{escaped_svc}'"
-    else:
-        svc_param = "$null"
 
-    return f"""# PowerShell - Reinício e Ativação Precisa do 3º SAP Logon
+    return f"""# PowerShell - Reinício do SAP Logon e Seleção do SAP 03
 $ErrorActionPreference = 'SilentlyContinue'
 
 $sapExe = '{escaped_exe}'
 $landscapeXml = '{escaped_xml}'
 $targetIndex = {target_index}
-$targetServiceName = {svc_param}
 
-# 1. Helper Win32 para garantir foco no SAP Logon e clique via API nativa
+# 1. Helper Win32 para garantir foco prioritário no SAP Logon
 $win32Code = @"
 using System;
 using System.Runtime.InteropServices;
@@ -178,15 +173,6 @@ public class Win32Helper {{
     [DllImport("user32.dll")]
     public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
-    [DllImport("user32.dll")]
-    public static extern bool SetCursorPos(int X, int Y);
-
-    [DllImport("user32.dll")]
-    public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
-
-    public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
-    public const uint MOUSEEVENTF_LEFTUP   = 0x0004;
-
     public static void ForceForeground(IntPtr hWnd) {{
         if (hWnd == IntPtr.Zero) return;
         uint foreProcId;
@@ -205,16 +191,6 @@ public class Win32Helper {{
             SetForegroundWindow(hWnd);
             BringWindowToTop(hWnd);
         }}
-    }}
-
-    public static void LeftDoubleClickAt(int x, int y) {{
-        SetCursorPos(x, y);
-        System.Threading.Thread.Sleep(120);
-        mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-        System.Threading.Thread.Sleep(80);
-        mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
     }}
 }}
 "@
@@ -239,7 +215,7 @@ $psi.UseShellExecute = $true
 $proc = [System.Diagnostics.Process]::Start($psi)
 
 # 3. Aguarda a janela principal do SAP Logon aparecer
-$timeoutSec = 20
+$timeoutSec = 25
 $elapsed = 0
 $sapWin = $null
 
@@ -255,149 +231,36 @@ if (-not $sapWin) {{
     exit 1
 }}
 
-# Traz o SAP Logon com prioridade máxima para primeiro plano
+# 4. Aguarda inicialização da janela e seleção padrão do sap 01
+Write-Output "[PS] Janela do SAP Logon detectada (PID: $($sapWin.Id)). Aguardando renderizacao do sap 01..."
+Start-Sleep -Milliseconds 1500
+
+# 5. Força foco e primeiro plano na janela do SAP Logon
 [Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-Start-Sleep -Milliseconds 1000
+Start-Sleep -Milliseconds 500
 
-# 4. Tenta conectar via SAP GUI Scripting COM se o serviço for conhecido
-$connectedViaCom = $false
-if ($targetServiceName) {{
-    try {{
-        Write-Output "[PS] Tentando conexão COM para: $targetServiceName"
-        $sapGuiAuto = [System.Runtime.InteropServices.Marshal]::GetActiveObject("SAPGUI")
-        if ($sapGuiAuto) {{
-            $app = $sapGuiAuto.GetScriptingEngine()
-            if ($app) {{
-                $conn = $app.OpenConnection($targetServiceName, $true)
-                if ($conn) {{
-                    Write-Output "[PS_OK] Conexão aberta com sucesso via COM: $targetServiceName"
-                    $connectedViaCom = $true
-                }}
-            }}
-        }}
-    }} catch {{
-        Write-Output "[PS] COM Scripting não respondeu: $_. Prosseguindo com UI Automation."
-    }}
-}}
-
-if ($connectedViaCom) {{
-    exit 0
-}}
-
-# 5. UI Automation direcionada ao 3º item da lista (de cima para baixo)
-try {{
-    Add-Type -AssemblyName UIAutomationClient -ErrorAction SilentlyContinue
-    Add-Type -AssemblyName UIAutomationTypes -ErrorAction SilentlyContinue
-    Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
-
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($sapWin.MainWindowHandle)
-    if ($root) {{
-        $condList = New-Object System.Windows.Automation.OrCondition(
-            (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)),
-            (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::TreeItem)),
-            (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem))
-        )
-
-        $visibleItems = @()
-        for ($i = 0; $i -lt 12; $i++) {{
-            [Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-            $found = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condList)
-            if ($found) {{
-                # Filtra apenas itens visíveis com dimensões reais e ordena do topo para baixo (Y crescente)
-                $visibleItems = @($found | Where-Object {{
-                    $r = $_.Current.BoundingRectangle
-                    $r.Width -gt 25 -and $r.Height -gt 6 -and $r.X -gt 0 -and $r.Y -gt 0
-                }} | Sort-Object {{ $_.Current.BoundingRectangle.Y }})
-
-                if ($visibleItems.Count -ge $targetIndex) {{
-                    break
-                }}
-            }}
-            Start-Sleep -Milliseconds 400
-        }}
-
-        Write-Output "[PS] Itens visíveis encontrados no SAP Logon: $($visibleItems.Count)"
-
-        $targetItem = $null
-
-        # 5.1 Busca por nome do serviço se disponível
-        if ($targetServiceName) {{
-            $targetItem = $visibleItems | Where-Object {{ $_.Current.Name -like "*$targetServiceName*" }} | Select-Object -First 1
-        }}
-
-        # 5.2 Busca por '03' ou 'SAP 03' no nome do item
-        if (-not $targetItem) {{
-            $targetItem = $visibleItems | Where-Object {{
-                $n = $_.Current.Name
-                $n -match "\\b0?3\\b" -or $n -match "SAP\\s*0?3"
-            }} | Select-Object -First 1
-        }}
-
-        # 5.3 Fallback estrito: o 3º item ordenado de cima para baixo (índice 2)
-        if (-not $targetItem -and $visibleItems.Count -ge $targetIndex) {{
-            $targetItem = $visibleItems[$targetIndex - 1]
-        }}
-
-        if ($targetItem) {{
-            $itemName = $targetItem.Current.Name
-            Write-Output "[PS] Item alvo selecionado: '$itemName' (3º de cima para baixo)."
-            [Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-            Start-Sleep -Milliseconds 150
-
-            # Foca o item via UI Automation
-            try {{ $targetItem.SetFocus() }} catch {{}}
-
-            # Seleciona o item se suportado
-            try {{
-                $selPattern = $targetItem.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
-                if ($selPattern) {{ $selPattern.Select() }}
-            }} catch {{}}
-
-            # Duplo clique físico nas coordenadas exatas do item
-            $rect = $targetItem.Current.BoundingRectangle
-            $clickX = [int]($rect.X + [Math]::Min(50, [int]($rect.Width / 3)))
-            $clickY = [int]($rect.Y + [int]($rect.Height / 2))
-            Write-Output "[PS] Executando duplo clique em ($clickX, $clickY) sobre '$itemName'..."
-            [Win32Helper]::LeftDoubleClickAt($clickX, $clickY)
-            Start-Sleep -Milliseconds 300
-
-            # Confirma com ENTER na janela se estiver em primeiro plano
-            if ([Win32Helper]::GetForegroundWindow() -eq $sapWin.MainWindowHandle) {{
-                [System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
-            }}
-
-            Write-Output "[PS_OK] Item '$itemName' acionado com sucesso!"
-            exit 0
-        }}
-    }}
-}} catch {{
-    Write-Output "[PS_WARN] UI Automation falhou: $_"
-}}
-
-# 6. Fallback teclado com verificação estrita de janela em primeiro plano
-Write-Output "[PS] Usando fallback de teclado com proteção de foco..."
-[Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
-Start-Sleep -Milliseconds 600
-
-$activeHwnd = [Win32Helper]::GetForegroundWindow()
-if ($activeHwnd -ne $sapWin.MainWindowHandle) {{
-    Write-Output "[PS_ERR] SAP Logon não está em primeiro plano (Janela ativa: $activeHwnd). Abortando para proteger a barra de tarefas."
-    exit 2
-}}
-
-# Envia sequência segura apenas quando confirmado que o SAP Logon está em foco
 Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
-[System.Windows.Forms.SendKeys]::SendWait("{{TAB}}")
-Start-Sleep -Milliseconds 200
-[System.Windows.Forms.SendKeys]::SendWait("{{HOME}}")
-Start-Sleep -Milliseconds 200
-[System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
-Start-Sleep -Milliseconds 200
-[System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
-Start-Sleep -Milliseconds 300
-[System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
 
-Write-Output "[PS_OK] Sequência de teclado enviada para o SAP Logon."
+# Número de passos para baixo a partir do sap 01 (para o 3º item: 3 - 1 = 2)
+$downCount = $targetIndex - 1
+if ($downCount -lt 0) {{ $downCount = 0 }}
+
+Write-Output "[PS] SAP Logon pronto com sap 01 selecionado. Navegando $downCount x para baixo ate o sap 03..."
+
+for ($i = 1; $i -le $downCount; $i++) {{
+    [Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
+    [System.Windows.Forms.SendKeys]::SendWait("{{DOWN}}")
+    Write-Output "[PS] Seta para baixo $i de $downCount enviada."
+    Start-Sleep -Milliseconds 350
+}}
+
+# 6. Pressiona ENTER para abrir a conexão com o sap 03
+Start-Sleep -Milliseconds 350
+[Win32Helper]::ForceForeground($sapWin.MainWindowHandle)
+[System.Windows.Forms.SendKeys]::SendWait("{{ENTER}}")
+Write-Output "[PS_OK] ENTER enviado com sucesso no SAP 03!"
+
+Start-Sleep -Milliseconds 800
 exit 0
 """
 
@@ -415,12 +278,12 @@ def restart_sap_session(
     # Passo 1: Fechar instâncias travadas
     kill_sap_processes()
 
-    # Passo 2: Extrai nome do 3º serviço do XML caso disponível
+    # Passo 2: Extrai nome do 3º serviço do XML caso disponível (para log informativo)
     service_name = get_third_service_name_from_xml(landscape_xml, target_index=target_index)
     if service_name:
         logger.info("[SAP_RESTART] Identificado 3º serviço no XML: '%s'", service_name)
     else:
-        logger.info("[SAP_RESTART] Nome do serviço não extraído do XML; usará navegação direta no SAP Logon.")
+        logger.info("[SAP_RESTART] Navegação direta configurada: abrindo item %d (sap 03).", target_index)
 
     # Passo 3: Executa script PowerShell especializado
     ps_code = generate_powershell_restart_script(
